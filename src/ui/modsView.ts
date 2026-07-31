@@ -1,4 +1,4 @@
-import { getMods, scanMods, disableMod, enableMod, removeMod, checkForUpdates, disableAllMods, enableAllMods, getGameVersion, getLibrary, installModFromLibrary, getProfiles, switchProfile, setModProfileState, checkDependencies, openModFolder, installUe4ss, installPalschema, uninstallUe4ss, uninstallPalschema, openUrl, removeFromLibrary, setHideNativeMods } from '../api';
+import { getMods, scanMods, disableMod, enableMod, removeMod, checkForUpdates, disableAllMods, enableAllMods, getGameVersion, getLibrary, installModFromLibrary, getProfiles, switchProfile, setModProfileState, checkDependencies, openModFolder, openExtraFolder, installUe4ss, installPalschema, uninstallUe4ss, uninstallPalschema, openUrl, removeFromLibrary, setHideNativeMods } from '../api';
 import { getState, updateState } from '../state';
 import { openDetailPanel, closeDetailPanel } from './detailPanel';
 import { openConfigEditor, populateEditorModSelect } from './editorView';
@@ -7,6 +7,20 @@ import { showConfirm } from './confirm';
 import { escapeHtml } from '../utils/helpers';
 import type { ModInfo, Profile, LibraryEntry } from '../types';
 
+function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
+  const updatesMap = new Map<string, string>();
+  for (const m of mods) {
+    if (m.nexusVersionCached && m.version) {
+      const normNexus = m.nexusVersionCached.replace(/^v/i, '').trim().toLowerCase();
+      const normLocal = m.version.replace(/^v/i, '').trim().toLowerCase();
+      if (normNexus !== '' && normNexus !== 'unknown' && normLocal !== 'unknown' && normNexus !== normLocal && !normLocal.startsWith(normNexus)) {
+        updatesMap.set(m.id, m.nexusVersionCached);
+      }
+    }
+  }
+  return updatesMap;
+}
+
 export async function loadMods(): Promise<void> {
   const container = document.getElementById('mods-container')!;
 
@@ -14,7 +28,8 @@ export async function loadMods(): Promise<void> {
   try {
     const cachedMods = await getMods();
     if (cachedMods && cachedMods.length > 0) {
-      updateState({ allMods: cachedMods });
+      const updatesMap = computeAvailableUpdates(cachedMods);
+      updateState({ allMods: cachedMods, availableUpdates: updatesMap });
       renderModsView();
       populateAdvancedFilters();
       populateEditorModSelect();
@@ -29,7 +44,8 @@ export async function loadMods(): Promise<void> {
   // 2. Escaneo en disco en segundo plano para sincronizar cambios
   try {
     const freshMods = await scanMods();
-    updateState({ allMods: freshMods });
+    const updatesMap = computeAvailableUpdates(freshMods);
+    updateState({ allMods: freshMods, availableUpdates: updatesMap });
     renderModsView();
     populateAdvancedFilters();
     populateEditorModSelect();
@@ -123,6 +139,11 @@ export function renderModsView(): void {
       ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(mod.nexusPictureUrl)}" alt="" loading="lazy" /></div>`
       : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
 
+    const updateVer = state.availableUpdates?.get(mod.id);
+    const updateBadge = updateVer
+      ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}">&#9650; Update (v${escapeHtml(updateVer)})</span>`
+      : '';
+
     const isSelected = state.selectedModIds.has(mod.id);
     return `
     <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}">
@@ -135,6 +156,7 @@ export function renderModsView(): void {
         <div class="mod-card-meta">
           <span class="mod-card-type ${mod.type}">${mod.type}</span>
           <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
+          ${updateBadge}
           ${catHtml}
         </div>
         ${author}
@@ -270,6 +292,7 @@ export function setupFilterListeners(): void {
         newFilters.add('palschema');
         newFilters.add('pak');
         newFilters.add('logicmods');
+        newFilters.add('hybrid');
       }
       updateState({ activeFilters: newFilters });
       syncFilterUI(newFilters);
@@ -299,6 +322,13 @@ export async function handleCheckUpdates(): Promise<void> {
 
   try {
     const updates = await checkForUpdates();
+    const updatesMap = new Map<string, string>();
+    for (const u of updates) {
+      updatesMap.set(u.modId, u.latestVersion);
+    }
+    updateState({ availableUpdates: updatesMap });
+    renderModsView();
+
     if (updates.length === 0) {
       showToast('All mods are up to date', 'success');
     } else {
@@ -1110,9 +1140,18 @@ function runContextAction(action: string, modId: string): void {
           const localVer = updated.version;
           const normNexus = (nexusVer || '').replace(/^v/i, '').trim().toLowerCase();
           const normLocal = (localVer || '').replace(/^v/i, '').trim().toLowerCase();
-          if (nexusVer && normNexus !== normLocal && normNexus !== 'unknown') {
+          const isNewUpdate = nexusVer && normNexus !== normLocal && normNexus !== 'unknown' && !normLocal.startsWith(normNexus);
+          
+          const newMap = new Map(getState().availableUpdates);
+          if (isNewUpdate) {
+            newMap.set(modId, nexusVer!);
+            updateState({ availableUpdates: newMap });
+            renderModsView();
             showToast(`Update available: v${nexusVer} (current: v${localVer})`, 'info');
           } else {
+            newMap.delete(modId);
+            updateState({ availableUpdates: newMap });
+            renderModsView();
             showToast(`"${mod.name}" is up to date`, 'success');
           }
         } catch (e) {
@@ -1132,6 +1171,9 @@ function runContextAction(action: string, modId: string): void {
       break;
     case 'open-folder':
       openModFolder(modId).catch(e => showToast('Failed: ' + e, 'error'));
+      break;
+    case 'open-extras':
+      openExtraFolder(modId).catch(e => showToast('Failed: ' + e, 'error'));
       break;
     case 'edit-config':
       openConfigEditor(modId);
@@ -1182,6 +1224,12 @@ function showContextMenu(modId: string, x: number, y: number): void {
       <span class="ctx-icon">📁</span>
       Open folder
     </button>
+    ${mod.extraFiles && mod.extraFiles.length > 0 ? `
+    <button type="button" class="context-menu-item" data-action="open-extras">
+      <span class="ctx-icon">📂</span>
+      Open extra folder
+    </button>
+    ` : ''}
     <button type="button" class="context-menu-item" data-action="edit-config">
       <span class="ctx-icon">⚙</span>
       Edit config

@@ -10,6 +10,7 @@ export function getTypeLabel(type: string): string {
     case 'palschema': return 'PS';
     case 'pak': return 'PAK';
     case 'logicmods': return 'LM';
+    case 'hybrid': return 'HY';
     default: return '??';
   }
 }

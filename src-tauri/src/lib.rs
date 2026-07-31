@@ -1,11 +1,11 @@
 mod commands;
 mod profiles;
-mod db;
+pub mod db;
 mod dependency_checker;
 mod installer;
 mod library;
 mod models;
-mod nexus;
+pub mod nexus;
 mod state;
 mod zip_handler;
 mod logger;
@@ -19,6 +19,7 @@ use commands::library_commands;
 use commands::profile_commands;
 use commands::dependency_commands;
 use state::AppState;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -50,6 +51,13 @@ pub fn run() {
     logger::log("Initializing Tauri builder...");
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .manage(state)
@@ -68,6 +76,7 @@ pub fn run() {
             mod_commands::disable_all_mods,
             mod_commands::enable_all_mods,
             mod_commands::open_folder,
+            mod_commands::open_extra_folder,
             mod_commands::rename_mod,
             mod_commands::set_mod_version,
             mod_commands::check_github_version,

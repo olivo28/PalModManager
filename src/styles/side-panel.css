@@ -204,6 +204,7 @@
 .mod-type-badge.palschema { color: var(--type-palschema); border-color: var(--type-palschema-dim); }
 .mod-type-badge.pak { color: var(--type-pak); border-color: var(--type-pak-dim); }
 .mod-type-badge.logicmods { color: var(--type-logicmods); border-color: var(--type-logicmods-dim); }
+.mod-type-badge.hybrid { color: var(--type-hybrid); border-color: var(--type-hybrid-dim); }
 
 .detail-status {
   font-size: 10px;

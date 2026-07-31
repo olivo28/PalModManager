@@ -87,6 +87,7 @@
             <button class="quick-filter-btn active" data-filter="palschema">PalSchema</button>
             <button class="quick-filter-btn active" data-filter="pak">Pak</button>
             <button class="quick-filter-btn active" data-filter="logicmods">LogicMods</button>
+            <button class="quick-filter-btn active" data-filter="hybrid">Hybrid</button>
             <span class="quick-filter-sep"></span>
             <button id="advanced-filter-btn" class="quick-filter-btn advanced" title="Advanced filters">▼</button>
             <div id="advanced-filter-dropdown" class="filter-dropdown" style="display:none;">
@@ -249,6 +250,9 @@
             </div>
             <div class="detail-row"><span class="detail-label">Source</span> <span id="detail-source-zip"></span></div>
             <div class="detail-row"><span class="detail-label">Root</span> <span id="detail-root-folder"></span></div>
+            <div class="detail-row" id="detail-extra-files-row" style="display:none;">
+              <span class="detail-label">Extras</span> <span id="detail-extra-files" style="word-break:break-all;font-size:11px;"></span>
+            </div>
             <div class="detail-row" id="detail-duplicate-row" style="display:none;">
               <span class="detail-label" style="color:var(--danger);">Duplicate</span> <span
                 id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>

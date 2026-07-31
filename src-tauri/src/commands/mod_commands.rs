@@ -256,40 +256,39 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
 
     crate::logger::log(&format!("remove_mod: Removing mod '{}' (id: {})", mod_info.name, mod_info.id));
 
-    // 1. Delete game_path if exists
-    if !mod_info.game_path.is_empty() {
-        let p = Path::new(&mod_info.game_path);
+    // Helper to delete path and its companion sidecar if it's a file
+    let delete_path_and_sidecar = |path_str: &str| {
+        if path_str.is_empty() {
+            return;
+        }
+        let p = Path::new(path_str);
         if p.exists() {
             if p.is_dir() {
                 let _ = fs::remove_dir_all(p);
             } else {
                 let _ = fs::remove_file(p);
+                let sidecar = std::path::PathBuf::from(format!("{}.pmm.json", path_str));
+                if sidecar.exists() {
+                    let _ = fs::remove_file(sidecar);
+                }
+            }
+        } else {
+            let sidecar = std::path::PathBuf::from(format!("{}.pmm.json", path_str));
+            if sidecar.exists() {
+                let _ = fs::remove_file(sidecar);
             }
         }
-    }
+    };
+
+    // 1. Delete game_path if exists
+    delete_path_and_sidecar(&mod_info.game_path);
 
     // 2. Delete disabled_path if exists
-    if !mod_info.disabled_path.is_empty() {
-        let p = Path::new(&mod_info.disabled_path);
-        if p.exists() {
-            if p.is_dir() {
-                let _ = fs::remove_dir_all(p);
-            } else {
-                let _ = fs::remove_file(p);
-            }
-        }
-    }
+    delete_path_and_sidecar(&mod_info.disabled_path);
 
     // 3. Delete extra_files
     for extra in &mod_info.extra_files {
-        let p = Path::new(extra);
-        if p.exists() {
-            if p.is_dir() {
-                let _ = fs::remove_dir_all(p);
-            } else {
-                let _ = fs::remove_file(p);
-            }
-        }
+        delete_path_and_sidecar(extra);
     }
 
     // 4. For Pak/LogicMods, cleanup remnants by name in target folders
@@ -551,36 +550,24 @@ fn merge_scan_with_db(
 
     let mut final_deduped: Vec<models::ModInfo> = Vec::new();
     for m in result {
-        let physical_id = get_physical_identity(&m.game_path, &m.disabled_path);
-        if physical_id.is_empty() {
-            final_deduped.push(m);
-            continue;
-        }
-        if let Some(existing_idx) = final_deduped.iter().position(|em| {
-            let em_id = get_physical_identity(&em.game_path, &em.disabled_path);
-            em_id == physical_id
-        }) {
+        if let Some(existing_idx) = final_deduped.iter().position(|em| em.id == m.id) {
             let existing = final_deduped[existing_idx].clone();
-            let mut merged = if existing.nexus_mod_id.is_none() && m.nexus_mod_id.is_some() {
-                m.clone()
-            } else {
-                existing.clone()
-            };
-            if merged.game_path.is_empty() {
-                merged.game_path = if !existing.game_path.is_empty() {
-                    existing.game_path.clone()
-                } else {
-                    m.game_path.clone()
-                };
+            let mut merged = existing.clone();
+            if merged.game_path.is_empty() && !m.game_path.is_empty() {
+                merged.game_path = m.game_path.clone();
             }
-            if merged.disabled_path.is_empty() {
-                merged.disabled_path = if !existing.disabled_path.is_empty() {
-                    existing.disabled_path.clone()
-                } else {
-                    m.disabled_path.clone()
-                };
+            if merged.disabled_path.is_empty() && !m.disabled_path.is_empty() {
+                merged.disabled_path = m.disabled_path.clone();
+            }
+            for extra in &m.extra_files {
+                if !merged.extra_files.contains(extra) {
+                    merged.extra_files.push(extra.clone());
+                }
             }
             merged.enabled = existing.enabled || m.enabled;
+            if merged.config_path.is_none() && m.config_path.is_some() {
+                merged.config_path = m.config_path.clone();
+            }
             final_deduped[existing_idx] = merged;
         } else {
             final_deduped.push(m);
@@ -1050,4 +1037,47 @@ pub fn export_mods_json(path: String, state: State<AppState>) -> Result<String, 
     }
     std::fs::write(&path, &json).map_err(|e| e.to_string())?;
     Ok(path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let mod_info = data.mods.iter().find(|m| m.id == mod_id)
+        .ok_or_else(|| "Mod not found".to_string())?;
+    if mod_info.extra_files.is_empty() {
+        return Err("No extra files".to_string());
+    }
+    let first_extra = &mod_info.extra_files[0];
+    let mut dir = std::path::Path::new(first_extra);
+    if dir.is_file() {
+        if let Some(parent) = dir.parent() {
+            dir = parent;
+        }
+    }
+    if !dir.exists() {
+        return Err("Directory does not exist".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+    Ok(())
 }

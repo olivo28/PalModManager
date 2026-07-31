@@ -5,6 +5,7 @@ use chrono::Utc;
 use std::fs;
 use std::path::{Path, PathBuf};
 use uuid::Uuid;
+use walkdir::WalkDir;
 
 /// Recursively collect all files with the given extension (case-insensitive).
 fn find_files_with_ext(dir: &Path, ext: &str) -> Vec<PathBuf> {
@@ -236,6 +237,8 @@ pub fn install_mod(
             DetectedModType::Pak
         } else if t_lower == "logicmods" {
             DetectedModType::LogicMods
+        } else if t_lower == "hybrid" {
+            DetectedModType::Hybrid
         } else {
             analysis.detected_type.clone()
         }
@@ -263,6 +266,12 @@ pub fn install_mod(
             &game, extracted_dir, zip_filename, nexus_mod_id, nexus_name, nexus_author,
             nexus_summary, nexus_picture_url, nexus_downloads, nexus_endorsements,
             Some("logicmods"), custom_name, &now, nexus_category, nexus_tags,
+        ),
+        DetectedModType::Hybrid => install_hybrid(
+            &game, extracted_dir, zip_filename, nexus_mod_id, nexus_name, nexus_author,
+            nexus_summary, nexus_picture_url, nexus_downloads, nexus_endorsements,
+            custom_name, &now, nexus_category, nexus_tags,
+            analysis,
         ),
         DetectedModType::Unknown => {
             Err("Cannot determine mod type. Please specify manually.".to_string())
@@ -302,22 +311,36 @@ fn get_physical_identity(game_path: &str, disabled_path: &str) -> String {
     name.replace(' ', "").replace('-', "").replace('_', "").to_lowercase()
 }
 
+pub fn determine_mod_id(nexus_mod_id: Option<u32>, folder_name: &str) -> String {
+    if let Some(nexus_id) = nexus_mod_id {
+        format!("{}-{}", nexus_id, folder_name)
+    } else {
+        folder_name.to_string()
+    }
+}
+
 pub fn check_mod_exists(folder_name: &str, nexus_id: Option<u32>, existing_mods: &[ModInfo]) -> Option<ModInfo> {
     let zip_norm = folder_name.replace(' ', "").replace('-', "").replace('_', "").to_lowercase();
     
     existing_mods
         .iter()
         .find(|m| {
-            if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
-                if nid1 == nid2 {
-                    return true;
-                }
-            }
             let db_id = get_physical_identity(&m.game_path, &m.disabled_path);
             if !db_id.is_empty() && db_id == zip_norm {
                 return true;
             }
-            normalize_name(&m.name) == normalize_name(folder_name)
+            if normalize_name(&m.name) == normalize_name(folder_name) {
+                return true;
+            }
+            if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
+                if nid1 == nid2 {
+                    let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id);
+                    if name_sim {
+                        return true;
+                    }
+                }
+            }
+            false
         })
         .cloned()
 }
@@ -414,12 +437,204 @@ fn sanitize_folder_name(name: &str) -> String {
     cleaned
 }
 
+fn detect_config_local(dir: &Path) -> Option<String> {
+    for entry in WalkDir::new(dir).max_depth(3).into_iter().filter_map(|e| e.ok()) {
+        if entry.file_type().is_file() {
+            let name = entry.file_name().to_string_lossy().to_lowercase();
+            if name == "config.json" || name == "config.jsonc" || name == "config.txt" || name == "config.cfg" || name == "settings.json" || name == "settings.txt" {
+                return Some(entry.path().to_string_lossy().to_string());
+            }
+        }
+    }
+    None
+}
+
+pub fn install_hybrid(
+    game: &Path,
+    extracted: &Path,
+    zip_filename: &str,
+    nexus_mod_id: Option<u32>,
+    _nexus_name: Option<String>,
+    nexus_author: Option<String>,
+    nexus_summary: Option<String>,
+    nexus_picture_url: Option<String>,
+    nexus_downloads: Option<u32>,
+    nexus_endorsements: Option<u32>,
+    custom_name: Option<String>,
+    now: &str,
+    nexus_category: Option<String>,
+    nexus_tags: Vec<String>,
+    _analysis: &ZipAnalysis,
+) -> Result<ModInfo, String> {
+    let win64 = crate::dependency_checker::get_binaries_dir(game);
+    let clean_stem = clean_zip_name(zip_filename);
+    let mod_name = custom_name.unwrap_or(clean_stem.clone());
+    let safe_folder_name = sanitize_folder_name(&clean_stem);
+
+    let mut installed_extras = Vec::new();
+    let mut primary_path = String::new();
+    let mut config_path: Option<String> = None;
+
+    let palschema_base_dest = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&safe_folder_name);
+    let ue4ss_base_dest = win64.join("ue4ss").join("Mods").join(&safe_folder_name);
+    let paks_dest_dir = game.join("Pal").join("Content").join("Paks").join("~mods");
+    let logicmods_dest_dir = game.join("Pal").join("Content").join("Paks").join("LogicMods");
+
+    let mut copied_palschema = false;
+    let mut copied_ue4ss = false;
+
+    for entry in WalkDir::new(extracted).into_iter().filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+
+        let path = entry.path();
+        let rel_path = path.strip_prefix(extracted).unwrap_or(path);
+        let rel_str = rel_path.to_string_lossy().replace('\\', "/");
+        let rel_lower = rel_str.to_lowercase();
+        let file_basename = path.file_name().unwrap();
+
+        // 1. Is it a Pak file/companion?
+        if rel_lower.ends_with(".pak") || rel_lower.ends_with(".ucas") || rel_lower.ends_with(".utoc") {
+            let dest_dir = if rel_lower.contains("logicmods") {
+                &logicmods_dest_dir
+            } else {
+                &paks_dest_dir
+            };
+            let dest_file = dest_dir.join(file_basename);
+            let _ = fs::create_dir_all(dest_file.parent().unwrap());
+            fs::copy(path, &dest_file).map_err(|e| format!("Cannot copy asset file: {}", e))?;
+            installed_extras.push(dest_file.to_string_lossy().to_string());
+            continue;
+        }
+
+        // Skip READMEs or other junk files at the root of the ZIP
+        if rel_lower.starts_with("readme") || (rel_lower.ends_with(".txt") && !rel_str.contains('/')) {
+            continue;
+        }
+
+        // 2. Is it a PalSchema file?
+        if rel_lower.contains("palschema") {
+            let parts: Vec<&str> = rel_str.split('/').collect();
+            let mut relative_parts = Vec::new();
+            for (idx, part) in parts.iter().enumerate() {
+                if part.to_lowercase().contains("palschema") {
+                    if idx + 2 < parts.len() {
+                        relative_parts = parts[idx + 2..].to_vec();
+                    }
+                    break;
+                }
+            }
+
+            let dest_file = if !relative_parts.is_empty() {
+                palschema_base_dest.join(relative_parts.join("/"))
+            } else {
+                palschema_base_dest.join(file_basename)
+            };
+
+            let _ = fs::create_dir_all(dest_file.parent().unwrap());
+            fs::copy(path, &dest_file).map_err(|e| format!("Cannot copy PalSchema file: {}", e))?;
+            copied_palschema = true;
+            continue;
+        }
+
+        // 3. Otherwise, it belongs to UE4SS component
+        let parts: Vec<&str> = rel_str.split('/').collect();
+        let mut relative_parts = Vec::new();
+        let mut found_mods = false;
+        for (idx, part) in parts.iter().enumerate() {
+            if part.to_lowercase() == "mods" {
+                found_mods = true;
+                if idx + 2 < parts.len() {
+                    relative_parts = parts[idx + 2..].to_vec();
+                }
+                break;
+            }
+        }
+
+        if !found_mods {
+            for (idx, part) in parts.iter().enumerate() {
+                if part.to_lowercase() == "scripts" {
+                    relative_parts = parts[idx..].to_vec();
+                    break;
+                }
+            }
+        }
+
+        let dest_file = if !relative_parts.is_empty() {
+            ue4ss_base_dest.join(relative_parts.join("/"))
+        } else {
+            ue4ss_base_dest.join(file_basename)
+        };
+
+        let _ = fs::create_dir_all(dest_file.parent().unwrap());
+        fs::copy(path, &dest_file).map_err(|e| format!("Cannot copy UE4SS file: {}", e))?;
+        copied_ue4ss = true;
+    }
+
+    if copied_ue4ss {
+        primary_path = ue4ss_base_dest.to_string_lossy().to_string();
+        config_path = detect_config_local(&ue4ss_base_dest);
+        let enabled_file = ue4ss_base_dest.join("enabled.txt");
+        if !enabled_file.exists() {
+            let _ = fs::write(&enabled_file, "");
+        }
+        if copied_palschema {
+            installed_extras.push(palschema_base_dest.to_string_lossy().to_string());
+        }
+    } else if copied_palschema {
+        primary_path = palschema_base_dest.to_string_lossy().to_string();
+        config_path = detect_config_local(&palschema_base_dest);
+    } else {
+        if !installed_extras.is_empty() {
+            primary_path = installed_extras.remove(0);
+        }
+    }
+
+    let has_enabled_txt = copied_ue4ss;
+
+    Ok(ModInfo {
+        id: determine_mod_id(nexus_mod_id, &safe_folder_name),
+        name: mod_name,
+        mod_type: ModType::Hybrid,
+        nexus_mod_id,
+        nexus_url: nexus_mod_id.map(|id| format!("https://www.nexusmods.com/palworld/mods/{}", id)),
+        nexus_author,
+        nexus_summary,
+        nexus_picture_url,
+        nexus_endorsements,
+        nexus_downloads,
+        version: parse_version_from_filename(zip_filename),
+        install_date: now.to_string(),
+        source_zip: zip_filename.to_string(),
+        config_path,
+        config_type: Some("auto".to_string()),
+        enabled: true,
+        game_path: primary_path,
+        disabled_path: String::new(),
+        pak_destination: None,
+        has_enabled_txt,
+        mods_txt_order: None,
+        extra_files: installed_extras,
+        nexus_description: None,
+        nexus_version_cached: None,
+        nexus_cached_at: None,
+        nexus_category,
+        nexus_tags,
+        github_repo: None,
+        github_version: None,
+        github_cached_at: None,
+        update_date: None,
+        library_zip: None,
+    })
+}
+
 pub fn install_ue4ss(
     game: &Path,
     extracted: &Path,
     zip_filename: &str,
     nexus_mod_id: Option<u32>,
-    nexus_name: Option<String>,
+    _nexus_name: Option<String>,
     nexus_author: Option<String>,
     nexus_summary: Option<String>,
     nexus_picture_url: Option<String>,
@@ -435,7 +650,7 @@ pub fn install_ue4ss(
         .join("Mods");
 
     let (mod_root, detected_name) = find_ue4ss_mod_root(extracted, zip_filename);
-    let mod_name = custom_name.or(nexus_name).unwrap_or_else(|| detected_name.clone());
+    let mod_name = custom_name.unwrap_or_else(|| detected_name.clone());
     let safe_folder_name = sanitize_folder_name(&detected_name);
     let dest = mods_dir.join(&safe_folder_name);
 
@@ -484,7 +699,7 @@ pub fn install_ue4ss(
     let has_enabled_txt = true;
 
     Ok(ModInfo {
-        id: nexus_mod_id.map(|n| n.to_string()).unwrap_or_else(|| safe_folder_name.clone()),
+        id: determine_mod_id(nexus_mod_id, &safe_folder_name),
         name: mod_name,
 
         mod_type: ModType::Ue4ss,
@@ -526,7 +741,7 @@ fn install_palschema(
     extracted: &Path,
     zip_filename: &str,
     nexus_mod_id: Option<u32>,
-    nexus_name: Option<String>,
+    _nexus_name: Option<String>,
     nexus_author: Option<String>,
     nexus_summary: Option<String>,
     nexus_picture_url: Option<String>,
@@ -544,7 +759,7 @@ fn install_palschema(
         .join("mods");
 
     let (mod_root, detected_name) = find_palschema_mod_root(extracted, zip_filename);
-    let mod_name = custom_name.or(nexus_name).unwrap_or_else(|| detected_name.clone());
+    let mod_name = custom_name.unwrap_or_else(|| detected_name.clone());
     let safe_folder_name = sanitize_folder_name(&detected_name);
     let dest = mods_dir.join(&safe_folder_name);
 
@@ -562,8 +777,7 @@ fn install_palschema(
 
 
     Ok(ModInfo {
-        id: nexus_mod_id.map(|n| n.to_string()).unwrap_or_else(|| safe_folder_name.clone()),
-
+        id: determine_mod_id(nexus_mod_id, &safe_folder_name),
         name: mod_name,
         mod_type: ModType::PalSchema,
         nexus_mod_id,
@@ -603,7 +817,7 @@ fn install_pak(
     extracted: &Path,
     zip_filename: &str,
     nexus_mod_id: Option<u32>,
-    nexus_name: Option<String>,
+    _nexus_name: Option<String>,
     nexus_author: Option<String>,
     nexus_summary: Option<String>,
     nexus_picture_url: Option<String>,
@@ -667,7 +881,7 @@ fn install_pak(
         })
         .unwrap_or_else(|| clean_zip_name(zip_filename));
 
-    let mod_name = custom_name.or(nexus_name).unwrap_or(clean_stem.clone());
+    let mod_name = custom_name.unwrap_or(clean_stem.clone());
 
 
     let mod_type = if dest_subdir == "LogicMods" {
@@ -677,7 +891,7 @@ fn install_pak(
     };
 
     Ok(ModInfo {
-        id: nexus_mod_id.map(|n| n.to_string()).unwrap_or_else(|| clean_stem.clone()),
+        id: determine_mod_id(nexus_mod_id, &clean_stem),
         name: mod_name,
         mod_type,
         nexus_mod_id,

@@ -26,11 +26,12 @@ export interface AppState {
   dependencies: DependencyStatus | null;
   selectedModIds: Set<string>;
   selectedLibraryIds: Set<string>;
+  availableUpdates: Map<string, string>;
 }
 
 let state: AppState = {
   allMods: [],
-  activeFilters: new Set(['ue4ss', 'palschema', 'pak', 'logicmods']),
+  activeFilters: new Set(['ue4ss', 'palschema', 'pak', 'logicmods', 'hybrid']),
   tagFilters: new Set(),
   categoryFilters: new Set(),
   statusFilter: 'all',
@@ -53,6 +54,7 @@ let state: AppState = {
   dependencies: null,
   selectedModIds: new Set(),
   selectedLibraryIds: new Set(),
+  availableUpdates: new Map(),
 };
 
 

@@ -12,6 +12,10 @@ path = "../scratch/test_palvariety_zip.rs"
 name = "test_install_sim"
 path = "../scratch/test_installation_simulation.rs"
 
+[[bin]]
+name = "test_progressive_weapon"
+path = "../scratch/test_progressive_weapon.rs"
+
 
 
 [lib]
@@ -25,6 +29,7 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
 tauri-plugin-fs = "2"
+tauri-plugin-single-instance = "2.0.0"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 zip = "2"

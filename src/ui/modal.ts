@@ -201,12 +201,23 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
     confirmBtn.textContent = 'Install';
   }
 
-  // Helper to extract clean name
-  const cleanName = (analysis.nexusInfo?.name || analysis.rootFolder || (() => {
+  const cleanName = (() => {
     const file = analysis.zipPath.split(/[/\\]/).pop() || '';
     const stem = file.substring(0, file.lastIndexOf('.')) || file;
-    return stem.replace(/\s+\d+\s+.*$/, '').trim();
-  })());
+    const words = stem.split(/\s+/);
+    const clean: string[] = [];
+    for (const word of words) {
+      if (/^\d+$/.test(word)) {
+        break;
+      }
+      if (/^\d/.test(word) && word.includes('-') && word.length > 6) {
+        break;
+      }
+      clean.push(word);
+    }
+    const result = clean.join(' ').replace(/\s*\(\s*$/, '').trim();
+    return result.length < 2 ? stem.trim() : result;
+  })();
 
   let pakDestHtml = `
     <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${analysis.detectedType === 'pak' || analysis.detectedType === 'logicmods' ? 'block' : 'none'}; margin-top:8px;">
@@ -263,6 +274,7 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
                   <option value="palschema" ${analysis.detectedType === 'palschema' ? 'selected' : ''}>PalSchema</option>
                   <option value="pak" ${analysis.detectedType === 'pak' ? 'selected' : ''}>Pak (~mods)</option>
                   <option value="logicmods" ${analysis.detectedType === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+                  <option value="hybrid" ${analysis.detectedType === 'hybrid' ? 'selected' : ''}>Hybrid</option>
                 </select>
              </div>
              <div style="width:120px;display:flex;flex-direction:column;gap:6px;">
@@ -440,6 +452,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             <option value="palschema" ${item.type === 'palschema' ? 'selected' : ''}>PalSchema</option>
             <option value="pak" ${item.type === 'pak' ? 'selected' : ''}>Pak (~mods)</option>
             <option value="logicmods" ${item.type === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+            <option value="hybrid" ${item.type === 'hybrid' ? 'selected' : ''}>Hybrid</option>
           </select>
         </td>
         <td style="padding:6px;width:50px;text-align:right;">${stateBadge}</td>

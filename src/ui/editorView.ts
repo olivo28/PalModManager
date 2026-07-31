@@ -73,6 +73,7 @@ export function renderEditorModTree(): void {
 
   const ue4ssMods = editableMods.filter(m => m.type === 'ue4ss');
   const palSchemaMods = editableMods.filter(m => m.type === 'palschema');
+  const hybridMods = editableMods.filter(m => m.type === 'hybrid');
 
   function renderSection(label: string, mods: typeof editableMods, sectionId: string): string {
     if (mods.length === 0) return '';
@@ -96,7 +97,8 @@ export function renderEditorModTree(): void {
 
   tree.innerHTML =
     renderSection('UE4SS', ue4ssMods, 'ue4ss') +
-    renderSection('PalSchema', palSchemaMods, 'palschema');
+    renderSection('PalSchema', palSchemaMods, 'palschema') +
+    renderSection('Hybrid', hybridMods, 'hybrid');
 
   if (editableMods.length === 0) {
     tree.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-muted)">No editable mods</div>';

@@ -115,6 +115,10 @@ export async function openModFolder(modId: string): Promise<void> {
   return invoke('open_folder', { modId });
 }
 
+export async function openExtraFolder(modId: string): Promise<void> {
+  return invoke('open_extra_folder', { modId });
+}
+
 export async function checkForUpdates(): Promise<UpdateCheckResult[]> {
   return invoke('check_for_updates');
 }

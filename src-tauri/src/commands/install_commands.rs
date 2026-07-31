@@ -32,6 +32,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         zip_handler::DetectedModType::PalSchema => "palschema",
         zip_handler::DetectedModType::Pak => "pak",
         zip_handler::DetectedModType::LogicMods => "logicmods",
+        zip_handler::DetectedModType::Hybrid => "hybrid",
         zip_handler::DetectedModType::Unknown => "unknown",
     };
 

@@ -81,6 +81,11 @@
   color: var(--type-logicmods);
 }
 
+.mod-card-image-placeholder.hybrid {
+  background: var(--type-hybrid-dim);
+  color: var(--type-hybrid);
+}
+
 /* ===== Body ===== */
 .mod-card-body {
   padding: 6px 8px;
@@ -154,6 +159,7 @@
 .mod-card-type.palschema { color: var(--type-palschema); border-color: var(--type-palschema-dim); }
 .mod-card-type.pak { color: var(--type-pak); border-color: var(--type-pak-dim); }
 .mod-card-type.logicmods { color: var(--type-logicmods); border-color: var(--type-logicmods-dim); }
+.mod-card-type.hybrid { color: var(--type-hybrid); border-color: var(--type-hybrid-dim); }
 
 .mod-card-category {
   font-size: 8px;
@@ -353,4 +359,27 @@
   .mod-card-author {
     font-size: 8px;
   }
+}
+
+.mod-card-update-badge {
+  font-size: 7px;
+  font-weight: 700;
+  color: #ff9800;
+  background: rgba(255, 152, 0, 0.1);
+  border: 1px solid rgba(255, 152, 0, 0.3);
+  padding: 0px 3px;
+  line-height: 12px;
+  letter-spacing: 0.3px;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  text-transform: uppercase;
+  animation: pulse-badge 2s infinite ease-in-out;
+  cursor: pointer;
+}
+
+@keyframes pulse-badge {
+  0% { opacity: 0.8; }
+  50% { opacity: 1; filter: brightness(1.2); }
+  100% { opacity: 0.8; }
 }

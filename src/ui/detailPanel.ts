@@ -119,6 +119,16 @@ export function openDetailPanel(modId: string): void {
   const gamePath = mod.enabled ? mod.gamePath : mod.disabledPath;
   document.getElementById('detail-root-folder')!.textContent = gamePath;
 
+  // Extra companion files/folders
+  const extraFilesRow = document.getElementById('detail-extra-files-row')!;
+  const extraFilesEl = document.getElementById('detail-extra-files')!;
+  if (mod.extraFiles && mod.extraFiles.length > 0) {
+    extraFilesEl.innerHTML = mod.extraFiles.map(f => `<div style="margin-bottom:2px;">${f}</div>`).join('');
+    extraFilesRow.style.display = '';
+  } else {
+    extraFilesRow.style.display = 'none';
+  }
+
   // Duplicate detection
   const duplicateRow = document.getElementById('detail-duplicate-row')!;
   const duplicateWarning = document.getElementById('detail-duplicate-warning')!;
@@ -389,7 +399,13 @@ export async function handleDetailRename(): Promise<void> {
 
 function renderVersion(mod: ModInfo): void {
   const el = document.getElementById('detail-version')!;
-  el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> <button class="btn-tiny version-edit-btn">Edit</button>`;
+  const state = getState();
+  const updateVer = state.availableUpdates?.get(mod.id);
+  const updateBadge = updateVer
+    ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle;">&#9650; Update (v${escapeHtml(updateVer)})</span>`
+    : '';
+
+  el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> ${updateBadge} <button class="btn-tiny version-edit-btn" style="margin-left: 6px;">Edit</button>`;
   const editBtn = el.querySelector('.version-edit-btn') as HTMLButtonElement;
   const valSpan = el.querySelector('.version-value') as HTMLSpanElement;
   editBtn.addEventListener('click', () => {

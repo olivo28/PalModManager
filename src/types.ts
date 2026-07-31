@@ -1,4 +1,4 @@
-export type ModType = 'ue4ss' | 'palschema' | 'pak' | 'logicmods';
+export type ModType = 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'hybrid';
 
 export interface ModInfo {
   id: string;

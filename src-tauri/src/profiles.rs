@@ -558,6 +558,67 @@ pub fn disable_mod_internal(
             mod_info.game_path = String::new();
         }
         mod_info.enabled = false;
+    } else if mod_type == ModType::Hybrid {
+        let mod_info = &mut data.mods[mod_index];
+        let mut moved_extras = Vec::new();
+        for extra in &mod_info.extra_files {
+            let extra_path = PathBuf::from(extra);
+            if extra_path.exists() {
+                let file_name = extra_path.file_name().unwrap().to_string_lossy().to_string();
+                let dest_dir = disabled_base.join("hybrid").join("extras");
+                let _ = fs::create_dir_all(&dest_dir);
+                
+                if extra_path.is_dir() {
+                    let dest = dest_dir.join(&file_name);
+                    move_path(&extra_path, &dest)?;
+                    moved_extras.push(dest.to_string_lossy().to_string());
+                } else {
+                    let parent = extra_path.parent().unwrap();
+                    let stem = extra_path.file_stem().unwrap().to_string_lossy().to_string();
+                    let dest = dest_dir.join(&file_name);
+                    move_path(&extra_path, &dest)?;
+                    moved_extras.push(dest.to_string_lossy().to_string());
+                    
+                    for c_ext in &["ucas", "utoc"] {
+                        let companion = parent.join(format!("{}.{}", stem, c_ext));
+                        if companion.exists() {
+                            let c_dest = dest_dir.join(format!("{}.{}", stem, c_ext));
+                            let _ = move_path(&companion, &c_dest);
+                        }
+                    }
+                    let sidecar = parent.join(format!("{}.pmm.json", file_name));
+                    if sidecar.exists() {
+                        let c_dest = dest_dir.join(format!("{}.pmm.json", file_name));
+                        let _ = move_path(&sidecar, &c_dest);
+                    }
+                }
+            }
+        }
+
+        let src_path = PathBuf::from(&mod_info.game_path);
+        if src_path.exists() {
+            if let Some(ue4ss_mods_dir) = src_path.parent() {
+                let mods_txt = ue4ss_mods_dir.join("mods.txt");
+                if mods_txt.exists() {
+                    let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+                }
+            }
+            let enabled_file = src_path.join("enabled.txt");
+            if enabled_file.exists() {
+                let _ = fs::remove_file(&enabled_file);
+            }
+            
+            let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+            let dest_dir = disabled_base.join("hybrid");
+            let _ = fs::create_dir_all(&dest_dir);
+            let dest = dest_dir.join(&file_name);
+            move_path(&src_path, &dest)?;
+            
+            mod_info.disabled_path = dest.to_string_lossy().to_string();
+            mod_info.game_path = String::new();
+        }
+        mod_info.extra_files = moved_extras;
+        mod_info.enabled = false;
     } else {
         return Ok(());
     }
@@ -677,6 +738,68 @@ pub fn enable_mod_internal(
         mod_info.extra_files = moved_back.into_iter().skip(1).collect();
         mod_info.disabled_path = String::new();
         mod_info.enabled = true;
+    } else if mod_type == ModType::Hybrid {
+        let mod_info = &mut data.mods[mod_index];
+        let primary_disabled = PathBuf::from(&mod_info.disabled_path);
+        let mut dest_path = primary_disabled.clone();
+        if primary_disabled.exists() {
+            let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
+            let has_scripts = primary_disabled.join("Scripts").exists()
+                || primary_disabled.join("scripts").exists()
+                || primary_disabled.join("enabled.txt").exists();
+            let dest = if has_scripts {
+                win64.join("ue4ss").join("Mods").join(&filename)
+            } else {
+                win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&filename)
+            };
+            let _ = fs::create_dir_all(dest.parent().unwrap());
+            move_path(&primary_disabled, &dest)?;
+            dest_path = dest;
+            
+            if has_scripts {
+                if let Some(ue4ss_mods_dir) = dest_path.parent() {
+                    let mods_txt = ue4ss_mods_dir.join("mods.txt");
+                    if mods_txt.exists() {
+                        let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
+                    }
+                }
+                let enabled_file = dest_path.join("enabled.txt");
+                let _ = fs::write(&enabled_file, "");
+            }
+        }
+        
+        let mut moved_back = Vec::new();
+        let dest_dir = game_paks.join("~mods");
+        for extra_disabled_str in &mod_info.extra_files {
+            let extra_disabled = PathBuf::from(extra_disabled_str);
+            if extra_disabled.exists() {
+                let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
+                let dest = dest_dir.join(&filename);
+                let _ = fs::create_dir_all(&dest_dir);
+                move_path(&extra_disabled, &dest)?;
+                moved_back.push(dest.to_string_lossy().to_string());
+                
+                let parent = extra_disabled.parent().unwrap();
+                let stem = extra_disabled.file_stem().unwrap().to_string_lossy().to_string();
+                for c_ext in &["ucas", "utoc"] {
+                    let companion = parent.join(format!("{}.{}", stem, c_ext));
+                    if companion.exists() {
+                        let c_dest = dest_dir.join(format!("{}.{}", stem, c_ext));
+                        let _ = move_path(&companion, &c_dest);
+                    }
+                }
+                let sidecar = parent.join(format!("{}.pmm.json", filename));
+                if sidecar.exists() {
+                    let c_dest = dest_dir.join(format!("{}.pmm.json", filename));
+                    let _ = move_path(&sidecar, &c_dest);
+                }
+            }
+        }
+        
+        mod_info.game_path = dest_path.to_string_lossy().to_string();
+        mod_info.extra_files = moved_back;
+        mod_info.disabled_path = String::new();
+        mod_info.enabled = true;
     } else {
         return Ok(());
     }
@@ -752,8 +875,7 @@ fn move_path(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String>
     Ok(())
 }
 
-pub fn save_pmm_meta(m: &crate::models::ModInfo) -> Result<(), String> {
-    let path_str = if !m.game_path.is_empty() { &m.game_path } else { &m.disabled_path };
+fn save_pmm_meta_path(m: &crate::models::ModInfo, path_str: &str) -> Result<(), String> {
     if path_str.is_empty() {
         return Ok(());
     }
@@ -770,6 +892,16 @@ pub fn save_pmm_meta(m: &crate::models::ModInfo) -> Result<(), String> {
 
     if let Ok(json) = serde_json::to_string_pretty(m) {
         let _ = std::fs::write(&pmm_path, json);
+    }
+    Ok(())
+}
+
+pub fn save_pmm_meta(m: &crate::models::ModInfo) -> Result<(), String> {
+    let primary_path = if !m.game_path.is_empty() { &m.game_path } else { &m.disabled_path };
+    let _ = save_pmm_meta_path(m, primary_path);
+
+    for extra in &m.extra_files {
+        let _ = save_pmm_meta_path(m, extra);
     }
     Ok(())
 }

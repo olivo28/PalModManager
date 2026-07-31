@@ -17,6 +17,7 @@ pub enum DetectedModType {
     PalSchema,
     Pak,
     LogicMods,
+    Hybrid,
     Unknown,
 }
 
@@ -234,7 +235,12 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     }
 
     // Determine type first, then run content detection with type hint
-    let detected_type_pre = if has_lua {
+    let has_palschema_folder = files.iter().any(|f| f.to_lowercase().contains("palschema"));
+    let is_hybrid = (has_pak && (has_lua || has_palschema_folder)) || (has_lua && has_palschema_folder);
+
+    let detected_type_pre = if is_hybrid {
+        DetectedModType::Hybrid
+    } else if has_lua {
         DetectedModType::Ue4ss
     } else if has_pak && in_logicmods {
         DetectedModType::LogicMods

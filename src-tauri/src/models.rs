@@ -10,6 +10,8 @@ pub enum ModType {
     Pak,
     #[serde(rename = "logicmods")]
     LogicMods,
+    #[serde(rename = "hybrid")]
+    Hybrid,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
