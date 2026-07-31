@@ -122,6 +122,7 @@ pub async fn refresh_nexus_cache(mod_id_str: String, state: State<'_, AppState>)
             "tags": info.tags,
         });
         let _ = fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
+        let _ = crate::profiles::save_pmm_meta(m);
     }
 
     let result = serde_json::to_value(&data.mods[mod_index]).map_err(|e| e.to_string())?;

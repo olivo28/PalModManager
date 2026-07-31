@@ -107,6 +107,32 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
         }
 
         if let Some(idx) = nexus_id_idx {
+            let mut date_start_idx = None;
+            for i in (idx + 1)..hyphen_parts.len() {
+                let token = hyphen_parts[i];
+                if (token.len() == 4 && (token.starts_with("202") || token.starts_with("203")))
+                   || (token.len() >= 10 && token.chars().all(|c| c.is_ascii_digit())) {
+                    date_start_idx = Some(i);
+                    break;
+                }
+            }
+
+            if let Some(ds_idx) = date_start_idx {
+                let name = hyphen_parts[..idx].join(" ");
+                let nexus_id = hyphen_parts[idx].parse::<u32>().unwrap();
+                let version_parts = &hyphen_parts[idx + 1..ds_idx];
+                let version = version_parts.join(".");
+                let date_parts = &hyphen_parts[ds_idx..hyphen_parts.len() - 1];
+                let date_str = date_parts.join("-");
+
+                return ParsedModInfo {
+                    name: Some(name),
+                    nexus_id: Some(nexus_id),
+                    version: Some(version),
+                    date: Some(date_str),
+                };
+            }
+
             let last_token = hyphen_parts[hyphen_parts.len() - 1];
             let is_timestamp = last_token.len() >= 10 && last_token.chars().all(|c| c.is_ascii_digit());
             if is_timestamp {

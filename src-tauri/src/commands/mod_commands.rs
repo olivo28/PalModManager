@@ -170,6 +170,7 @@ pub fn scan_mods_internal(
     game_path: &str,
     program_path: &str,
     current_profile_id: &str,
+    installed_ids: &[String],
     db_mods: &[models::ModInfo],
 ) -> Vec<models::ModInfo> {
     if game_path.is_empty() {
@@ -206,7 +207,7 @@ pub fn scan_mods_internal(
         scan_disabled_mods(&disabled_base, &mut fs_mods);
     }
 
-    merge_scan_with_db(db_mods, &fs_mods)
+    merge_scan_with_db(current_profile_id, installed_ids, db_mods, &fs_mods)
 }
 
 #[tauri::command]
@@ -217,13 +218,15 @@ pub fn scan_mods(state: State<AppState>) -> Result<Value, String> {
     let game_path = data.settings.game_path.clone();
     let program_path = data.settings.program_path.clone();
     let current_profile_id = data.current_profile_id.clone();
+    let current_profile = data.profiles.iter().find(|p| p.id == current_profile_id);
+    let installed_ids = current_profile.map(|p| p.installed_mod_ids.clone()).unwrap_or_default();
 
     if game_path.is_empty() {
         crate::logger::log("scan_mods: game_path empty, aborting scan");
         return Ok(serde_json::json!([]));
     }
 
-    let merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &data.mods.clone());
+    let merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &data.mods.clone());
     data.mods = merged;
     crate::profiles::cleanup_profile_mod_lists(&mut data);
     crate::profiles::sync_current_profile_states(&mut data);
@@ -408,7 +411,41 @@ fn get_physical_identity(game_path: &str, disabled_path: &str) -> String {
     path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()
 }
 
-fn merge_scan_with_db(db_mods: &[models::ModInfo], fs_mods: &[models::ModInfo]) -> Vec<models::ModInfo> {
+fn load_pmm_meta(path: &Path) -> Option<models::ModInfo> {
+    let pmm_path = if path.is_file() {
+        PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()))
+    } else {
+        path.join(".pmm.json")
+    };
+    if pmm_path.exists() {
+        if let Ok(content) = fs::read_to_string(&pmm_path) {
+            if let Ok(mut mod_info) = serde_json::from_str::<models::ModInfo>(&content) {
+                let path_str = path.to_string_lossy().to_string();
+                let is_disabled = path_str.contains("disabled_mods");
+                if is_disabled {
+                    mod_info.disabled_path = path_str;
+                    mod_info.game_path = String::new();
+                    mod_info.enabled = false;
+                } else {
+                    mod_info.game_path = path_str;
+                    mod_info.disabled_path = String::new();
+                    if path.is_file() {
+                        mod_info.enabled = true;
+                    }
+                }
+                return Some(mod_info);
+            }
+        }
+    }
+    None
+}
+
+fn merge_scan_with_db(
+    current_profile_id: &str,
+    installed_ids: &[String],
+    db_mods: &[models::ModInfo],
+    fs_mods: &[models::ModInfo],
+) -> Vec<models::ModInfo> {
     let mut consolidated_db: Vec<models::ModInfo> = Vec::new();
     for db_mod in db_mods {
         let db_id = get_physical_identity(&db_mod.game_path, &db_mod.disabled_path);
@@ -475,10 +512,26 @@ fn merge_scan_with_db(db_mods: &[models::ModInfo], fs_mods: &[models::ModInfo]) 
 
     for (i, dm) in consolidated_db.iter().enumerate() {
         if !matched_db[i] {
+            // Check if this mod belongs to the current profile.
+            // If it belongs to a different profile, we must NOT purge it or clear its paths.
+            let is_installed_in_current = installed_ids.iter().any(|entry| {
+                crate::profiles::mod_matches_profile_entry(dm, entry)
+            });
+
+            let normalized_disabled = dm.disabled_path.replace("\\", "/");
+            let is_disabled_in_other_profile = normalized_disabled.contains("/profiles/") 
+                && !normalized_disabled.contains(&format!("/profiles/{}/", current_profile_id));
+
+            if !is_installed_in_current || is_disabled_in_other_profile {
+                // Keep the mod exactly as is, without purging or altering paths
+                result.push(dm.clone());
+                continue;
+            }
+
             let has_game = !dm.game_path.is_empty() && Path::new(&dm.game_path).exists();
             let has_disabled = !dm.disabled_path.is_empty() && Path::new(&dm.disabled_path).exists();
             let has_metadata = dm.nexus_mod_id.is_some() || dm.library_zip.is_some();
-
+ 
             if has_game || has_disabled {
                 // Still physically on disk somewhere
                 result.push(dm.clone());
@@ -496,7 +549,45 @@ fn merge_scan_with_db(db_mods: &[models::ModInfo], fs_mods: &[models::ModInfo]) 
 
 
 
-    result
+    let mut final_deduped: Vec<models::ModInfo> = Vec::new();
+    for m in result {
+        let physical_id = get_physical_identity(&m.game_path, &m.disabled_path);
+        if physical_id.is_empty() {
+            final_deduped.push(m);
+            continue;
+        }
+        if let Some(existing_idx) = final_deduped.iter().position(|em| {
+            let em_id = get_physical_identity(&em.game_path, &em.disabled_path);
+            em_id == physical_id
+        }) {
+            let existing = final_deduped[existing_idx].clone();
+            let mut merged = if existing.nexus_mod_id.is_none() && m.nexus_mod_id.is_some() {
+                m.clone()
+            } else {
+                existing.clone()
+            };
+            if merged.game_path.is_empty() {
+                merged.game_path = if !existing.game_path.is_empty() {
+                    existing.game_path.clone()
+                } else {
+                    m.game_path.clone()
+                };
+            }
+            if merged.disabled_path.is_empty() {
+                merged.disabled_path = if !existing.disabled_path.is_empty() {
+                    existing.disabled_path.clone()
+                } else {
+                    m.disabled_path.clone()
+                };
+            }
+            merged.enabled = existing.enabled || m.enabled;
+            final_deduped[existing_idx] = merged;
+        } else {
+            final_deduped.push(m);
+        }
+    }
+
+    final_deduped
 }
 
 
@@ -552,6 +643,12 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                 mod_path.join("enabled.txt").exists() || is_native_mod
             };
 
+            if let Some(mut m) = load_pmm_meta(&mod_path) {
+                m.enabled = is_enabled;
+                results.push(m);
+                continue;
+            }
+
             let author = if is_native_mod { Some("UE4SS Native Mod".to_string()) } else { None };
             let summary = if is_native_mod { Some("Core dependency mod installed by UE4SS. Controlled by mods.txt.".to_string()) } else { None };
 
@@ -591,6 +688,11 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
             let mod_name = entry.file_name().to_string_lossy().to_string();
             let mod_path = entry.path();
 
+            if let Some(m) = load_pmm_meta(&mod_path) {
+                results.push(m);
+                continue;
+            }
+
             let has_json = WalkDir::new(&mod_path).max_depth(2).into_iter().filter_map(|e| e.ok()).any(|e| {
                 e.file_type().is_file() && e.path().extension().map_or(false, |ext| ext == "json" || ext == "jsonc")
             });
@@ -626,6 +728,13 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<models::ModInfo>)
         if !entry.file_type().is_file() { continue; }
         let ext = entry.path().extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
         if ext != "pak" { continue; }
+
+        let mod_path = entry.path();
+        if let Some(m) = load_pmm_meta(&mod_path) {
+            results.push(m);
+            continue;
+        }
+
         let file_stem = entry.path().file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "unknown".to_string());
         let mod_name = file_stem.trim_end_matches("_P").to_string();
         let mod_path = entry.path();
@@ -669,6 +778,12 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                 if !entry.file_type().map_or(false, |ft| ft.is_dir()) { continue; }
                 let mod_name = entry.file_name().to_string_lossy().to_string();
                 let mod_path = entry.path();
+
+                if let Some(m) = load_pmm_meta(&mod_path) {
+                    results.push(m);
+                    continue;
+                }
+
                 let install_date = file_install_date(&mod_path);
                 results.push(models::ModInfo {
                     id: mod_name.clone(), name: mod_name.clone(), mod_type: mod_type.clone(),
@@ -700,6 +815,13 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                 if !entry.file_type().map_or(false, |ft| ft.is_file()) { continue; }
                 let ext = entry.path().extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
                 if ext != "pak" { continue; }
+
+                let mod_path = entry.path();
+                if let Some(m) = load_pmm_meta(&mod_path) {
+                    results.push(m);
+                    continue;
+                }
+
                 let file_stem = entry.path().file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
                 let mod_name = file_stem.trim_end_matches("_P").to_string();
                 let install_date = file_install_date(&entry.path());

@@ -544,7 +544,7 @@ pub fn disable_mod_internal(
                 let dest_dir = disabled_base.join(type_dir);
                 let _ = fs::create_dir_all(&dest_dir);
 
-                for ext in &["pak", "ucas", "utoc"] {
+                for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
                     let companion = parent.join(format!("{}.{}", file_stem, ext));
                     if companion.exists() {
                         let dest = dest_dir.join(format!("{}.{}", file_stem, ext));
@@ -574,6 +574,11 @@ pub fn disable_mod_internal(
                 let _ = fs::write(p_dir.join("profile.json"), json);
             }
         }
+    }
+
+    // Save updated mod metadata in .pmm.json
+    if let Some(mod_info) = data.mods.iter().find(|m| m.id == mod_id) {
+        let _ = save_pmm_meta(mod_info);
     }
 
     Ok(())
@@ -704,6 +709,11 @@ pub fn enable_mod_internal(
     }
 
 
+    // Save updated mod metadata in .pmm.json
+    if let Some(mod_info) = data.mods.iter().find(|m| m.id == mod_id) {
+        let _ = save_pmm_meta(mod_info);
+    }
+
     Ok(())
 }
 
@@ -738,6 +748,28 @@ fn move_path(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String>
         }
         fs::copy(src, dst).map_err(|e| format!("Failed to copy source file during cross-device move: {}", e))?;
         fs::remove_file(src).map_err(|e| format!("Failed to remove source file after cross-device copy: {}", e))?;
+    }
+    Ok(())
+}
+
+pub fn save_pmm_meta(m: &crate::models::ModInfo) -> Result<(), String> {
+    let path_str = if !m.game_path.is_empty() { &m.game_path } else { &m.disabled_path };
+    if path_str.is_empty() {
+        return Ok(());
+    }
+    let path = std::path::Path::new(path_str);
+    if !path.exists() {
+        return Ok(());
+    }
+
+    let pmm_path = if path.is_file() {
+        std::path::PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()))
+    } else {
+        path.join(".pmm.json")
+    };
+
+    if let Ok(json) = serde_json::to_string_pretty(m) {
+        let _ = std::fs::write(&pmm_path, json);
     }
     Ok(())
 }

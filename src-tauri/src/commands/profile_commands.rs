@@ -48,12 +48,14 @@ pub fn switch_profile_command(
     }
 
     // 2. Re-scan disk to get the actual mods present for the new profile
-    let (game_path, db_mods, current_profile_id) = {
+    let (game_path, db_mods, current_profile_id, installed_ids) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.mods.clone(), data.current_profile_id.clone())
+        let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let ids = current_profile.map(|p| p.installed_mod_ids.clone()).unwrap_or_default();
+        (data.settings.game_path.clone(), data.mods.clone(), data.current_profile_id.clone(), ids)
     };
 
-    let fresh_mods = crate::commands::mod_commands::scan_mods_internal(&game_path, &program_path, &current_profile_id, &db_mods);
+    let fresh_mods = crate::commands::mod_commands::scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &db_mods);
 
     // 3. Apply the fresh scan into state and sync profile
     let profile_mods = {

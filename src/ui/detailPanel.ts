@@ -53,6 +53,9 @@ export function openDetailPanel(modId: string): void {
       `;
       nexusSection.style.display = 'block';
       setupNexusIdEdit(mod.id);
+      if (!mod.nexusDescription) {
+        autoFetchNexusInfo(mod);
+      }
     } else {
       nexusSection.innerHTML = `
         <div class="detail-row"><span class="detail-label">NexusMods:</span> <span class="detail-nexus-id-row"><a class="nexus-link" href="https://www.nexusmods.com/palworld/mods/${mod.nexusModId}" target="_blank">#${mod.nexusModId}</a> <button class="btn-tiny nexus-id-edit-btn">Edit</button></span></div>

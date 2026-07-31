@@ -228,6 +228,8 @@ pub async fn install_mod_command(
         let _ = db::save_db(&program_path, &data_clone);
     }
 
+    let _ = crate::profiles::save_pmm_meta(&final_mod);
+
     Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
 }
 
