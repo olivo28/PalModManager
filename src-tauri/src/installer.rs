@@ -435,8 +435,8 @@ pub fn install_ue4ss(
         .join("Mods");
 
     let (mod_root, detected_name) = find_ue4ss_mod_root(extracted, zip_filename);
-    let mod_name = custom_name.or(nexus_name).unwrap_or(detected_name);
-    let safe_folder_name = sanitize_folder_name(&mod_name);
+    let mod_name = custom_name.or(nexus_name).unwrap_or_else(|| detected_name.clone());
+    let safe_folder_name = sanitize_folder_name(&detected_name);
     let dest = mods_dir.join(&safe_folder_name);
 
     if dest.exists() {
@@ -484,7 +484,7 @@ pub fn install_ue4ss(
     let has_enabled_txt = true;
 
     Ok(ModInfo {
-        id: nexus_mod_id.map(|n| n.to_string()).unwrap_or_else(|| mod_name.clone()),
+        id: nexus_mod_id.map(|n| n.to_string()).unwrap_or_else(|| safe_folder_name.clone()),
         name: mod_name,
 
         mod_type: ModType::Ue4ss,
@@ -544,8 +544,8 @@ fn install_palschema(
         .join("mods");
 
     let (mod_root, detected_name) = find_palschema_mod_root(extracted, zip_filename);
-    let mod_name = custom_name.or(nexus_name).unwrap_or(detected_name);
-    let safe_folder_name = sanitize_folder_name(&mod_name);
+    let mod_name = custom_name.or(nexus_name).unwrap_or_else(|| detected_name.clone());
+    let safe_folder_name = sanitize_folder_name(&detected_name);
     let dest = mods_dir.join(&safe_folder_name);
 
     if dest.exists() {

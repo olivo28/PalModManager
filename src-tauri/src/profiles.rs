@@ -493,28 +493,42 @@ pub fn disable_mod_internal(
         return Ok(());
     }
 
+    let current_id = data.current_profile_id.clone();
+    let profile_dir = get_profile_dir(program_path, &current_id);
+    let disabled_base = profile_dir.join("disabled_mods");
+
     if mod_type == ModType::Ue4ss {
         let mod_info = &mut data.mods[mod_index];
-        let game_dir = PathBuf::from(&mod_info.game_path);
-        if let Some(ue4ss_mods_dir) = game_dir.parent() {
-            let mods_txt = ue4ss_mods_dir.join("mods.txt");
-            if mods_txt.exists() {
-                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+        let src_path = PathBuf::from(&mod_info.game_path);
+        if src_path.exists() {
+            if let Some(ue4ss_mods_dir) = src_path.parent() {
+                let mods_txt = ue4ss_mods_dir.join("mods.txt");
+                if mods_txt.exists() {
+                    let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+                }
             }
-        }
-        let enabled_file = game_dir.join("enabled.txt");
-        if enabled_file.exists() {
-            let _ = fs::remove_file(&enabled_file);
+            let enabled_file = src_path.join("enabled.txt");
+            if enabled_file.exists() {
+                let _ = fs::remove_file(&enabled_file);
+            }
+            let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+            let dest_dir = disabled_base.join("ue4ss");
+            let _ = fs::create_dir_all(&dest_dir);
+            let dest = dest_dir.join(&file_name);
+            move_path(&src_path, &dest)?;
+            mod_info.disabled_path = dest.to_string_lossy().to_string();
+            mod_info.game_path = String::new();
         }
         mod_info.enabled = false;
     } else if mod_type == ModType::PalSchema {
         let mod_info = &mut data.mods[mod_index];
         let src_path = PathBuf::from(&mod_info.game_path);
         if src_path.exists() {
-            let parent = src_path.parent().unwrap();
             let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
-            let dest = parent.join(format!("{}.disabled", file_name));
-            let _ = fs::rename(&src_path, &dest);
+            let dest_dir = disabled_base.join("palschema");
+            let _ = fs::create_dir_all(&dest_dir);
+            let dest = dest_dir.join(&file_name);
+            move_path(&src_path, &dest)?;
             mod_info.disabled_path = dest.to_string_lossy().to_string();
             mod_info.game_path = String::new();
         }
@@ -526,11 +540,15 @@ pub fn disable_mod_internal(
             let mut moved_files = Vec::new();
             if let Some(parent) = src_path.parent() {
                 let file_stem = src_path.file_stem().unwrap().to_string_lossy().to_string();
+                let type_dir = if mod_type == ModType::LogicMods { "logicmods" } else { "pak" };
+                let dest_dir = disabled_base.join(type_dir);
+                let _ = fs::create_dir_all(&dest_dir);
+
                 for ext in &["pak", "ucas", "utoc"] {
                     let companion = parent.join(format!("{}.{}", file_stem, ext));
                     if companion.exists() {
-                        let dest = parent.join(format!("{}.{}.disabled", file_stem, ext));
-                        let _ = fs::rename(&companion, &dest);
+                        let dest = dest_dir.join(format!("{}.{}", file_stem, ext));
+                        move_path(&companion, &dest)?;
                         moved_files.push(dest.to_string_lossy().to_string());
                     }
                 }
@@ -589,60 +607,65 @@ pub fn enable_mod_internal(
         return Ok(());
     }
 
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&data.settings.game_path));
+    let game_paks = PathBuf::from(&data.settings.game_path).join("Pal").join("Content").join("Paks");
+
     if mod_type == ModType::Ue4ss {
         let mod_info = &mut data.mods[mod_index];
-        let game_dir = PathBuf::from(&mod_info.game_path);
-        if let Some(ue4ss_mods_dir) = game_dir.parent() {
+        let primary_disabled = PathBuf::from(&mod_info.disabled_path);
+        let mut dest_path = primary_disabled.clone();
+        if primary_disabled.exists() {
+            let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
+            let dest = win64.join("ue4ss").join("Mods").join(&filename);
+            let _ = fs::create_dir_all(dest.parent().unwrap());
+            move_path(&primary_disabled, &dest)?;
+            dest_path = dest;
+        }
+        mod_info.game_path = dest_path.to_string_lossy().to_string();
+        mod_info.disabled_path = String::new();
+
+        if let Some(ue4ss_mods_dir) = dest_path.parent() {
             let mods_txt = ue4ss_mods_dir.join("mods.txt");
             if mods_txt.exists() {
                 let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
             }
         }
-        let enabled_file = game_dir.join("enabled.txt");
+        let enabled_file = dest_path.join("enabled.txt");
         let _ = fs::write(&enabled_file, "");
         mod_info.enabled = true;
     } else if mod_type == ModType::PalSchema {
         let mod_info = &mut data.mods[mod_index];
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
         if primary_disabled.exists() {
-            let parent = primary_disabled.parent().unwrap();
             let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
-            if filename.ends_with(".disabled") {
-                let orig_name = filename.strip_suffix(".disabled").unwrap();
-                let dest = parent.join(orig_name);
-                let _ = fs::rename(&primary_disabled, &dest);
-                mod_info.game_path = dest.to_string_lossy().to_string();
-                mod_info.disabled_path = String::new();
-            }
+            let dest = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&filename);
+            let _ = fs::create_dir_all(dest.parent().unwrap());
+            move_path(&primary_disabled, &dest)?;
+            mod_info.game_path = dest.to_string_lossy().to_string();
+            mod_info.disabled_path = String::new();
         }
         mod_info.enabled = true;
     } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods {
         let mod_info = &mut data.mods[mod_index];
         let mut moved_back = Vec::new();
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
+        let dest_subdir = if mod_type == ModType::LogicMods { "LogicMods" } else { "~mods" };
+        let dest_dir = game_paks.join(dest_subdir);
+
         if primary_disabled.exists() {
-            if let Some(parent) = primary_disabled.parent() {
-                let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
-                if filename.ends_with(".disabled") {
-                    let orig_name = filename.strip_suffix(".disabled").unwrap();
-                    let dest = parent.join(orig_name);
-                    let _ = fs::rename(&primary_disabled, &dest);
-                    moved_back.push(dest.to_string_lossy().to_string());
-                }
-            }
+            let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
+            let dest = dest_dir.join(&filename);
+            let _ = fs::create_dir_all(&dest_dir);
+            move_path(&primary_disabled, &dest)?;
+            moved_back.push(dest.to_string_lossy().to_string());
         }
         for extra_disabled_str in &mod_info.extra_files {
             let extra_disabled = PathBuf::from(extra_disabled_str);
             if extra_disabled.exists() {
-                if let Some(parent) = extra_disabled.parent() {
-                    let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
-                    if filename.ends_with(".disabled") {
-                        let orig_name = filename.strip_suffix(".disabled").unwrap();
-                        let dest = parent.join(orig_name);
-                        let _ = fs::rename(&extra_disabled, &dest);
-                        moved_back.push(dest.to_string_lossy().to_string());
-                    }
-                }
+                let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
+                let dest = dest_dir.join(&filename);
+                move_path(&extra_disabled, &dest)?;
+                moved_back.push(dest.to_string_lossy().to_string());
             }
         }
         mod_info.game_path = moved_back.first().cloned().unwrap_or_default();
@@ -698,6 +721,23 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), Stri
                 format!("Cannot copy file {}: {}", file_name.to_string_lossy(), e)
             })?;
         }
+    }
+    Ok(())
+}
+
+fn move_path(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+    if fs::rename(src, dst).is_ok() {
+        return Ok(());
+    }
+    if src.is_dir() {
+        copy_dir_all(src, dst)?;
+        fs::remove_dir_all(src).map_err(|e| format!("Failed to remove source dir after cross-device copy: {}", e))?;
+    } else {
+        if let Some(parent) = dst.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        fs::copy(src, dst).map_err(|e| format!("Failed to copy source file during cross-device move: {}", e))?;
+        fs::remove_file(src).map_err(|e| format!("Failed to remove source file after cross-device copy: {}", e))?;
     }
     Ok(())
 }

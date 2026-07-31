@@ -169,6 +169,7 @@ fn filter_mods_for_current_profile(data: &crate::models::AppData) -> Vec<models:
 pub fn scan_mods_internal(
     game_path: &str,
     program_path: &str,
+    current_profile_id: &str,
     db_mods: &[models::ModInfo],
 ) -> Vec<models::ModInfo> {
     if game_path.is_empty() {
@@ -197,7 +198,10 @@ pub fn scan_mods_internal(
         scan_pak_mods(&logic_mods_dir, "logicmods", &mut fs_mods);
     }
 
-    let disabled_base = PathBuf::from(program_path).join("disabled");
+    let disabled_base = PathBuf::from(program_path)
+        .join("profiles")
+        .join(current_profile_id)
+        .join("disabled_mods");
     if disabled_base.exists() {
         scan_disabled_mods(&disabled_base, &mut fs_mods);
     }
@@ -212,13 +216,14 @@ pub fn scan_mods(state: State<AppState>) -> Result<Value, String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let game_path = data.settings.game_path.clone();
     let program_path = data.settings.program_path.clone();
+    let current_profile_id = data.current_profile_id.clone();
 
     if game_path.is_empty() {
         crate::logger::log("scan_mods: game_path empty, aborting scan");
         return Ok(serde_json::json!([]));
     }
 
-    let merged = scan_mods_internal(&game_path, &program_path, &data.mods.clone());
+    let merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &data.mods.clone());
     data.mods = merged;
     crate::profiles::cleanup_profile_mod_lists(&mut data);
     crate::profiles::sync_current_profile_states(&mut data);
@@ -237,6 +242,7 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let program_path = data.settings.program_path.clone();
     let game_path_str = data.settings.game_path.clone();
+    let current_profile_id = data.current_profile_id.clone();
 
     let mod_index = match data.mods.iter().position(|m| m.id == mod_id) {
         Some(idx) => idx,
@@ -290,7 +296,8 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
             let check_dirs = vec![
                 game_base.join("Pal").join("Content").join("Paks").join("~mods"),
                 game_base.join("Pal").join("Content").join("Paks").join("LogicMods"),
-                PathBuf::from(&program_path).join("disabled"),
+                PathBuf::from(&program_path).join("profiles").join(&current_profile_id).join("disabled_mods").join("pak"),
+                PathBuf::from(&program_path).join("profiles").join(&current_profile_id).join("disabled_mods").join("logicmods"),
             ];
             for dir in check_dirs {
                 if dir.exists() {
@@ -581,14 +588,8 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.filter_map(|e| e.ok()) {
             if !entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) { continue; }
-            let folder_name = entry.file_name().to_string_lossy().to_string();
+            let mod_name = entry.file_name().to_string_lossy().to_string();
             let mod_path = entry.path();
-
-            let (mod_name, is_enabled) = if folder_name.ends_with(".disabled") {
-                (folder_name.strip_suffix(".disabled").unwrap().to_string(), false)
-            } else {
-                (folder_name.clone(), true)
-            };
 
             let has_json = WalkDir::new(&mod_path).max_depth(2).into_iter().filter_map(|e| e.ok()).any(|e| {
                 e.file_type().is_file() && e.path().extension().map_or(false, |ext| ext == "json" || ext == "jsonc")
@@ -604,9 +605,9 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
                     version: "unknown".to_string(), install_date,
                     source_zip: String::new(), config_path: detect_config(&mod_path),
-                    config_type: Some("auto".to_string()), enabled: is_enabled,
-                    game_path: if is_enabled { mod_path.to_string_lossy().to_string() } else { String::new() },
-                    disabled_path: if is_enabled { String::new() } else { mod_path.to_string_lossy().to_string() },
+                    config_type: Some("auto".to_string()), enabled: true,
+                    game_path: mod_path.to_string_lossy().to_string(),
+                    disabled_path: String::new(),
                     pak_destination: None, has_enabled_txt: false, mods_txt_order: None,
                     extra_files: Vec::new(),
                     nexus_description: None, nexus_version_cached: None, nexus_cached_at: None,
