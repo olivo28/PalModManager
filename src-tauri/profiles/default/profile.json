@@ -1,0 +1,9 @@
+{
+  "id": "default",
+  "name": "Default",
+  "created_at": "2026-07-30T23:46:43.882074300+00:00",
+  "installed_mod_ids": [],
+  "enabled_mod_ids": [],
+  "ue4ss_enabled": false,
+  "palschema_enabled": false
+}

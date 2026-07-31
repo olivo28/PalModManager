@@ -1,0 +1,827 @@
+use crate::models::{AppData, ModInfo, ModType, Profile};
+use std::fs;
+use std::path::{Path, PathBuf};
+
+pub fn sanitize_profile_id(name: &str) -> String {
+    let clean: String = name
+        .chars()
+        .map(|c| if c.is_alphanumeric() { c.to_ascii_lowercase() } else { '_' })
+        .collect();
+    let trimmed = clean.trim_matches('_');
+    if trimmed.is_empty() {
+        "profile".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+pub fn get_profile_dir(program_path: &str, profile_id: &str) -> PathBuf {
+    PathBuf::from(program_path).join("profiles").join(profile_id)
+}
+
+pub fn ensure_profile_structure(program_path: &str, profile_id: &str) -> PathBuf {
+    let p_dir = get_profile_dir(program_path, profile_id);
+    let _ = fs::create_dir_all(p_dir.join("ue4ss"));
+    let _ = fs::create_dir_all(p_dir.join("palschema"));
+    let _ = fs::create_dir_all(p_dir.join("paks"));
+    let _ = fs::create_dir_all(p_dir.join("logicmods"));
+    p_dir
+}
+
+pub fn cleanup_profile_mod_lists(data: &mut AppData) {
+    for profile in &mut data.profiles {
+        // Migrate old profiles: if installed_mod_ids is empty but enabled_mod_ids has content,
+        // seed installed_mod_ids from enabled_mod_ids for backward compatibility
+        if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
+            profile.installed_mod_ids = profile.enabled_mod_ids.clone();
+        }
+    }
+}
+
+/// Backward-compat alias
+pub fn cleanup_profile_enabled_ids(data: &mut AppData) {
+    cleanup_profile_mod_lists(data);
+}
+
+/// Returns the set of mod names installed in the given profile.
+/// Used by get_mods/scan_mods to filter the global mod list to only profile-relevant mods.
+pub fn get_profile_mod_names(data: &AppData, profile_id: &str) -> std::collections::HashSet<String> {
+    if let Some(profile) = data.profiles.iter().find(|p| p.id == profile_id) {
+        profile.installed_mod_ids.iter()
+            .map(|s| s.to_lowercase())
+            .collect()
+    } else {
+        std::collections::HashSet::new()
+    }
+}
+
+pub fn ensure_default_profile(data: &mut AppData) {
+    let program_path = data.settings.program_path.clone();
+    let profiles_base = PathBuf::from(&program_path).join("profiles");
+    let _ = fs::create_dir_all(&profiles_base);
+
+    if !data.profiles.iter().any(|p| p.id == "default") {
+        let now = chrono::Utc::now().to_rfc3339();
+        let (ue4ss_installed, palschema_installed) = {
+            let win64 = PathBuf::from(&data.settings.game_path).join("Pal").join("Binaries").join("Win64");
+            (win64.join("dwmapi.dll").exists(), win64.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll").exists())
+        };
+
+        data.profiles.push(Profile {
+            id: "default".to_string(),
+            name: "Default".to_string(),
+            created_at: now,
+            installed_mod_ids: Vec::new(),
+            enabled_mod_ids: Vec::new(),
+            ue4ss_enabled: ue4ss_installed,
+            palschema_enabled: palschema_installed,
+        });
+    }
+
+    // Migrate old profiles: if installed_mod_ids is empty but enabled_mod_ids has content,
+    // seed installed_mod_ids for backward compatibility
+    for profile in &mut data.profiles {
+        if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
+            profile.installed_mod_ids = profile.enabled_mod_ids.clone();
+        }
+    }
+
+    migrate_profile_uuids_to_stable_ids(data);
+
+    if data.current_profile_id.is_empty() {
+        data.current_profile_id = "default".to_string();
+    }
+
+    for p in &data.profiles {
+        let p_dir = ensure_profile_structure(&program_path, &p.id);
+        if let Ok(json) = serde_json::to_string_pretty(p) {
+            let _ = fs::write(p_dir.join("profile.json"), json);
+        }
+    }
+
+    cleanup_profile_mod_lists(data);
+}
+
+pub fn migrate_profile_uuids_to_stable_ids(data: &mut AppData) {
+    let mods = data.mods.clone();
+    for profile in &mut data.profiles {
+        for id_entry in &mut profile.installed_mod_ids {
+            if let Some(matching_mod) = mods.iter().find(|m| {
+                m.id.to_lowercase() == id_entry.to_lowercase() ||
+                m.name.to_lowercase() == id_entry.to_lowercase()
+            }) {
+                if id_entry != &matching_mod.id {
+                    crate::logger::log(&format!("Migrating profile installed ID '{}' -> stable ID '{}'", id_entry, matching_mod.id));
+                    *id_entry = matching_mod.id.clone();
+                }
+            }
+        }
+        
+        for id_entry in &mut profile.enabled_mod_ids {
+            if let Some(matching_mod) = mods.iter().find(|m| {
+                m.id.to_lowercase() == id_entry.to_lowercase() ||
+                m.name.to_lowercase() == id_entry.to_lowercase()
+            }) {
+                if id_entry != &matching_mod.id {
+                    crate::logger::log(&format!("Migrating profile enabled ID '{}' -> stable ID '{}'", id_entry, matching_mod.id));
+                    *id_entry = matching_mod.id.clone();
+                }
+            }
+        }
+
+        profile.installed_mod_ids.dedup();
+        profile.enabled_mod_ids.dedup();
+    }
+}
+
+
+pub fn mod_matches_profile_entry(mod_info: &crate::models::ModInfo, entry: &str) -> bool {
+    let entry_lower = entry.to_lowercase();
+    if entry_lower == mod_info.id.to_lowercase() {
+        return true;
+    }
+    if entry_lower == mod_info.name.to_lowercase() {
+        return true;
+    }
+    // Check against game_path folder name
+    if !mod_info.game_path.is_empty() {
+        if let Some(filename) = std::path::Path::new(&mod_info.game_path).file_name() {
+            let folder_name = filename.to_string_lossy().to_lowercase();
+            if folder_name == entry_lower {
+                return true;
+            }
+            // Strip .disabled if it got appended
+            if let Some(stripped) = folder_name.strip_suffix(".disabled") {
+                if stripped == entry_lower {
+                    return true;
+                }
+            }
+        }
+    }
+    // Check against disabled_path folder name
+    if !mod_info.disabled_path.is_empty() {
+        if let Some(filename) = std::path::Path::new(&mod_info.disabled_path).file_name() {
+            let folder_name = filename.to_string_lossy().to_lowercase();
+            if folder_name == entry_lower {
+                return true;
+            }
+            if let Some(stripped) = folder_name.strip_suffix(".disabled") {
+                if stripped == entry_lower {
+                    return true;
+                }
+            }
+        }
+    }
+    false
+}
+
+pub fn sync_current_profile_states(data: &mut AppData) {
+    cleanup_profile_mod_lists(data);
+    let current_id = data.current_profile_id.clone();
+    if let Some(profile) = data.profiles.iter().find(|p| p.id == current_id).cloned() {
+        for mod_info in &mut data.mods {
+            if mod_info.nexus_author.as_deref() == Some("UE4SS Native Mod") {
+                // Native mods: enabled state comes from mods.txt, not from profile
+                continue;
+            }
+            // Enabled = matches any entry in this profile's enabled_mod_ids
+            let is_enabled = profile.enabled_mod_ids.iter().any(|entry| {
+                mod_matches_profile_entry(mod_info, entry)
+            });
+            mod_info.enabled = is_enabled;
+        }
+    }
+}
+
+pub fn set_profile_mod_state(
+    data: &mut AppData,
+    profile_id: &str,
+    mod_id: &str,
+    enabled: bool,
+) -> Result<(), String> {
+    let program_path = data.settings.program_path.clone();
+    let mod_name = data.mods.iter().find(|m| m.id == mod_id).map(|m| m.name.clone());
+
+    {
+        let profile = data
+            .profiles
+            .iter_mut()
+            .find(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+
+        if enabled {
+            // Use mod name (stable across scans) not UUID (which changes if mod is re-scanned)
+            if let Some(ref name) = mod_name {
+                let already_present = profile.enabled_mod_ids.iter().any(|id| id.to_lowercase() == name.to_lowercase());
+                if !already_present {
+                    profile.enabled_mod_ids.push(name.clone());
+                }
+            }
+        } else {
+            profile.enabled_mod_ids.retain(|id| id != mod_id);
+            if let Some(ref name) = mod_name {
+                profile.enabled_mod_ids.retain(|id| id.to_lowercase() != name.to_lowercase());
+            }
+        }
+    }
+
+    cleanup_profile_enabled_ids(data);
+
+    // Save individual profile metadata file
+    let p_dir = get_profile_dir(&program_path, profile_id);
+    if let Some(profile) = data.profiles.iter().find(|p| p.id == profile_id) {
+        if let Ok(json) = serde_json::to_string_pretty(profile) {
+            let _ = fs::write(p_dir.join("profile.json"), json);
+        }
+    }
+
+    // Apply physically if this is the currently active profile
+    if profile_id == data.current_profile_id {
+        crate::logger::log(&format!("set_profile_mod_state: Applying switch physically for mod = {} -> enabled = {}", mod_id, enabled));
+        if enabled {
+            enable_mod_internal(data, &program_path, mod_id)?;
+        } else {
+            disable_mod_internal(data, &program_path, mod_id)?;
+        }
+    }
+
+    Ok(())
+}
+
+fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path) {
+    if game_path.is_empty() { return; }
+    let win64 = PathBuf::from(game_path).join("Pal").join("Binaries").join("Win64");
+    let ue4ss_game = win64.join("ue4ss");
+    let dwmapi_game = win64.join("dwmapi.dll");
+
+    let ue4ss_backup = profile_dir.join("ue4ss");
+    if ue4ss_game.exists() {
+        let _ = copy_dir_all(&ue4ss_game, &ue4ss_backup);
+    }
+    if dwmapi_game.exists() {
+        let _ = fs::copy(&dwmapi_game, profile_dir.join("dwmapi.dll"));
+    }
+
+    let palschema_game = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+    let palschema_backup = profile_dir.join("palschema");
+    if palschema_game.exists() {
+        let _ = copy_dir_all(&palschema_game, &palschema_backup);
+    }
+
+    let paks_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("~mods");
+    let paks_backup = profile_dir.join("paks");
+    if paks_game.exists() {
+        let _ = copy_dir_all(&paks_game, &paks_backup);
+    }
+
+    let logic_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("LogicMods");
+    let logic_backup = profile_dir.join("logicmods");
+    if logic_game.exists() {
+        let _ = copy_dir_all(&logic_game, &logic_backup);
+    }
+}
+
+fn restore_profile_files_to_game(game_path: &str, profile_dir: &Path, target_profile: &Profile, program_path: &str) {
+    if game_path.is_empty() { return; }
+    let win64 = PathBuf::from(game_path).join("Pal").join("Binaries").join("Win64");
+    let ue4ss_game = win64.join("ue4ss");
+    let dwmapi_game = win64.join("dwmapi.dll");
+    let palschema_game = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+    let paks_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("~mods");
+    let logic_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("LogicMods");
+
+    // Clear game directory first
+    if dwmapi_game.exists() { let _ = fs::remove_file(&dwmapi_game); }
+    if ue4ss_game.exists() { let _ = fs::remove_dir_all(&ue4ss_game); }
+    if paks_game.exists() { let _ = fs::remove_dir_all(&paks_game); }
+    if logic_game.exists() { let _ = fs::remove_dir_all(&logic_game); }
+
+    if target_profile.ue4ss_enabled {
+        let ue4ss_backup = profile_dir.join("ue4ss");
+        let dwmapi_backup = profile_dir.join("dwmapi.dll");
+        if ue4ss_backup.exists() && fs::read_dir(&ue4ss_backup).map(|mut d| d.next().is_some()).unwrap_or(false) {
+            let _ = copy_dir_all(&ue4ss_backup, &ue4ss_game);
+            if dwmapi_backup.exists() {
+                let _ = fs::copy(&dwmapi_backup, &dwmapi_game);
+            }
+        } else {
+            let _ = sync_profile_dependencies(game_path, program_path, target_profile);
+        }
+    }
+
+    if target_profile.palschema_enabled {
+        let palschema_backup = profile_dir.join("palschema");
+        if palschema_backup.exists() {
+            let _ = copy_dir_all(&palschema_backup, &palschema_game);
+        }
+    }
+
+    let paks_backup = profile_dir.join("paks");
+    if paks_backup.exists() {
+        let _ = copy_dir_all(&paks_backup, &paks_game);
+    }
+
+    let logic_backup = profile_dir.join("logicmods");
+    if logic_backup.exists() {
+        let _ = copy_dir_all(&logic_backup, &logic_game);
+    }
+}
+
+pub fn switch_profile(
+    data: &mut AppData,
+    program_path: &str,
+    target_profile: &Profile,
+) -> Result<Vec<ModInfo>, String> {
+    crate::logger::log(&format!("switch_profile: Switching to profile '{}' (folder: {})", target_profile.name, target_profile.id));
+
+    let game_path = data.settings.game_path.clone();
+
+    // 1. Backup physical files of current active profile
+    let current_id = data.current_profile_id.clone();
+    if !current_id.is_empty() {
+        let current_dir = ensure_profile_structure(program_path, &current_id);
+        backup_game_files_to_profile(&game_path, &current_dir);
+    }
+
+    // 2. Restore target profile physical files to game
+    let target_dir = ensure_profile_structure(program_path, &target_profile.id);
+    restore_profile_files_to_game(&game_path, &target_dir, target_profile, program_path);
+
+    // 3. Update memory state
+    data.current_profile_id = target_profile.id.clone();
+    cleanup_profile_enabled_ids(data);
+    sync_current_profile_states(data);
+
+    // Save profile metadata
+    if let Ok(json) = serde_json::to_string_pretty(target_profile) {
+        let _ = fs::write(target_dir.join("profile.json"), json);
+    }
+
+    Ok(data.mods.clone())
+}
+
+pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, String> {
+    let name = name.trim().to_string();
+    if name.is_empty() || name.len() > 100 {
+        return Err("Invalid profile name".to_string());
+    }
+
+    let profile_id = sanitize_profile_id(&name);
+    if data.profiles.iter().any(|p| p.id == profile_id) {
+        return Err("A profile with a similar name already exists".to_string());
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let profile = Profile {
+        id: profile_id.clone(),
+        name,
+        created_at: now,
+        installed_mod_ids: Vec::new(),
+        enabled_mod_ids: Vec::new(),
+        ue4ss_enabled: false,
+        palschema_enabled: false,
+    };
+
+    let program_path = data.settings.program_path.clone();
+    let p_dir = ensure_profile_structure(&program_path, &profile.id);
+    if let Ok(json) = serde_json::to_string_pretty(&profile) {
+        let _ = fs::write(p_dir.join("profile.json"), json);
+    }
+
+    data.profiles.push(profile.clone());
+    Ok(profile)
+}
+
+pub fn delete_profile(data: &mut AppData, profile_id: &str) -> Result<(), String> {
+    if profile_id == "default" {
+        return Err("Cannot delete the default profile".to_string());
+    }
+
+    let idx = data
+        .profiles
+        .iter()
+        .position(|p| p.id == profile_id)
+        .ok_or_else(|| "Profile not found".to_string())?;
+
+    if data.current_profile_id == profile_id {
+        return Err("Cannot delete the active profile. Switch profiles first.".to_string());
+    }
+
+    let program_path = data.settings.program_path.clone();
+    let p_dir = get_profile_dir(&program_path, profile_id);
+    if p_dir.exists() {
+        let _ = fs::remove_dir_all(p_dir);
+    }
+
+    data.profiles.remove(idx);
+    Ok(())
+}
+
+pub fn rename_profile(data: &mut AppData, profile_id: &str, name: String) -> Result<(), String> {
+    let name = name.trim().to_string();
+    if name.is_empty() || name.len() > 100 {
+        return Err("Invalid profile name".to_string());
+    }
+
+    let profile = data
+        .profiles
+        .iter_mut()
+        .find(|p| p.id == profile_id)
+        .ok_or_else(|| "Profile not found".to_string())?;
+
+    profile.name = name;
+    Ok(())
+}
+
+// Internal helpers
+
+fn update_mods_txt_setting(mods_txt: &Path, mod_name: &str, enabled: bool) -> Result<(), String> {
+    let content = fs::read_to_string(mods_txt).map_err(|e| e.to_string())?;
+    let mut new_lines = Vec::new();
+    let mut found = false;
+    let target_val = if enabled { "1" } else { "0" };
+
+    for line in content.lines() {
+        let line_clean = line.trim();
+        if !line_clean.starts_with(';') && !line_clean.starts_with("//") {
+            if let Some(pos) = line_clean.find(':') {
+                let name = line_clean[..pos].trim();
+                if name.to_lowercase() == mod_name.to_lowercase() {
+                    new_lines.push(format!("{} : {}", name, target_val));
+                    found = true;
+                    continue;
+                }
+            }
+        }
+        new_lines.push(line.to_string());
+    }
+
+    if !found {
+        new_lines.push(format!("{} : {}", mod_name, target_val));
+    }
+
+    fs::write(mods_txt, new_lines.join("\r\n") + "\r\n").map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn disable_mod_internal(
+    data: &mut AppData,
+    program_path: &str,
+    mod_id: &str,
+) -> Result<(), String> {
+    let mod_index = data
+        .mods
+        .iter()
+        .position(|m| m.id == mod_id)
+        .ok_or("Mod not found")?;
+    
+    let is_native = data.mods[mod_index].nexus_author.as_deref() == Some("UE4SS Native Mod");
+    let mod_type = data.mods[mod_index].mod_type.clone();
+    let mod_name = data.mods[mod_index].name.clone();
+
+    if is_native {
+        let mod_info = &mut data.mods[mod_index];
+        let game_dir = PathBuf::from(&mod_info.game_path);
+        if let Some(ue4ss_dir) = game_dir.parent().and_then(|p| p.parent()) {
+            let mods_txt = ue4ss_dir.join("mods.txt");
+            if mods_txt.exists() {
+                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+            }
+        }
+        mod_info.enabled = false;
+        // Native mods are not tracked in profile enabled_mod_ids
+        return Ok(());
+    }
+
+    if mod_type == ModType::Ue4ss {
+        let mod_info = &mut data.mods[mod_index];
+        let game_dir = PathBuf::from(&mod_info.game_path);
+        if let Some(ue4ss_mods_dir) = game_dir.parent() {
+            let mods_txt = ue4ss_mods_dir.join("mods.txt");
+            if mods_txt.exists() {
+                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+            }
+        }
+        let enabled_file = game_dir.join("enabled.txt");
+        if enabled_file.exists() {
+            let _ = fs::remove_file(&enabled_file);
+        }
+        mod_info.enabled = false;
+    } else if mod_type == ModType::PalSchema {
+        let mod_info = &mut data.mods[mod_index];
+        let src_path = PathBuf::from(&mod_info.game_path);
+        if src_path.exists() {
+            let parent = src_path.parent().unwrap();
+            let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+            let dest = parent.join(format!("{}.disabled", file_name));
+            let _ = fs::rename(&src_path, &dest);
+            mod_info.disabled_path = dest.to_string_lossy().to_string();
+            mod_info.game_path = String::new();
+        }
+        mod_info.enabled = false;
+    } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods {
+        let mod_info = &mut data.mods[mod_index];
+        let src_path = PathBuf::from(&mod_info.game_path);
+        if src_path.exists() {
+            let mut moved_files = Vec::new();
+            if let Some(parent) = src_path.parent() {
+                let file_stem = src_path.file_stem().unwrap().to_string_lossy().to_string();
+                for ext in &["pak", "ucas", "utoc"] {
+                    let companion = parent.join(format!("{}.{}", file_stem, ext));
+                    if companion.exists() {
+                        let dest = parent.join(format!("{}.{}.disabled", file_stem, ext));
+                        let _ = fs::rename(&companion, &dest);
+                        moved_files.push(dest.to_string_lossy().to_string());
+                    }
+                }
+            }
+            mod_info.disabled_path = moved_files.first().cloned().unwrap_or_default();
+            mod_info.extra_files = moved_files.into_iter().skip(1).collect();
+            mod_info.game_path = String::new();
+        }
+        mod_info.enabled = false;
+    } else {
+        return Ok(());
+    }
+
+    // Remove from active profile's enabled_mod_ids and persist profile.json
+    let current_id = data.current_profile_id.clone();
+    if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_id) {
+        profile.enabled_mod_ids.retain(|id| id != mod_id && id.to_lowercase() != mod_name.to_lowercase());
+    }
+    if !program_path.is_empty() {
+        let p_dir = get_profile_dir(program_path, &current_id);
+        if let Some(profile) = data.profiles.iter().find(|p| p.id == current_id) {
+            if let Ok(json) = serde_json::to_string_pretty(profile) {
+                let _ = fs::write(p_dir.join("profile.json"), json);
+            }
+        }
+    }
+
+    Ok(())
+}
+
+pub fn enable_mod_internal(
+    data: &mut AppData,
+    program_path: &str,
+    mod_id: &str,
+) -> Result<(), String> {
+    let mod_index = data
+        .mods
+        .iter()
+        .position(|m| m.id == mod_id)
+        .ok_or("Mod not found")?;
+
+    let is_native = data.mods[mod_index].nexus_author.as_deref() == Some("UE4SS Native Mod");
+    let mod_type = data.mods[mod_index].mod_type.clone();
+
+    if is_native {
+        let mod_info = &mut data.mods[mod_index];
+        let game_dir = PathBuf::from(&mod_info.game_path);
+        if let Some(ue4ss_dir) = game_dir.parent().and_then(|p| p.parent()) {
+            let mods_txt = ue4ss_dir.join("mods.txt");
+            if mods_txt.exists() {
+                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
+            }
+        }
+        mod_info.enabled = true;
+        // Native mods are not tracked in profile enabled_mod_ids
+        return Ok(());
+    }
+
+    if mod_type == ModType::Ue4ss {
+        let mod_info = &mut data.mods[mod_index];
+        let game_dir = PathBuf::from(&mod_info.game_path);
+        if let Some(ue4ss_mods_dir) = game_dir.parent() {
+            let mods_txt = ue4ss_mods_dir.join("mods.txt");
+            if mods_txt.exists() {
+                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
+            }
+        }
+        let enabled_file = game_dir.join("enabled.txt");
+        let _ = fs::write(&enabled_file, "");
+        mod_info.enabled = true;
+    } else if mod_type == ModType::PalSchema {
+        let mod_info = &mut data.mods[mod_index];
+        let primary_disabled = PathBuf::from(&mod_info.disabled_path);
+        if primary_disabled.exists() {
+            let parent = primary_disabled.parent().unwrap();
+            let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
+            if filename.ends_with(".disabled") {
+                let orig_name = filename.strip_suffix(".disabled").unwrap();
+                let dest = parent.join(orig_name);
+                let _ = fs::rename(&primary_disabled, &dest);
+                mod_info.game_path = dest.to_string_lossy().to_string();
+                mod_info.disabled_path = String::new();
+            }
+        }
+        mod_info.enabled = true;
+    } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods {
+        let mod_info = &mut data.mods[mod_index];
+        let mut moved_back = Vec::new();
+        let primary_disabled = PathBuf::from(&mod_info.disabled_path);
+        if primary_disabled.exists() {
+            if let Some(parent) = primary_disabled.parent() {
+                let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
+                if filename.ends_with(".disabled") {
+                    let orig_name = filename.strip_suffix(".disabled").unwrap();
+                    let dest = parent.join(orig_name);
+                    let _ = fs::rename(&primary_disabled, &dest);
+                    moved_back.push(dest.to_string_lossy().to_string());
+                }
+            }
+        }
+        for extra_disabled_str in &mod_info.extra_files {
+            let extra_disabled = PathBuf::from(extra_disabled_str);
+            if extra_disabled.exists() {
+                if let Some(parent) = extra_disabled.parent() {
+                    let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
+                    if filename.ends_with(".disabled") {
+                        let orig_name = filename.strip_suffix(".disabled").unwrap();
+                        let dest = parent.join(orig_name);
+                        let _ = fs::rename(&extra_disabled, &dest);
+                        moved_back.push(dest.to_string_lossy().to_string());
+                    }
+                }
+            }
+        }
+        mod_info.game_path = moved_back.first().cloned().unwrap_or_default();
+        mod_info.extra_files = moved_back.into_iter().skip(1).collect();
+        mod_info.disabled_path = String::new();
+        mod_info.enabled = true;
+    } else {
+        return Ok(());
+    }
+
+    // Add to active profile's installed + enabled lists and persist profile.json
+    // Use mod name (stable across scans) instead of UUID (changes if mod is re-scanned)
+    let current_id = data.current_profile_id.clone();
+    let mod_name_for_profile = data.mods.iter().find(|m| m.id == mod_id).map(|m| m.name.clone());
+    if let Some(ref name) = mod_name_for_profile {
+        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_id) {
+            // Always ensure it's in installed_mod_ids
+            let in_installed = profile.installed_mod_ids.iter().any(|id| id.to_lowercase() == name.to_lowercase());
+            if !in_installed {
+                profile.installed_mod_ids.push(name.clone());
+            }
+            // Add to enabled_mod_ids
+            let in_enabled = profile.enabled_mod_ids.iter().any(|id| id.to_lowercase() == name.to_lowercase());
+            if !in_enabled {
+                profile.enabled_mod_ids.push(name.clone());
+            }
+        }
+    }
+    if !program_path.is_empty() {
+        let p_dir = get_profile_dir(program_path, &current_id);
+        if let Some(profile) = data.profiles.iter().find(|p| p.id == current_id) {
+            if let Ok(json) = serde_json::to_string_pretty(profile) {
+                let _ = fs::write(p_dir.join("profile.json"), json);
+            }
+        }
+    }
+
+
+    Ok(())
+}
+
+fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+    fs::create_dir_all(dst).map_err(|e| format!("Cannot create dest dir: {}", e))?;
+    for entry in fs::read_dir(src).map_err(|e| format!("Cannot read source dir: {}", e))? {
+        let entry = entry.map_err(|e| format!("Dir entry error: {}", e))?;
+        let path = entry.path();
+        let file_name = path.file_name().unwrap();
+        let dest_path = dst.join(file_name);
+        if path.is_dir() {
+            copy_dir_all(&path, &dest_path)?;
+        } else {
+            fs::copy(&path, &dest_path).map_err(|e| {
+                format!("Cannot copy file {}: {}", file_name.to_string_lossy(), e)
+            })?;
+        }
+    }
+    Ok(())
+}
+
+fn find_extracted_root(src: &std::path::Path) -> PathBuf {
+    if src.is_dir() {
+        let entries: Vec<_> = fs::read_dir(src)
+            .ok()
+            .into_iter()
+            .flat_map(|rd| rd.filter_map(|e| e.ok()))
+            .filter(|e| {
+                let n = e.file_name();
+                n != ".." && n != "." && n != "__MACOSX"
+            })
+            .collect();
+        if entries.len() == 1 && entries[0].file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
+            return entries[0].path();
+        }
+    }
+    src.to_path_buf()
+}
+
+fn sync_profile_dependencies(
+    game_path: &str,
+    program_path: &str,
+    target_profile: &Profile,
+) -> Result<(), String> {
+    if game_path.is_empty() {
+        return Ok(());
+    }
+    let win64 = PathBuf::from(game_path).join("Pal").join("Binaries").join("Win64");
+
+    // UE4SS
+    let dwmapi = win64.join("dwmapi.dll");
+    let ue4ss_dir = win64.join("ue4ss");
+    if target_profile.ue4ss_enabled {
+        let cached_zip = PathBuf::from(program_path)
+            .join("mods-library")
+            .join("dependencies")
+            .join("ue4ss.zip");
+        if cached_zip.exists() && (!dwmapi.exists() || !ue4ss_dir.exists()) {
+            crate::logger::log("sync_profile_dependencies: Installing UE4SS from local library (offline)...");
+            let temp_dir = std::env::temp_dir().join(format!("pmm_sync_ue4ss_{}", uuid::Uuid::new_v4()));
+            if let Ok(extracted) = crate::zip_handler::extract_zip_to_temp(&cached_zip.to_string_lossy(), &temp_dir.join("extracted")) {
+                let root = find_extracted_root(&extracted);
+                let (framework_src, dwmapi_src) = {
+                    let ue4ss_sub = root.join("ue4ss");
+                    if ue4ss_sub.is_dir() {
+                        (ue4ss_sub, root.join("dwmapi.dll"))
+                    } else {
+                        (root.clone(), root.join("dwmapi.dll"))
+                    }
+                };
+                if dwmapi_src.exists() {
+                    let _ = fs::copy(&dwmapi_src, &win64.join("dwmapi.dll"));
+                }
+                let _ = fs::create_dir_all(&ue4ss_dir);
+                if let Ok(rd) = fs::read_dir(&framework_src) {
+                    for entry in rd.filter_map(|e| e.ok()) {
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        if name == "dwmapi.dll" || name == "Mods" || name == "mods" {
+                            continue;
+                        }
+                        let dst = ue4ss_dir.join(&name);
+                        if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
+                            let _ = copy_dir_all(&entry.path(), &dst);
+                        } else {
+                            let _ = fs::copy(&entry.path(), &dst);
+                        }
+                    }
+                }
+                if let Ok(ver) = fs::read_to_string(PathBuf::from(program_path).join("mods-library").join("dependencies").join("ue4ss.version")) {
+                    let _ = fs::write(ue4ss_dir.join("ue4ss.version"), ver.trim());
+                }
+            }
+            let _ = fs::remove_dir_all(&temp_dir);
+        }
+    } else {
+        if dwmapi.exists() {
+            let _ = fs::remove_file(dwmapi);
+        }
+        if ue4ss_dir.exists() {
+            let _ = fs::remove_dir_all(ue4ss_dir);
+        }
+    }
+
+    // PalSchema
+    let palschema_dir = win64.join("ue4ss").join("Mods").join("PalSchema");
+    if target_profile.palschema_enabled {
+        let cached_zip = PathBuf::from(program_path)
+            .join("mods-library")
+            .join("dependencies")
+            .join("palschema.zip");
+        if cached_zip.exists() && !palschema_dir.exists() {
+            crate::logger::log("sync_profile_dependencies: Installing PalSchema from local library (offline)...");
+            let temp_dir = std::env::temp_dir().join(format!("pmm_sync_ps_{}", uuid::Uuid::new_v4()));
+            if let Ok(extracted) = crate::zip_handler::extract_zip_to_temp(&cached_zip.to_string_lossy(), &temp_dir.join("extracted")) {
+                let root = find_extracted_root(&extracted);
+                let _ = fs::create_dir_all(&palschema_dir);
+                if let Ok(rd) = fs::read_dir(&root) {
+                    for entry in rd.filter_map(|e| e.ok()) {
+                        let name = entry.file_name().to_string_lossy().to_string();
+                        if name == "mods" || name == "Mods" {
+                            continue;
+                        }
+                        let dst = palschema_dir.join(&name);
+                        if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
+                            let _ = copy_dir_all(&entry.path(), &dst);
+                        } else {
+                            let _ = fs::copy(&entry.path(), &dst);
+                        }
+                    }
+                }
+                if let Ok(ver) = fs::read_to_string(PathBuf::from(program_path).join("mods-library").join("dependencies").join("palschema.version")) {
+                    let _ = fs::write(palschema_dir.join("palschema.version"), ver.trim());
+                }
+            }
+            let _ = fs::remove_dir_all(&temp_dir);
+        }
+    } else {
+        if palschema_dir.exists() {
+            let _ = fs::remove_dir_all(palschema_dir);
+        }
+    }
+
+    Ok(())
+}

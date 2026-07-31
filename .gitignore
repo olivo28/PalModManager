@@ -1,0 +1,38 @@
+# --- Node.js & Frontend ---
+node_modules/
+dist/
+dist-ssr/
+*.local
+.env
+.env.*.local
+
+# --- Rust & Tauri ---
+src-tauri/target/
+src-tauri/Cargo.lock
+src-tauri/target-desktop/
+src-tauri/.tauri/
+
+# --- IDEs & OS ---
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+Thumbs.db
+
+# --- PalModManager Local Data (CRITICAL to ignore) ---
+db_plain.json
+*.db
+*.bin
+temp/
+logs/
+*.log
+/Mods test
+DESCRIPTION_PIPELINE.md
+PROJECT.md
+RESUMEN.md
+palmodmanager_mods.json
+UE4SS-Palworld (3).zip

@@ -1,0 +1,21 @@
+#drop-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  align-items: center;
+  justify-content: center;
+}
+
+#drop-overlay.visible { display: flex; }
+
+#drop-zone {
+  border: 2px dashed var(--accent);
+  padding: 60px 80px;
+  text-align: center;
+  background: var(--accent-dim);
+}
+
+.drop-icon { font-size: 3.5rem; margin-bottom: 12px; color: var(--accent); }
+.drop-text { font-size: 1.2rem; color: var(--text-primary); font-weight: 600; }

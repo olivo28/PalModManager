@@ -1,0 +1,388 @@
+#editor-view {
+  display: none;
+  height: 100%;
+  flex-direction: column;
+}
+
+#editor-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 20px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+#editor-mod-select {
+  padding: 6px 10px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-size: 12px;
+  min-width: 200px;
+  font-weight: 500;
+}
+
+#editor-mod-select:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+.editor-sep {
+  width: 1px;
+  height: 24px;
+  background: var(--border);
+  margin: 0 6px;
+}
+
+.btn-editor {
+  padding: 5px 14px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+.btn-editor:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.btn-editor.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.btn-editor.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+.btn-editor.primary:hover {
+  opacity: 0.9;
+}
+
+#editor-body {
+  flex: 1;
+  display: flex;
+  overflow: hidden;
+}
+
+/* ===== VSCode-style Mod Explorer Panel ===== */
+#editor-mod-panel {
+  width: 180px;
+  flex-shrink: 0;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.editor-mod-panel-header {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  padding: 10px 12px 6px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.editor-mod-section {
+  flex-shrink: 0;
+}
+
+.editor-mod-section-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  user-select: none;
+  transition: color 0.15s;
+}
+
+.editor-mod-section-header:hover {
+  color: var(--text-secondary);
+}
+
+.editor-mod-section-chevron {
+  font-size: 8px;
+  transition: transform 0.2s;
+  display: inline-block;
+}
+
+.editor-mod-section.collapsed .editor-mod-section-chevron {
+  transform: rotate(-90deg);
+}
+
+.editor-mod-section-list {
+  overflow: hidden;
+}
+
+.editor-mod-section.collapsed .editor-mod-section-list {
+  display: none;
+}
+
+.editor-mod-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px 4px 16px;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--text-secondary);
+  transition: background 0.12s, color 0.12s;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 500;
+}
+
+.editor-mod-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.editor-mod-item.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.editor-mod-item-icon {
+  font-size: 10px;
+  flex-shrink: 0;
+  opacity: 0.7;
+}
+
+/* ===== File Tree Panel ===== */
+#editor-file-tree {
+  width: 240px;
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.editor-tree-folder-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  user-select: none;
+  transition: color 0.15s;
+  border-radius: 3px;
+}
+
+.editor-tree-folder-header:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.editor-tree-chevron {
+  font-size: 9px;
+  transition: transform 0.2s;
+  display: inline-block;
+  color: var(--text-muted);
+}
+
+.editor-tree-folder.collapsed > .editor-tree-folder-header .editor-tree-chevron {
+  transform: rotate(-90deg);
+}
+
+.editor-tree-folder-children {
+  padding-left: 12px;
+}
+
+.editor-tree-folder.collapsed > .editor-tree-folder-children {
+  display: none;
+}
+
+.editor-folder-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 8px;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+  transition: all 0.15s;
+  border-radius: 3px;
+}
+
+.editor-file-item:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.editor-file-item.selected {
+  background: var(--accent-dim);
+  color: var(--accent);
+}
+
+.editor-file-icon {
+  font-size: 9px;
+  color: var(--text-muted);
+  width: 28px;
+  text-align: center;
+  font-family: monospace;
+  flex-shrink: 0;
+  font-weight: 700;
+}
+
+.editor-file-item[data-ext="json"] .editor-file-icon,
+.editor-file-item[data-ext="jsonc"] .editor-file-icon { color: #c792ea; }
+.editor-file-item[data-ext="lua"] .editor-file-icon { color: #82aaff; }
+.editor-file-item[data-ext="md"] .editor-file-icon { color: #ffcb6b; }
+.editor-file-item[data-ext="png"] .editor-file-icon,
+.editor-file-item[data-ext="jpg"] .editor-file-icon,
+.editor-file-item[data-ext="jpeg"] .editor-file-icon,
+.editor-file-item[data-ext="gif"] .editor-file-icon,
+.editor-file-item[data-ext="webp"] .editor-file-icon { color: #4ec9b0; }
+
+.editor-file-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-file-empty,
+.editor-file-error {
+  padding: 12px;
+  font-size: 12px;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+#editor-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  background: var(--bg-primary);
+}
+
+#editor-file-path {
+  padding: 6px 16px;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  font-family: monospace;
+}
+
+#editor-input-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#editor-highlight,
+#editor-content,
+#editor-preview {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  font-family: 'Consolas', 'Fira Code', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+  border: none;
+  outline: none;
+  resize: none;
+}
+
+#editor-highlight {
+  background: transparent;
+  pointer-events: none;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: var(--text-primary);
+  overflow-y: auto;
+  z-index: 1;
+}
+
+#editor-content {
+  background: transparent;
+  color: transparent;
+  caret-color: var(--text-primary);
+  z-index: 2;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  overflow-y: auto;
+}
+
+#editor-preview {
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  overflow-y: auto;
+  z-index: 3;
+  line-height: 1.6;
+}
+
+#editor-find-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 10;
+}
+
+#editor-find-input {
+  flex: 1;
+  padding: 4px 8px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  font-size: 12px;
+}
+
+.btn-find {
+  padding: 3px 8px;
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.btn-find:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}

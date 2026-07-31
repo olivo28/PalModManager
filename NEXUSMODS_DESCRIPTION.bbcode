@@ -1,0 +1,82 @@
+[size=5][b]PalModManager (PMM) - Mod Manager & Editor for Palworld[/b][/size]
+
+[hr]
+
+[size=4][b]Description[/b][/size]
+[b]PalModManager[/b] is a modern, high-performance desktop application built specifically for [b]Palworld[/b] players and modders on [b]Steam[/b] and [b]Xbox Game Pass (PC)[/b]. 
+
+Unlike generic mod managers, PalModManager is tailor-made for Palworld: it natively handles all mod structures ([b]UE4SS[/b], [b]PalSchema[/b], [b]Pak[/b], and [b]LogicMods[/b]), provides conflict detection, and includes a full-featured built-in JSON configuration code editor.
+
+Built with [b]Tauri v2[/b] and [b]Rust[/b], PalModManager launches instantly and uses minimal RAM and CPU.
+
+[hr]
+
+[size=4][b]Installation instructions[/b][/size]
+[list=1]
+[*]Download [b]PalModManager[/b] from the Files section.
+[*]Extract the contents or run [i]PalModManager_Setup.exe[/i] (a portable standalone executable is also included).
+[*]Open [b]PalModManager[/b].
+[*]Open [b]Settings[/b] (⚙ icon) and select your Palworld installation directory.
+[*]Drag & drop any mod [i].zip[/i] or [i].rar[/i] file directly into the app window to install!
+[/list]
+
+[hr]
+
+[size=4][b]Main features[/b][/size]
+[list]
+[*] [b]Ultra-Fast & Lightweight[/b]: Built on Rust and Tauri v2 for instantaneous response times and zero bloat.
+[*] [b]Smart Mod Auto-Detection[/b]: Automatically identifies and categorizes UE4SS, PalSchema, Pak, and LogicMods.
+[*] [b]Smart Heuristic Zip Unpacker[/b]: Never worry about how mod files are structured. Generic managers fail when mod authors zip their files with custom structures or nested folders. PalModManager implements a custom layout sanitizer that automatically parses, flattens, and reorganizes any zipped layout into clean game-ready directories before installation.
+[*] [b]Automated Dependency Management[/b]: Detects missing core dependencies (UE4SS or PalSchema) and offers one-click automatic installation.
+[*] [b]Batch & Drag-and-Drop Installation[/b]: Drop single or multiple zip files to preview mod details, check versions, and install in bulk.
+
+[*] [b]Installed Version Warnings[/b]: The upgrade assistant explicitly warns and displays your currently installed version when dragging files to update existing mods.
+[*] [b]Mod Library[/b]: Maintain a centralized library of downloaded mods complete with auto-fetched NexusMods thumbnails, authors, and summary metadata.
+[*] [b]Reactive Profile Manager[/b]: Create and switch between isolated mod profiles (e.g. Singleplayer, Multiplayer, Hardcore) with instant physical folder deployment. Integrates automatic ID migration to cleanly upgrade old profiles into stable IDs.
+[*] [b]ID Stability System[/b]: Uses the [b]Nexus Mod ID[/b] or [b]Sanitized descriptive names[/b] to identify mods (no random UUIDs), ensuring upgrades and profile matching are 100% stable.
+[*] [b]Built-in Code Editor[/b]: Edit mod json and jsonc configuration files directly within the application with syntax highlighting, auto-formatting, search (Ctrl+F), and safety checks preventing loss of changes when switching profiles.
+[*] [b]NexusMods API Sync[/b]: Check for mod updates automatically and sync Nexus data using your personal API Key.
+[*] [b]Modern Dark Mode[/b]: Sleek glassmorphism UI designed for maximum usability and aesthetic clarity.
+[/list]
+
+[hr]
+
+[size=4][b]Roadmap / Planned features[/b][/size]
+[list]
+[*][b]Direct Mod Downloader[/b]: Download mods directly into the manager using the NexusMods API (supports premium high-speed & free download rate-limits).
+[*][b]In-App Nexus Mod Browser[/b]: Search, filter, and explore Palworld mods on NexusMods directly from the app interface.
+[/list]
+
+[size=4][b]⚠️ Important Safety & Backup Recommendation[/b][/size]
+[quote]
+[b]Before using PalModManager (or installing mods in general), we strongly recommend manually backing up your game's mod directories.[/b]
+[/quote]
+While [b]PalModManager automatically handles and backs up PalSchema files[/b], it is always best practice to create a copy of the following folders in your Palworld directory:
+[list]
+[*] 📁 [i]Pal/Content/Paks[/i]
+[*] 📁 [i]Pal/Binaries/Win64/ue4ss[/i] (Steam) or [i]Pal/Binaries/WinGDK/ue4ss[/i] (Xbox GDK)
+[/list]
+
+[hr]
+
+[size=4][b]🛡️ Anti-Virus & False Positives Note[/b][/size]
+This application is built using [b]Rust + Tauri[/b] for maximum efficiency and security.
+
+Because this is an independent community project without a commercial Code Signing Certificate, some antivirus engines (like Windows Defender or SecureAge) may trigger a [b]false positive[/b] (e.g., [i]Trojan:Win32/Wacatac.B!ml[/i] or similar flags).
+[list]
+[*][b]Why this happens[/b]: Heuristic AI and machine learning analysis ([i]!ml[/i]) frequently flags unsigned executables that perform folder and file system modifications (such as injecting or switching files in your Steam Palworld directories).
+[*][b]Is it safe?[/b]: Absolutely. The program is completely clean. If you download it from the official page, there is no threat. 
+[*][b]Workaround[/b]: If Windows Defender blocks the manager, click [i]"More Info"[/i] -> [i]"Run Anyway"[/i] on the SmartScreen prompt, or add [i]palmodmanager.exe[/i] to your antivirus exclusions list.
+[/list]
+
+[hr]
+
+[size=4][b]Requirements[/b][/size]
+
+[list]
+[*][b]Game[/b]: Palworld (Steam or PC Game Pass).
+[*][b]OS[/b]: Windows 10 / Windows 11 (64-bit).
+[*][b]Optional Dependencies[/b]: 
+  - UE4SS (PalModManager can install this for you automatically).
+  - PalSchema (PalModManager can install this for you automatically).
+[/list]
