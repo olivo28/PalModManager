@@ -11,6 +11,38 @@ use std::path::{Path, PathBuf};
 use tauri::State;
 use uuid::Uuid;
 
+fn check_mod_dependencies(game_path: &str, mod_type: &str, analysis: &zip_handler::ZipAnalysis) -> Result<(), String> {
+    let binaries = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
+    
+    // Check UE4SS dependency
+    let ue4ss_required = match mod_type {
+        "ue4ss" | "palschema" | "hybrid" => true,
+        _ => false,
+    };
+    if ue4ss_required {
+        let dwmapi = binaries.join("dwmapi.dll");
+        if !dwmapi.exists() {
+            return Err("UE4SS is not installed. This mod requires UE4SS to operate. Please install UE4SS first.".to_string());
+        }
+    }
+
+    // Check PalSchema dependency
+    let has_palschema_folder = analysis.files.iter().any(|f| f.to_lowercase().contains("palschema"));
+    let palschema_required = match mod_type {
+        "palschema" => true,
+        "hybrid" if (analysis.has_json || has_palschema_folder) => true,
+        _ => false,
+    };
+    if palschema_required {
+        let ps_dll = binaries.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll");
+        if !ps_dll.exists() {
+            return Err("PalSchema is not installed. This mod requires PalSchema to operate. Please install PalSchema first.".to_string());
+        }
+    }
+
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result<Value, String> {
     println!("[INFO] Analyzing zip file: {}", zip_path);
@@ -80,6 +112,17 @@ pub async fn install_mod_command(
     }
 
     let analysis = zip_handler::analyze_zip(&zip_path)?;
+
+    let resolved_type = custom_type.as_deref().unwrap_or(match analysis.detected_type {
+        zip_handler::DetectedModType::Ue4ss => "ue4ss",
+        zip_handler::DetectedModType::PalSchema => "palschema",
+        zip_handler::DetectedModType::Pak => "pak",
+        zip_handler::DetectedModType::LogicMods => "logicmods",
+        zip_handler::DetectedModType::Hybrid => "hybrid",
+        zip_handler::DetectedModType::Unknown => "unknown",
+    });
+
+    check_mod_dependencies(&game_path, resolved_type, &analysis)?;
 
     let nexus_id = {
         let filename = Path::new(&zip_path)
@@ -283,6 +326,25 @@ pub async fn update_mod_command(
     }
 
     let analysis = zip_handler::analyze_zip(&zip_path)?;
+
+    let mod_type_str = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let existing = data
+            .mods
+            .iter()
+            .find(|m| m.id == mod_id)
+            .ok_or_else(|| "Mod not found".to_string())?;
+        match existing.mod_type {
+            crate::models::ModType::Ue4ss => "ue4ss",
+            crate::models::ModType::PalSchema => "palschema",
+            crate::models::ModType::Pak => "pak",
+            crate::models::ModType::LogicMods => "logicmods",
+            crate::models::ModType::Hybrid => "hybrid",
+        }
+        .to_string()
+    };
+
+    check_mod_dependencies(&game_path, &mod_type_str, &analysis)?;
     let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
     let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
 
