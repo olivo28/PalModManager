@@ -119,6 +119,9 @@ pub fn run() {
             dependency_commands::uninstall_palschema,
             settings_commands::log_from_js,
             settings_commands::open_url,
+            mod_commands::create_backup,
+            mod_commands::restore_backup,
+            mod_commands::analyze_backup,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

@@ -13,11 +13,15 @@ export function setupDragAndDrop(): void {
     webview.onDragDropEvent((event) => {
       const payload = event.payload;
       if (payload.type === 'enter') {
-        overlay.classList.add('visible');
+        if (getState().activeTab !== 'editor') {
+          overlay.classList.add('visible');
+        }
       } else if (payload.type === 'leave') {
         overlay.classList.remove('visible');
       } else if (payload.type === 'drop') {
         overlay.classList.remove('visible');
+        if (getState().activeTab === 'editor') return;
+
         const paths = payload.paths;
         if (!paths || paths.length === 0) return;
 

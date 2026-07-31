@@ -269,3 +269,17 @@ export async function copyToLibraryCommand(zipPath: string, modName?: string): P
   return invoke('copy_to_library_command', { zipPath, modName });
 }
 
+export async function createBackup(targetDir: string): Promise<string> {
+  return invoke('create_backup', { targetDir });
+}
+
+export async function restoreBackup(zipPath: string): Promise<void> {
+  return invoke('restore_backup', { zipPath });
+}
+
+export async function analyzeBackup(zipPath: string): Promise<{ hasUe4ss: boolean; hasPalSchema: boolean }> {
+  return invoke('analyze_backup', { zipPath });
+}
+
+
+

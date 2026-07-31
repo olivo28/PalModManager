@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setNexusApiKey, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync } from '../api';
+import { getSettings, setGamePath, setNexusApiKey, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -146,6 +146,11 @@ export function closeInstallModal(): void {
   _pendingUpdateModId = null;
   _pendingBatchPaths = [];
 
+  const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
+  if (retryBtn) {
+    retryBtn.style.display = 'none';
+  }
+
   const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
   const cancelBtn = document.getElementById('modal-cancel')! as HTMLButtonElement;
   if (confirmBtn) {
@@ -168,6 +173,11 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
   const content = document.getElementById('modal-content')!;
   const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
   const statusEl = document.getElementById('modal-status')!;
+
+  const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
+  if (retryBtn) {
+    retryBtn.style.display = 'none';
+  }
 
   statusEl.textContent = '';
 
@@ -626,6 +636,99 @@ export async function handleConfirmInstall(): Promise<void> {
   const resultsList = contentEl.querySelector('.batch-results-list')!;
   const logs: string[] = [];
 
+  // Check dependencies first
+  const depStatus = await checkDependencies();
+  const ue4ssRequired = ['ue4ss', 'palschema', 'hybrid'].includes(customType);
+  const palschemaRequired = (customType === 'palschema') || (customType === 'hybrid' && (state.currentAnalysis.hasJson || state.currentAnalysis.files.some(f => f.toLowerCase().includes('palschema'))));
+
+  const missingUe4ss = ue4ssRequired && !depStatus.ue4ss_installed;
+  const missingPalSchema = palschemaRequired && !depStatus.palschema_installed;
+
+  if (missingUe4ss || missingPalSchema) {
+    const missingNames = [];
+    if (missingUe4ss) missingNames.push('UE4SS');
+    if (missingPalSchema) missingNames.push('PalSchema');
+
+    logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Installation failed: Missing dependencies (${missingNames.join(', ')}).</div>`);
+    logs.push(`<div style="color:#888;">&gt; Please click "Install Deps & Retry" to install them automatically.</div>`);
+    resultsList.innerHTML = logs.join('');
+    resultsList.scrollTop = resultsList.scrollHeight;
+    statusEl.textContent = 'Missing dependencies';
+
+    confirmBtn.disabled = false;
+    cancelBtn.disabled = false;
+    confirmBtn.textContent = _pendingUpdateModId ? 'Update' : 'Install';
+
+    const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
+    if (retryBtn) {
+      retryBtn.style.display = '';
+      retryBtn.onclick = async () => {
+        retryBtn.disabled = true;
+        try {
+          // Download and install in priority order (UE4SS first, then PalSchema)
+          if (missingUe4ss) {
+            logs.push(`<div style="color:#e0af68;">&gt; Downloading and installing UE4SS dependency...</div>`);
+            resultsList.innerHTML = logs.join('');
+            resultsList.scrollTop = resultsList.scrollHeight;
+            statusEl.textContent = 'Downloading and installing UE4SS...';
+            await installUe4ss();
+            logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] UE4SS installed successfully!</div>`);
+            resultsList.innerHTML = logs.join('');
+            resultsList.scrollTop = resultsList.scrollHeight;
+          }
+          if (missingPalSchema) {
+            logs.push(`<div style="color:#e0af68;">&gt; Downloading and installing PalSchema dependency...</div>`);
+            resultsList.innerHTML = logs.join('');
+            resultsList.scrollTop = resultsList.scrollHeight;
+            statusEl.textContent = 'Downloading and installing PalSchema...';
+            await installPalschema();
+            logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] PalSchema installed successfully!</div>`);
+            resultsList.innerHTML = logs.join('');
+            resultsList.scrollTop = resultsList.scrollHeight;
+          }
+          
+          // Load dependencies to update GUI state / badges!
+          const { loadDependencies } = await import('./modsView');
+          await loadDependencies();
+
+          logs.push(`<div style="color:#888;">&gt; Dependencies installed. Starting mod installation...</div>`);
+          resultsList.innerHTML = logs.join('');
+          resultsList.scrollTop = resultsList.scrollHeight;
+
+          retryBtn.style.display = 'none';
+          
+          // Small timeout so the user sees the final dependency status log before mod installation proceeds
+          setTimeout(() => {
+            executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state);
+          }, 1000);
+        } catch (err) {
+          logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Failed to install dependencies: ${escapeHtml(String(err))}</div>`);
+          resultsList.innerHTML = logs.join('');
+          resultsList.scrollTop = resultsList.scrollHeight;
+          showToast('Failed to install dependencies: ' + err, 'error');
+          statusEl.textContent = 'Failed to install dependencies';
+        } finally {
+          retryBtn.disabled = false;
+        }
+      };
+    }
+    return;
+  }
+
+  await executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state);
+}
+
+async function executeModInstallation(
+  logs: string[],
+  resultsList: HTMLElement,
+  statusEl: HTMLElement,
+  confirmBtn: HTMLButtonElement,
+  cancelBtn: HTMLButtonElement,
+  customType: string,
+  customName: string | null,
+  state: any
+) {
+
   logs.push(`<div style="color:#e0af68;">&gt; Extracting ZIP contents to temporary directory...</div>`);
   resultsList.innerHTML = logs.join('');
 
@@ -678,6 +781,8 @@ export async function handleConfirmInstall(): Promise<void> {
     confirmBtn.textContent = _pendingUpdateModId ? 'Update' : 'Install';
   }
 }
+
+
 
 
 

@@ -228,6 +228,7 @@ pub fn scan_mods(state: State<AppState>) -> Result<Value, String> {
 
     let merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &data.mods.clone());
     data.mods = merged;
+    crate::profiles::auto_add_scanned_mods_to_profile(&mut data);
     crate::profiles::cleanup_profile_mod_lists(&mut data);
     crate::profiles::sync_current_profile_states(&mut data);
     let profile_mods = filter_mods_for_current_profile(&data);
@@ -1081,3 +1082,220 @@ pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), S
     }
     Ok(())
 }
+
+#[tauri::command]
+pub async fn create_backup(target_dir: String, state: State<'_, AppState>) -> Result<String, String> {
+    use std::fs::File;
+    use std::io::{Write, Read};
+    use zip::write::{FileOptions, ZipWriter};
+
+    let mods = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.mods.clone()
+    };
+
+    let mods_to_backup: Vec<_> = mods.into_iter().filter(|m| {
+        if m.nexus_author.as_deref() == Some("UE4SS Native Mod") {
+            return false;
+        }
+        let is_in_game = !m.game_path.is_empty() && Path::new(&m.game_path).exists();
+        let is_disabled = !m.disabled_path.is_empty() && Path::new(&m.disabled_path).exists();
+        is_in_game || is_disabled
+    }).collect();
+
+    let num_mods = mods_to_backup.len();
+    let date_str = chrono::Utc::now().format("%Y-%m-%d").to_string();
+    let zip_name = format!("PMM_{}Mods_{}_Backup.zip", num_mods, date_str);
+    let zip_path = Path::new(&target_dir).join(&zip_name);
+
+    let zip_file = File::create(&zip_path).map_err(|e| format!("Failed to create zip file: {}", e))?;
+    let mut zip = ZipWriter::new(zip_file);
+    let options = FileOptions::<()>::default().compression_method(zip::CompressionMethod::Deflated);
+
+    for m in mods_to_backup {
+        let src_path = if !m.game_path.is_empty() && Path::new(&m.game_path).exists() {
+            PathBuf::from(&m.game_path)
+        } else {
+            PathBuf::from(&m.disabled_path)
+        };
+
+        let category_folder = match m.mod_type {
+            crate::models::ModType::Ue4ss | crate::models::ModType::Hybrid => "UE4SS",
+            crate::models::ModType::PalSchema => "PalSchema",
+            crate::models::ModType::Pak => "Paks",
+            crate::models::ModType::LogicMods => "LogicMods",
+        };
+
+        if src_path.is_dir() {
+            for entry in walkdir::WalkDir::new(&src_path) {
+                let entry = entry.map_err(|e| format!("Walkdir error: {}", e))?;
+                let path = entry.path();
+                if path.is_file() {
+                    let relative_path = path.strip_prefix(&src_path.parent().unwrap())
+                        .map_err(|e| format!("Failed to strip prefix: {}", e))?;
+                    let zip_entry_name = format!("{}/{}", category_folder, relative_path.to_string_lossy().replace('\\', "/"));
+                    
+                    zip.start_file(&zip_entry_name, options)
+                        .map_err(|e| format!("Failed to start file in zip: {}", e))?;
+                    
+                    let mut file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
+                    let mut buffer = Vec::new();
+                    file.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file: {}", e))?;
+                    zip.write_all(&buffer).map_err(|e| format!("Failed to write to zip: {}", e))?;
+                }
+            }
+        } else if src_path.is_file() {
+            let filename = src_path.file_name().unwrap().to_string_lossy().to_string();
+            let zip_entry_name = format!("{}/{}", category_folder, filename);
+            zip.start_file(&zip_entry_name, options)
+                .map_err(|e| format!("Failed to start file in zip: {}", e))?;
+            
+            let mut file = File::open(&src_path).map_err(|e| format!("Failed to open file: {}", e))?;
+            let mut buffer = Vec::new();
+            file.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file: {}", e))?;
+            zip.write_all(&buffer).map_err(|e| format!("Failed to write to zip: {}", e))?;
+
+            let companions = crate::zip_handler::find_pak_companions(&src_path);
+            for companion in companions {
+                if companion != src_path {
+                    let comp_filename = companion.file_name().unwrap().to_string_lossy().to_string();
+                    let zip_entry_name = format!("{}/{}", category_folder, comp_filename);
+                    zip.start_file(&zip_entry_name, options)
+                        .map_err(|e| format!("Failed to start file in zip: {}", e))?;
+                    
+                    let mut file = File::open(&companion).map_err(|e| format!("Failed to open file: {}", e))?;
+                    let mut buffer = Vec::new();
+                    file.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file: {}", e))?;
+                    zip.write_all(&buffer).map_err(|e| format!("Failed to write to zip: {}", e))?;
+                }
+            }
+        }
+    }
+
+    zip.finish().map_err(|e| format!("Failed to finalize zip: {}", e))?;
+
+    Ok(zip_path.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub async fn restore_backup(zip_path: String, state: State<'_, AppState>) -> Result<(), String> {
+    use std::fs::File;
+    use std::io::Read;
+    use zip::read::ZipArchive;
+
+    let game_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.game_path.clone()
+    };
+    if game_path.is_empty() {
+        return Err("Game path not set".to_string());
+    }
+    let game = Path::new(&game_path);
+    let binaries = crate::dependency_checker::get_binaries_dir(game);
+
+    let file = File::open(&zip_path).map_err(|e| format!("Failed to open backup zip: {}", e))?;
+    let mut archive = ZipArchive::new(file).map_err(|e| format!("Invalid backup zip: {}", e))?;
+
+    let mut has_ue4ss = false;
+    let mut has_palschema = false;
+
+    for i in 0..archive.len() {
+        if let Ok(entry) = archive.by_index(i) {
+            let name = entry.name();
+            if name.starts_with("UE4SS/") {
+                has_ue4ss = true;
+            }
+            if name.starts_with("PalSchema/") {
+                has_palschema = true;
+            }
+        }
+    }
+
+    if has_ue4ss {
+        let dwmapi = binaries.join("dwmapi.dll");
+        if !dwmapi.exists() {
+            return Err("UE4SS is not installed. The backup contains UE4SS mods which require UE4SS to operate. Please install UE4SS first.".to_string());
+        }
+    }
+
+    if has_palschema {
+        let ps_dll = binaries.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll");
+        if !ps_dll.exists() {
+            return Err("PalSchema is not installed. The backup contains PalSchema mods which require PalSchema to operate. Please install PalSchema first.".to_string());
+        }
+    }
+
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i).map_err(|e| format!("Failed to read zip entry: {}", e))?;
+        let name = entry.name().to_string();
+        if entry.is_dir() || name.contains("..") {
+            continue;
+        }
+
+        let parts: Vec<&str> = name.split('/').collect();
+        if parts.len() < 2 {
+            continue;
+        }
+        let category = parts[0];
+        let subpath = parts[1..].join("/");
+
+        let dest_path = match category {
+            "UE4SS" => {
+                binaries.join("ue4ss").join("Mods").join(&subpath)
+            }
+            "PalSchema" => {
+                binaries.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&subpath)
+            }
+            "Paks" => {
+                game.join("Pal").join("Content").join("Paks").join("~mods").join(&subpath)
+            }
+            "LogicMods" => {
+                game.join("Pal").join("Content").join("Paks").join("LogicMods").join(&subpath)
+            }
+            _ => continue,
+        };
+
+        if let Some(parent) = dest_path.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create folder: {}", e))?;
+        }
+
+        let mut outfile = File::create(&dest_path).map_err(|e| format!("Failed to create file {}: {}", dest_path.display(), e))?;
+        let mut buffer = Vec::new();
+        entry.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file from zip: {}", e))?;
+        std::io::Write::write_all(&mut outfile, &buffer).map_err(|e| format!("Failed to write file: {}", e))?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
+pub fn analyze_backup(zip_path: String) -> Result<Value, String> {
+    use std::fs::File;
+    use zip::read::ZipArchive;
+
+    let file = File::open(&zip_path).map_err(|e| format!("Failed to open backup zip: {}", e))?;
+    let mut archive = ZipArchive::new(file).map_err(|e| format!("Invalid backup zip: {}", e))?;
+
+    let mut has_ue4ss = false;
+    let mut has_palschema = false;
+
+    for i in 0..archive.len() {
+        if let Ok(entry) = archive.by_index(i) {
+            let name = entry.name();
+            if name.starts_with("UE4SS/") {
+                has_ue4ss = true;
+            }
+            if name.starts_with("PalSchema/") {
+                has_palschema = true;
+            }
+        }
+    }
+
+    Ok(serde_json::json!({
+        "hasUe4ss": has_ue4ss,
+        "hasPalSchema": has_palschema,
+    }))
+}
+
+
+

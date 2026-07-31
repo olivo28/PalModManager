@@ -1,6 +1,6 @@
 {
   "productName": "PalModManager",
-  "version": "0.1.0",
+  "version": "1.1.0",
   "identifier": "com.palmodmanager.app",
   "build": {
     "beforeDevCommand": "npm run dev",

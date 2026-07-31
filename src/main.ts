@@ -1,5 +1,5 @@
 import 'highlight.js/styles/github-dark.css';
-import { getSettings, exportModsJson, setModProfileState, logFromJs } from './api';
+import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema } from './api';
 import { getState, updateState } from './state';
 import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleToggleKeyVisibility, handleConfirmInstall, closeInstallModal, closeSettingsModal } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
@@ -128,6 +128,81 @@ function setupEventListeners() {
       showToast(`Exported to ${saved}`, 'success');
     } catch (e) {
       showToast('Export failed: ' + e, 'error');
+    }
+  });
+  safeEl('backup-btn')?.addEventListener('click', async () => {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Backup Destination Folder',
+      });
+      if (!selected) return;
+      const targetDir = typeof selected === 'string' ? selected : selected as string;
+      showToast('Creating backup zip archive...', 'info');
+      const savedPath = await createBackup(targetDir);
+      showToast(`Backup created successfully at: ${savedPath}`, 'success');
+    } catch (e) {
+      showToast('Backup failed: ' + e, 'error');
+    }
+  });
+  safeEl('restore-backup-btn')?.addEventListener('click', async () => {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({
+        multiple: false,
+        filters: [{ name: 'PMM Backup Zip', extensions: ['zip'] }],
+        title: 'Select PMM Backup ZIP Archive',
+      });
+      if (!selected) return;
+      const zipPath = typeof selected === 'string' ? selected : selected as string;
+
+      // 1. Analyze ZIP contents
+      const analysis = await analyzeBackup(zipPath);
+
+      // 2. Check current dependencies status
+      const depStatus = await checkDependencies();
+
+      let missingUe4ss = analysis.hasUe4ss && !depStatus.ue4ss_installed;
+      let missingPalSchema = analysis.hasPalSchema && !depStatus.palschema_installed;
+
+      if (missingUe4ss || missingPalSchema) {
+        let missingList: string[] = [];
+        if (missingUe4ss) missingList.push('UE4SS');
+        if (missingPalSchema) missingList.push('PalSchema');
+
+        const { showConfirm } = await import('./ui/confirm');
+        const confirmed = await showConfirm(
+          `This backup requires the following missing dependencies: ${missingList.join(' & ')}.\n\nWould you like PMM to automatically download and install them before restoring?`
+        );
+        if (!confirmed) {
+          showToast('Restore cancelled because dependencies are missing', 'error');
+          return;
+        }
+
+        const { loadDependencies } = await import('./ui/modsView');
+
+        // Install missing dependencies
+        if (missingUe4ss) {
+          showToast('Installing UE4SS...', 'info');
+          await installUe4ss();
+          await loadDependencies();
+        }
+        if (missingPalSchema) {
+          showToast('Installing PalSchema...', 'info');
+          await installPalschema();
+          await loadDependencies();
+        }
+        showToast('Dependencies installed successfully!', 'success');
+      }
+
+      showToast('Restoring mods from backup...', 'info');
+      await restoreBackup(zipPath);
+      showToast('Backup restored successfully!', 'success');
+      loadMods();
+    } catch (e) {
+      showToast('Restore failed: ' + e, 'error');
     }
   });
   safeEl('detail-set-config')?.addEventListener('click', handleDetailSetConfig);

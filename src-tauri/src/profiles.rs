@@ -1029,3 +1029,61 @@ fn sync_profile_dependencies(
 
     Ok(())
 }
+
+pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
+    let current_profile_id = data.current_profile_id.clone();
+    let program_path = data.settings.program_path.clone();
+    let mut modified = false;
+
+    if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+        let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&data.settings.game_path));
+        let ue4ss_installed = win64.join("dwmapi.dll").exists();
+        let palschema_installed = win64.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll").exists();
+
+        if profile.ue4ss_enabled != ue4ss_installed {
+            profile.ue4ss_enabled = ue4ss_installed;
+            modified = true;
+        }
+        if profile.palschema_enabled != palschema_installed {
+            profile.palschema_enabled = palschema_installed;
+            modified = true;
+        }
+
+        for m in &data.mods {
+            if m.nexus_author.as_deref() == Some("UE4SS Native Mod") {
+                continue;
+            }
+
+            let is_in_game = !m.game_path.is_empty() && Path::new(&m.game_path).exists();
+            let is_disabled = !m.disabled_path.is_empty() && Path::new(&m.disabled_path).exists();
+
+            if is_in_game || is_disabled {
+                let already_installed = profile.installed_mod_ids.iter().any(|id| {
+                    id.to_lowercase() == m.id.to_lowercase() || id.to_lowercase() == m.name.to_lowercase()
+                });
+                if !already_installed {
+                    profile.installed_mod_ids.push(m.id.clone());
+                    modified = true;
+                }
+
+                if is_in_game {
+                    let already_enabled = profile.enabled_mod_ids.iter().any(|id| {
+                        id.to_lowercase() == m.id.to_lowercase() || id.to_lowercase() == m.name.to_lowercase()
+                    });
+                    if !already_enabled {
+                        profile.enabled_mod_ids.push(m.id.clone());
+                        modified = true;
+                    }
+                }
+            }
+        }
+
+        if modified {
+            let p_dir = get_profile_dir(&program_path, &current_profile_id);
+            if let Ok(json) = serde_json::to_string_pretty(profile) {
+                let _ = fs::write(p_dir.join("profile.json"), json);
+            }
+        }
+    }
+}
+
