@@ -4,6 +4,16 @@ version = "0.1.0"
 edition = "2021"
 default-run = "palmodmanager"
 
+[[bin]]
+name = "test_zips"
+path = "../scratch/test_palvariety_zip.rs"
+
+[[bin]]
+name = "test_install_sim"
+path = "../scratch/test_installation_simulation.rs"
+
+
+
 [lib]
 name = "palmodmanager_lib"
 crate-type = ["lib", "cdylib", "staticlib"]
