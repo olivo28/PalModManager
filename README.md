@@ -59,7 +59,7 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 ## 🚀 Installation & Usage
 
 ### Standard Installer
-1. Download the latest `PalModManager_Setup.exe` (or `.msi`) from the [Releases](https://github.com/Antikux/PalModManager/releases) tab.
+1. Download the latest `PalModManager_Setup.exe` (or `.msi`) from the [Releases](https://github.com/olivo28/PalModManager/releases) tab.
 2. Run the installer and launch PalModManager.
 3. On first launch, open **Settings** (⚙) and select your Palworld installation directory.
 
@@ -81,7 +81,7 @@ If you prefer not to install anything:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Antikux/PalModManager.git
+git clone https://github.com/olivo28/PalModManager.git
 cd PalModManager
 
 # Install frontend dependencies
@@ -139,4 +139,4 @@ Distributed under the MIT License. See `LICENSE` for details.
 
 ---
 
-Developed with ❤️ by **Antikux**
+Developed with ❤️ by **Olivo28**
