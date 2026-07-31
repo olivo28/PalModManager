@@ -79,4 +79,5 @@ export interface DependencyStatus {
   palschema_version: string | null;
   palschema_latest_version: string | null;
   palschema_needs_update: boolean;
+  game_platform: string;
 }

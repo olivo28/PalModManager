@@ -34,7 +34,7 @@ pub struct ZipAnalysis {
 
 /// Names that must not be used as mod folder names.
 const FORBIDDEN_MOD_NAMES: &[&str] = &[
-    "pal", "mods", "win64", "binaries", "content", "paks", "~mods",
+    "pal", "mods", "win64", "wingdk", "binaries", "content", "paks", "~mods",
     "logicmods", "ue4ss", "palschema", "plugins", "scripts",
     "blueprints", "translations",
 ];
@@ -49,6 +49,7 @@ const MODS_DIR_MARKERS: &[&str] = &[
     "ue4ss/mods/",
     "ue4ss/mods/",
     "binaries/win64/ue4ss/mods/",
+    "binaries/wingdk/ue4ss/mods/",
 ];
 
 fn is_forbidden(name: &str) -> bool {

@@ -16,6 +16,7 @@ fn empty_status() -> dependency_checker::DependencyStatus {
         palschema_version: None,
         palschema_latest_version: None,
         palschema_needs_update: false,
+        game_platform: "Unknown".to_string(),
     }
 }
 
@@ -163,7 +164,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         return Err("Game path not set".to_string());
     }
 
-    let win64 = PathBuf::from(&game_path).join("Pal").join("Binaries").join("Win64");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
     let ue4ss_dir = win64.join("ue4ss");
 
     let lib_dep_dir = PathBuf::from(&program_path).join("mods-library").join("dependencies");
@@ -467,11 +468,11 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
         return Err("Game path not set".to_string());
     }
 
-    let palschema_dir = PathBuf::from(&game_path).join("Pal").join("Binaries").join("Win64")
-        .join("ue4ss").join("Mods").join("PalSchema");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
+    let palschema_dir = win64.join("ue4ss").join("Mods").join("PalSchema");
 
     // Check if UE4SS is installed; PalSchema requires UE4SS to operate.
-    let dwmapi = PathBuf::from(&game_path).join("Pal").join("Binaries").join("Win64").join("dwmapi.dll");
+    let dwmapi = win64.join("dwmapi.dll");
     if !dwmapi.exists() {
         return Err("UE4SS is not installed. PalSchema requires UE4SS to operate.".to_string());
     }
@@ -633,7 +634,7 @@ pub fn uninstall_ue4ss(state: State<'_, AppState>) -> Result<String, String> {
     };
     if game_path.is_empty() { return Err("Game path not set".to_string()); }
     
-    let win64 = PathBuf::from(&game_path).join("Pal").join("Binaries").join("Win64");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
     let dwmapi = win64.join("dwmapi.dll");
     let ue4ss_dir = win64.join("ue4ss");
     
@@ -675,8 +676,8 @@ pub fn uninstall_palschema(state: State<'_, AppState>) -> Result<String, String>
     };
     if game_path.is_empty() { return Err("Game path not set".to_string()); }
     
-    let palschema_dir = PathBuf::from(&game_path).join("Pal").join("Binaries").join("Win64")
-        .join("ue4ss").join("Mods").join("PalSchema");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
+    let palschema_dir = win64.join("ue4ss").join("Mods").join("PalSchema");
         
     if palschema_dir.exists() { let _ = fs::remove_dir_all(palschema_dir); }
     

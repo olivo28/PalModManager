@@ -17,6 +17,7 @@ pub struct DependencyStatus {
     pub palschema_version: Option<String>,
     pub palschema_latest_version: Option<String>,
     pub palschema_needs_update: bool,
+    pub game_platform: String,
 }
 
 #[repr(C)]
@@ -147,15 +148,41 @@ fn get_file_date(path: &str) -> Option<String> {
     Some(dt.format("%d.%m.%Y").to_string())
 }
 
+pub fn get_binaries_dir(game_path: &Path) -> std::path::PathBuf {
+    let wingdk = game_path.join("Pal").join("Binaries").join("WinGDK");
+    if wingdk.exists() {
+        wingdk
+    } else {
+        game_path.join("Pal").join("Binaries").join("Win64")
+    }
+}
+
+pub fn get_shipping_exe_path(game_path: &Path) -> std::path::PathBuf {
+    let binaries = get_binaries_dir(game_path);
+    if binaries.file_name().map(|n| n.to_string_lossy().to_lowercase()) == Some("wingdk".to_string()) {
+        binaries.join("Palworld-WinGDK-Shipping.exe")
+    } else {
+        binaries.join("Palworld-Win64-Shipping.exe")
+    }
+}
+
 pub fn check_dependencies(game_path: &str) -> DependencyStatus {
-    let game_path = Path::new(game_path);
+    let game_path_val = Path::new(game_path);
+    let binaries = get_binaries_dir(game_path_val);
+
+    let game_platform = if binaries.file_name().map(|n| n.to_string_lossy().to_lowercase()) == Some("wingdk".to_string()) {
+        "Xbox".to_string()
+    } else if binaries.exists() {
+        "Steam".to_string()
+    } else {
+        "Unknown".to_string()
+    };
 
     // UE4SS check — detect by dwmapi.dll presence, version = file date or ue4ss.version
-    let dwmapi = game_path.join("Pal").join("Binaries").join("Win64").join("dwmapi.dll");
+    let dwmapi = binaries.join("dwmapi.dll");
     let ue4ss_installed = dwmapi.exists();
     let ue4ss_version = if ue4ss_installed {
-        let version_file = game_path.join("Pal").join("Binaries").join("Win64")
-            .join("ue4ss").join("ue4ss.version");
+        let version_file = binaries.join("ue4ss").join("ue4ss.version");
         if version_file.exists() {
             fs::read_to_string(version_file).ok().map(|s| s.trim().to_string())
         } else {
@@ -166,12 +193,10 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
     };
 
     // PalSchema check — detect by dlls/main.dll, version = ProductVersion string or palschema.version
-    let ps_dll = game_path.join("Pal").join("Binaries").join("Win64")
-        .join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll");
+    let ps_dll = binaries.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll");
     let palschema_installed = ps_dll.exists();
     let palschema_version = if palschema_installed {
-        let version_file = game_path.join("Pal").join("Binaries").join("Win64")
-            .join("ue4ss").join("Mods").join("PalSchema").join("palschema.version");
+        let version_file = binaries.join("ue4ss").join("Mods").join("PalSchema").join("palschema.version");
         if version_file.exists() {
             fs::read_to_string(version_file).ok().map(|s| s.trim().to_string())
         } else {
@@ -193,6 +218,7 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         palschema_version,
         palschema_latest_version: None,
         palschema_needs_update: false,
+        game_platform,
     }
 }
 

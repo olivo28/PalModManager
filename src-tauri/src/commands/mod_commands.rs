@@ -107,7 +107,7 @@ pub async fn get_game_version(state: State<'_, AppState>) -> Result<Option<Strin
         crate::logger::log("get_game_version: game_path is empty");
         return Ok(None);
     }
-    let exe_path = PathBuf::from(&game_path).join("Pal").join("Binaries").join("Win64").join("Palworld-Win64-Shipping.exe");
+    let exe_path = crate::dependency_checker::get_shipping_exe_path(Path::new(&game_path));
     crate::logger::log(&format!("get_game_version: Checking executable {}", exe_path.display()));
     let result = if exe_path.exists() {
         get_file_version(&exe_path.to_string_lossy())
@@ -177,12 +177,12 @@ pub fn scan_mods_internal(
     let game = PathBuf::from(game_path);
     let mut fs_mods: Vec<models::ModInfo> = vec![];
 
-    let ue4ss_mods_dir = game.join("Pal").join("Binaries").join("Win64").join("ue4ss").join("Mods");
+    let ue4ss_mods_dir = crate::dependency_checker::get_binaries_dir(&game).join("ue4ss").join("Mods");
     if ue4ss_mods_dir.exists() {
         scan_ue4ss_mods(&ue4ss_mods_dir, &mut fs_mods);
     }
 
-    let palschema_dir = game.join("Pal").join("Binaries").join("Win64").join("ue4ss").join("Mods").join("PalSchema").join("mods");
+    let palschema_dir = crate::dependency_checker::get_binaries_dir(&game).join("ue4ss").join("Mods").join("PalSchema").join("mods");
     if palschema_dir.exists() {
         scan_palschema_mods(&palschema_dir, &mut fs_mods);
     }

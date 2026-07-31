@@ -502,6 +502,27 @@ main {
   font-size: 13px;
 }
 
+/* ===== GAME PLATFORM BADGE ===== */
+.game-platform-badge {
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid;
+  flex-shrink: 0;
+}
+.game-platform-badge.steam {
+  color: #0078d4;
+  border-color: rgba(0, 120, 212, 0.2);
+  background: rgba(0, 120, 212, 0.1);
+}
+.game-platform-badge.xbox {
+  color: #107c10;
+  border-color: rgba(16, 124, 16, 0.2);
+  background: rgba(16, 124, 16, 0.1);
+}
+
 /* ===== GAME VERSION BADGE ===== */
 .game-version-badge {
   font-size: 9px;

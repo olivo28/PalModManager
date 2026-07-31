@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -7,27 +8,44 @@
   <link rel="stylesheet" href="/src/styles/main.css" />
   <style>
     #app-loading {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
       background: #1e1e1e;
-      display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      z-index: 9999; gap: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+      gap: 16px;
     }
+
     .loading-spinner {
-      width: 32px; height: 32px;
-      border: 2px solid rgba(0,120,212,0.2);
+      width: 32px;
+      height: 32px;
+      border: 2px solid rgba(0, 120, 212, 0.2);
       border-top-color: #0078d4;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
     .loading-text {
-      font-size: 14px; font-weight: 700;
+      font-size: 14px;
+      font-weight: 700;
       color: #0078d4;
       letter-spacing: 2px;
     }
   </style>
 </head>
+
 <body>
   <div id="app-loading">
     <div class="loading-spinner"></div>
@@ -60,6 +78,7 @@
       <!-- MODS TAB -->
       <div id="mods-view" class="tab-content">
         <div id="toolbar">
+          <span id="game-platform-badge" class="game-platform-badge" style="display:none"></span>
           <span id="game-version-badge" class="game-version-badge"></span>
           <span id="ue4ss-badge" class="dep-badge" style="display:none"></span>
           <span id="palschema-badge" class="dep-badge" style="display:none"></span>
@@ -92,7 +111,8 @@
             <button class="sort-btn" data-sort="date">D <span class="arrow">▼</span></button>
             <button class="sort-btn" data-sort="status">S <span class="arrow">▲</span></button>
           </div>
-          <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile: Default</span>
+          <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile:
+            Default</span>
           <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles">Profiles</button>
           <div id="toolbar-actions">
             <button id="scan-btn" class="toolbar-btn" title="Rescan mods">↻</button>
@@ -121,10 +141,12 @@
 
       <!-- LIBRARY TAB -->
       <div id="library-view" class="tab-content" style="display:none">
-        <div id="library-toolbar" style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
+        <div id="library-toolbar"
+          style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
           <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Mod Library</span>
           <div id="library-search-wrap" style="position:relative;width:240px;">
-            <input type="text" id="library-search-input" placeholder="Search library..." style="width:100%;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;" />
+            <input type="text" id="library-search-input" placeholder="Search library..."
+              style="width:100%;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;" />
           </div>
           <div style="flex:1"></div>
           <button id="library-refresh-btn" class="toolbar-btn-sm">Refresh</button>
@@ -137,7 +159,8 @@
             <button id="library-bulk-clear-btn" class="bulk-btn">Cancel</button>
           </div>
         </div>
-        <div id="library-container" style="flex:1;padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:16px;align-content:start;">
+        <div id="library-container"
+          style="flex:1;padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:16px;align-content:start;">
           <div id="library-empty">No mods in library. Mods are automatically copied here when installed.</div>
         </div>
       </div>
@@ -149,10 +172,12 @@
           <select id="editor-mod-select" style="display:none">
             <option value="">Select a mod...</option>
           </select>
-          <span id="editor-current-mod-name" style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 8px;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></span>
+          <span id="editor-current-mod-name"
+            style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 8px;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></span>
           <span class="editor-sep"></span>
           <button id="editor-format-btn" class="btn-editor" title="Format JSON">Format</button>
-          <button id="editor-preview-btn" class="btn-editor" title="Toggle preview" style="display:none">Preview</button>
+          <button id="editor-preview-btn" class="btn-editor" title="Toggle preview"
+            style="display:none">Preview</button>
           <button id="editor-save-btn" class="btn-editor primary">Save</button>
           <div style="flex:1"></div>
           <span id="editor-status"></span>
@@ -213,16 +238,20 @@
         </div>
         <div id="detail-tech-tab" class="detail-tab-content" style="display:none">
           <div class="detail-row-group">
-            <div class="detail-row"><span class="detail-label">Type</span> <span id="detail-type" class="mod-type-badge"></span></div>
+            <div class="detail-row"><span class="detail-label">Type</span> <span id="detail-type"
+                class="mod-type-badge"></span></div>
             <div class="detail-row"><span class="detail-label">Version</span> <span id="detail-version"></span></div>
-            <div class="detail-row"><span class="detail-label">Status</span> <span id="detail-status" class="detail-status"></span></div>
+            <div class="detail-row"><span class="detail-label">Status</span> <span id="detail-status"
+                class="detail-status"></span></div>
           </div>
           <div class="detail-row-group">
-            <div class="detail-row"><span class="detail-label">Installed</span> <span id="detail-install-date"></span></div>
+            <div class="detail-row"><span class="detail-label">Installed</span> <span id="detail-install-date"></span>
+            </div>
             <div class="detail-row"><span class="detail-label">Source</span> <span id="detail-source-zip"></span></div>
             <div class="detail-row"><span class="detail-label">Root</span> <span id="detail-root-folder"></span></div>
             <div class="detail-row" id="detail-duplicate-row" style="display:none;">
-              <span class="detail-label" style="color:var(--danger);">Duplicate</span> <span id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
+              <span class="detail-label" style="color:var(--danger);">Duplicate</span> <span
+                id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
             </div>
             <div class="detail-row">
               <span class="detail-label">Config</span> <span id="detail-config-path"></span>
@@ -232,133 +261,140 @@
           </div>
         </div>
         <div class="detail-actions">
-        <button id="detail-toggle" class="btn-action">Disable</button>
-        <button id="detail-open-folder" class="btn-action">Open folder</button>
-        <button id="detail-config" class="btn-action">Edit config</button>
-        <button id="detail-refresh" class="btn-action">Refresh</button>
-        <button id="detail-remove" class="btn-action btn-action-danger">Remove</button>
+          <button id="detail-toggle" class="btn-action">Disable</button>
+          <button id="detail-open-folder" class="btn-action">Open folder</button>
+          <button id="detail-config" class="btn-action">Edit config</button>
+          <button id="detail-refresh" class="btn-action">Refresh</button>
+          <button id="detail-remove" class="btn-action btn-action-danger">Remove</button>
+        </div>
       </div>
     </div>
-  </div>
 
-  <!-- DROP OVERLAY -->
-  <div id="drop-overlay">
-    <div id="drop-zone">
-      <div class="drop-icon">⊞</div>
-      <div class="drop-text">Drop .zip to install</div>
-    </div>
-  </div>
-
-  <!-- INSTALL MODAL -->
-  <div id="install-modal" class="modal-overlay">
-    <div class="modal" style="width: 750px; max-width: 90vw;">
-      <div class="modal-header">
-        <h3>Install Mod</h3>
-        <button class="modal-close-btn" onclick="document.getElementById('install-modal').classList.remove('visible')">✕</button>
-      </div>
-      <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden;">
-        <div id="modal-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
-        <div id="modal-status" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;"></div>
-      </div>
-      <div class="modal-footer" style="padding:16px 20px;">
-        <button id="modal-cancel" class="btn-secondary">Cancel</button>
-        <button id="modal-confirm" class="btn-primary" disabled>Install</button>
+    <!-- DROP OVERLAY -->
+    <div id="drop-overlay">
+      <div id="drop-zone">
+        <div class="drop-icon">⊞</div>
+        <div class="drop-text">Drop .zip or .rar to install</div>
       </div>
     </div>
-  </div>
 
-
-  <!-- SETTINGS MODAL -->
-  <div id="settings-modal" class="modal-overlay">
-    <div class="modal">
-      <div class="modal-header">
-        <h3>Settings</h3>
-        <button class="modal-close-btn" onclick="document.getElementById('settings-modal').classList.remove('visible')">✕</button>
+    <!-- INSTALL MODAL -->
+    <div id="install-modal" class="modal-overlay">
+      <div class="modal" style="width: 750px; max-width: 90vw;">
+        <div class="modal-header">
+          <h3>Install Mod</h3>
+          <button class="modal-close-btn"
+            onclick="document.getElementById('install-modal').classList.remove('visible')">✕</button>
+        </div>
+        <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden;">
+          <div id="modal-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
+          <div id="modal-status" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;"></div>
+        </div>
+        <div class="modal-footer" style="padding:16px 20px;">
+          <button id="modal-cancel" class="btn-secondary">Cancel</button>
+          <button id="modal-confirm" class="btn-primary" disabled>Install</button>
+        </div>
       </div>
-      <div class="modal-body">
-        <div class="settings-group">
-          <label>Game Path</label>
-          <div class="settings-hint">Path to your Palworld installation directory</div>
-          <div class="settings-path-row">
-            <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" readonly />
-            <button id="settings-browse-btn" class="btn-secondary">Browse</button>
+    </div>
+
+
+    <!-- SETTINGS MODAL -->
+    <div id="settings-modal" class="modal-overlay">
+      <div class="modal">
+        <div class="modal-header">
+          <h3>Settings</h3>
+          <button class="modal-close-btn"
+            onclick="document.getElementById('settings-modal').classList.remove('visible')">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-group">
+            <label>Game Path</label>
+            <div class="settings-hint">Path to your Palworld installation directory</div>
+            <div class="settings-path-row">
+              <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" readonly />
+              <button id="settings-browse-btn" class="btn-secondary">Browse</button>
+            </div>
+            <div id="settings-path-status" class="settings-path-status"></div>
           </div>
-          <div id="settings-path-status" class="settings-path-status"></div>
-        </div>
-        <div class="settings-divider"></div>
-        <div class="settings-group">
-          <label>NexusMods API Key</label>
-          <div class="settings-hint">Optional — get yours from <a href="#" id="nexus-api-key-link" style="color:var(--accent);text-decoration:underline;cursor:pointer;">https://www.nexusmods.com/settings/api-keys</a></div>
-          <div class="settings-key-row">
-            <input type="password" id="settings-api-key" placeholder="Leave empty for anonymous (limited)" />
-            <button id="settings-toggle-key" class="btn-icon-inline" title="Show/hide">👁</button>
+          <div class="settings-divider"></div>
+          <div class="settings-group">
+            <label>NexusMods API Key</label>
+            <div class="settings-hint">Optional — get yours from <a href="#" id="nexus-api-key-link"
+                style="color:var(--accent);text-decoration:underline;cursor:pointer;">https://www.nexusmods.com/settings/api-keys</a>
+            </div>
+            <div class="settings-key-row">
+              <input type="password" id="settings-api-key" placeholder="Leave empty for anonymous (limited)" />
+              <button id="settings-toggle-key" class="btn-icon-inline" title="Show/hide">👁</button>
+            </div>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="settings-hide-native-mods" />
+              <span>Hide UE4SS native mods</span>
+            </label>
+            <div class="settings-hint" style="margin-left:22px;">Hide pre-installed mods that come with UE4SS
+              (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="settings-debug-console" />
+              <span>Enable Debug Console</span>
+            </label>
+            <div class="settings-hint" style="margin-left:22px;">Show terminal output window in real-time for live
+              debugging logs.</div>
+          </div>
+          <div class="settings-divider"></div>
+
+          <div class="settings-group">
+            <label>Theme</label>
+            <div class="settings-hint">Switch between dark and light appearance</div>
+            <button id="theme-toggle-btn" class="btn-secondary" style="width:100%">Switch to Light Theme</button>
           </div>
         </div>
-        <div class="settings-divider"></div>
-        <div class="settings-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" id="settings-hide-native-mods" />
-            <span>Hide UE4SS native mods</span>
-          </label>
-          <div class="settings-hint" style="margin-left:22px;">Hide pre-installed mods that come with UE4SS (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
+        <div class="modal-footer">
+          <button id="settings-cancel" class="btn-secondary">Cancel</button>
+          <button id="settings-save" class="btn-primary">Save</button>
         </div>
-        <div class="settings-divider"></div>
-        <div class="settings-group">
-          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-            <input type="checkbox" id="settings-debug-console" />
-            <span>Enable Debug Console</span>
-          </label>
-          <div class="settings-hint" style="margin-left:22px;">Show terminal output window in real-time for live debugging logs.</div>
-        </div>
-        <div class="settings-divider"></div>
-
-        <div class="settings-group">
-          <label>Theme</label>
-          <div class="settings-hint">Switch between dark and light appearance</div>
-          <button id="theme-toggle-btn" class="btn-secondary" style="width:100%">Switch to Light Theme</button>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button id="settings-cancel" class="btn-secondary">Cancel</button>
-        <button id="settings-save" class="btn-primary">Save</button>
       </div>
     </div>
-  </div>
 
-  <!-- PROFILE MANAGER MODAL -->
-  <div id="profile-modal" class="modal-overlay">
-    <div class="modal" style="max-width:400px">
-      <div class="modal-header">
-        <h3>Manage Profiles</h3>
-        <button class="modal-close-btn" id="profile-modal-close-x">✕</button>
-      </div>
-      <div class="modal-body">
-        <div id="profile-list"></div>
-        <div class="profile-add-row">
-          <input type="text" id="profile-new-name" placeholder="New profile name..." />
-          <button id="profile-create-btn" class="btn-primary">Create</button>
+    <!-- PROFILE MANAGER MODAL -->
+    <div id="profile-modal" class="modal-overlay">
+      <div class="modal" style="max-width:400px">
+        <div class="modal-header">
+          <h3>Manage Profiles</h3>
+          <button class="modal-close-btn" id="profile-modal-close-x">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="profile-list"></div>
+          <div class="profile-add-row">
+            <input type="text" id="profile-new-name" placeholder="New profile name..." />
+            <button id="profile-create-btn" class="btn-primary">Create</button>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="profile-modal-close" class="btn-secondary">Close</button>
         </div>
       </div>
-      <div class="modal-footer">
-        <button id="profile-modal-close" class="btn-secondary">Close</button>
+    </div>
+
+    <!-- CONTEXT MENU -->
+    <div id="context-overlay" class="context-overlay">
+      <div id="context-menu" class="context-menu" tabindex="-1"></div>
+    </div>
+
+    <!-- DRAG & DROP OVERLAY -->
+    <div id="drop-overlay">
+      <div id="drop-zone">
+        <div class="drop-icon">📥</div>
+        <div class="drop-text">Drop your mod (.zip, .rar) here to install</div>
       </div>
     </div>
-  </div>
 
-  <!-- CONTEXT MENU -->
-  <div id="context-overlay" class="context-overlay">
-    <div id="context-menu" class="context-menu" tabindex="-1"></div>
-  </div>
-
-  <!-- DRAG & DROP OVERLAY -->
-  <div id="drop-overlay">
-    <div id="drop-zone">
-      <div class="drop-icon">📥</div>
-      <div class="drop-text">Drop your mod (.zip, .rar) here to install</div>
-    </div>
-  </div>
-
-  <div id="drag-select-box" class="drag-select-box"></div>
-  <script type="module" src="/src/main.ts"></script>
+    <div id="drag-select-box" class="drag-select-box"></div>
+    <script type="module" src="/src/main.ts"></script>
 </body>
+
 </html>

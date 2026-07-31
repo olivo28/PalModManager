@@ -71,7 +71,7 @@ fn parse_version_from_filename(zip_filename: &str) -> String {
 // ---------------------------------------------------------------------------
 
 const GAME_DIR_SEGMENTS: &[&str] = &[
-    "pal", "binaries", "win64", "ue4ss", "mods", "palschema", "content", "paks"
+    "pal", "binaries", "win64", "wingdk", "ue4ss", "mods", "palschema", "content", "paks"
 ];
 
 /// Navigate down through game directories (like Pal/Binaries/Win64...) if present.
@@ -430,10 +430,7 @@ pub fn install_ue4ss(
     nexus_category: Option<String>,
     nexus_tags: Vec<String>,
 ) -> Result<ModInfo, String> {
-    let mods_dir = game
-        .join("Pal")
-        .join("Binaries")
-        .join("Win64")
+    let mods_dir = crate::dependency_checker::get_binaries_dir(game)
         .join("ue4ss")
         .join("Mods");
 
@@ -540,10 +537,7 @@ fn install_palschema(
     nexus_category: Option<String>,
     nexus_tags: Vec<String>,
 ) -> Result<ModInfo, String> {
-    let mods_dir = game
-        .join("Pal")
-        .join("Binaries")
-        .join("Win64")
+    let mods_dir = crate::dependency_checker::get_binaries_dir(game)
         .join("ue4ss")
         .join("Mods")
         .join("PalSchema")

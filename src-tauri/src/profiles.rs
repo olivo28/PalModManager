@@ -63,7 +63,7 @@ pub fn ensure_default_profile(data: &mut AppData) {
     if !data.profiles.iter().any(|p| p.id == "default") {
         let now = chrono::Utc::now().to_rfc3339();
         let (ue4ss_installed, palschema_installed) = {
-            let win64 = PathBuf::from(&data.settings.game_path).join("Pal").join("Binaries").join("Win64");
+            let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&data.settings.game_path));
             (win64.join("dwmapi.dll").exists(), win64.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll").exists())
         };
 
@@ -250,7 +250,7 @@ pub fn set_profile_mod_state(
 
 fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path) {
     if game_path.is_empty() { return; }
-    let win64 = PathBuf::from(game_path).join("Pal").join("Binaries").join("Win64");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
     let ue4ss_game = win64.join("ue4ss");
     let dwmapi_game = win64.join("dwmapi.dll");
 
@@ -283,7 +283,7 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path) {
 
 fn restore_profile_files_to_game(game_path: &str, profile_dir: &Path, target_profile: &Profile, program_path: &str) {
     if game_path.is_empty() { return; }
-    let win64 = PathBuf::from(game_path).join("Pal").join("Binaries").join("Win64");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
     let ue4ss_game = win64.join("ue4ss");
     let dwmapi_game = win64.join("dwmapi.dll");
     let palschema_game = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
@@ -728,7 +728,7 @@ fn sync_profile_dependencies(
     if game_path.is_empty() {
         return Ok(());
     }
-    let win64 = PathBuf::from(game_path).join("Pal").join("Binaries").join("Win64");
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
 
     // UE4SS
     let dwmapi = win64.join("dwmapi.dll");

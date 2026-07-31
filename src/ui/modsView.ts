@@ -1019,6 +1019,17 @@ function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
 }
 
 function renderDependencyBadges(deps: import('../types').DependencyStatus): void {
+  const platformEl = document.getElementById('game-platform-badge');
+  if (platformEl) {
+    if (deps.game_platform && deps.game_platform !== 'Unknown') {
+      platformEl.textContent = deps.game_platform;
+      platformEl.style.display = '';
+      platformEl.className = 'game-platform-badge ' + deps.game_platform.toLowerCase();
+    } else {
+      platformEl.style.display = 'none';
+    }
+  }
+
   const ue4ssEl = document.getElementById('ue4ss-badge');
   const psEl = document.getElementById('palschema-badge');
   if (!ue4ssEl || !psEl) return;
