@@ -328,6 +328,7 @@ query GetPalworldMod($modId: ID!) {
 
     let client = reqwest::Client::builder()
         .user_agent("PalModManager/1.0.0 (Tauri App)")
+        .timeout(std::time::Duration::from_secs(10))
         .build()
         .unwrap_or_else(|_| reqwest::Client::new());
 

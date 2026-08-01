@@ -13,6 +13,7 @@ export interface ZipAnalysis {
   fileCount: number;
   nexusModId: number | null;
   detectedVersion?: string | null;
+  files?: string[];
   nexusInfo: {
     name: string;
     author: string;

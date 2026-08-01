@@ -89,6 +89,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         "nexusModId": nexus_id,
         "detectedVersion": detected_version,
         "nexusInfo": null,
+        "files": analysis.files,
     }))
 }
 

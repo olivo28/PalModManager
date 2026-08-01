@@ -639,7 +639,7 @@ export async function handleConfirmInstall(): Promise<void> {
   // Check dependencies first
   const depStatus = await checkDependencies();
   const ue4ssRequired = ['ue4ss', 'palschema', 'hybrid'].includes(customType);
-  const palschemaRequired = (customType === 'palschema') || (customType === 'hybrid' && (state.currentAnalysis.hasJson || state.currentAnalysis.files.some(f => f.toLowerCase().includes('palschema'))));
+  const palschemaRequired = (customType === 'palschema') || (customType === 'hybrid' && (state.currentAnalysis.hasJson || (state.currentAnalysis.files || []).some((f: string) => f.toLowerCase().includes('palschema'))));
 
   const missingUe4ss = ue4ssRequired && !depStatus.ue4ss_installed;
   const missingPalSchema = palschemaRequired && !depStatus.palschema_installed;

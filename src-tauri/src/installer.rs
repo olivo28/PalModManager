@@ -449,6 +449,32 @@ fn detect_config_local(dir: &Path) -> Option<String> {
     None
 }
 
+fn find_palschema_root(json_path: &Path, extracted: &Path) -> PathBuf {
+    for ancestor in json_path.ancestors() {
+        if let Some(name) = ancestor.file_name().map(|n| n.to_string_lossy().to_lowercase()) {
+            if ["pals", "enums", "translations", "raw"].contains(&name.as_str()) {
+                if let Some(parent) = ancestor.parent() {
+                    if parent != extracted {
+                        return parent.to_path_buf();
+                    }
+                }
+            }
+        }
+    }
+    let mut current = json_path.parent().unwrap();
+    while let Some(parent) = current.parent() {
+        if parent == extracted {
+            break;
+        }
+        let parent_name = parent.file_name().unwrap().to_string_lossy().to_lowercase();
+        if ["palschema mods folder", "mods", "ue4ss"].contains(&parent_name.as_str()) {
+            break;
+        }
+        current = parent;
+    }
+    current.to_path_buf()
+}
+
 pub fn install_hybrid(
     game: &Path,
     extracted: &Path,
@@ -468,33 +494,89 @@ pub fn install_hybrid(
 ) -> Result<ModInfo, String> {
     let win64 = crate::dependency_checker::get_binaries_dir(game);
     let clean_stem = clean_zip_name(zip_filename);
-    let mod_name = custom_name.unwrap_or(clean_stem.clone());
-    let safe_folder_name = sanitize_folder_name(&clean_stem);
+
+    // 1. Scan extracted files to dynamically discover component roots
+    let mut all_files = Vec::new();
+    fn collect_files(dir: &Path, list: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_dir() {
+                    collect_files(&path, list);
+                } else {
+                    list.push(path);
+                }
+            }
+        }
+    }
+    collect_files(extracted, &mut all_files);
+
+    // 2. Identify UE4SS roots
+    let mut ue4ss_roots = Vec::new();
+    for file_path in &all_files {
+        let ext = file_path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+        if ext == "lua" {
+            let parent = file_path.parent().unwrap();
+            let parent_name = parent.file_name().unwrap().to_string_lossy().to_lowercase();
+            let root = if parent_name == "scripts" {
+                parent.parent().unwrap().to_path_buf()
+            } else {
+                parent.to_path_buf()
+            };
+            if !ue4ss_roots.contains(&root) {
+                ue4ss_roots.push(root);
+            }
+        }
+    }
+
+    // 3. Identify PalSchema roots
+    let mut palschema_roots = Vec::new();
+    for file_path in &all_files {
+        let ext = file_path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+        if ext == "json" || ext == "jsonc" {
+            let is_in_ue4ss = ue4ss_roots.iter().any(|r| file_path.starts_with(r));
+            if !is_in_ue4ss {
+                let root = find_palschema_root(file_path, extracted);
+                if !palschema_roots.contains(&root) {
+                    palschema_roots.push(root);
+                }
+            }
+        }
+    }
+
+    // Determine target mod folder name
+    let detected_folder_name = if !ue4ss_roots.is_empty() {
+        ue4ss_roots[0].file_name().unwrap().to_string_lossy().to_string()
+    } else if !palschema_roots.is_empty() {
+        palschema_roots[0].file_name().unwrap().to_string_lossy().to_string()
+    } else {
+        clean_stem.clone()
+    };
+
+    let mod_name = custom_name.unwrap_or_else(|| detected_folder_name.clone());
+    let safe_folder_name = sanitize_folder_name(&detected_folder_name);
 
     let mut installed_extras = Vec::new();
     let mut primary_path = String::new();
     let mut config_path: Option<String> = None;
 
-    let palschema_base_dest = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&safe_folder_name);
-    let ue4ss_base_dest = win64.join("ue4ss").join("Mods").join(&safe_folder_name);
     let paks_dest_dir = game.join("Pal").join("Content").join("Paks").join("~mods");
     let logicmods_dest_dir = game.join("Pal").join("Content").join("Paks").join("LogicMods");
+    let ue4ss_mods_dest = win64.join("ue4ss").join("Mods");
+    let palschema_mods_dest = ue4ss_mods_dest.join("PalSchema").join("mods");
 
     let mut copied_palschema = false;
     let mut copied_ue4ss = false;
+    let mut copied_ue4ss_base = PathBuf::new();
+    let mut copied_palschema_base = PathBuf::new();
 
-    for entry in WalkDir::new(extracted).into_iter().filter_map(|e| e.ok()) {
-        if !entry.file_type().is_file() {
-            continue;
-        }
+    // 4. Perform enrouting copy
+    for file_path in &all_files {
+        let rel_path = file_path.strip_prefix(extracted).unwrap();
+        let rel_lower = rel_path.to_string_lossy().to_lowercase().replace('\\', "/");
+        let file_basename = file_path.file_name().unwrap();
 
-        let path = entry.path();
-        let rel_path = path.strip_prefix(extracted).unwrap_or(path);
-        let rel_str = rel_path.to_string_lossy().replace('\\', "/");
-        let rel_lower = rel_str.to_lowercase();
-        let file_basename = path.file_name().unwrap();
-
-        // 1. Is it a Pak file/companion?
+        // A. Pak files
         if rel_lower.ends_with(".pak") || rel_lower.ends_with(".ucas") || rel_lower.ends_with(".utoc") {
             let dest_dir = if rel_lower.contains("logicmods") {
                 &logicmods_dest_dir
@@ -503,88 +585,49 @@ pub fn install_hybrid(
             };
             let dest_file = dest_dir.join(file_basename);
             let _ = fs::create_dir_all(dest_file.parent().unwrap());
-            fs::copy(path, &dest_file).map_err(|e| format!("Cannot copy asset file: {}", e))?;
+            fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy asset file: {}", e))?;
             installed_extras.push(dest_file.to_string_lossy().to_string());
             continue;
         }
 
-        // Skip READMEs or other junk files at the root of the ZIP
-        if rel_lower.starts_with("readme") || (rel_lower.ends_with(".txt") && !rel_str.contains('/')) {
+        // B. UE4SS files
+        if let Some(ue4ss_root) = ue4ss_roots.iter().find(|r| file_path.starts_with(r)) {
+            let folder_name = ue4ss_root.file_name().unwrap().to_string_lossy().to_string();
+            let file_rel_to_root = file_path.strip_prefix(ue4ss_root).unwrap();
+            let dest_file = ue4ss_mods_dest.join(&folder_name).join(file_rel_to_root);
+            let _ = fs::create_dir_all(dest_file.parent().unwrap());
+            fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy UE4SS file: {}", e))?;
+            copied_ue4ss_base = ue4ss_mods_dest.join(&folder_name);
+            copied_ue4ss = true;
             continue;
         }
 
-        // 2. Is it a PalSchema file?
-        if rel_lower.contains("palschema") {
-            let parts: Vec<&str> = rel_str.split('/').collect();
-            let mut relative_parts = Vec::new();
-            for (idx, part) in parts.iter().enumerate() {
-                if part.to_lowercase().contains("palschema") {
-                    if idx + 2 < parts.len() {
-                        relative_parts = parts[idx + 2..].to_vec();
-                    }
-                    break;
-                }
-            }
-
-            let dest_file = if !relative_parts.is_empty() {
-                palschema_base_dest.join(relative_parts.join("/"))
-            } else {
-                palschema_base_dest.join(file_basename)
-            };
-
+        // C. PalSchema files
+        if let Some(palschema_root) = palschema_roots.iter().find(|r| file_path.starts_with(r)) {
+            let folder_name = palschema_root.file_name().unwrap().to_string_lossy().to_string();
+            let file_rel_to_root = file_path.strip_prefix(palschema_root).unwrap();
+            let dest_file = palschema_mods_dest.join(&folder_name).join(file_rel_to_root);
             let _ = fs::create_dir_all(dest_file.parent().unwrap());
-            fs::copy(path, &dest_file).map_err(|e| format!("Cannot copy PalSchema file: {}", e))?;
+            fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy PalSchema file: {}", e))?;
+            copied_palschema_base = palschema_mods_dest.join(&folder_name);
             copied_palschema = true;
             continue;
         }
-
-        // 3. Otherwise, it belongs to UE4SS component
-        let parts: Vec<&str> = rel_str.split('/').collect();
-        let mut relative_parts = Vec::new();
-        let mut found_mods = false;
-        for (idx, part) in parts.iter().enumerate() {
-            if part.to_lowercase() == "mods" {
-                found_mods = true;
-                if idx + 2 < parts.len() {
-                    relative_parts = parts[idx + 2..].to_vec();
-                }
-                break;
-            }
-        }
-
-        if !found_mods {
-            for (idx, part) in parts.iter().enumerate() {
-                if part.to_lowercase() == "scripts" {
-                    relative_parts = parts[idx..].to_vec();
-                    break;
-                }
-            }
-        }
-
-        let dest_file = if !relative_parts.is_empty() {
-            ue4ss_base_dest.join(relative_parts.join("/"))
-        } else {
-            ue4ss_base_dest.join(file_basename)
-        };
-
-        let _ = fs::create_dir_all(dest_file.parent().unwrap());
-        fs::copy(path, &dest_file).map_err(|e| format!("Cannot copy UE4SS file: {}", e))?;
-        copied_ue4ss = true;
     }
 
     if copied_ue4ss {
-        primary_path = ue4ss_base_dest.to_string_lossy().to_string();
-        config_path = detect_config_local(&ue4ss_base_dest);
-        let enabled_file = ue4ss_base_dest.join("enabled.txt");
+        primary_path = copied_ue4ss_base.to_string_lossy().to_string();
+        config_path = detect_config_local(&copied_ue4ss_base);
+        let enabled_file = copied_ue4ss_base.join("enabled.txt");
         if !enabled_file.exists() {
             let _ = fs::write(&enabled_file, "");
         }
         if copied_palschema {
-            installed_extras.push(palschema_base_dest.to_string_lossy().to_string());
+            installed_extras.push(copied_palschema_base.to_string_lossy().to_string());
         }
     } else if copied_palschema {
-        primary_path = palschema_base_dest.to_string_lossy().to_string();
-        config_path = detect_config_local(&palschema_base_dest);
+        primary_path = copied_palschema_base.to_string_lossy().to_string();
+        config_path = detect_config_local(&copied_palschema_base);
     } else {
         if !installed_extras.is_empty() {
             primary_path = installed_extras.remove(0);

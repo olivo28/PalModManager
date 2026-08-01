@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ---
 
+## [1.1.1] - 2026-07-31
+
+### Fixed
+- **Smart Structure-Based Mod Routing**: Implemented dynamic folder signature discovery (detecting `.lua` scripts/`Scripts` folder for UE4SS components, and `.json` files/`pals`/`enums`/`translations`/`raw` folders for PalSchema components) to enroute files to their correct destination directories. This fixes installation for mods wrapped inside custom or non-standard parent directories (e.g. `UE4SS mods folder`).
+- **Fixed UI Install Modal Hang**: Fixed a silent Javascript TypeError where checking dependencies crashed the installation promise when files list was not passed, leaving the install button disabled and status text stuck.
+- **Network Fetching Timeout**: Added a 10-second timeout to the Nexus API graphql request client to prevent potential infinite connection hangs.
+
+---
+
 ## [1.1.0] - 2026-07-31
 
 ### Added
