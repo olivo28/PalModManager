@@ -2,98 +2,12 @@ use crate::db;
 use crate::models;
 use crate::state::AppState;
 use serde_json::Value;
-use std::ffi::OsStr;
 use std::fs;
-use std::os::windows::ffi::OsStrExt;
 use std::path::{Path, PathBuf};
-use std::ptr::null_mut;
 use std::time::Instant;
 use tauri::State;
 use uuid::Uuid;
 use walkdir::WalkDir;
-
-#[repr(C)]
-struct VS_FIXEDFILEINFO {
-    dw_signature: u32,
-    dw_struc_version: u32,
-    dw_file_version_ms: u32,
-    dw_file_version_ls: u32,
-    dw_product_version_ms: u32,
-    dw_product_version_ls: u32,
-    dw_file_flags_mask: u32,
-    dw_file_flags: u32,
-    dw_file_os: u32,
-    dw_file_type: u32,
-    dw_file_subtype: u32,
-    dw_file_date_ms: u32,
-    dw_file_date_ls: u32,
-}
-
-#[link(name = "version")]
-extern "system" {
-    fn GetFileVersionInfoSizeW(
-        lptstr_filename: *const u16,
-        lpdw_handle: *mut u32,
-    ) -> u32;
-
-    fn GetFileVersionInfoW(
-        lptstr_filename: *const u16,
-        dw_handle: u32,
-        dw_len: u32,
-        lp_data: *mut std::ffi::c_void,
-    ) -> i32;
-
-    fn VerQueryValueW(
-        p_block: *const std::ffi::c_void,
-        lp_sub_block: *const u16,
-        lplp_buffer: *mut *mut std::ffi::c_void,
-        pu_len: *mut u32,
-    ) -> i32;
-}
-
-fn get_file_version(path: &str) -> Option<String> {
-    let wide: Vec<u16> = OsStr::new(path)
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect();
-
-    unsafe {
-        let size = GetFileVersionInfoSizeW(wide.as_ptr(), null_mut());
-        if size == 0 {
-            return None;
-        }
-
-        let mut buf = vec![0u8; size as usize];
-        if GetFileVersionInfoW(wide.as_ptr(), 0, size, buf.as_mut_ptr() as *mut std::ffi::c_void) == 0
-        {
-            return None;
-        }
-
-        let mut info: *mut std::ffi::c_void = null_mut();
-        let mut info_len: u32 = 0;
-        let backslash: [u16; 2] = [0x5C, 0]; // L"\\"
-
-        if VerQueryValueW(
-            buf.as_ptr() as *const std::ffi::c_void,
-            backslash.as_ptr(),
-            &mut info,
-            &mut info_len,
-        ) == 0 || info.is_null()
-        {
-            return None;
-        }
-
-        let fixed = &*(info as *const VS_FIXEDFILEINFO);
-        let major = fixed.dw_product_version_ms >> 16;
-        let minor = fixed.dw_product_version_ms & 0xFFFF;
-        let build = fixed.dw_product_version_ls >> 16;
-        let patch = fixed.dw_product_version_ls & 0xFFFF;
-
-        let version = format!("v{}.{}.{}", major, minor, build);
-        let version = if patch > 0 { format!("{}.{}", version, patch) } else { version };
-        Some(version)
-    }
-}
 
 #[tauri::command]
 pub async fn get_game_version(state: State<'_, AppState>) -> Result<Option<String>, String> {
@@ -108,13 +22,12 @@ pub async fn get_game_version(state: State<'_, AppState>) -> Result<Option<Strin
         return Ok(None);
     }
     let exe_path = crate::dependency_checker::get_shipping_exe_path(Path::new(&game_path));
-    crate::logger::log(&format!("get_game_version: Checking executable {}", exe_path.display()));
-    let result = if exe_path.exists() {
-        get_file_version(&exe_path.to_string_lossy())
+    let fallback = PathBuf::from(&game_path).join("Palworld.exe");
+    
+    let result = if exe_path.exists() || fallback.exists() {
+        Some("Palworld".to_string())
     } else {
-        crate::logger::log("get_game_version: Main executable does not exist, checking fallback Palworld.exe");
-        let fallback = PathBuf::from(&game_path).join("Palworld.exe");
-        get_file_version(&fallback.to_string_lossy())
+        None
     };
     crate::logger::log(&format!("get_game_version completed in {:?}. Result: {:?}", start.elapsed(), result));
     Ok(result)

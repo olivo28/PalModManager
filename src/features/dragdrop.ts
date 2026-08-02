@@ -30,7 +30,7 @@ export function setupDragAndDrop(): void {
 
         for (const path of paths) {
           const lower = path.toLowerCase();
-          if (lower.endsWith('.zip') || lower.endsWith('.rar')) {
+          if (lower.endsWith('.zip') || lower.endsWith('.rar') || lower.endsWith('.7z')) {
             archives.push(path);
           } else {
             skipped++;

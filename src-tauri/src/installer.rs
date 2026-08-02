@@ -347,79 +347,279 @@ pub fn check_mod_exists(folder_name: &str, nexus_id: Option<u32>, existing_mods:
 
 
 
+fn move_path(src: &Path, dst: &Path) -> Result<(), String> {
+    if fs::rename(src, dst).is_ok() {
+        return Ok(());
+    }
+    if src.is_dir() {
+        copy_folder_contents(src, dst)?;
+        fs::remove_dir_all(src).map_err(|e| format!("Failed to remove source dir after cross-device copy: {}", e))?;
+    } else {
+        if let Some(parent) = dst.parent() {
+            let _ = fs::create_dir_all(parent);
+        }
+        fs::copy(src, dst).map_err(|e| format!("Failed to copy source file during cross-device move: {}", e))?;
+        fs::remove_file(src).map_err(|e| format!("Failed to remove source file after cross-device copy: {}", e))?;
+    }
+    Ok(())
+}
+
 /// Re-install an existing mod from new ZIP contents.
 pub fn update_mod(
     existing: &mut ModInfo,
-    _game_path: &str,
+    game_path: &str,
+    program_path: &str,
+    current_profile_id: &str,
     extracted: &Path,
     analysis: &ZipAnalysis,
     zip_filename: &str,
     now: &str,
 ) -> Result<(), String> {
-    let dest = if existing.enabled {
-        PathBuf::from(&existing.game_path)
-    } else {
-        PathBuf::from(&existing.disabled_path)
+    // Helper to delete path and its companion sidecar if it's a file
+    let delete_path_and_sidecar = |path_str: &str| {
+        if path_str.is_empty() {
+            return;
+        }
+        let p = Path::new(path_str);
+        if p.exists() {
+            if p.is_dir() {
+                let _ = fs::remove_dir_all(p);
+            } else {
+                let _ = fs::remove_file(p);
+                let sidecar = PathBuf::from(format!("{}.pmm.json", path_str));
+                if sidecar.exists() {
+                    let _ = fs::remove_file(sidecar);
+                }
+            }
+        } else {
+            let sidecar = PathBuf::from(format!("{}.pmm.json", path_str));
+            if sidecar.exists() {
+                let _ = fs::remove_file(sidecar);
+            }
+        }
     };
 
-    if dest.is_dir() {
-        let _ = fs::remove_dir_all(&dest);
-    } else if dest.is_file() {
-        let _ = fs::remove_file(&dest);
+    // 1. Physically delete previous mod files
+    delete_path_and_sidecar(&existing.game_path);
+    delete_path_and_sidecar(&existing.disabled_path);
+    for extra in &existing.extra_files {
+        delete_path_and_sidecar(extra);
     }
 
-    // Re-detect mod root and copy
-    match &analysis.detected_type {
-        DetectedModType::Ue4ss => {
-            let mod_root = find_ue4ss_mod_root(extracted, zip_filename).0;
-            let has_scripts_dir = mod_root.join("Scripts").exists() || mod_root.join("scripts").exists();
-            if has_scripts_dir {
-                copy_folder_contents(&mod_root, &dest)?;
-            } else {
-                fs::create_dir_all(dest.join("Scripts")).map_err(|e| format!("Cannot create Scripts dir: {}", e))?;
-                if let Ok(entries) = fs::read_dir(&mod_root) {
-                    for entry in entries.filter_map(|e| e.ok()) {
-                        let path = entry.path();
-                        let file_name = path.file_name().unwrap();
-                        if path.is_dir() {
-                            let dest_path = dest.join(file_name);
-                            copy_folder_contents(&path, &dest_path)?;
-                        } else {
-                            let ext = path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
-                            if ext == "lua" {
-                                fs::copy(&path, dest.join("Scripts").join(file_name))
-                                    .map_err(|e| format!("Cannot copy lua script: {}", e))?;
-                            } else {
-                                fs::copy(&path, dest.join(file_name))
-                                    .map_err(|e| format!("Cannot copy asset: {}", e))?;
+    // 2. Remember original state
+    let was_enabled = existing.enabled;
+
+    // 3. Call the corresponding installer function based on the mod's target type
+    let game = Path::new(game_path);
+    let new_mod_info = match existing.mod_type {
+        ModType::Ue4ss => install_ue4ss(
+            game,
+            extracted,
+            zip_filename,
+            existing.nexus_mod_id,
+            Some(existing.name.clone()),
+            existing.nexus_author.clone(),
+            existing.nexus_summary.clone(),
+            existing.nexus_picture_url.clone(),
+            existing.nexus_downloads,
+            existing.nexus_endorsements,
+            Some(existing.name.clone()),
+            now,
+            existing.nexus_category.clone(),
+            existing.nexus_tags.clone(),
+        )?,
+        ModType::PalSchema => install_palschema(
+            game,
+            extracted,
+            zip_filename,
+            existing.nexus_mod_id,
+            Some(existing.name.clone()),
+            existing.nexus_author.clone(),
+            existing.nexus_summary.clone(),
+            existing.nexus_picture_url.clone(),
+            existing.nexus_downloads,
+            existing.nexus_endorsements,
+            Some(existing.name.clone()),
+            now,
+            existing.nexus_category.clone(),
+            existing.nexus_tags.clone(),
+        )?,
+        ModType::Pak => install_pak(
+            game,
+            extracted,
+            zip_filename,
+            existing.nexus_mod_id,
+            Some(existing.name.clone()),
+            existing.nexus_author.clone(),
+            existing.nexus_summary.clone(),
+            existing.nexus_picture_url.clone(),
+            existing.nexus_downloads,
+            existing.nexus_endorsements,
+            Some("~mods"),
+            Some(existing.name.clone()),
+            now,
+            existing.nexus_category.clone(),
+            existing.nexus_tags.clone(),
+        )?,
+        ModType::LogicMods => install_pak(
+            game,
+            extracted,
+            zip_filename,
+            existing.nexus_mod_id,
+            Some(existing.name.clone()),
+            existing.nexus_author.clone(),
+            existing.nexus_summary.clone(),
+            existing.nexus_picture_url.clone(),
+            existing.nexus_downloads,
+            existing.nexus_endorsements,
+            Some("logicmods"),
+            Some(existing.name.clone()),
+            now,
+            existing.nexus_category.clone(),
+            existing.nexus_tags.clone(),
+        )?,
+        ModType::Hybrid => install_hybrid(
+            game,
+            extracted,
+            zip_filename,
+            existing.nexus_mod_id,
+            Some(existing.name.clone()),
+            existing.nexus_author.clone(),
+            existing.nexus_summary.clone(),
+            existing.nexus_picture_url.clone(),
+            existing.nexus_downloads,
+            existing.nexus_endorsements,
+            Some(existing.name.clone()),
+            now,
+            existing.nexus_category.clone(),
+            existing.nexus_tags.clone(),
+            analysis,
+        )?,
+    };
+
+    // 4. Overwrite mod fields with new install details
+    existing.name = new_mod_info.name;
+    existing.mod_type = new_mod_info.mod_type;
+    existing.version = new_mod_info.version;
+    existing.source_zip = new_mod_info.source_zip;
+    existing.config_path = new_mod_info.config_path;
+    existing.config_type = new_mod_info.config_type;
+    existing.game_path = new_mod_info.game_path;
+    existing.disabled_path = new_mod_info.disabled_path;
+    existing.pak_destination = new_mod_info.pak_destination;
+    existing.has_enabled_txt = new_mod_info.has_enabled_txt;
+    existing.extra_files = new_mod_info.extra_files;
+    existing.update_date = Some(now.to_string());
+    existing.enabled = true; // Temporary marked as enabled so we can disable if needed
+
+    // 5. If it was disabled before, manually disable it now
+    if !was_enabled {
+        let profile_dir = PathBuf::from(program_path).join("profiles").join(current_profile_id);
+        let disabled_base = profile_dir.join("disabled_mods");
+
+        if existing.mod_type == ModType::Ue4ss {
+            let src_path = PathBuf::from(&existing.game_path);
+            if src_path.exists() {
+                let enabled_file = src_path.join("enabled.txt");
+                if enabled_file.exists() {
+                    let _ = fs::remove_file(&enabled_file);
+                }
+                let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+                let dest = disabled_base.join("ue4ss").join(&file_name);
+                move_path(&src_path, &dest)?;
+                existing.disabled_path = dest.to_string_lossy().to_string();
+                existing.game_path = String::new();
+            }
+            existing.enabled = false;
+        } else if existing.mod_type == ModType::PalSchema {
+            let src_path = PathBuf::from(&existing.game_path);
+            if src_path.exists() {
+                let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+                let dest = disabled_base.join("palschema").join(&file_name);
+                move_path(&src_path, &dest)?;
+                existing.disabled_path = dest.to_string_lossy().to_string();
+                existing.game_path = String::new();
+            }
+            existing.enabled = false;
+        } else if existing.mod_type == ModType::Pak || existing.mod_type == ModType::LogicMods {
+            let src_path = PathBuf::from(&existing.game_path);
+            if src_path.exists() {
+                let mut moved_files = Vec::new();
+                if let Some(parent) = src_path.parent() {
+                    let file_stem = src_path.file_stem().unwrap().to_string_lossy().to_string();
+                    let type_dir = if existing.mod_type == ModType::LogicMods { "logicmods" } else { "pak" };
+                    let dest_dir = disabled_base.join(type_dir);
+                    let _ = fs::create_dir_all(&dest_dir);
+
+                    for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
+                        let companion = parent.join(format!("{}.{}", file_stem, ext));
+                        if companion.exists() {
+                            let dest = dest_dir.join(format!("{}.{}", file_stem, ext));
+                            move_path(&companion, &dest)?;
+                            moved_files.push(dest.to_string_lossy().to_string());
+                        }
+                    }
+                }
+                existing.disabled_path = moved_files.first().cloned().unwrap_or_default();
+                existing.extra_files = moved_files.into_iter().skip(1).collect();
+                existing.game_path = String::new();
+            }
+            existing.enabled = false;
+        } else if existing.mod_type == ModType::Hybrid {
+            let mut moved_extras = Vec::new();
+            for extra in &existing.extra_files {
+                let extra_path = PathBuf::from(extra);
+                if extra_path.exists() {
+                    let file_name = extra_path.file_name().unwrap().to_string_lossy().to_string();
+                    let dest_dir = disabled_base.join("hybrid").join("extras");
+                    let _ = fs::create_dir_all(&dest_dir);
+                    
+                    if extra_path.is_dir() {
+                        let dest = dest_dir.join(&file_name);
+                        move_path(&extra_path, &dest)?;
+                        moved_extras.push(dest.to_string_lossy().to_string());
+                    } else {
+                        let parent = extra_path.parent().unwrap();
+                        let stem = extra_path.file_stem().unwrap().to_string_lossy().to_string();
+                        let dest = dest_dir.join(&file_name);
+                        move_path(&extra_path, &dest)?;
+                        moved_extras.push(dest.to_string_lossy().to_string());
+                        
+                        for c_ext in &["ucas", "utoc"] {
+                            let companion = parent.join(format!("{}.{}", stem, c_ext));
+                            if companion.exists() {
+                                let c_dest = dest_dir.join(format!("{}.{}", stem, c_ext));
+                                let _ = move_path(&companion, &c_dest);
                             }
+                        }
+                        let sidecar = parent.join(format!("{}.pmm.json", file_name));
+                        if sidecar.exists() {
+                            let c_dest = dest_dir.join(format!("{}.pmm.json", file_name));
+                            let _ = move_path(&sidecar, &c_dest);
                         }
                     }
                 }
             }
-            // Ensure enabled.txt exists
-            let enabled_file = dest.join("enabled.txt");
-            if !enabled_file.exists() {
-                let _ = fs::write(&enabled_file, "");
+
+            let src_path = PathBuf::from(&existing.game_path);
+            if src_path.exists() {
+                let enabled_file = src_path.join("enabled.txt");
+                if enabled_file.exists() {
+                    let _ = fs::remove_file(&enabled_file);
+                }
+                
+                let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+                let dest_dir = disabled_base.join("hybrid");
+                let _ = fs::create_dir_all(&dest_dir);
+                let dest = dest_dir.join(&file_name);
+                move_path(&src_path, &dest)?;
+                
+                existing.disabled_path = dest.to_string_lossy().to_string();
+                existing.game_path = String::new();
             }
+            existing.extra_files = moved_extras;
+            existing.enabled = false;
         }
-
-        DetectedModType::PalSchema => {
-            let mod_root = find_palschema_mod_root(extracted, zip_filename).0;
-            copy_folder_contents(&mod_root, &dest)?;
-        }
-        _ => {
-            copy_folder_contents(extracted, &dest)?;
-        }
-    }
-
-    existing.update_date = Some(now.to_string());
-    existing.source_zip = zip_filename.to_string();
-
-    if existing.enabled {
-        existing.game_path = dest.to_string_lossy().to_string();
-    } else {
-        existing.disabled_path = dest.to_string_lossy().to_string();
     }
 
     Ok(())

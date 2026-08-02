@@ -333,6 +333,17 @@ function syncHighlight(): void {
   const ext = state.editorSelectedFile ? state.editorSelectedFile.split('.').pop() || '' : '';
   let text = editorContent.value;
 
+  // Update line numbers gutter
+  const gutter = document.getElementById('editor-gutter');
+  if (gutter) {
+    const lines = text.split('\n').length;
+    let html = '';
+    for (let i = 1; i <= lines; i++) {
+      html += `${i}<br/>`;
+    }
+    gutter.innerHTML = html;
+  }
+
   if (findMatches.length > 0) {
     const parts: string[] = [];
     let lastEnd = 0;
@@ -352,7 +363,7 @@ function syncHighlight(): void {
   if (findMatches.length > 0) {
     for (let i = 0; i < findMatches.length; i++) {
       result = result
-        .replace('\x00START' + i + '\x00', '<mark class="find-match"')
+        .replace('\x00START' + i + '\x00', '<mark class="find-match">')
         .replace('\x00END' + i + '\x00', '</mark>');
     }
   }
@@ -364,6 +375,12 @@ async function loadFileContent(filePath: string): Promise<void> {
   const state = getState();
   if (!state.editorModId) return;
 
+  // Reset find matches on file load
+  findMatches = [];
+  findCurrentMatch = -1;
+  const findCount = document.getElementById('editor-find-count');
+  if (findCount) findCount.textContent = '';
+
   const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
   const editorPath = document.getElementById('editor-file-path')!;
   const editorStatus = document.getElementById('editor-status')!;
@@ -371,6 +388,7 @@ async function loadFileContent(filePath: string): Promise<void> {
   const previewBtn = document.getElementById('editor-preview-btn') as HTMLButtonElement;
   const preview = document.getElementById('editor-preview')!;
   const highlight = document.getElementById('editor-highlight')!;
+  const gutter = document.getElementById('editor-gutter')!;
 
   editorContent.disabled = true;
   editorStatus.textContent = '';
@@ -378,6 +396,7 @@ async function loadFileContent(filePath: string): Promise<void> {
   preview.style.display = 'none';
   highlight.style.display = '';
   editorContent.style.display = '';
+  gutter.style.display = 'block';
   previewBtn.style.display = 'none';
   previewBtn.textContent = 'Preview';
 
@@ -389,6 +408,7 @@ async function loadFileContent(filePath: string): Promise<void> {
       editorContent.disabled = true;
       formatBtn.style.display = 'none';
       _originalContent = null;
+      gutter.style.display = 'none';
     } else if (result.configType === 'image') {
       editorPath.textContent = result.path || filePath;
       preview.innerHTML = `
@@ -399,6 +419,7 @@ async function loadFileContent(filePath: string): Promise<void> {
       preview.style.display = 'block';
       highlight.style.display = 'none';
       editorContent.style.display = 'none';
+      gutter.style.display = 'none';
       editorContent.value = '';
       _originalContent = null;
       formatBtn.style.display = 'none';
@@ -413,12 +434,12 @@ async function loadFileContent(filePath: string): Promise<void> {
       formatBtn.style.display = result.configType === 'json' || result.configType === 'jsonc' ? '' : 'none';
       if (filePath.endsWith('.md')) {
         previewBtn.style.display = '';
-        preview.innerHTML = await marked.parse(result.content);
-        preview.style.display = 'block';
-        highlight.style.display = 'none';
-        editorContent.style.display = 'none';
-        previewBtn.textContent = 'Edit';
-        updateState({ editorPreviewMode: true });
+        preview.style.display = 'none';
+        highlight.style.display = '';
+        editorContent.style.display = '';
+        gutter.style.display = 'block';
+        previewBtn.textContent = 'Preview';
+        updateState({ editorPreviewMode: false });
       }
     }
     editorStatus.textContent = '';
@@ -430,6 +451,10 @@ async function loadFileContent(filePath: string): Promise<void> {
     editorStatus.textContent = '';
   }
   syncHighlight();
+}
+
+function stripJsonComments(jsonc: string): string {
+  return jsonc.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => g ? "" : m);
 }
 
 export async function handleEditorSave(): Promise<void> {
@@ -444,7 +469,10 @@ export async function handleEditorSave(): Promise<void> {
 
   if (isJson) {
     try {
-      JSON.parse(content);
+      const cleanContent = state.editorSelectedFile.endsWith('.jsonc')
+        ? stripJsonComments(content)
+        : content;
+      JSON.parse(cleanContent);
     } catch (e) {
       editorStatus.textContent = 'Invalid JSON: ' + (e as Error).message;
       return;
@@ -472,10 +500,15 @@ export async function handleEditorSave(): Promise<void> {
 export function handleEditorFormat(): void {
   const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
   const editorStatus = document.getElementById('editor-status')!;
+  const state = getState();
+  const isJsonc = state.editorSelectedFile?.endsWith('.jsonc');
+
   try {
-    const parsed = JSON.parse(editorContent.value);
+    const raw = editorContent.value;
+    const clean = isJsonc ? stripJsonComments(raw) : raw;
+    const parsed = JSON.parse(clean);
     editorContent.value = JSON.stringify(parsed, null, 2);
-    editorStatus.textContent = 'Formatted';
+    editorStatus.textContent = isJsonc ? 'Formatted (Comments removed)' : 'Formatted';
     syncHighlight();
     setTimeout(() => { editorStatus.textContent = ''; }, 2000);
   } catch (e) {
@@ -483,18 +516,21 @@ export function handleEditorFormat(): void {
   }
 }
 
+
 export async function handleEditorPreview(): Promise<void> {
   const state = getState();
   const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
   const highlight = document.getElementById('editor-highlight')!;
   const preview = document.getElementById('editor-preview')!;
   const previewBtn = document.getElementById('editor-preview-btn') as HTMLButtonElement;
+  const gutter = document.getElementById('editor-gutter')!;
   const mode = state.editorPreviewMode;
 
   if (mode) {
     preview.style.display = 'none';
     highlight.style.display = '';
     editorContent.style.display = '';
+    gutter.style.display = 'block';
     editorContent.disabled = false;
     previewBtn.textContent = 'Preview';
     previewBtn.classList.remove('active');
@@ -504,6 +540,7 @@ export async function handleEditorPreview(): Promise<void> {
     preview.style.display = 'block';
     highlight.style.display = 'none';
     editorContent.style.display = 'none';
+    gutter.style.display = 'none';
     previewBtn.textContent = 'Edit';
     previewBtn.classList.add('active');
     updateState({ editorPreviewMode: true });
@@ -558,7 +595,7 @@ function updateFindMatches(): void {
 
   if (findMatches.length > 0) {
     findCurrentMatch = 0;
-    scrollToMatch(0);
+    scrollToMatch(0, false); // Do NOT steal focus from find input while typing
   }
   countEl.textContent = findMatches.length > 0
     ? `${findCurrentMatch + 1} of ${findMatches.length}`
@@ -566,7 +603,7 @@ function updateFindMatches(): void {
   syncHighlight();
 }
 
-function scrollToMatch(idx: number): void {
+function scrollToMatch(idx: number, focusEditor = true): void {
   const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
   if (idx < 0 || idx >= findMatches.length) return;
   findCurrentMatch = idx;
@@ -579,7 +616,9 @@ function scrollToMatch(idx: number): void {
   for (let i = 0; i < lines.length; i++) {
     if (pos + lines[i].length >= match.index) {
       const lineStart = lines.slice(0, i).join('\n').length + (i > 0 ? 1 : 0);
-      editorContent.focus();
+      if (focusEditor) {
+        editorContent.focus();
+      }
       editorContent.setSelectionRange(match.index, match.index + match.length);
       const lineHeight = 20;
       editorContent.scrollTop = Math.max(0, (i - 3) * lineHeight);
@@ -678,10 +717,14 @@ export function setupEditorKeybindings(): void {
   editorContent.addEventListener('scroll', () => {
     highlightEl.scrollTop = editorContent.scrollTop;
     highlightEl.scrollLeft = editorContent.scrollLeft;
+    const gutter = document.getElementById('editor-gutter');
+    if (gutter) gutter.scrollTop = editorContent.scrollTop;
   });
   highlightEl.addEventListener('scroll', () => {
     editorContent.scrollTop = highlightEl.scrollTop;
     editorContent.scrollLeft = highlightEl.scrollLeft;
+    const gutter = document.getElementById('editor-gutter');
+    if (gutter) gutter.scrollTop = highlightEl.scrollTop;
   });
 
   document.getElementById('editor-preview-btn')!.addEventListener('click', handleEditorPreview);

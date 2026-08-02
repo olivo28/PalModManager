@@ -1,7 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::ffi::OsStr;
 use std::fs;
-use std::os::windows::ffi::OsStrExt;
 use std::path::Path;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -18,125 +16,6 @@ pub struct DependencyStatus {
     pub palschema_latest_version: Option<String>,
     pub palschema_needs_update: bool,
     pub game_platform: String,
-}
-
-#[repr(C)]
-struct VS_FIXEDFILEINFO {
-    dw_signature: u32,
-    dw_struc_version: u32,
-    dw_file_version_ms: u32,
-    dw_file_version_ls: u32,
-    dw_product_version_ms: u32,
-    dw_product_version_ls: u32,
-    dw_file_flags_mask: u32,
-    dw_file_flags: u32,
-    dw_file_os: u32,
-    dw_file_type: u32,
-    dw_file_subtype: u32,
-    dw_file_date_ms: u32,
-    dw_file_date_ls: u32,
-}
-
-#[link(name = "version")]
-extern "system" {
-    fn GetFileVersionInfoSizeW(
-        lptstr_filename: *const u16,
-        lpdw_handle: *mut u32,
-    ) -> u32;
-    fn GetFileVersionInfoW(
-        lptstr_filename: *const u16,
-        dw_handle: u32,
-        dw_len: u32,
-        lp_data: *mut std::ffi::c_void,
-    ) -> i32;
-    fn VerQueryValueW(
-        p_block: *const std::ffi::c_void,
-        lp_sub_block: *const u16,
-        lplp_buffer: *mut *mut std::ffi::c_void,
-        pu_len: *mut u32,
-    ) -> i32;
-}
-
-fn get_file_version(path: &str) -> Option<String> {
-    let wide: Vec<u16> = OsStr::new(path)
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect();
-    unsafe {
-        let size = GetFileVersionInfoSizeW(wide.as_ptr(), std::ptr::null_mut());
-        if size == 0 { return None; }
-        let mut buf = vec![0u8; size as usize];
-        if GetFileVersionInfoW(wide.as_ptr(), 0, size, buf.as_mut_ptr() as *mut std::ffi::c_void) == 0 {
-            return None;
-        }
-        let mut info: *mut std::ffi::c_void = std::ptr::null_mut();
-        let mut info_len: u32 = 0;
-        let backslash: [u16; 2] = [0x5C, 0];
-        if VerQueryValueW(
-            buf.as_ptr() as *const std::ffi::c_void,
-            backslash.as_ptr(),
-            &mut info,
-            &mut info_len,
-        ) == 0 || info.is_null() {
-            return None;
-        }
-        let fixed = &*(info as *const VS_FIXEDFILEINFO);
-        let major = fixed.dw_product_version_ms >> 16;
-        let minor = fixed.dw_product_version_ms & 0xFFFF;
-        let build = fixed.dw_product_version_ls >> 16;
-        let patch = fixed.dw_product_version_ls & 0xFFFF;
-        let version = format!("{}.{}.{}", major, minor, build);
-        let version = if patch > 0 { format!("{}.{}", version, patch) } else { version };
-        Some(version)
-    }
-}
-
-fn get_file_string_version(path: &str, field: &str) -> Option<String> {
-    let wide: Vec<u16> = OsStr::new(path)
-        .encode_wide()
-        .chain(std::iter::once(0))
-        .collect();
-    unsafe {
-        let size = GetFileVersionInfoSizeW(wide.as_ptr(), std::ptr::null_mut());
-        if size == 0 { return None; }
-        let mut buf = vec![0u8; size as usize];
-        if GetFileVersionInfoW(wide.as_ptr(), 0, size, buf.as_mut_ptr() as *mut std::ffi::c_void) == 0 {
-            return None;
-        }
-        let mut trans: *mut std::ffi::c_void = std::ptr::null_mut();
-        let mut trans_len: u32 = 0;
-        let trans_key: Vec<u16> = OsStr::new("\\VarFileInfo\\Translation")
-            .encode_wide()
-            .chain(std::iter::once(0))
-            .collect();
-        if VerQueryValueW(
-            buf.as_ptr() as *const std::ffi::c_void,
-            trans_key.as_ptr(),
-            &mut trans,
-            &mut trans_len,
-        ) == 0 || trans.is_null() || trans_len < 4 {
-            return None;
-        }
-        let lang = *(trans as *const u16);
-        let codepage = *(trans as *const u16).offset(1);
-        let sub_block = format!("\\StringFileInfo\\{:04X}{:04X}\\{}", lang, codepage, field);
-        let wide_sub: Vec<u16> = OsStr::new(&sub_block)
-            .encode_wide()
-            .chain(std::iter::once(0))
-            .collect();
-        let mut str_buf: *mut std::ffi::c_void = std::ptr::null_mut();
-        let mut str_len: u32 = 0;
-        if VerQueryValueW(
-            buf.as_ptr() as *const std::ffi::c_void,
-            wide_sub.as_ptr(),
-            &mut str_buf,
-            &mut str_len,
-        ) == 0 || str_buf.is_null() {
-            return None;
-        }
-        let slice = std::slice::from_raw_parts(str_buf as *const u16, (str_len as usize).saturating_sub(1));
-        Some(String::from_utf16_lossy(slice))
-    }
 }
 
 fn get_file_date(path: &str) -> Option<String> {
@@ -192,7 +71,7 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         None
     };
 
-    // PalSchema check — detect by dlls/main.dll, version = ProductVersion string or palschema.version
+    // PalSchema check — detect by dlls/main.dll, version = palschema.version if available
     let ps_dll = binaries.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll");
     let palschema_installed = ps_dll.exists();
     let palschema_version = if palschema_installed {
@@ -200,9 +79,7 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         if version_file.exists() {
             fs::read_to_string(version_file).ok().map(|s| s.trim().to_string())
         } else {
-            let dll_path = ps_dll.to_string_lossy();
-            get_file_string_version(&dll_path, "ProductVersion")
-                .or_else(|| get_file_version(&dll_path))
+            None
         }
     } else {
         None

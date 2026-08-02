@@ -1293,7 +1293,7 @@ function showGlobalContextMenu(x: number, y: number): void {
   const html = `
     <button type="button" class="context-menu-item" data-action="install">
       <span class="ctx-icon">+</span>
-      Install mod (.zip, .rar)
+      Install mod (.zip, .rar, .7z)
     </button>
     <button type="button" class="context-menu-item" data-action="rescan">
       <span class="ctx-icon">↻</span>

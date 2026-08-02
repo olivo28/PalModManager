@@ -200,7 +200,7 @@ fn extract_rar_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
 
 pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     let lower_path = zip_path.to_lowercase();
-    let files = if lower_path.ends_with(".rar") {
+    let files = if lower_path.ends_with(".rar") || lower_path.ends_with(".7z") {
         list_rar_files(zip_path)?
     } else {
         let file = fs::File::open(zip_path).map_err(|e| format!("Cannot open zip: {}", e))?;
@@ -242,10 +242,14 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
         DetectedModType::Hybrid
     } else if has_lua {
         DetectedModType::Ue4ss
-    } else if has_pak && in_logicmods {
-        DetectedModType::LogicMods
+    } else if has_palschema_folder {
+        DetectedModType::PalSchema
     } else if has_pak {
-        DetectedModType::Pak
+        if in_logicmods {
+            DetectedModType::LogicMods
+        } else {
+            DetectedModType::Pak
+        }
     } else if has_json {
         DetectedModType::PalSchema
     } else {
@@ -268,7 +272,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
 
 pub fn extract_zip_to_temp(zip_path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
     let lower_path = zip_path.to_lowercase();
-    if lower_path.ends_with(".rar") {
+    if lower_path.ends_with(".rar") || lower_path.ends_with(".7z") {
         return extract_rar_to_temp(zip_path, temp_dir);
     }
     let file = fs::File::open(zip_path).map_err(|e| format!("Cannot open zip: {}", e))?;

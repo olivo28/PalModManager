@@ -26,8 +26,15 @@ pub fn run() {
     logger::init_logger();
     logger::log("=== APPLICATION STARTED (cargo run / .exe) ===");
 
+    #[cfg(target_os = "windows")]
     let program_path = std::env::var("LOCALAPPDATA")
         .map(std::path::PathBuf::from)
+        .unwrap_or_else(|_| std::env::temp_dir())
+        .join("PalModManager");
+
+    #[cfg(not(target_os = "windows"))]
+    let program_path = std::env::var("HOME")
+        .map(|h| std::path::PathBuf::from(h).join(".local").join("share"))
         .unwrap_or_else(|_| std::env::temp_dir())
         .join("PalModManager");
     

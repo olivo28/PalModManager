@@ -117,15 +117,74 @@ fn get_mod_base_dir(mod_info: &crate::models::ModInfo) -> PathBuf {
     }
 }
 
+fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str) -> Result<PathBuf, String> {
+    if mod_info.mod_type == crate::models::ModType::Hybrid {
+        let path_obj = Path::new(file_path);
+        let components: Vec<&str> = path_obj.iter().map(|c| c.to_str().unwrap_or_default()).collect();
+        if !components.is_empty() {
+            let prefix = components[0];
+            let relative_part = path_obj.strip_prefix(prefix)
+                .map_err(|e| format!("Failed to strip prefix: {}", e))?;
+
+            // 1. Check UE4SS base
+            let base_path1 = get_mod_base_dir(mod_info);
+            let folder_name1 = base_path1.file_name().unwrap_or_default().to_string_lossy().to_string();
+            if prefix == folder_name1 {
+                return Ok(base_path1.join(relative_part));
+            }
+
+            // 2. Check PalSchema base
+            if let Some(extra_str) = mod_info.extra_files.first() {
+                let base_path2 = PathBuf::from(extra_str);
+                let folder_name2 = base_path2.file_name().unwrap_or_default().to_string_lossy().to_string();
+                if prefix == folder_name2 {
+                    return Ok(base_path2.join(relative_part));
+                }
+            }
+        }
+        return Err("Invalid hybrid file path prefix".to_string());
+    }
+
+    let base_dir = get_mod_base_dir(mod_info);
+    Ok(base_dir.join(file_path))
+}
+
 #[tauri::command]
 pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<String>, String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let mod_info = data.mods.iter().find(|m| m.id == mod_id).ok_or("Mod not found")?;
 
-    let base_path = get_mod_base_dir(mod_info);
-
     let mut files = Vec::new();
-    walk_dir(&base_path, &mut files, &base_path).map_err(|e| e.to_string())?;
+
+    if mod_info.mod_type == crate::models::ModType::Hybrid {
+        // 1. Get UE4SS base path
+        let base_path1 = get_mod_base_dir(mod_info);
+        if base_path1.exists() {
+            let folder_name1 = base_path1.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let mut files1 = Vec::new();
+            walk_dir(&base_path1, &mut files1, &base_path1).map_err(|e| e.to_string())?;
+            for f in files1 {
+                files.push(format!("{}/{}", folder_name1, f));
+            }
+        }
+
+        // 2. Get PalSchema base path
+        if let Some(extra_str) = mod_info.extra_files.first() {
+            let base_path2 = PathBuf::from(extra_str);
+            if base_path2.exists() {
+                let folder_name2 = base_path2.file_name().unwrap_or_default().to_string_lossy().to_string();
+                let mut files2 = Vec::new();
+                walk_dir(&base_path2, &mut files2, &base_path2).map_err(|e| e.to_string())?;
+                for f in files2 {
+                    files.push(format!("{}/{}", folder_name2, f));
+                }
+            }
+        }
+    } else {
+        let base_path = get_mod_base_dir(mod_info);
+        walk_dir(&base_path, &mut files, &base_path).map_err(|e| e.to_string())?;
+    }
+
     Ok(files)
 }
 
@@ -150,9 +209,7 @@ pub fn read_mod_file(mod_id: String, file_path: String, state: State<AppState>) 
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let mod_info = data.mods.iter().find(|m| m.id == mod_id).ok_or("Mod not found")?;
 
-    let base_dir = get_mod_base_dir(mod_info);
-
-    let full_path = base_dir.join(&file_path);
+    let full_path = get_full_mod_file_path(mod_info, &file_path)?;
 
     if !full_path.exists() {
         return Ok(serde_json::json!({ "content": null, "path": file_path, "configType": null }));
@@ -200,9 +257,7 @@ pub fn save_mod_file(mod_id: String, file_path: String, content: String, state: 
     let mod_index = data.mods.iter().position(|m| m.id == mod_id).ok_or("Mod not found")?;
     let mod_info = &data.mods[mod_index];
 
-    let base_dir = get_mod_base_dir(mod_info);
-
-    let full_path = base_dir.join(&file_path);
+    let full_path = get_full_mod_file_path(mod_info, &file_path)?;
 
     if full_path.exists() {
         let bak_path = full_path.with_extension("bak");

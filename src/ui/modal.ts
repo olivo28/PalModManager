@@ -136,6 +136,23 @@ export async function handleSaveSettings(): Promise<void> {
 
 let _pendingUpdateModId: string | null = null;
 
+function getCleanNameFromFilename(filename: string): string {
+  const stem = filename.substring(0, filename.lastIndexOf('.')) || filename;
+  const words = stem.split(/\s+/);
+  const clean: string[] = [];
+  for (const word of words) {
+    if (/^\d+$/.test(word)) {
+      break;
+    }
+    if (/^\d/.test(word) && word.includes('-') && word.length > 6) {
+      break;
+    }
+    clean.push(word);
+  }
+  const result = clean.join(' ').replace(/\s*\(\s*$/, '').trim();
+  return result.length < 2 ? stem.trim() : result;
+}
+
 export function showInstallModal(): void {
   document.getElementById('install-modal')!.classList.add('visible');
 }
@@ -211,23 +228,7 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
     confirmBtn.textContent = 'Install';
   }
 
-  const cleanName = (() => {
-    const file = analysis.zipPath.split(/[/\\]/).pop() || '';
-    const stem = file.substring(0, file.lastIndexOf('.')) || file;
-    const words = stem.split(/\s+/);
-    const clean: string[] = [];
-    for (const word of words) {
-      if (/^\d+$/.test(word)) {
-        break;
-      }
-      if (/^\d/.test(word) && word.includes('-') && word.length > 6) {
-        break;
-      }
-      clean.push(word);
-    }
-    const result = clean.join(' ').replace(/\s*\(\s*$/, '').trim();
-    return result.length < 2 ? stem.trim() : result;
-  })();
+  const cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
 
   let pakDestHtml = `
     <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${analysis.detectedType === 'pak' || analysis.detectedType === 'logicmods' ? 'block' : 'none'}; margin-top:8px;">
@@ -397,10 +398,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
       const analysis = await analyzeZip(path);
       const check = await checkModExistsCommand(path);
 
-      const cleanName = (analysis.rootFolder || (() => {
-        const stem = filename.substring(0, filename.lastIndexOf('.')) || filename;
-        return stem.replace(/\s+\d+\s+.*$/, '').trim();
-      })());
+      const cleanName = getCleanNameFromFilename(filename);
 
       results.push({
         path,
@@ -791,8 +789,8 @@ export async function handleInstall(): Promise<void> {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const selected = await open({
       multiple: true,
-      filters: [{ name: 'Mod Archives', extensions: ['zip', 'rar'] }],
-      title: 'Select mod archive (.zip, .rar)',
+      filters: [{ name: 'Mod Archives', extensions: ['zip', 'rar', '7z'] }],
+      title: 'Select mod archive (.zip, .rar, .7z)',
     });
 
     if (!selected) return;

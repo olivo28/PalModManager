@@ -317,9 +317,9 @@ pub async fn update_mod_command(
     mod_id: String,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    let (game_path, program_path) = {
+    let (game_path, program_path, current_profile_id) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.settings.program_path.clone())
+        (data.settings.game_path.clone(), data.settings.program_path.clone(), data.current_profile_id.clone())
     };
 
     if game_path.is_empty() {
@@ -364,7 +364,7 @@ pub async fn update_mod_command(
             .find(|m| m.id == mod_id)
             .ok_or_else(|| "Mod not found".to_string())?;
 
-        installer::update_mod(existing, &game_path, &extracted, &analysis, &zip_filename, &now)?;
+        installer::update_mod(existing, &game_path, &program_path, &current_profile_id, &extracted, &analysis, &zip_filename, &now)?;
         existing.clone()
     };
 

@@ -125,7 +125,8 @@
             <span class="quick-filter-sep"></span>
             <button id="export-json-btn" class="toolbar-btn-sm" title="Export all mod data as JSON">Export JSON</button>
             <button id="backup-btn" class="toolbar-btn-sm" title="Backup all mods to a ZIP archive">Backup</button>
-            <button id="restore-backup-btn" class="toolbar-btn-sm" title="Restore all mods from a PMM Backup ZIP">Restore Backup</button>
+            <button id="restore-backup-btn" class="toolbar-btn-sm"
+              title="Restore all mods from a PMM Backup ZIP">Restore Backup</button>
           </div>
         </div>
         <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none">
@@ -200,6 +201,7 @@
           <div id="editor-content-area">
             <div id="editor-file-path"></div>
             <div id="editor-input-wrap">
+              <div id="editor-gutter" style="display:none"></div>
               <pre id="editor-highlight"><code id="editor-highlight-code"></code></pre>
               <textarea id="editor-content" spellcheck="false" disabled></textarea>
               <div id="editor-preview" style="display:none"></div>
@@ -281,7 +283,7 @@
     <div id="drop-overlay">
       <div id="drop-zone">
         <div class="drop-icon">⊞</div>
-        <div class="drop-text">Drop .zip or .rar to install</div>
+        <div class="drop-text">Drop .zip/.rar/.7z to install</div>
       </div>
     </div>
 
@@ -299,7 +301,8 @@
         </div>
         <div class="modal-footer" style="padding:16px 20px;">
           <button id="modal-cancel" class="btn-secondary">Cancel</button>
-          <button id="modal-install-deps-retry" class="btn-primary" style="display:none;background:#e0af68;color:#000;">Install Deps & Retry</button>
+          <button id="modal-install-deps-retry" class="btn-primary"
+            style="display:none;background:#e0af68;color:#000;">Install Deps & Retry</button>
           <button id="modal-confirm" class="btn-primary" disabled>Install</button>
         </div>
       </div>
@@ -397,7 +400,7 @@
     <div id="drop-overlay">
       <div id="drop-zone">
         <div class="drop-icon">📥</div>
-        <div class="drop-text">Drop your mod (.zip, .rar) here to install</div>
+        <div class="drop-text">Drop your mod (.zip, .rar, .7z) here to install</div>
       </div>
     </div>
 
