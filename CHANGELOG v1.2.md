@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ---
 
-## [1.2.0] - Unreleased
+## [1.2.0]
 
 ### Added
 - **7z Archive Support**: Added support for installing mods packaged in the `.7z` format. Both drag-and-drop actions and manual file selection dialogs now natively support `.7z` archives.
