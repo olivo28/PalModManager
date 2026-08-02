@@ -225,6 +225,18 @@ function setupEventListeners() {
       modal.focus();
     }
   });
+  safeEl('new-folder-btn')?.addEventListener('click', async () => {
+    const { showInputModal, handleCreateFolder } = await import('./ui/modsView');
+    const newName = await showInputModal(
+      'New Mod Folder',
+      'Enter a name for the new virtual folder:',
+      'Skins'
+    );
+    if (newName === null) return;
+    const trimmed = newName.trim();
+    if (!trimmed) return;
+    await handleCreateFolder(trimmed);
+  });
   safeEl('profile-create-btn')?.addEventListener('click', async () => {
     const input = document.getElementById('profile-new-name') as HTMLInputElement | null;
     if (!input || !input.value.trim()) return;

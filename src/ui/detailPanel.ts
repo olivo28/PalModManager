@@ -156,6 +156,36 @@ export function openDetailPanel(modId: string): void {
     configRow.style.display = '';
   }
 
+  // Populate Folder Dropdown
+  const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement | null;
+  if (folderSelect) {
+    const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
+    const folders = currentProfile?.mod_folders || [];
+    const currentFolder = folders.find(f => f.mod_ids.includes(mod.id));
+    
+    folderSelect.innerHTML = `<option value="">(None / Ungrouped)</option>` + 
+      folders.map(f => `<option value="${escapeHtml(f.id)}" ${currentFolder?.id === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('');
+      
+    const newSelect = folderSelect.cloneNode(true) as HTMLSelectElement;
+    folderSelect.parentNode!.replaceChild(newSelect, folderSelect);
+    
+    newSelect.addEventListener('change', async () => {
+      const selectedFolderId = newSelect.value || null;
+      try {
+        const { addModToFolder } = await import('../api');
+        const updatedProfile = await addModToFolder(state.currentProfileId, selectedFolderId, mod.id);
+        
+        const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
+        updateState({ profiles: updatedProfiles });
+        
+        await loadMods();
+        showToast(selectedFolderId ? 'Mod folder updated' : 'Mod removed from folder', 'success');
+      } catch (err) {
+        showToast('Failed to change folder: ' + err, 'error');
+      }
+    });
+  }
+
   // Reset scroll position and tabs — fixes state persistence across mods
   document.getElementById('detail-body')!.scrollTop = 0;
   document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));

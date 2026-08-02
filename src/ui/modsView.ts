@@ -60,6 +60,92 @@ export async function loadMods(): Promise<void> {
 }
 
 
+// Persistent UI state for folded/collapsed virtual folders
+const collapsedFolders = new Set<string>(JSON.parse(localStorage.getItem('pmm_collapsed_folders') || '[]'));
+
+function toggleFolderCollapsed(folderId: string): void {
+  if (collapsedFolders.has(folderId)) {
+    collapsedFolders.delete(folderId);
+  } else {
+    collapsedFolders.add(folderId);
+  }
+  localStorage.setItem('pmm_collapsed_folders', JSON.stringify(Array.from(collapsedFolders)));
+  renderModsView();
+}
+
+function buildModCardHtml(mod: ModInfo, state: any): string {
+  const tags = mod.nexusTags && mod.nexusTags.length > 0
+    ? `<div class="mod-card-tags">${mod.nexusTags.slice(0, 3).map(t => `<span class="mod-card-tag">${escapeHtml(t)}</span>`).join('')}</div>`
+    : '';
+  const catHtml = mod.nexusCategory ? `<span class="mod-card-category">${escapeHtml(mod.nexusCategory)}</span>` : '';
+  const author = mod.nexusAuthor ? `<span class="mod-card-author">by ${escapeHtml(mod.nexusAuthor)}</span>` : '';
+  const imageHtml = mod.nexusPictureUrl
+    ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(mod.nexusPictureUrl)}" alt="" loading="lazy" /></div>`
+    : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
+
+  const updateVer = state.availableUpdates?.get(mod.id);
+  const updateBadge = updateVer
+    ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}">&#9650; Update (v${escapeHtml(updateVer)})</span>`
+    : '';
+
+  const isSelected = state.selectedModIds.has(mod.id);
+  return `
+  <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" draggable="true">
+    ${imageHtml}
+    <div class="mod-card-body">
+      <div class="mod-card-body-top">
+        <span class="mod-card-name">${escapeHtml(mod.name)}</span>
+        <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
+      </div>
+      <div class="mod-card-meta">
+        <span class="mod-card-type ${mod.type}">${mod.type}</span>
+        <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
+        ${updateBadge}
+        ${catHtml}
+      </div>
+      ${author}
+      ${tags}
+    </div>
+    <div class="mod-card-footer">
+      <label class="toggle-switch">
+        <input type="checkbox" class="card-toggle-input" data-id="${mod.id}" ${mod.enabled ? 'checked' : ''} />
+        <span class="toggle-slider"></span>
+      </label>
+      <button class="card-remove-btn" data-id="${mod.id}" title="Remove mod">✕</button>
+    </div>
+  </div>`;
+}
+
+function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state: any): string {
+  const allEnabled = modsInFolder.length > 0 && modsInFolder.every(m => m.enabled);
+  const folderCheckbox = `<label class="toggle-switch" title="Toggle all mods in this folder" onclick="event.stopPropagation()">
+    <input type="checkbox" class="folder-toggle-input" data-folder-id="${folder.id}" ${allEnabled ? 'checked' : ''} />
+    <span class="toggle-slider"></span>
+  </label>`;
+  const isSelected = state.selectedModIds.has(folder.id);
+
+  return `
+  <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" draggable="true" style="position:relative;">
+    <div class="folder-card-actions" style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; z-index: 10;" onclick="event.stopPropagation()">
+      <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="Rename folder" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✏</button>
+      <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="Delete folder" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✕</button>
+    </div>
+    <div class="mod-card-image-wrap folder-icon-wrap" style="display:flex;align-items:center;justify-content:center;height:120px;background:var(--bg-secondary);font-size:48px;">
+      📁
+    </div>
+    <div class="mod-card-body" style="padding: 12px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between;">
+      <div class="mod-card-body-top">
+        <span class="mod-card-name" style="font-weight: 600; font-size: 13px;">${escapeHtml(folder.name)}</span>
+      </div>
+      <div class="mod-card-meta" style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
+        <span>${modsInFolder.length} mod${modsInFolder.length === 1 ? '' : 's'}</span>
+        ${folderCheckbox}
+      </div>
+    </div>
+  </div>
+  `;
+}
+
 export function renderModsView(): void {
   const state = getState();
   const container = document.getElementById('mods-container')!;
@@ -69,8 +155,6 @@ export function renderModsView(): void {
     if (state.statusFilter === 'enabled' && !m.enabled) return false;
     if (state.statusFilter === 'disabled' && m.enabled) return false;
 
-    // Hide UE4SS mods from the "enabled" list if UE4SS is not active for this profile,
-    // but keep them visible in "all" and "disabled" views so users can still see what's installed
     const isUe4ssMod = m.type === 'ue4ss' || m.nexusAuthor === 'UE4SS Native Mod';
     if (isUe4ssMod && currentProfile && !currentProfile.ue4ss_enabled && state.statusFilter === 'enabled') {
       return false;
@@ -123,66 +207,84 @@ export function renderModsView(): void {
     return asc ? cmp : -cmp;
   });
 
-  if (filtered.length === 0) {
+  if (filtered.length === 0 && !state.currentFolderId) {
     const isProfileEmpty = state.allMods.every(m => !m.enabled);
     container.innerHTML = `<div id="empty-state">${isProfileEmpty ? 'No active mods in this profile. Switch profiles or install/enable mods from the Library.' : 'No mods match the current filters.'}</div>`;
     return;
   }
 
-  container.innerHTML = filtered.map((mod) => {
-    const tags = mod.nexusTags && mod.nexusTags.length > 0
-      ? `<div class="mod-card-tags">${mod.nexusTags.slice(0, 3).map(t => `<span class="mod-card-tag">${escapeHtml(t)}</span>`).join('')}</div>`
-      : '';
-    const catHtml = mod.nexusCategory ? `<span class="mod-card-category">${escapeHtml(mod.nexusCategory)}</span>` : '';
-    const author = mod.nexusAuthor ? `<span class="mod-card-author">by ${escapeHtml(mod.nexusAuthor)}</span>` : '';
-    const imageHtml = mod.nexusPictureUrl
-      ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(mod.nexusPictureUrl)}" alt="" loading="lazy" /></div>`
-      : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
+  // Virtual Folders Grouping
+  const folders = currentProfile?.mod_folders || [];
+  const folderModsMap = new Map<string, ModInfo[]>();
+  for (const f of folders) {
+    folderModsMap.set(f.id, []);
+  }
 
-    const updateVer = state.availableUpdates?.get(mod.id);
-    const updateBadge = updateVer
-      ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}">&#9650; Update (v${escapeHtml(updateVer)})</span>`
-      : '';
+  const ungroupedMods: ModInfo[] = [];
 
-    const isSelected = state.selectedModIds.has(mod.id);
-    return `
-    <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}">
-      ${imageHtml}
-      <div class="mod-card-body">
-        <div class="mod-card-body-top">
-          <span class="mod-card-name">${escapeHtml(mod.name)}</span>
-          <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
-        </div>
-        <div class="mod-card-meta">
-          <span class="mod-card-type ${mod.type}">${mod.type}</span>
-          <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
-          ${updateBadge}
-          ${catHtml}
-        </div>
-        ${author}
-        ${tags}
-      </div>
-      <div class="mod-card-footer">
-        <label class="toggle-switch">
-          <input type="checkbox" class="card-toggle-input" data-id="${mod.id}" ${mod.enabled ? 'checked' : ''} />
-          <span class="toggle-slider"></span>
-        </label>
-        <button class="card-remove-btn" data-id="${mod.id}" title="Remove mod">✕</button>
-      </div>
-    </div>`;
-  }).join('');
+  for (const mod of filtered) {
+    let placed = false;
+    for (const f of folders) {
+      if (f.mod_ids.includes(mod.id)) {
+        folderModsMap.get(f.id)!.push(mod);
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      ungroupedMods.push(mod);
+    }
+  }
+
+  let html = '';
+
+  if (state.currentFolderId) {
+    // Render inside a specific folder
+    const activeFolder = folders.find(f => f.id === state.currentFolderId);
+    const modsInFolder = folderModsMap.get(state.currentFolderId) || [];
+    
+    html += `
+    <div class="folder-breadcrumb" id="mod-root-drop-zone" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+      <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">← Back to Root</button>
+      <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Root / ${escapeHtml(activeFolder ? activeFolder.name : 'Unknown Folder')}</span>
+    </div>
+    `;
+
+    if (modsInFolder.length === 0) {
+      html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">No mods in this folder. Double-click "Back to Root" or drag mods to ungroup them.</div>`;
+    } else {
+      html += modsInFolder.map(m => buildModCardHtml(m, state)).join('');
+    }
+  } else {
+    // Render Root level (folders first, then ungrouped mods)
+    const renderFolderCards = folders.map(f => {
+      const modsInFolder = folderModsMap.get(f.id) || [];
+      return buildFolderCardHtml(f, modsInFolder, state);
+    }).join('');
+
+    html += renderFolderCards;
+    html += ungroupedMods.map(m => buildModCardHtml(m, state)).join('');
+  }
+
+  container.innerHTML = html;
 
   attachCardEvents(container);
+  attachFolderEvents(container);
 }
 
 function attachCardEvents(container: HTMLElement): void {
   container.querySelectorAll('.mod-card').forEach((card) => {
-    card.addEventListener('click', (e) => {
+    card.addEventListener('dblclick', (e) => {
       if ((e.target as HTMLElement).closest('.toggle-switch')) return;
-      if ((e.target as HTMLElement).closest('.card-remove-btn')) return;
-      if ((e as MouseEvent).ctrlKey || (e as MouseEvent).metaKey || (e as MouseEvent).shiftKey) return;
+      if ((e.target as HTMLElement).closest('.mod-folder-btn')) return;
+      const type = (card as HTMLElement).dataset.type;
       const id = (card as HTMLElement).dataset.id!;
-      openDetailPanel(id);
+      if (type === 'folder') {
+        updateState({ currentFolderId: id });
+        renderModsView();
+      } else {
+        openDetailPanel(id);
+      }
     });
   });
 
@@ -534,7 +636,8 @@ function renderProfileList(): void {
           currentProfileId: id,
           editorModId: null,
           editorFiles: [],
-          editorSelectedFile: null
+          editorSelectedFile: null,
+          currentFolderId: null
         });
         renderModsView();
 
@@ -567,7 +670,53 @@ function renderProfileList(): void {
     });
   });
 
-function showInputModal(title: string, message: string, defaultValue: string): Promise<string | null> {
+  list.querySelectorAll('.profile-clone-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      const { profiles } = getState();
+      const current = profiles.find(p => p.id === id);
+      const name = current ? current.name : '';
+
+      const newName = await showInputModal(
+        'Duplicate Profile',
+        `Enter a name for the duplicated profile of "${name}":`,
+        `${name} - Copy`
+      );
+      if (newName === null) return;
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+
+      try {
+        const { cloneProfile } = await import('../api');
+        await cloneProfile(id, trimmed);
+        showToast('Profile duplicated', 'success');
+        await loadProfiles();
+        renderModsView();
+      } catch (err) {
+        showToast('Failed to duplicate profile: ' + err, 'error');
+      }
+    });
+  });
+
+  list.querySelectorAll('.profile-item-delete:not(.disabled)').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      try {
+        const { deleteProfile } = await import('../api');
+        await deleteProfile(id);
+        showToast('Profile deleted', 'success');
+        await loadProfiles();
+        renderModsView();
+      } catch (err) {
+        showToast('Failed to delete profile: ' + err, 'error');
+      }
+    });
+  });
+}
+
+export function showInputModal(title: string, message: string, defaultValue: string): Promise<string | null> {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay visible';
@@ -640,52 +789,6 @@ function showInputModal(title: string, message: string, defaultValue: string): P
   });
 }
 
-  list.querySelectorAll('.profile-clone-btn').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = (btn as HTMLElement).dataset.id!;
-      const { profiles } = getState();
-      const current = profiles.find(p => p.id === id);
-      const name = current ? current.name : '';
-
-      const newName = await showInputModal(
-        'Duplicate Profile',
-        `Enter a name for the duplicated profile of "${name}":`,
-        `${name} - Copy`
-      );
-      if (newName === null) return;
-      const trimmed = newName.trim();
-      if (!trimmed) return;
-
-      try {
-        const { cloneProfile } = await import('../api');
-        await cloneProfile(id, trimmed);
-        showToast('Profile duplicated', 'success');
-        await loadProfiles();
-        renderModsView();
-      } catch (err) {
-        showToast('Failed to duplicate profile: ' + err, 'error');
-      }
-    });
-  });
-
-  list.querySelectorAll('.profile-item-delete:not(.disabled)').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      e.stopPropagation();
-      const id = (btn as HTMLElement).dataset.id!;
-      try {
-        const { deleteProfile } = await import('../api');
-        await deleteProfile(id);
-        showToast('Profile deleted', 'success');
-        await loadProfiles();
-        renderModsView();
-      } catch (err) {
-        showToast('Failed to delete profile: ' + err, 'error');
-      }
-    });
-  });
-}
-
 export async function handleProfileChange(profileId: string): Promise<void> {
   const { currentProfileId } = getState();
   if (profileId === currentProfileId) return;
@@ -706,7 +809,8 @@ export async function handleProfileChange(profileId: string): Promise<void> {
       currentProfileId: profileId,
       editorModId: null,
       editorFiles: [],
-      editorSelectedFile: null
+      editorSelectedFile: null,
+      currentFolderId: null
     });
     renderModsView();
 
@@ -1343,6 +1447,36 @@ function showContextMenu(modId: string, x: number, y: number): void {
     </button>
   `;
 
+  // Folders Submenu
+  const currentProfile = getState().profiles.find(p => p.id === getState().currentProfileId);
+  const folders = currentProfile?.mod_folders || [];
+  const isInFolder = folders.some(f => f.mod_ids.includes(modId));
+  const foldersHtml = folders.map(f => `
+    <button type="button" class="context-submenu-item" data-action="move-to-folder" data-folder-id="${f.id}" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
+      <span>📁</span> ${escapeHtml(f.name)}
+    </button>
+  `).join('');
+
+  html += `
+    <div class="context-menu-sep"></div>
+    <div class="context-menu-item has-submenu" style="position:relative;display:flex;align-items:center;width:100%;">
+      <span class="ctx-icon">📁</span>
+      Move to folder...
+      <span style="margin-left:auto;font-size:9px;color:var(--text-muted);">▶</span>
+      <div class="context-submenu" style="display:none;position:absolute;top:-4px;left:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;z-index:4000;padding:4px 0;">
+        ${foldersHtml}
+        ${(folders.length > 0 && isInFolder) ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
+        ${isInFolder ? `<button type="button" class="context-submenu-item" data-action="move-to-folder" data-folder-id="none" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
+          <span>❌</span> Remove from folder
+        </button>` : ''}
+        ${folders.length > 0 ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
+        <button type="button" class="context-submenu-item" data-action="move-to-new-folder" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
+          <span>➕</span> New folder...
+        </button>
+      </div>
+    </div>
+  `;
+
   if (mod.nexusModId || mod.githubRepo) {
     html += `<div class="context-menu-sep"></div>`;
     if (mod.nexusModId) {
@@ -1367,6 +1501,24 @@ function showContextMenu(modId: string, x: number, y: number): void {
 
   menu.innerHTML = html;
 
+  // Smart submenu positioning: flip to left when near right edge
+  menu.querySelectorAll('.has-submenu').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      const sub = item.querySelector('.context-submenu') as HTMLElement | null;
+      if (!sub) return;
+      const parentRect = item.getBoundingClientRect();
+      const subWidth = 180;
+      const spaceRight = window.innerWidth - parentRect.right;
+      if (spaceRight < subWidth + 12) {
+        sub.style.left = 'auto';
+        sub.style.right = '100%';
+      } else {
+        sub.style.left = '100%';
+        sub.style.right = 'auto';
+      }
+    });
+  });
+
   // Mark this mod card as context-active (cleared when menu closes)
   document.querySelectorAll('.mod-card.context-active').forEach(el => el.classList.remove('context-active'));
   const modCard = document.querySelector(`.mod-card[data-id="${modId}"]`);
@@ -1374,11 +1526,48 @@ function showContextMenu(modId: string, x: number, y: number): void {
 
   menu.querySelectorAll('.context-menu-item').forEach(btn => {
     btn.addEventListener('click', (e) => {
+      if ((btn as HTMLElement).classList.contains('has-submenu')) return;
       e.stopPropagation();
       e.preventDefault();
       const action = (btn as HTMLElement).dataset.action!;
       hideContextMenu();
       runContextAction(action, modId);
+    });
+  });
+
+  menu.querySelectorAll('.context-submenu-item').forEach(subBtn => {
+    subBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const subAction = (subBtn as HTMLElement).dataset.action!;
+      hideContextMenu();
+      
+      if (subAction === 'move-to-folder') {
+        const folderId = (subBtn as HTMLElement).dataset.folderId!;
+        const targetFolder = folderId === 'none' ? null : folderId;
+        await handleAddModToFolder(targetFolder, modId);
+      } else if (subAction === 'move-to-new-folder') {
+        const newName = await showInputModal(
+          'New Mod Folder',
+          'Enter a name for the new virtual folder:',
+          'Skins'
+        );
+        if (newName === null) return;
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+        
+        try {
+          const { createModFolder, addModToFolder } = await import('../api');
+          const state = getState();
+          const updatedProfile = await createModFolder(state.currentProfileId, trimmed);
+          const newFolder = updatedProfile.mod_folders?.find(f => f.name.toLowerCase() === trimmed.toLowerCase());
+          if (newFolder) {
+            await handleAddModToFolder(newFolder.id, modId);
+          }
+        } catch (err) {
+          showToast('Failed: ' + err, 'error');
+        }
+      }
     });
   });
 
@@ -1394,6 +1583,11 @@ function showGlobalContextMenu(x: number, y: number): void {
   const hasPalSchema = deps?.palschema_installed;
 
   const html = `
+    <button type="button" class="context-menu-item" data-action="new-folder">
+      <span class="ctx-icon">📁</span>
+      New mod folder
+    </button>
+    <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="install">
       <span class="ctx-icon">+</span>
       Install mod (.zip, .rar, .7z)
@@ -1465,6 +1659,9 @@ function showGlobalContextMenu(x: number, y: number): void {
           break;
         case 'export-json':
           document.getElementById('export-json-btn')?.click();
+          break;
+        case 'new-folder':
+          document.getElementById('new-folder-btn')?.click();
           break;
         case 'check-deps':
           showToast('Checking for dependency updates...', 'info');
@@ -1539,6 +1736,16 @@ function showBulkContextMenu(x: number, y: number): void {
   const menu = document.getElementById('context-menu')!;
   const selectedCount = getState().selectedModIds.size;
 
+  const currentProfile = getState().profiles.find(p => p.id === getState().currentProfileId);
+  const folders = currentProfile?.mod_folders || [];
+  const selectedIds = Array.from(getState().selectedModIds);
+  const anyInFolder = folders.some(f => selectedIds.some(id => f.mod_ids.includes(id)));
+  const foldersHtml = folders.map(f => `
+    <button type="button" class="context-submenu-item" data-action="bulk-move-to-folder" data-folder-id="${f.id}" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
+      <span>📁</span> ${escapeHtml(f.name)}
+    </button>
+  `).join('');
+
   const html = `
     <div style="font-size:9px;font-weight:700;color:var(--text-muted);padding:6px 16px 2px;text-transform:uppercase">${selectedCount} Mods Selected</div>
     <div class="context-menu-sep"></div>
@@ -1551,6 +1758,23 @@ function showBulkContextMenu(x: number, y: number): void {
       Disable Selected
     </button>
     <div class="context-menu-sep"></div>
+    <div class="context-menu-item has-submenu" style="position:relative;display:flex;align-items:center;width:100%;">
+      <span class="ctx-icon">📁</span>
+      Move selected to folder...
+      <span style="margin-left:auto;font-size:9px;color:var(--text-muted);">▶</span>
+      <div class="context-submenu" style="display:none;position:absolute;top:-4px;left:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;z-index:4000;padding:4px 0;">
+        ${foldersHtml}
+        ${(folders.length > 0 && anyInFolder) ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
+        ${anyInFolder ? `<button type="button" class="context-submenu-item" data-action="bulk-move-to-folder" data-folder-id="none" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
+          <span>❌</span> Remove from folders
+        </button>` : ''}
+        ${folders.length > 0 ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
+        <button type="button" class="context-submenu-item" data-action="bulk-move-to-new-folder" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
+          <span>➕</span> New folder...
+        </button>
+      </div>
+    </div>
+    <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item danger" data-action="bulk-remove">
       <span class="ctx-icon">✕</span>
       Remove Selected
@@ -1559,8 +1783,27 @@ function showBulkContextMenu(x: number, y: number): void {
 
   menu.innerHTML = html;
 
+  // Smart submenu positioning: flip to left when near right edge
+  menu.querySelectorAll('.has-submenu').forEach(item => {
+    item.addEventListener('mouseenter', () => {
+      const sub = item.querySelector('.context-submenu') as HTMLElement | null;
+      if (!sub) return;
+      const parentRect = item.getBoundingClientRect();
+      const subWidth = 180;
+      const spaceRight = window.innerWidth - parentRect.right;
+      if (spaceRight < subWidth + 12) {
+        sub.style.left = 'auto';
+        sub.style.right = '100%';
+      } else {
+        sub.style.left = '100%';
+        sub.style.right = 'auto';
+      }
+    });
+  });
+
   menu.querySelectorAll('.context-menu-item').forEach(btn => {
     btn.addEventListener('click', (e) => {
+      if ((btn as HTMLElement).classList.contains('has-submenu')) return;
       e.stopPropagation();
       e.preventDefault();
       const action = (btn as HTMLElement).dataset.action!;
@@ -1572,6 +1815,70 @@ function showBulkContextMenu(x: number, y: number): void {
         document.getElementById('bulk-disable-btn')?.click();
       } else if (action === 'bulk-remove') {
         document.getElementById('bulk-remove-btn')?.click();
+      }
+    });
+  });
+
+  menu.querySelectorAll('.context-submenu-item').forEach(subBtn => {
+    subBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const subAction = (subBtn as HTMLElement).dataset.action!;
+      hideContextMenu();
+
+      const modIds = Array.from(getState().selectedModIds);
+      if (modIds.length === 0) return;
+
+      if (subAction === 'bulk-move-to-folder') {
+        const folderId = (subBtn as HTMLElement).dataset.folderId!;
+        const targetFolder = folderId === 'none' ? null : folderId;
+        showToast(`Grouping ${modIds.length} mods...`, 'info');
+        try {
+          const { addModToFolder } = await import('../api');
+          const state = getState();
+          let lastProfile = null;
+          for (const modId of modIds) {
+            lastProfile = await addModToFolder(state.currentProfileId, targetFolder, modId);
+          }
+          if (lastProfile) {
+            const profiles = state.profiles.map(p => p.id === state.currentProfileId ? lastProfile : p);
+            updateState({ profiles });
+          }
+          await loadMods();
+          showToast(`Moved ${modIds.length} mods successfully`, 'success');
+        } catch (err) {
+          showToast('Failed to group mods: ' + err, 'error');
+        }
+      } else if (subAction === 'bulk-move-to-new-folder') {
+        const newName = await showInputModal(
+          'New Mod Folder',
+          'Enter a name for the new virtual folder:',
+          'Skins'
+        );
+        if (newName === null) return;
+        const trimmed = newName.trim();
+        if (!trimmed) return;
+        
+        try {
+          const { createModFolder, addModToFolder } = await import('../api');
+          const state = getState();
+          const updatedProfile = await createModFolder(state.currentProfileId, trimmed);
+          const newFolder = updatedProfile.mod_folders?.find(f => f.name.toLowerCase() === trimmed.toLowerCase());
+          if (newFolder) {
+            let lastProfile = null;
+            for (const modId of modIds) {
+              lastProfile = await addModToFolder(state.currentProfileId, newFolder.id, modId);
+            }
+            if (lastProfile) {
+              const profiles = state.profiles.map(p => p.id === state.currentProfileId ? lastProfile : p);
+              updateState({ profiles });
+            }
+            await loadMods();
+            showToast(`Created folder and grouped ${modIds.length} mods`, 'success');
+          }
+        } catch (err) {
+          showToast('Failed: ' + err, 'error');
+        }
       }
     });
   });
@@ -1810,4 +2117,257 @@ export function setupContextMenu(): void {
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') hideContextMenu();
   });
+}
+
+function attachFolderEvents(container: HTMLElement): void {
+  // Back to Root Button Click
+  const backBtn = container.querySelector('#btn-back-to-root');
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      updateState({ currentFolderId: null });
+      renderModsView();
+    });
+  }
+
+  // Folder Toggle Input (enable/disable all mods in folder)
+  container.querySelectorAll('.folder-toggle-input').forEach(input => {
+    input.addEventListener('change', async (e) => {
+      e.stopPropagation();
+      const target = e.currentTarget as HTMLInputElement;
+      const folderId = target.dataset.folderId!;
+      const enabled = target.checked;
+      
+      try {
+        const { toggleFolderMods } = await import('../api');
+        const state = getState();
+        const updatedProfile = await toggleFolderMods(state.currentProfileId, folderId, enabled);
+        
+        const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
+        updateState({ profiles: updatedProfiles });
+        
+        showToast(enabled ? 'All folder mods enabled' : 'All folder mods disabled', 'success');
+        await loadMods();
+      } catch (err) {
+        target.checked = !enabled;
+        showToast('Failed to toggle folder mods: ' + err, 'error');
+      }
+    });
+  });
+
+  // Rename Folder
+  container.querySelectorAll('.mod-folder-btn.rename-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const folderId = (btn as HTMLElement).dataset.folderId!;
+      const state = getState();
+      const folder = state.profiles.find(p => p.id === state.currentProfileId)?.mod_folders?.find(f => f.id === folderId);
+      if (!folder) return;
+
+      const newName = await showInputModal('Rename Folder', 'Enter new folder name:', folder.name);
+      if (newName === null) return;
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+
+      try {
+        const { renameModFolder } = await import('../api');
+        const updatedProfile = await renameModFolder(state.currentProfileId, folderId, trimmed);
+        
+        const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
+        updateState({ profiles: updatedProfiles });
+        
+        showToast('Folder renamed', 'success');
+        await loadMods();
+      } catch (err) {
+        showToast('Failed to rename folder: ' + err, 'error');
+      }
+    });
+  });
+
+  // Delete Folder
+  container.querySelectorAll('.mod-folder-btn.delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const folderId = (btn as HTMLElement).dataset.folderId!;
+      const state = getState();
+      const folder = state.profiles.find(p => p.id === state.currentProfileId)?.mod_folders?.find(f => f.id === folderId);
+      const name = folder ? folder.name : 'this folder';
+
+      const confirmed = await showConfirm(`Delete folder "${name}"? Mods inside will not be deleted (they will just return to Ungrouped).`);
+      if (confirmed) {
+        try {
+          const { deleteModFolder } = await import('../api');
+          const updatedProfile = await deleteModFolder(state.currentProfileId, folderId);
+          
+          const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
+          updateState({ profiles: updatedProfiles });
+          
+          showToast('Folder deleted', 'success');
+          // If deleted folder was active, clear navigation
+          if (state.currentFolderId === folderId) {
+            updateState({ currentFolderId: null });
+          }
+          await loadMods();
+        } catch (err) {
+          showToast('Failed to delete folder: ' + err, 'error');
+        }
+      }
+    });
+  });
+
+  // HTML5 Drag and Drop Event Listeners
+  container.querySelectorAll('.mod-card').forEach(card => {
+    card.addEventListener('dragstart', (e: Event) => {
+      const de = e as DragEvent;
+      const modId = (card as HTMLElement).dataset.id!;
+      const state = getState();
+      if (de.dataTransfer) {
+        de.dataTransfer.effectAllowed = 'move';
+      }
+      if (state.selectedModIds.has(modId)) {
+        const ids = Array.from(state.selectedModIds).join(',');
+        de.dataTransfer?.setData('text/plain', ids);
+      } else {
+        de.dataTransfer?.setData('text/plain', modId);
+      }
+      card.classList.add('dragging');
+    });
+
+    card.addEventListener('dragend', () => {
+      card.classList.remove('dragging');
+    });
+  });
+
+  // Drop on Folder Cards
+  container.querySelectorAll('.mod-card.folder-card').forEach(folderCard => {
+    folderCard.addEventListener('dragover', (e: Event) => {
+      e.preventDefault();
+      const de = e as DragEvent;
+      if (de.dataTransfer) {
+        de.dataTransfer.dropEffect = 'move';
+      }
+      folderCard.classList.add('drag-over');
+    });
+
+    folderCard.addEventListener('dragleave', () => {
+      folderCard.classList.remove('drag-over');
+    });
+
+    folderCard.addEventListener('drop', async (e: Event) => {
+      e.preventDefault();
+      folderCard.classList.remove('drag-over');
+      const de = e as DragEvent;
+      const data = de.dataTransfer?.getData('text/plain');
+      const folderId = (folderCard as HTMLElement).dataset.id!;
+      if (data) {
+        const modIds = data.split(',');
+        try {
+          const { addModToFolder } = await import('../api');
+          const state = getState();
+          let lastProfile = null;
+          for (const id of modIds) {
+            // Avoid adding folders to other folders
+            const isFolder = container.querySelector(`.mod-card[data-id="${id}"]`)?.getAttribute('data-type') === 'folder';
+            if (isFolder || id === folderId) continue;
+            lastProfile = await addModToFolder(state.currentProfileId, folderId, id);
+          }
+          if (lastProfile) {
+            const profiles = state.profiles.map(p => p.id === state.currentProfileId ? lastProfile : p);
+            updateState({ profiles });
+          }
+          await loadMods();
+          showToast(`Moved ${modIds.length} mod(s) to folder`, 'success');
+        } catch (err) {
+          showToast('Failed to move: ' + err, 'error');
+        }
+      }
+    });
+  });
+
+  const rootZone = container.querySelector('#mod-root-drop-zone');
+  if (rootZone) {
+    rootZone.addEventListener('dragover', (e: Event) => {
+      e.preventDefault();
+      const de = e as DragEvent;
+      if (de.dataTransfer) {
+        de.dataTransfer.dropEffect = 'move';
+      }
+      rootZone.classList.add('drag-over');
+    });
+
+    rootZone.addEventListener('dragleave', () => {
+      rootZone.classList.remove('drag-over');
+    });
+
+    rootZone.addEventListener('drop', async (e: Event) => {
+      e.preventDefault();
+      rootZone.classList.remove('drag-over');
+      const de = e as DragEvent;
+      const data = de.dataTransfer?.getData('text/plain');
+      if (data) {
+        const modIds = data.split(',');
+        try {
+          const { addModToFolder } = await import('../api');
+          const state = getState();
+          let lastProfile = null;
+          for (const id of modIds) {
+            // Avoid adding folders to other folders
+            const isFolder = container.querySelector(`.mod-card[data-id="${id}"]`)?.getAttribute('data-type') === 'folder';
+            if (isFolder) continue;
+            lastProfile = await addModToFolder(state.currentProfileId, null, id);
+          }
+          if (lastProfile) {
+            const profiles = state.profiles.map(p => p.id === state.currentProfileId ? lastProfile : p);
+            updateState({ profiles });
+          }
+          await loadMods();
+          showToast(`Ungrouped ${modIds.length} mod(s)`, 'success');
+        } catch (err) {
+          showToast('Failed to ungroup: ' + err, 'error');
+        }
+      }
+    });
+  }
+
+  // Allow dragover on the entire container to prevent the blocked cursor
+  container.addEventListener('dragover', (e: Event) => {
+    e.preventDefault();
+    const de = e as DragEvent;
+    if (de.dataTransfer) {
+      de.dataTransfer.dropEffect = 'move';
+    }
+  });
+}
+
+async function handleAddModToFolder(folderId: string | null, modId: string): Promise<void> {
+  const { currentProfileId } = getState();
+  try {
+    const { addModToFolder } = await import('../api');
+    const updatedProfile = await addModToFolder(currentProfileId, folderId, modId);
+    
+    const state = getState();
+    const profiles = state.profiles.map(p => p.id === currentProfileId ? updatedProfile : p);
+    updateState({ profiles });
+    
+    await loadMods();
+    showToast(folderId ? 'Mod grouped into folder' : 'Mod moved to ungrouped', 'success');
+  } catch (err) {
+    showToast('Failed to move mod: ' + err, 'error');
+  }
+}
+
+export async function handleCreateFolder(name: string): Promise<void> {
+  const { currentProfileId } = getState();
+  try {
+    const { createModFolder } = await import('../api');
+    const updatedProfile = await createModFolder(currentProfileId, name);
+    showToast('Folder created', 'success');
+    
+    const state = getState();
+    const profiles = state.profiles.map(p => p.id === currentProfileId ? updatedProfile : p);
+    updateState({ profiles });
+    
+    await loadMods();
+  } catch (err) {
+    showToast('Failed to create folder: ' + err, 'error');
+  }
 }

@@ -75,6 +75,7 @@ pub fn ensure_default_profile(data: &mut AppData) {
             enabled_mod_ids: Vec::new(),
             ue4ss_enabled: ue4ss_installed,
             palschema_enabled: palschema_installed,
+            mod_folders: Vec::new(),
         });
     }
 
@@ -380,6 +381,7 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
         enabled_mod_ids: Vec::new(),
         ue4ss_enabled: false,
         palschema_enabled: false,
+        mod_folders: Vec::new(),
     };
 
     let program_path = data.settings.program_path.clone();
@@ -415,6 +417,7 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
         enabled_mod_ids: source_profile.enabled_mod_ids.clone(),
         ue4ss_enabled: source_profile.ue4ss_enabled,
         palschema_enabled: source_profile.palschema_enabled,
+        mod_folders: source_profile.mod_folders.clone(),
     };
 
     let program_path = data.settings.program_path.clone();

@@ -201,3 +201,210 @@ pub fn set_mod_profile_state(
 
     Ok(serde_json::json!({ "success": true }))
 }
+
+#[tauri::command]
+pub fn create_mod_folder_command(
+    profile_id: String,
+    name: String,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let name = name.trim().to_string();
+    if name.is_empty() || name.len() > 100 {
+        return Err("Invalid folder name".to_string());
+    }
+
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_idx = data.profiles.iter().position(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+        
+        let folder_id = crate::profiles::sanitize_profile_id(&name);
+        if data.profiles[p_idx].mod_folders.iter().any(|f| f.id == folder_id) {
+            return Err("A folder with a similar name already exists".to_string());
+        }
+
+        let new_folder = crate::models::ModFolder {
+            id: folder_id,
+            name,
+            mod_ids: Vec::new(),
+        };
+
+        data.profiles[p_idx].mod_folders.push(new_folder);
+        
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &profile_id);
+        if let Ok(json) = serde_json::to_string_pretty(&data.profiles[p_idx]) {
+            let _ = std::fs::write(p_dir.join("profile.json"), json);
+        }
+        data.profiles[p_idx].clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}
+
+#[tauri::command]
+pub fn delete_mod_folder_command(
+    profile_id: String,
+    folder_id: String,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_idx = data.profiles.iter().position(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+
+        data.profiles[p_idx].mod_folders.retain(|f| f.id != folder_id);
+
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &profile_id);
+        if let Ok(json) = serde_json::to_string_pretty(&data.profiles[p_idx]) {
+            let _ = std::fs::write(p_dir.join("profile.json"), json);
+        }
+        data.profiles[p_idx].clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}
+
+#[tauri::command]
+pub fn rename_mod_folder_command(
+    profile_id: String,
+    folder_id: String,
+    new_name: String,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let new_name = new_name.trim().to_string();
+    if new_name.is_empty() || new_name.len() > 100 {
+        return Err("Invalid folder name".to_string());
+    }
+
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_idx = data.profiles.iter().position(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+
+        let f_idx = data.profiles[p_idx].mod_folders.iter().position(|f| f.id == folder_id)
+            .ok_or_else(|| "Folder not found".to_string())?;
+
+        data.profiles[p_idx].mod_folders[f_idx].name = new_name;
+
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &profile_id);
+        if let Ok(json) = serde_json::to_string_pretty(&data.profiles[p_idx]) {
+            let _ = std::fs::write(p_dir.join("profile.json"), json);
+        }
+        data.profiles[p_idx].clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}
+
+#[tauri::command]
+pub fn add_mod_to_folder_command(
+    profile_id: String,
+    folder_id: Option<String>,
+    mod_id: String,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_idx = data.profiles.iter().position(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+
+        for folder in &mut data.profiles[p_idx].mod_folders {
+            folder.mod_ids.retain(|id| id != &mod_id);
+        }
+
+        if let Some(fid) = folder_id {
+            if let Some(folder) = data.profiles[p_idx].mod_folders.iter_mut().find(|f| f.id == fid) {
+                folder.mod_ids.push(mod_id);
+            }
+        }
+
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &profile_id);
+        if let Ok(json) = serde_json::to_string_pretty(&data.profiles[p_idx]) {
+            let _ = std::fs::write(p_dir.join("profile.json"), json);
+        }
+        data.profiles[p_idx].clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}
+
+#[tauri::command]
+pub fn toggle_folder_mods_command(
+    profile_id: String,
+    folder_id: String,
+    enabled: bool,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        
+        let p_idx = data.profiles.iter().position(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+        
+        let folder = data.profiles[p_idx].mod_folders.iter().find(|f| f.id == folder_id)
+            .ok_or_else(|| "Folder not found".to_string())?.clone();
+
+        for mod_id in &folder.mod_ids {
+            let _ = crate::profiles::set_profile_mod_state(&mut data, &profile_id, mod_id, enabled);
+        }
+
+        data.profiles[p_idx].clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}

@@ -115,6 +115,7 @@
           <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile:
             Default</span>
           <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles">Profiles</button>
+          <button id="new-folder-btn" class="toolbar-btn-sm" title="Create virtual group folder">New Folder</button>
           <div id="toolbar-actions">
             <button id="scan-btn" class="toolbar-btn" title="Rescan mods">↻</button>
             <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip">+</button>
@@ -236,6 +237,12 @@
         <div id="detail-info-tab" class="detail-tab-content">
           <div id="detail-image-container">
             <img id="detail-image" src="" alt="" />
+          </div>
+          <div class="detail-row" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+            <span class="detail-label">Folder:</span>
+            <select id="detail-folder-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; flex: 1;">
+              <option value="">(None / Ungrouped)</option>
+            </select>
           </div>
           <div id="detail-description" class="detail-description"></div>
           <div id="detail-nexus" class="detail-section"></div>

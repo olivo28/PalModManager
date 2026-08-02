@@ -27,6 +27,7 @@ export interface AppState {
   selectedModIds: Set<string>;
   selectedLibraryIds: Set<string>;
   availableUpdates: Map<string, string>;
+  currentFolderId: string | null;
 }
 
 let state: AppState = {
@@ -55,6 +56,7 @@ let state: AppState = {
   selectedModIds: new Set(),
   selectedLibraryIds: new Set(),
   availableUpdates: new Map(),
+  currentFolderId: null,
 };
 
 

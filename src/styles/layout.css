@@ -807,7 +807,7 @@ main {
   border: 1px solid var(--accent);
   min-width: 190px;
   max-height: calc(100vh - 20px);
-  overflow-y: auto;
+  overflow: visible;
   padding: 4px 0;
   box-shadow: 0 4px 16px rgba(0,0,0,0.5);
 }
@@ -1000,3 +1000,171 @@ main {
   opacity: 0.3;
   cursor: not-allowed;
 }
+
+/* ===== MOD GROUP FOLDERS ===== */
+.mod-folder-wrapper {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.mod-folder-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.mod-folder-header:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+.mod-folder-header.drag-over {
+  border-color: var(--accent) !important;
+  background: rgba(58, 149, 255, 0.08) !important;
+  box-shadow: 0 0 8px rgba(58, 149, 255, 0.25);
+}
+
+.mod-folder-title-area {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.mod-folder-caret {
+  font-size: 11px;
+  transition: transform 0.2s ease;
+  color: var(--text-muted);
+  display: inline-block;
+}
+
+.mod-folder-caret.collapsed {
+  transform: rotate(-90deg);
+}
+
+.mod-folder-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.mod-folder-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.mod-folder-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.15s ease, background-color 0.15s ease;
+}
+
+.mod-folder-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mod-folder-btn.delete:hover {
+  color: #f1707b !important;
+  background: rgba(232, 17, 35, 0.1);
+}
+
+.mod-folder-body {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+  padding: 8px 4px;
+  margin-top: 4px;
+}
+
+.mod-folder-body.collapsed {
+  display: none;
+}
+
+/* Root list header style */
+.mod-root-header {
+  grid-column: 1 / -1;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 12px 0 4px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.mod-root-header.drag-over {
+  color: var(--accent);
+  border-bottom: 1px dashed var(--accent);
+  padding-bottom: 2px;
+}
+
+.mod-card.dragging {
+  opacity: 0.4;
+  border: 1px dashed var(--accent) !important;
+}
+
+/* Submenu layout styles for context menus */
+.context-menu-item.has-submenu:hover .context-submenu {
+  display: block !important;
+}
+
+.context-submenu-item:hover {
+  background: var(--bg-hover) !important;
+  color: var(--text-primary) !important;
+}
+
+/* Folder Card custom styling */
+.mod-card.folder-card {
+  border-color: var(--border);
+  background: var(--bg-card);
+}
+
+.mod-card.folder-card .folder-icon-wrap {
+  background: rgba(255, 193, 7, 0.05) !important;
+  color: #ffc107;
+  font-size: 54px !important;
+  transition: transform 0.2s, background-color 0.2s;
+}
+
+.mod-card.folder-card:hover .folder-icon-wrap {
+  transform: scale(1.05);
+  background: rgba(255, 193, 7, 0.1) !important;
+}
+
+.mod-card.folder-card:hover .folder-card-actions {
+  opacity: 1 !important;
+}
+
+.mod-card.folder-card.drag-over {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-dim) !important;
+  background: var(--bg-hover) !important;
+}
+
+.folder-breadcrumb.drag-over {
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 2px var(--accent-dim) !important;
+  background: var(--bg-hover) !important;
+}
+
+

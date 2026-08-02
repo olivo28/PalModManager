@@ -77,6 +77,13 @@ pub struct AppSettings {
 
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModFolder {
+    pub id: String,
+    pub name: String,
+    pub mod_ids: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub id: String,
     pub name: String,
@@ -91,6 +98,8 @@ pub struct Profile {
     pub ue4ss_enabled: bool,
     #[serde(default)]
     pub palschema_enabled: bool,
+    #[serde(default)]
+    pub mod_folders: Vec<ModFolder>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

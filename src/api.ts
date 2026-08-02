@@ -225,6 +225,26 @@ export async function setModProfileState(modId: string, enabled: boolean): Promi
   return invoke('set_mod_profile_state', { modId, enabled });
 }
 
+export async function createModFolder(profileId: string, name: string): Promise<Profile> {
+  return invoke('create_mod_folder_command', { profileId, name });
+}
+
+export async function deleteModFolder(profileId: string, folderId: string): Promise<Profile> {
+  return invoke('delete_mod_folder_command', { profileId, folderId });
+}
+
+export async function renameModFolder(profileId: string, folderId: string, newName: string): Promise<Profile> {
+  return invoke('rename_mod_folder_command', { profileId, folderId, newName });
+}
+
+export async function addModToFolder(profileId: string, folderId: string | null, modId: string): Promise<Profile> {
+  return invoke('add_mod_to_folder_command', { profileId, folderId, modId });
+}
+
+export async function toggleFolderMods(profileId: string, folderId: string, enabled: boolean): Promise<Profile> {
+  return invoke('toggle_folder_mods_command', { profileId, folderId, enabled });
+}
+
 // Dependencies (UE4SS / PalSchema)
 export async function checkDependencies(): Promise<DependencyStatus> {
   return invoke('check_dependencies');
@@ -262,7 +282,7 @@ export async function removeFromLibrary(modId: string): Promise<{ success: boole
   return invoke('remove_from_library', { modId });
 }
 
-export async function fetchNexusInfoAsync(modId: number): Promise<NexusModInfo> {
+export async function fetchNexusInfoAsync(modId: number): Promise<any> {
   return invoke('fetch_nexus_info_async', { modId });
 }
 

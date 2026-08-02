@@ -6,6 +6,8 @@
   transition: all 0.15s;
   display: flex;
   flex-direction: column;
+  -webkit-user-drag: element;
+  user-drag: element;
 }
 
 .mod-card:hover {

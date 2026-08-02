@@ -185,7 +185,7 @@ export function setModalStatus(text: string): void {
   document.getElementById('modal-status')!.textContent = text;
 }
 
-export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: string; name: string } | null): void {
+export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: string; name: string; version?: string } | null): void {
   updateState({ currentAnalysis: analysis });
   const content = document.getElementById('modal-content')!;
   const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
@@ -631,7 +631,7 @@ export async function handleConfirmInstall(): Promise<void> {
     </div>
     <div class="batch-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;min-height:220px;overflow-y:auto;background:#0d0d0d;padding:14px;font-family:monospace;font-size:11px;line-height:1.5;border-bottom-left-radius:6px;border-bottom-right-radius:6px;box-shadow:inset 0 0 10px rgba(0,0,0,0.8);color:#d0d0d0;border:1px solid #282828;border-top:none;"></div>
   `;
-  const resultsList = contentEl.querySelector('.batch-results-list')!;
+  const resultsList = contentEl.querySelector('.batch-results-list') as HTMLElement;
   const logs: string[] = [];
 
   // Check dependencies first

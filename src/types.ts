@@ -43,6 +43,12 @@ export interface AppSettings {
   debugConsole?: boolean;
 }
 
+export interface ModFolder {
+  id: string;
+  name: string;
+  mod_ids: string[];
+}
+
 export interface Profile {
   id: string;
   name: string;
@@ -51,6 +57,7 @@ export interface Profile {
   enabled_mod_ids: string[];
   ue4ss_enabled: boolean;
   palschema_enabled: boolean;
+  mod_folders?: ModFolder[];
 }
 
 export interface LibraryEntry {
