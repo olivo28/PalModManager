@@ -113,6 +113,7 @@ pub fn run() {
             profile_commands::get_current_profile,
             profile_commands::switch_profile_command,
             profile_commands::create_profile_command,
+            profile_commands::clone_profile_command,
             profile_commands::delete_profile_command,
             profile_commands::rename_profile_command,
             profile_commands::set_mod_profile_state,

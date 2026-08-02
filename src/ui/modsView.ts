@@ -442,7 +442,7 @@ export async function loadGameVersion(): Promise<void> {
     updateState({ gameVersion: version });
     const el = document.getElementById('game-version-badge');
     if (el) {
-      el.textContent = version ? `PalWorld ${version}` : '';
+      el.textContent = version ? (version.toLowerCase() === 'palworld' ? 'PalWorld' : `PalWorld ${version}`) : '';
       el.style.display = version ? '' : 'none';
     }
   } catch (e) {
@@ -492,11 +492,11 @@ function renderProfileList(): void {
     const modCountBadge = `<span class="profile-badge count">${modCount} mod${modCount === 1 ? '' : 's'}</span>`;
 
     return `
-    <div class="profile-item ${p.id === currentProfileId ? 'active' : ''}" data-id="${p.id}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;margin-bottom:6px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:6px;cursor:pointer;">
+    <div class="profile-item ${p.id === currentProfileId ? 'active' : ''}" data-id="${p.id}">
       <div style="display:flex;flex-direction:column;gap:4px;">
         <div style="display:flex;align-items:center;gap:8px;">
-          <span class="profile-item-name" style="font-weight:700;font-size:14px;color:var(--text-primary);">${escapeHtml(p.name)}</span>
-          ${p.id === currentProfileId ? '<span class="profile-item-badge" style="background:var(--accent);color:#fff;font-size:9px;padding:2px 6px;border-radius:10px;font-weight:700;">ACTIVE</span>' : ''}
+          <span class="profile-item-name">${escapeHtml(p.name)}</span>
+          ${p.id === currentProfileId ? '<span class="profile-item-badge-active">ACTIVE</span>' : ''}
         </div>
         <div style="display:flex;gap:4px;align-items:center;">
           ${ue4ssBadge}
@@ -505,15 +505,16 @@ function renderProfileList(): void {
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:8px;">
+        <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}" style="font-size:11px;padding:4px 8px;">Clone</button>
         ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}" style="font-size:11px;padding:4px 8px;">Switch</button>` : ''}
-        <button class="profile-item-delete ${p.id === 'default' ? 'disabled' : ''}" data-id="${p.id}" ${p.id === 'default' ? 'disabled' : ''} style="background:none;border:none;color:var(--text-muted);cursor:pointer;font-size:14px;">✕</button>
+        <button class="profile-item-delete ${p.id === 'default' ? 'disabled' : ''}" data-id="${p.id}" ${p.id === 'default' ? 'disabled' : ''}>✕</button>
       </div>
     </div>`;
   }).join('');
 
   list.querySelectorAll('.profile-item').forEach(item => {
     item.addEventListener('click', async (e) => {
-      if ((e.target as HTMLElement).closest('.profile-item-delete')) return;
+      if ((e.target as HTMLElement).closest('.profile-item-delete') || (e.target as HTMLElement).closest('.profile-clone-btn')) return;
       const id = (item as HTMLElement).dataset.id!;
       if (id === getState().currentProfileId) return;
       try {
@@ -562,6 +563,108 @@ function renderProfileList(): void {
         renderModsView(); // Re-render with fully updated profile data
       } catch (err) {
         showToast('Failed to switch profile: ' + err, 'error');
+      }
+    });
+  });
+
+function showInputModal(title: string, message: string, defaultValue: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay visible';
+    overlay.style.zIndex = '3000';
+    overlay.style.position = 'fixed';
+    overlay.style.top = '0';
+    overlay.style.left = '0';
+    overlay.style.right = '0';
+    overlay.style.bottom = '0';
+    overlay.style.background = 'rgba(0,0,0,0.6)';
+    overlay.style.backdropFilter = 'blur(4px)';
+    overlay.style.display = 'flex';
+    overlay.style.alignItems = 'center';
+    overlay.style.justifyContent = 'center';
+
+    overlay.innerHTML = `
+      <div class="modal" style="width: 400px; max-width: 90vw; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
+        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
+          <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${escapeHtml(title)}</h3>
+          <button class="modal-close-btn" id="input-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
+        </div>
+        <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+          <div style="font-size: 13px; color: var(--text-secondary);">${escapeHtml(message)}</div>
+          <input type="text" id="input-modal-value" value="${escapeHtml(defaultValue)}" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; font-size: 13px; outline: none; box-sizing: border-box;" />
+        </div>
+        <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px;">
+          <button id="input-modal-cancel" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">Cancel</button>
+          <button id="input-modal-confirm" class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">Confirm</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input = overlay.querySelector('#input-modal-value') as HTMLInputElement;
+    input.focus();
+    input.select();
+
+    const cleanUp = () => {
+      document.body.removeChild(overlay);
+    };
+
+    overlay.querySelector('#input-modal-close-x')!.addEventListener('click', () => {
+      cleanUp();
+      resolve(null);
+    });
+
+    overlay.querySelector('#input-modal-cancel')!.addEventListener('click', () => {
+      cleanUp();
+      resolve(null);
+    });
+
+    const handleConfirm = () => {
+      const val = input.value.trim();
+      cleanUp();
+      resolve(val ? val : null);
+    };
+
+    overlay.querySelector('#input-modal-confirm')!.addEventListener('click', handleConfirm);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        handleConfirm();
+      }
+      if (e.key === 'Escape') {
+        cleanUp();
+        resolve(null);
+      }
+    });
+  });
+}
+
+  list.querySelectorAll('.profile-clone-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      const { profiles } = getState();
+      const current = profiles.find(p => p.id === id);
+      const name = current ? current.name : '';
+
+      const newName = await showInputModal(
+        'Duplicate Profile',
+        `Enter a name for the duplicated profile of "${name}":`,
+        `${name} - Copy`
+      );
+      if (newName === null) return;
+      const trimmed = newName.trim();
+      if (!trimmed) return;
+
+      try {
+        const { cloneProfile } = await import('../api');
+        await cloneProfile(id, trimmed);
+        showToast('Profile duplicated', 'success');
+        await loadProfiles();
+        renderModsView();
+      } catch (err) {
+        showToast('Failed to duplicate profile: ' + err, 'error');
       }
     });
   });

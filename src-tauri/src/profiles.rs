@@ -392,6 +392,63 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
     Ok(profile)
 }
 
+pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: String) -> Result<Profile, String> {
+    let new_name = new_name.trim().to_string();
+    if new_name.is_empty() || new_name.len() > 100 {
+        return Err("Invalid profile name".to_string());
+    }
+
+    let source_profile = data.profiles.iter().find(|p| p.id == source_profile_id)
+        .ok_or_else(|| "Source profile not found".to_string())?.clone();
+
+    let new_profile_id = sanitize_profile_id(&new_name);
+    if data.profiles.iter().any(|p| p.id == new_profile_id) {
+        return Err("A profile with a similar name already exists".to_string());
+    }
+
+    let now = chrono::Utc::now().to_rfc3339();
+    let new_profile = Profile {
+        id: new_profile_id.clone(),
+        name: new_name,
+        created_at: now,
+        installed_mod_ids: source_profile.installed_mod_ids.clone(),
+        enabled_mod_ids: source_profile.enabled_mod_ids.clone(),
+        ue4ss_enabled: source_profile.ue4ss_enabled,
+        palschema_enabled: source_profile.palschema_enabled,
+    };
+
+    let program_path = data.settings.program_path.clone();
+    let src_dir = get_profile_dir(&program_path, source_profile_id);
+    let dst_dir = ensure_profile_structure(&program_path, &new_profile.id);
+
+    // If we are cloning the active profile, back up its active files first to keep the clone up-to-date
+    if source_profile_id == data.current_profile_id {
+        backup_game_files_to_profile(&data.settings.game_path, &src_dir);
+    }
+
+    // Copy physical backed-up mod folders/files from source profile directory to the new profile directory
+    if src_dir.exists() {
+        for folder in &["ue4ss", "palschema", "paks", "logicmods"] {
+            let src_folder = src_dir.join(folder);
+            let dst_folder = dst_dir.join(folder);
+            if src_folder.exists() {
+                let _ = copy_dir_all(&src_folder, &dst_folder);
+            }
+        }
+        let dwmapi_src = src_dir.join("dwmapi.dll");
+        if dwmapi_src.exists() {
+            let _ = fs::copy(&dwmapi_src, dst_dir.join("dwmapi.dll"));
+        }
+    }
+
+    if let Ok(json) = serde_json::to_string_pretty(&new_profile) {
+        let _ = fs::write(dst_dir.join("profile.json"), json);
+    }
+
+    data.profiles.push(new_profile.clone());
+    Ok(new_profile)
+}
+
 pub fn delete_profile(data: &mut AppData, profile_id: &str) -> Result<(), String> {
     if profile_id == "default" {
         return Err("Cannot delete the default profile".to_string());

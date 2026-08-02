@@ -209,6 +209,10 @@ export async function createProfile(name: string): Promise<Profile> {
   return invoke('create_profile_command', { name });
 }
 
+export async function cloneProfile(profileId: string, newName: string): Promise<Profile> {
+  return invoke('clone_profile_command', { profileId, newName });
+}
+
 export async function deleteProfile(profileId: string): Promise<{ success: boolean }> {
   return invoke('delete_profile_command', { profileId });
 }

@@ -100,6 +100,31 @@ pub fn create_profile_command(name: String, state: State<AppState>) -> Result<Pr
 }
 
 #[tauri::command]
+pub fn clone_profile_command(
+    profile_id: String,
+    new_name: String,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        profiles::clone_profile(&mut data, &profile_id, new_name)?
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}
+
+#[tauri::command]
 pub fn delete_profile_command(profile_id: String, state: State<AppState>) -> Result<Value, String> {
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;

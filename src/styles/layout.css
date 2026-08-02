@@ -933,3 +933,70 @@ main {
 .bulk-btn.primary:hover {
   background: var(--accent-hover);
 }
+
+/* ===== PROFILE DIALOG ENHANCEMENTS ===== */
+.profile-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.15s ease;
+}
+
+.profile-item:hover {
+  border-color: var(--text-muted);
+  background: var(--bg-hover);
+}
+
+.profile-item.active {
+  border-color: var(--accent);
+  background: rgba(58, 149, 255, 0.05);
+  box-shadow: 0 0 8px rgba(58, 149, 255, 0.15);
+  cursor: default;
+}
+
+.profile-item-name {
+  font-weight: 700;
+  font-size: 14px;
+  color: var(--text-primary);
+}
+
+.profile-item-badge-active {
+  background: rgba(58, 149, 255, 0.15);
+  color: var(--accent);
+  border: 1px solid rgba(58, 149, 255, 0.3);
+  font-size: 9px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.profile-item-delete {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  transition: color 0.15s ease, background-color 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-item-delete:hover:not(.disabled) {
+  color: #f1707b !important;
+  background: rgba(232, 17, 35, 0.1);
+}
+
+.profile-item-delete.disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
