@@ -8,6 +8,8 @@
   flex-direction: column;
   -webkit-user-drag: element;
   user-drag: element;
+  -webkit-user-select: auto !important;
+  user-select: auto !important;
 }
 
 .mod-card:hover {

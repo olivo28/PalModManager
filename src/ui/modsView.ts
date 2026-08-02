@@ -1574,6 +1574,98 @@ function showContextMenu(modId: string, x: number, y: number): void {
   positionContextMenu(x, y);
 }
 
+function showFolderContextMenu(folderId: string, x: number, y: number): void {
+  const state = getState();
+  const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
+  const folder = currentProfile?.mod_folders?.find(f => f.id === folderId);
+  if (!folder) return;
+
+  const overlay = getContextOverlay();
+  const menu = document.getElementById('context-menu')!;
+
+  const modsInFolder = (state.allMods || []).filter(m => folder.mod_ids.includes(m.id));
+  const allEnabled = modsInFolder.length > 0 && modsInFolder.every(m => m.enabled);
+
+  let html = `
+    <button type="button" class="context-menu-item" data-action="enter">
+      <span class="ctx-icon">📂</span>
+      Enter folder
+    </button>
+    <button type="button" class="context-menu-item" data-action="rename">
+      <span class="ctx-icon">✏</span>
+      Rename folder
+    </button>
+    <div class="context-menu-sep"></div>
+    <button type="button" class="context-menu-item" data-action="toggle-mods">
+      <span class="ctx-icon">${allEnabled ? '◌' : '●'}</span>
+      ${allEnabled ? 'Disable all mods' : 'Enable all mods'}
+    </button>
+    <button type="button" class="context-menu-item" data-action="check-updates-mods">
+      <span class="ctx-icon">&#8634;</span>
+      Check updates for mods
+    </button>
+    <div class="context-menu-sep"></div>
+    <button type="button" class="context-menu-item danger" data-action="delete">
+      <span class="ctx-icon">✕</span>
+      Delete folder
+    </button>
+  `;
+
+  menu.innerHTML = html;
+
+  // Mark this folder card as context-active
+  document.querySelectorAll('.mod-card.context-active').forEach(el => el.classList.remove('context-active'));
+  const folderCard = document.querySelector(`.mod-card.folder-card[data-id="${folderId}"]`);
+  if (folderCard) folderCard.classList.add('context-active');
+
+  menu.querySelectorAll('.context-menu-item').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const action = (btn as HTMLElement).dataset.action!;
+      hideContextMenu();
+
+      if (action === 'enter') {
+        updateState({ currentFolderId: folderId });
+        renderModsView();
+      } else if (action === 'rename') {
+        const renameBtn = document.querySelector(`.folder-card[data-id="${folderId}"] .rename-btn`) as HTMLElement | null;
+        renameBtn?.click();
+      } else if (action === 'delete') {
+        const deleteBtn = document.querySelector(`.folder-card[data-id="${folderId}"] .delete-btn`) as HTMLElement | null;
+        deleteBtn?.click();
+      } else if (action === 'toggle-mods') {
+        try {
+          const { toggleFolderMods } = await import('../api');
+          const updatedProfile = await toggleFolderMods(state.currentProfileId, folderId, !allEnabled);
+          const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
+          updateState({ profiles: updatedProfiles });
+          showToast(!allEnabled ? 'All folder mods enabled' : 'All folder mods disabled', 'success');
+          await loadMods();
+        } catch (err) {
+          showToast('Failed to toggle: ' + err, 'error');
+        }
+      } else if (action === 'check-updates-mods') {
+        if (modsInFolder.length === 0) {
+          showToast('No mods in this folder', 'info');
+          return;
+        }
+        showToast('Checking for updates...', 'info');
+        try {
+          const { checkForUpdates } = await import('../api');
+          await checkForUpdates();
+          await loadMods();
+          showToast('Folder mods update check completed', 'success');
+        } catch (err) {
+          showToast('Failed to check updates: ' + err, 'error');
+        }
+      }
+    });
+  });
+
+  positionContextMenu(x, y);
+}
+
 function showGlobalContextMenu(x: number, y: number): void {
   const overlay = getContextOverlay();
   const menu = document.getElementById('context-menu')!;
@@ -2097,10 +2189,15 @@ export function setupContextMenu(): void {
       showBulkContextMenu(e.clientX, e.clientY);
     } else if (card && card.dataset.id) {
       const id = card.dataset.id;
-      import('../features/selection').then(({ updateSelection }) => {
-        updateSelection(new Set([id]));
-        showContextMenu(id, e.clientX, e.clientY);
-      });
+      const type = card.dataset.type;
+      if (type === 'folder') {
+        showFolderContextMenu(id, e.clientX, e.clientY);
+      } else {
+        import('../features/selection').then(({ updateSelection }) => {
+          updateSelection(new Set([id]));
+          showContextMenu(id, e.clientX, e.clientY);
+        });
+      }
     } else if (target.closest('#mods-container')) {
       showGlobalContextMenu(e.clientX, e.clientY);
     }
@@ -2217,6 +2314,7 @@ function attachFolderEvents(container: HTMLElement): void {
   // HTML5 Drag and Drop Event Listeners
   container.querySelectorAll('.mod-card').forEach(card => {
     card.addEventListener('dragstart', (e: Event) => {
+      e.stopPropagation();
       const de = e as DragEvent;
       const modId = (card as HTMLElement).dataset.id!;
       const state = getState();
@@ -2225,22 +2323,30 @@ function attachFolderEvents(container: HTMLElement): void {
       }
       if (state.selectedModIds.has(modId)) {
         const ids = Array.from(state.selectedModIds).join(',');
-        de.dataTransfer?.setData('text/plain', ids);
+        de.dataTransfer?.setData('text', ids);
       } else {
-        de.dataTransfer?.setData('text/plain', modId);
+        de.dataTransfer?.setData('text', modId);
       }
       card.classList.add('dragging');
     });
 
-    card.addEventListener('dragend', () => {
+    card.addEventListener('dragend', (e: Event) => {
+      e.stopPropagation();
       card.classList.remove('dragging');
     });
   });
 
   // Drop on Folder Cards
   container.querySelectorAll('.mod-card.folder-card').forEach(folderCard => {
+    folderCard.addEventListener('dragenter', (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      folderCard.classList.add('drag-over');
+    });
+
     folderCard.addEventListener('dragover', (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
       const de = e as DragEvent;
       if (de.dataTransfer) {
         de.dataTransfer.dropEffect = 'move';
@@ -2248,15 +2354,17 @@ function attachFolderEvents(container: HTMLElement): void {
       folderCard.classList.add('drag-over');
     });
 
-    folderCard.addEventListener('dragleave', () => {
+    folderCard.addEventListener('dragleave', (e: Event) => {
+      e.stopPropagation();
       folderCard.classList.remove('drag-over');
     });
 
     folderCard.addEventListener('drop', async (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
       folderCard.classList.remove('drag-over');
       const de = e as DragEvent;
-      const data = de.dataTransfer?.getData('text/plain');
+      const data = de.dataTransfer?.getData('text');
       const folderId = (folderCard as HTMLElement).dataset.id!;
       if (data) {
         const modIds = data.split(',');
@@ -2285,8 +2393,15 @@ function attachFolderEvents(container: HTMLElement): void {
 
   const rootZone = container.querySelector('#mod-root-drop-zone');
   if (rootZone) {
+    rootZone.addEventListener('dragenter', (e: Event) => {
+      e.preventDefault();
+      e.stopPropagation();
+      rootZone.classList.add('drag-over');
+    });
+
     rootZone.addEventListener('dragover', (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
       const de = e as DragEvent;
       if (de.dataTransfer) {
         de.dataTransfer.dropEffect = 'move';
@@ -2294,15 +2409,17 @@ function attachFolderEvents(container: HTMLElement): void {
       rootZone.classList.add('drag-over');
     });
 
-    rootZone.addEventListener('dragleave', () => {
+    rootZone.addEventListener('dragleave', (e: Event) => {
+      e.stopPropagation();
       rootZone.classList.remove('drag-over');
     });
 
     rootZone.addEventListener('drop', async (e: Event) => {
       e.preventDefault();
+      e.stopPropagation();
       rootZone.classList.remove('drag-over');
       const de = e as DragEvent;
-      const data = de.dataTransfer?.getData('text/plain');
+      const data = de.dataTransfer?.getData('text');
       if (data) {
         const modIds = data.split(',');
         try {
@@ -2328,9 +2445,15 @@ function attachFolderEvents(container: HTMLElement): void {
     });
   }
 
-  // Allow dragover on the entire container to prevent the blocked cursor
+  // Allow dragenter and dragover on the entire container to prevent the blocked cursor
+  container.addEventListener('dragenter', (e: Event) => {
+    e.preventDefault();
+    e.stopPropagation();
+  });
+
   container.addEventListener('dragover', (e: Event) => {
     e.preventDefault();
+    e.stopPropagation();
     const de = e as DragEvent;
     if (de.dataTransfer) {
       de.dataTransfer.dropEffect = 'move';

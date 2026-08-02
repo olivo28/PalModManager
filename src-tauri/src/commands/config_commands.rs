@@ -159,7 +159,7 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
     if mod_info.mod_type == crate::models::ModType::Hybrid {
         // 1. Get UE4SS base path
         let base_path1 = get_mod_base_dir(mod_info);
-        if base_path1.exists() {
+        if base_path1.exists() && base_path1.is_dir() {
             let folder_name1 = base_path1.file_name().unwrap_or_default().to_string_lossy().to_string();
             let mut files1 = Vec::new();
             walk_dir(&base_path1, &mut files1, &base_path1).map_err(|e| e.to_string())?;
@@ -171,7 +171,7 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
         // 2. Get PalSchema base path
         if let Some(extra_str) = mod_info.extra_files.first() {
             let base_path2 = PathBuf::from(extra_str);
-            if base_path2.exists() {
+            if base_path2.exists() && base_path2.is_dir() {
                 let folder_name2 = base_path2.file_name().unwrap_or_default().to_string_lossy().to_string();
                 let mut files2 = Vec::new();
                 walk_dir(&base_path2, &mut files2, &base_path2).map_err(|e| e.to_string())?;

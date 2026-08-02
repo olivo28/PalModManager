@@ -68,6 +68,21 @@ If you prefer not to install anything:
 - Download `palmodmanager.exe` from the Release section (or locate `src-tauri/target/release/palmodmanager.exe` after building).
 - Place `palmodmanager.exe` anywhere on your PC and run it directly!
 
+### 🐧 Linux Troubleshooting
+If you are running PalModManager on Linux (native compiled or AppImage) and encounter crashes on startup or a blank screen:
+- **Force X11 Backend** (resolves crashes related to Wayland windowing layers in WebKitGTK):
+  ```bash
+  GDK_BACKEND=x11 ./palmodmanager
+  ```
+- **Disable DMABUF Rendering** (resolves blank/invisible interface issues caused by graphics driver incompatibilities, common with Nvidia/Intel drivers):
+  ```bash
+  WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
+  ```
+- **Combined execution**:
+  ```bash
+  GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
+  ```
+
 ---
 
 ## 🛠️ Building from Source
