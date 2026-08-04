@@ -9,7 +9,8 @@ use rand::RngCore;
 use std::fs;
 use std::path::PathBuf;
 
-const DB_FILENAME: &str = "mod-manager.db";
+const DB_FILENAME: &str = "pmm_database.db";
+const LEGACY_DB_FILENAME: &str = "mod-manager.db";
 
 fn derive_key() -> [u8; 32] {
     let hostname = hostname::get()
@@ -141,7 +142,9 @@ const SETTINGS_MAPPING: &[(&str, &str)] = &[
     ("program_path", "programPath"),
     ("nexus_api_key", "nexusApiKey"),
     ("hide_native_mods", "hideNativeMods"),
+    ("custom_data_path", "customDataPath"),
 ];
+
 
 
 fn convert_old_format(json_str: &str) -> Option<AppData> {
@@ -161,6 +164,13 @@ fn convert_old_format(json_str: &str) -> Option<AppData> {
 
 pub fn load_db(program_path: &str) -> AppData {
     let db_path = get_db_path(program_path);
+    if !db_path.exists() {
+        let legacy_db = PathBuf::from(program_path).join(LEGACY_DB_FILENAME);
+        if legacy_db.exists() {
+            let _ = fs::rename(&legacy_db, &db_path);
+        }
+    }
+
     if !db_path.exists() {
         let legacy = PathBuf::from(program_path).join("mod-manager.json");
         if legacy.exists() {

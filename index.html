@@ -112,6 +112,10 @@
             <button class="sort-btn" data-sort="date">D <span class="arrow">▼</span></button>
             <button class="sort-btn" data-sort="status">S <span class="arrow">▲</span></button>
           </div>
+          <div id="layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
+            <button id="layout-grid-btn" class="layout-btn active" title="Grid View">⊞</button>
+            <button id="layout-list-btn" class="layout-btn" title="List View">☰</button>
+          </div>
           <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile:
             Default</span>
           <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles">Profiles</button>
@@ -364,6 +368,19 @@
               debugging logs.</div>
           </div>
           <div class="settings-divider"></div>
+          <div class="settings-group">
+            <label>Data Storage Location</label>
+            <div class="settings-hint">Choose where your database and profile backups are stored. Mod files will be migrated automatically.</div>
+            <div class="settings-path-row" style="margin-top: 6px;">
+              <select id="settings-data-path-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                <option value="default">Default (AppData)</option>
+                <option value="portable">Portable (Executable Folder)</option>
+                <option value="custom">Custom Folder...</option>
+              </select>
+            </div>
+            <div id="settings-custom-data-path-display" class="settings-hint" style="margin-top: 6px; font-family: monospace; display: none; word-break: break-all;"></div>
+          </div>
+          <div class="settings-divider"></div>
 
           <div class="settings-group">
             <label>Theme</label>
@@ -380,7 +397,7 @@
 
     <!-- PROFILE MANAGER MODAL -->
     <div id="profile-modal" class="modal-overlay">
-      <div class="modal" style="max-width:400px">
+      <div class="modal" style="max-width:480px">
         <div class="modal-header">
           <h3>Manage Profiles</h3>
           <button class="modal-close-btn" id="profile-modal-close-x">✕</button>

@@ -1,0 +1,158 @@
+/* ===== EXPLORER DETAILS LIST VIEW LAYOUT ===== */
+
+#mods-container.list-view {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+}
+
+/* Common Grid columns across header and row cards */
+.list-header-row,
+#mods-container.list-view .mod-card.list-row-card {
+  display: grid !important;
+  grid-template-columns: 2fr 80px 110px 80px 2.5fr 1.5fr 1.2fr 80px !important;
+  align-items: center !important;
+  gap: 12px !important;
+  padding: 6px 16px !important;
+  box-sizing: border-box !important;
+  border-radius: 6px !important;
+}
+
+/* Header Row styling */
+.list-header-row {
+  font-size: 11px !important;
+  font-weight: 700 !important;
+  color: var(--text-muted) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.5px !important;
+  border-bottom: 1px solid var(--border) !important;
+  margin-bottom: 4px !important;
+  background: var(--bg-secondary) !important;
+  position: sticky !important;
+  top: 0 !important;
+  z-index: 10 !important;
+  height: 32px !important;
+}
+
+.list-header-col.sortable {
+  cursor: pointer !important;
+  user-select: none !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 4px !important;
+}
+
+.list-header-col.sortable:hover {
+  color: var(--text-primary) !important;
+}
+
+/* Mod Card Rows */
+#mods-container.list-view .mod-card.list-row-card {
+  height: 38px !important;
+  min-height: unset !important;
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border) !important;
+  cursor: pointer !important;
+  margin: 0 !important;
+  flex-direction: row !important;
+  box-shadow: none !important;
+}
+
+#mods-container.list-view .mod-card.list-row-card:hover {
+  background: var(--bg-tertiary) !important;
+  border-color: var(--border-hover) !important;
+}
+
+#mods-container.list-view .mod-card.list-row-card.selected {
+  background: var(--bg-selected) !important;
+  border-color: var(--accent) !important;
+}
+
+/* Cell styles */
+.list-row-card .cell {
+  display: flex !important;
+  align-items: center !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+}
+
+.list-row-card .name-cell {
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  color: var(--text-primary) !important;
+  gap: 8px !important;
+}
+
+.list-row-card .name-cell .mod-card-name {
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+
+.list-row-card .status-cell {
+  justify-content: flex-start !important;
+}
+
+.list-row-card .type-cell .mod-card-type {
+  padding: 2px 6px !important;
+  font-size: 9px !important;
+  font-weight: 700 !important;
+  border-radius: 4px !important;
+  text-transform: uppercase !important;
+}
+
+.list-row-card .version-cell {
+  color: var(--text-secondary) !important;
+  font-size: 12px !important;
+  font-weight: 600 !important;
+}
+
+.list-row-card .path-cell {
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+  font-family: monospace !important;
+}
+
+.list-row-card .extra-cell {
+  color: var(--text-muted) !important;
+  font-size: 12px !important;
+}
+
+.list-row-card .date-cell {
+  color: var(--text-muted) !important;
+  font-size: 11px !important;
+}
+
+.list-row-card .action-cell {
+  justify-content: flex-end !important;
+  gap: 8px !important;
+}
+
+/* Action button overrides inside rows */
+.list-row-card .card-remove-btn {
+  opacity: 0.4 !important;
+  transition: opacity 0.15s !important;
+  background: transparent !important;
+  border: none !important;
+  color: var(--text-primary) !important;
+  cursor: pointer !important;
+  font-size: 12px !important;
+  padding: 4px !important;
+}
+
+.list-row-card:hover .card-remove-btn {
+  opacity: 1 !important;
+}
+
+.list-row-card .card-remove-btn:hover {
+  color: var(--danger) !important;
+}
+
+/* Hide elements from standard card layout in list mode if any slip through */
+#mods-container.list-view .mod-card-image-wrap,
+#mods-container.list-view .mod-card-body,
+#mods-container.list-view .mod-card-footer {
+  display: none !important;
+}

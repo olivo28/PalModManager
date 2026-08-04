@@ -13,7 +13,7 @@ export function setupDragAndDrop(): void {
     webview.onDragDropEvent((event) => {
       const payload = event.payload;
       if (payload.type === 'enter') {
-        if (getState().activeTab !== 'editor') {
+        if (getState().activeTab !== 'editor' && !getState().isDraggingCard) {
           overlay.classList.add('visible');
         }
       } else if (payload.type === 'leave') {

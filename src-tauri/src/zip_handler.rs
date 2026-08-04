@@ -26,7 +26,9 @@ pub struct ZipAnalysis {
     pub detected_type: DetectedModType,
     pub has_lua: bool,
     pub has_json: bool,
+    pub has_palschema_json: bool,
     pub has_pak: bool,
+    pub has_dll: bool,
     pub has_info_json: bool,
     pub pak_destination_hint: Option<String>,
     pub root_folder: Option<String>,
@@ -88,12 +90,14 @@ fn detect_mod_content_and_name(
     // --- Strategy 2: content-based structural heuristics ---
     match detected_type {
         DetectedModType::Ue4ss => {
-            // "Scripts" subfolder -> mod root is its parent
+            // "dlls/main.dll" or "Scripts" subfolder -> mod root is its parent
             for name in files {
-                if !name.to_lowercase().ends_with(".lua") { continue; }
+                let lower = name.to_lowercase();
+                if !lower.ends_with(".lua") && !lower.ends_with(".dll") { continue; }
                 let parts: Vec<&str> = name.split('/').filter(|s| !s.is_empty()).collect();
                 for (i, &part) in parts.iter().enumerate() {
-                    if part.eq_ignore_ascii_case("scripts") && i > 0 {
+                    let part_lower = part.to_lowercase();
+                    if (part_lower == "scripts" || part_lower == "dlls") && i > 0 {
                         let mod_name = parts[i - 1].to_string();
                         if !is_forbidden(&mod_name) {
                             let content_path = parts[..i].join("/");
@@ -101,7 +105,7 @@ fn detect_mod_content_and_name(
                         }
                     }
                 }
-                // No Scripts subdir: .lua directly in mod folder
+                // No Scripts/dlls subdir: file directly in mod folder
                 let parts: Vec<&str> = name.split('/').filter(|s| !s.is_empty()).collect();
                 if parts.len() >= 2 {
                     let mod_name = parts[parts.len() - 2].to_string();
@@ -216,6 +220,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     let mut has_lua = false;
     let mut has_json = false;
     let mut has_pak = false;
+    let mut has_dll = false;
     let mut has_info_json = false;
     let mut in_logicmods = false;
     let mut pak_destination_hint = None;
@@ -223,6 +228,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     for name in &files {
         let nl = name.to_lowercase();
         if nl.ends_with(".lua") { has_lua = true; }
+        if nl.ends_with(".dll") { has_dll = true; }
         if nl.ends_with(".json") || nl.ends_with(".jsonc") {
             has_json = true;
             if nl.contains("info.json") { has_info_json = true; }
@@ -236,11 +242,38 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
 
     // Determine type first, then run content detection with type hint
     let has_palschema_folder = files.iter().any(|f| f.to_lowercase().contains("palschema"));
-    let is_hybrid = (has_pak && (has_lua || has_palschema_folder)) || (has_lua && has_palschema_folder);
+    let has_palschema_json = files.iter().any(|f| {
+        let fl = f.to_lowercase();
+        if (fl.ends_with(".json") || fl.ends_with(".jsonc"))
+            && !fl.ends_with("info.json")
+            && !fl.ends_with("manifest.json")
+            && !fl.ends_with("metadata.json")
+        {
+            let parts: Vec<&str> = fl.split('/').collect();
+            parts.iter().any(|part| {
+                matches!(
+                    *part,
+                    "pals"
+                        | "spawns"
+                        | "items"
+                        | "blueprints"
+                        | "unique"
+                        | "enums"
+                        | "skins"
+                        | "translations"
+                        | "raw"
+                )
+            })
+        } else {
+            false
+        }
+    });
+    let is_hybrid = (has_pak && (has_lua || has_dll || has_palschema_folder || has_palschema_json))
+        || ((has_lua || has_dll) && (has_palschema_folder || has_palschema_json));
 
     let detected_type_pre = if is_hybrid {
         DetectedModType::Hybrid
-    } else if has_lua {
+    } else if has_lua || has_dll {
         DetectedModType::Ue4ss
     } else if has_palschema_folder {
         DetectedModType::PalSchema
@@ -262,7 +295,9 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
         detected_type: detected_type_pre,
         has_lua,
         has_json,
+        has_palschema_json,
         has_pak,
+        has_dll,
         has_info_json,
         pak_destination_hint,
         root_folder,

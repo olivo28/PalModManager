@@ -1,4 +1,4 @@
-import { getMods, scanMods, disableMod, enableMod, removeMod, checkForUpdates, disableAllMods, enableAllMods, getGameVersion, getLibrary, installModFromLibrary, getProfiles, switchProfile, setModProfileState, checkDependencies, openModFolder, openExtraFolder, installUe4ss, installPalschema, uninstallUe4ss, uninstallPalschema, openUrl, removeFromLibrary, setHideNativeMods } from '../api';
+import { getMods, scanMods, disableMod, enableMod, removeMod, checkForUpdates, disableAllMods, enableAllMods, getGameVersion, getLibrary, installModFromLibrary, getProfiles, switchProfile, setModProfileState, checkDependencies, openModFolder, openExtraFolder, installUe4ss, installPalschema, uninstallUe4ss, uninstallPalschema, openUrl, removeFromLibrary, setHideNativeMods, clearProfile } from '../api';
 import { getState, updateState } from '../state';
 import { openDetailPanel, closeDetailPanel } from './detailPanel';
 import { openConfigEditor, populateEditorModSelect } from './editorView';
@@ -72,8 +72,48 @@ function toggleFolderCollapsed(folderId: string): void {
   localStorage.setItem('pmm_collapsed_folders', JSON.stringify(Array.from(collapsedFolders)));
   renderModsView();
 }
+function buildModCardHtml(mod: ModInfo, state: any): string {
+  const isSelected = state.selectedModIds.has(mod.id);
 
-function buildModCardHtml(mod: ModInfo, state: any): string {
+  if (state.viewLayout === 'list') {
+    const extraCount = mod.extraFiles ? mod.extraFiles.length : 0;
+    const extraText = extraCount > 0 ? `${extraCount} file${extraCount === 1 ? '' : 's'}` : 'None';
+    const shortPath = mod.gamePath ? mod.gamePath.replace(/\\/g, '/').substring(mod.gamePath.replace(/\\/g, '/').lastIndexOf('/') + 1) : '';
+    const formattedDate = mod.installDate ? mod.installDate.substring(0, 10) : 'Unknown';
+
+    return `
+    <div class="mod-card list-row-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}">
+      <div class="cell name-cell" title="${escapeHtml(mod.name)}">
+        <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
+        <span class="mod-card-name">${escapeHtml(mod.name)}</span>
+      </div>
+      <div class="cell status-cell">
+        <label class="toggle-switch">
+          <input type="checkbox" class="card-toggle-input" data-id="${mod.id}" ${mod.enabled ? 'checked' : ''} />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div class="cell type-cell">
+        <span class="mod-card-type ${mod.type}">${mod.type}</span>
+      </div>
+      <div class="cell version-cell">
+        <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
+      </div>
+      <div class="cell path-cell" title="${escapeHtml(mod.gamePath)}">
+        <span class="mod-card-path">${escapeHtml(shortPath || 'Not active')}</span>
+      </div>
+      <div class="cell extra-cell" title="${mod.extraFiles ? escapeHtml(mod.extraFiles.join('\n')) : ''}">
+        <span class="mod-card-extra">${escapeHtml(extraText)}</span>
+      </div>
+      <div class="cell date-cell">
+        <span class="mod-card-date">${escapeHtml(formattedDate)}</span>
+      </div>
+      <div class="cell action-cell">
+        <button class="card-remove-btn" data-id="${mod.id}" title="Remove mod">✕</button>
+      </div>
+    </div>`;
+  }
+
   const tags = mod.nexusTags && mod.nexusTags.length > 0
     ? `<div class="mod-card-tags">${mod.nexusTags.slice(0, 3).map(t => `<span class="mod-card-tag">${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
@@ -88,9 +128,8 @@ function buildModCardHtml(mod: ModInfo, state: any): string {
     ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}">&#9650; Update (v${escapeHtml(updateVer)})</span>`
     : '';
 
-  const isSelected = state.selectedModIds.has(mod.id);
   return `
-  <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" draggable="true">
+  <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}">
     ${imageHtml}
     <div class="mod-card-body">
       <div class="mod-card-body-top">
@@ -124,8 +163,40 @@ function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state: any): 
   </label>`;
   const isSelected = state.selectedModIds.has(folder.id);
 
+  if (state.viewLayout === 'list') {
+    return `
+    <div class="mod-card folder-card list-row-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder">
+      <div class="cell name-cell">
+        <span style="margin-right: 8px;">📁</span>
+        <span class="mod-card-name">${escapeHtml(folder.name)}</span>
+      </div>
+      <div class="cell status-cell">
+        ${folderCheckbox}
+      </div>
+      <div class="cell type-cell">
+        <span class="mod-card-type" style="color: var(--text-muted); border-color: var(--border);">Folder</span>
+      </div>
+      <div class="cell version-cell">
+        <span>-</span>
+      </div>
+      <div class="cell path-cell">
+        <span>-</span>
+      </div>
+      <div class="cell extra-cell">
+        <span>${modsInFolder.length} mod${modsInFolder.length === 1 ? '' : 's'}</span>
+      </div>
+      <div class="cell date-cell">
+        <span>-</span>
+      </div>
+      <div class="cell action-cell" onclick="event.stopPropagation()">
+        <button class="mod-folder-btn rename-btn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="Rename folder">✏</button>
+        <button class="mod-folder-btn delete-btn delete" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="Delete folder">✕</button>
+      </div>
+    </div>`;
+  }
+
   return `
-  <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" draggable="true" style="position:relative;">
+  <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" style="position:relative;">
     <div class="folder-card-actions" style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; z-index: 10;" onclick="event.stopPropagation()">
       <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="Rename folder" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✏</button>
       <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="Delete folder" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✕</button>
@@ -142,14 +213,19 @@ function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state: any): 
         ${folderCheckbox}
       </div>
     </div>
-  </div>
-  `;
+  </div>`;
 }
 
 export function renderModsView(): void {
   const state = getState();
   const container = document.getElementById('mods-container')!;
   const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
+
+  if (state.viewLayout === 'list') {
+    container.classList.add('list-view');
+  } else {
+    container.classList.remove('list-view');
+  }
 
   let filtered = state.allMods.filter((m) => {
     if (state.statusFilter === 'enabled' && !m.enabled) return false;
@@ -238,35 +314,113 @@ export function renderModsView(): void {
 
   let html = '';
 
-  if (state.currentFolderId) {
-    // Render inside a specific folder
-    const activeFolder = folders.find(f => f.id === state.currentFolderId);
-    const modsInFolder = folderModsMap.get(state.currentFolderId) || [];
-    
-    html += `
-    <div class="folder-breadcrumb" id="mod-root-drop-zone" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-      <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">← Back to Root</button>
-      <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Root / ${escapeHtml(activeFolder ? activeFolder.name : 'Unknown Folder')}</span>
+  if (state.viewLayout === 'list') {
+    const sortField = state.currentSort.field;
+    const isAsc = state.currentSort.asc;
+    const arrow = (field: string) => {
+      if (sortField === field) {
+        return isAsc ? ' ▲' : ' ▼';
+      }
+      return '';
+    };
+
+    const headerHtml = `
+    <div class="list-header-row" style="grid-column: 1 / -1;">
+      <div class="list-header-col sortable name-col" data-sort="name">Name${arrow('name')}</div>
+      <div class="list-header-col sortable status-col" data-sort="status">Status${arrow('status')}</div>
+      <div class="list-header-col sortable type-col" data-sort="type">Type${arrow('type')}</div>
+      <div class="list-header-col version-col">Version</div>
+      <div class="list-header-col path-col">Installed Path</div>
+      <div class="list-header-col extra-col">Extra Files</div>
+      <div class="list-header-col sortable date-col" data-sort="date">Date Installed${arrow('date')}</div>
+      <div class="list-header-col action-col">Action</div>
     </div>
     `;
 
-    if (modsInFolder.length === 0) {
-      html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">No mods in this folder. Double-click "Back to Root" or drag mods to ungroup them.</div>`;
+    if (state.currentFolderId) {
+      const activeFolder = folders.find(f => f.id === state.currentFolderId);
+      const modsInFolder = folderModsMap.get(state.currentFolderId) || [];
+      
+      html += `
+      <div class="folder-breadcrumb" id="mod-root-drop-zone" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+        <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">← Back to Root</button>
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Root / ${escapeHtml(activeFolder ? activeFolder.name : 'Unknown Folder')}</span>
+      </div>
+      `;
+      
+      if (modsInFolder.length === 0) {
+        html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">No mods in this folder. Double-click "Back to Root" or drag mods to ungroup them.</div>`;
+      } else {
+        html += headerHtml;
+        html += modsInFolder.map(m => buildModCardHtml(m, state)).join('');
+      }
     } else {
-      html += modsInFolder.map(m => buildModCardHtml(m, state)).join('');
+      if (state.searchQuery) {
+        html += headerHtml;
+        html += filtered.map(m => buildModCardHtml(m, state)).join('');
+      } else {
+        const renderFolderCards = folders.map(f => {
+          const modsInFolder = folderModsMap.get(f.id) || [];
+          return buildFolderCardHtml(f, modsInFolder, state);
+        }).join('');
+
+        if (renderFolderCards || ungroupedMods.length > 0) {
+          html += headerHtml;
+        }
+        html += renderFolderCards;
+        html += ungroupedMods.map(m => buildModCardHtml(m, state)).join('');
+      }
     }
   } else {
-    // Render Root level (folders first, then ungrouped mods)
-    const renderFolderCards = folders.map(f => {
-      const modsInFolder = folderModsMap.get(f.id) || [];
-      return buildFolderCardHtml(f, modsInFolder, state);
-    }).join('');
+    if (state.currentFolderId) {
+      // Render inside a specific folder
+      const activeFolder = folders.find(f => f.id === state.currentFolderId);
+      const modsInFolder = folderModsMap.get(state.currentFolderId) || [];
+      
+      html += `
+      <div class="folder-breadcrumb" id="mod-root-drop-zone" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
+        <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">← Back to Root</button>
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Root / ${escapeHtml(activeFolder ? activeFolder.name : 'Unknown Folder')}</span>
+      </div>
+      `;
 
-    html += renderFolderCards;
-    html += ungroupedMods.map(m => buildModCardHtml(m, state)).join('');
+      if (modsInFolder.length === 0) {
+        html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">No mods in this folder. Double-click "Back to Root" or drag mods to ungroup them.</div>`;
+      } else {
+        html += modsInFolder.map(m => buildModCardHtml(m, state)).join('');
+      }
+    } else {
+      // Render Root level (folders first, then ungrouped mods)
+      if (state.searchQuery) {
+        html += filtered.map(m => buildModCardHtml(m, state)).join('');
+      } else {
+        const renderFolderCards = folders.map(f => {
+          const modsInFolder = folderModsMap.get(f.id) || [];
+          return buildFolderCardHtml(f, modsInFolder, state);
+        }).join('');
+
+        html += renderFolderCards;
+        html += ungroupedMods.map(m => buildModCardHtml(m, state)).join('');
+      }
+    }
   }
 
   container.innerHTML = html;
+
+  if (state.viewLayout === 'list') {
+    container.querySelectorAll('.list-header-col.sortable').forEach(col => {
+      col.addEventListener('click', () => {
+        const sortField = (col as HTMLElement).dataset.sort!;
+        const currentSort = getState().currentSort;
+        let asc = true;
+        if (currentSort.field === sortField) {
+          asc = !currentSort.asc;
+        }
+        updateState({ currentSort: { field: sortField, asc } });
+        renderModsView();
+      });
+    });
+  }
 
   attachCardEvents(container);
   attachFolderEvents(container);
@@ -310,7 +464,7 @@ function attachCardEvents(container: HTMLElement): void {
         if (isEnabled) { await enableMod(id); } else { await disableMod(id); }
         // Update profile state
         try { await setModProfileState(id, isEnabled); } catch { }
-        showToast(isEnabled ? 'Mod enabled' : 'Mod disabled', 'success');
+        showToast(isEnabled ? 'Mod enabled' : 'Mod disabled', isEnabled ? 'success' : 'info');
         await loadMods();
         const state = getState();
         if (state.currentDetailMod?.id === id) {
@@ -606,9 +760,10 @@ function renderProfileList(): void {
           ${modCountBadge}
         </div>
       </div>
-      <div style="display:flex;align-items:center;gap:8px;">
-        <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}" style="font-size:11px;padding:4px 8px;">Clone</button>
-        ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}" style="font-size:11px;padding:4px 8px;">Switch</button>` : ''}
+      <div class="profile-actions">
+        <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}">Clone</button>
+        <button class="btn-secondary btn-sm profile-clear-btn" data-id="${p.id}">Clear</button>
+        ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}">Switch</button>` : ''}
         <button class="profile-item-delete ${p.id === 'default' ? 'disabled' : ''}" data-id="${p.id}" ${p.id === 'default' ? 'disabled' : ''}>✕</button>
       </div>
     </div>`;
@@ -616,7 +771,11 @@ function renderProfileList(): void {
 
   list.querySelectorAll('.profile-item').forEach(item => {
     item.addEventListener('click', async (e) => {
-      if ((e.target as HTMLElement).closest('.profile-item-delete') || (e.target as HTMLElement).closest('.profile-clone-btn')) return;
+      if (
+        (e.target as HTMLElement).closest('.profile-item-delete') || 
+        (e.target as HTMLElement).closest('.profile-clone-btn') ||
+        (e.target as HTMLElement).closest('.profile-clear-btn')
+      ) return;
       const id = (item as HTMLElement).dataset.id!;
       if (id === getState().currentProfileId) return;
       try {
@@ -711,6 +870,36 @@ function renderProfileList(): void {
         renderModsView();
       } catch (err) {
         showToast('Failed to delete profile: ' + err, 'error');
+      }
+    });
+  });
+
+  list.querySelectorAll('.profile-clear-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      const { profiles } = getState();
+      const current = profiles.find(p => p.id === id);
+      const name = current ? current.name : '';
+
+      const confirmed = await showConfirm(`Are you sure you want to clear/purge all mods from the profile "${name}"? This will physically disable and clear active mods in the game (if active).`);
+      if (!confirmed) return;
+
+      try {
+        const updatedProfiles = await clearProfile(id);
+        updateState({ profiles: updatedProfiles });
+        showToast('Profile cleared successfully', 'success');
+        
+        if (id === getState().currentProfileId) {
+          const { getMods } = await import('../api');
+          const mods = await getMods();
+          updateState({ allMods: mods });
+        }
+        
+        await loadProfiles();
+        renderModsView();
+      } catch (err) {
+        showToast('Failed to clear profile: ' + err, 'error');
       }
     });
   });
@@ -1371,7 +1560,7 @@ function runContextAction(action: string, modId: string): void {
         try {
           if (mod.enabled) { await disableMod(modId); } else { await enableMod(modId); }
           try { await setModProfileState(modId, !mod.enabled); } catch { }
-          showToast(mod.enabled ? 'Mod disabled' : 'Mod enabled', 'success');
+          showToast(mod.enabled ? 'Mod disabled' : 'Mod enabled', mod.enabled ? 'info' : 'success');
           await loadMods();
         } catch (e) { showToast('Failed: ' + e, 'error'); }
       })();
@@ -2311,154 +2500,6 @@ function attachFolderEvents(container: HTMLElement): void {
     });
   });
 
-  // HTML5 Drag and Drop Event Listeners
-  container.querySelectorAll('.mod-card').forEach(card => {
-    card.addEventListener('dragstart', (e: Event) => {
-      e.stopPropagation();
-      const de = e as DragEvent;
-      const modId = (card as HTMLElement).dataset.id!;
-      const state = getState();
-      if (de.dataTransfer) {
-        de.dataTransfer.effectAllowed = 'move';
-      }
-      if (state.selectedModIds.has(modId)) {
-        const ids = Array.from(state.selectedModIds).join(',');
-        de.dataTransfer?.setData('text', ids);
-      } else {
-        de.dataTransfer?.setData('text', modId);
-      }
-      card.classList.add('dragging');
-    });
-
-    card.addEventListener('dragend', (e: Event) => {
-      e.stopPropagation();
-      card.classList.remove('dragging');
-    });
-  });
-
-  // Drop on Folder Cards
-  container.querySelectorAll('.mod-card.folder-card').forEach(folderCard => {
-    folderCard.addEventListener('dragenter', (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      folderCard.classList.add('drag-over');
-    });
-
-    folderCard.addEventListener('dragover', (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const de = e as DragEvent;
-      if (de.dataTransfer) {
-        de.dataTransfer.dropEffect = 'move';
-      }
-      folderCard.classList.add('drag-over');
-    });
-
-    folderCard.addEventListener('dragleave', (e: Event) => {
-      e.stopPropagation();
-      folderCard.classList.remove('drag-over');
-    });
-
-    folderCard.addEventListener('drop', async (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      folderCard.classList.remove('drag-over');
-      const de = e as DragEvent;
-      const data = de.dataTransfer?.getData('text');
-      const folderId = (folderCard as HTMLElement).dataset.id!;
-      if (data) {
-        const modIds = data.split(',');
-        try {
-          const { addModToFolder } = await import('../api');
-          const state = getState();
-          let lastProfile = null;
-          for (const id of modIds) {
-            // Avoid adding folders to other folders
-            const isFolder = container.querySelector(`.mod-card[data-id="${id}"]`)?.getAttribute('data-type') === 'folder';
-            if (isFolder || id === folderId) continue;
-            lastProfile = await addModToFolder(state.currentProfileId, folderId, id);
-          }
-          if (lastProfile) {
-            const profiles = state.profiles.map(p => p.id === state.currentProfileId ? lastProfile : p);
-            updateState({ profiles });
-          }
-          await loadMods();
-          showToast(`Moved ${modIds.length} mod(s) to folder`, 'success');
-        } catch (err) {
-          showToast('Failed to move: ' + err, 'error');
-        }
-      }
-    });
-  });
-
-  const rootZone = container.querySelector('#mod-root-drop-zone');
-  if (rootZone) {
-    rootZone.addEventListener('dragenter', (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      rootZone.classList.add('drag-over');
-    });
-
-    rootZone.addEventListener('dragover', (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const de = e as DragEvent;
-      if (de.dataTransfer) {
-        de.dataTransfer.dropEffect = 'move';
-      }
-      rootZone.classList.add('drag-over');
-    });
-
-    rootZone.addEventListener('dragleave', (e: Event) => {
-      e.stopPropagation();
-      rootZone.classList.remove('drag-over');
-    });
-
-    rootZone.addEventListener('drop', async (e: Event) => {
-      e.preventDefault();
-      e.stopPropagation();
-      rootZone.classList.remove('drag-over');
-      const de = e as DragEvent;
-      const data = de.dataTransfer?.getData('text');
-      if (data) {
-        const modIds = data.split(',');
-        try {
-          const { addModToFolder } = await import('../api');
-          const state = getState();
-          let lastProfile = null;
-          for (const id of modIds) {
-            // Avoid adding folders to other folders
-            const isFolder = container.querySelector(`.mod-card[data-id="${id}"]`)?.getAttribute('data-type') === 'folder';
-            if (isFolder) continue;
-            lastProfile = await addModToFolder(state.currentProfileId, null, id);
-          }
-          if (lastProfile) {
-            const profiles = state.profiles.map(p => p.id === state.currentProfileId ? lastProfile : p);
-            updateState({ profiles });
-          }
-          await loadMods();
-          showToast(`Ungrouped ${modIds.length} mod(s)`, 'success');
-        } catch (err) {
-          showToast('Failed to ungroup: ' + err, 'error');
-        }
-      }
-    });
-  }
-
-  // Allow dragenter and dragover on the entire container to prevent the blocked cursor
-  container.addEventListener('dragenter', (e: Event) => {
-    e.preventDefault();
-    e.stopPropagation();
-  });
-
-  container.addEventListener('dragover', (e: Event) => {
-    e.preventDefault();
-    e.stopPropagation();
-    const de = e as DragEvent;
-    if (de.dataTransfer) {
-      de.dataTransfer.dropEffect = 'move';
-    }
-  });
 }
 
 async function handleAddModToFolder(folderId: string | null, modId: string): Promise<void> {

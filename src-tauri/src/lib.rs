@@ -38,14 +38,34 @@ pub fn run() {
         .unwrap_or_else(|_| std::env::temp_dir())
         .join("PalModManager");
     
-    logger::log(&format!("Loading database from {}", program_path.display()));
-    let start_db = std::time::Instant::now();
-    let mut data = db::load_db(&program_path.to_string_lossy());
-    logger::log(&format!("Database loaded successfully in {:?}", start_db.elapsed()));
+    let default_program_path = program_path.clone();
+    let mut active_program_path = default_program_path.clone();
 
-    if data.settings.program_path.is_empty() {
-        data.settings.program_path = program_path.to_string_lossy().to_string();
-        let _ = db::save_db(&data.settings.program_path, &data);
+    logger::log(&format!("Loading default database from {}", default_program_path.display()));
+    let start_db = std::time::Instant::now();
+    let mut data = db::load_db(&default_program_path.to_string_lossy());
+    logger::log(&format!("Default database loaded successfully in {:?}", start_db.elapsed()));
+
+    if let Some(ref custom_path) = data.settings.custom_data_path {
+        if !custom_path.is_empty() {
+            let target_dir = if custom_path == "__portable__" {
+                std::env::current_exe()
+                    .ok()
+                    .and_then(|p| p.parent().map(|parent| parent.to_path_buf()))
+                    .unwrap_or_else(|| default_program_path.clone())
+            } else {
+                std::path::PathBuf::from(custom_path)
+            };
+            logger::log(&format!("Redirecting database location to custom path: {}", target_dir.display()));
+            active_program_path = target_dir;
+            let custom_data = db::load_db(&active_program_path.to_string_lossy());
+            data = custom_data;
+        }
+    }
+
+    if data.settings.program_path != active_program_path.to_string_lossy().to_string() {
+        data.settings.program_path = active_program_path.to_string_lossy().to_string();
+        let _ = db::save_db(&active_program_path.to_string_lossy(), &data);
     }
 
     let is_debug = data.settings.debug_console.unwrap_or(false);
@@ -74,6 +94,7 @@ pub fn run() {
             settings_commands::set_nexus_api_key,
             settings_commands::set_hide_native_mods,
             settings_commands::set_debug_console,
+            settings_commands::set_custom_data_path,
 
             mod_commands::get_mods,
             mod_commands::scan_mods,
@@ -116,6 +137,7 @@ pub fn run() {
             profile_commands::clone_profile_command,
             profile_commands::delete_profile_command,
             profile_commands::rename_profile_command,
+            profile_commands::clear_profile_command,
             profile_commands::set_mod_profile_state,
             profile_commands::create_mod_folder_command,
             profile_commands::delete_mod_folder_command,

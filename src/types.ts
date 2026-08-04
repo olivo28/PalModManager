@@ -41,6 +41,7 @@ export interface AppSettings {
   nexusApiKey: string | null;
   hideNativeMods?: boolean;
   debugConsole?: boolean;
+  customDataPath?: string | null;
 }
 
 export interface ModFolder {

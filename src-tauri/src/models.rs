@@ -73,6 +73,8 @@ pub struct AppSettings {
     pub hide_native_mods: Option<bool>,
     #[serde(default)]
     pub debug_console: Option<bool>,
+    #[serde(default)]
+    pub custom_data_path: Option<String>,
 }
 
 
@@ -126,6 +128,7 @@ impl Default for AppData {
                 nexus_api_key: None,
                 hide_native_mods: Some(false),
                 debug_console: Some(false),
+                custom_data_path: None,
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

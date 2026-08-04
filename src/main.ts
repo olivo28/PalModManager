@@ -1,7 +1,7 @@
 import 'highlight.js/styles/github-dark.css';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema } from './api';
 import { getState, updateState } from './state';
-import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleToggleKeyVisibility, handleConfirmInstall, closeInstallModal, closeSettingsModal } from './ui/modal';
+import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleToggleKeyVisibility, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers } from './ui/editorView';
@@ -95,6 +95,7 @@ function setupEventListeners() {
   safeEl('settings-cancel')?.addEventListener('click', closeSettingsModal);
   safeEl('settings-save')?.addEventListener('click', handleSaveSettings);
   safeEl('settings-browse-btn')?.addEventListener('click', handleSettingsBrowse);
+  safeEl('settings-data-path-select')?.addEventListener('change', handleDataPathChange);
   safeEl('settings-toggle-key')?.addEventListener('click', handleToggleKeyVisibility);
   safeEl('nexus-api-key-link')?.addEventListener('click', async (e) => {
     e.preventDefault();
@@ -299,6 +300,36 @@ function setupEventListeners() {
 
   document.querySelectorAll('.sort-btn').forEach((btn) => {
     btn.addEventListener('click', () => handleSort(btn as HTMLButtonElement));
+  });
+
+  // Layout Toggle
+  const gridBtn = document.getElementById('layout-grid-btn');
+  const listBtn = document.getElementById('layout-list-btn');
+
+  function updateLayoutUI(layout: 'grid' | 'list') {
+    if (layout === 'grid') {
+      gridBtn?.classList.add('active');
+      listBtn?.classList.remove('active');
+    } else {
+      listBtn?.classList.add('active');
+      gridBtn?.classList.remove('active');
+    }
+  }
+
+  updateLayoutUI(getState().viewLayout);
+
+  gridBtn?.addEventListener('click', () => {
+    updateState({ viewLayout: 'grid' });
+    localStorage.setItem('pmm-layout', 'grid');
+    updateLayoutUI('grid');
+    renderModsView();
+  });
+
+  listBtn?.addEventListener('click', () => {
+    updateState({ viewLayout: 'list' });
+    localStorage.setItem('pmm-layout', 'list');
+    updateLayoutUI('list');
+    renderModsView();
   });
 
   const searchInput = document.getElementById('search-input') as HTMLInputElement | null;

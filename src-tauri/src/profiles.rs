@@ -477,6 +477,62 @@ pub fn delete_profile(data: &mut AppData, profile_id: &str) -> Result<(), String
     Ok(())
 }
 
+pub fn clear_profile(data: &mut AppData, profile_id: &str) -> Result<(), String> {
+    let program_path = data.settings.program_path.clone();
+    let game_path = data.settings.game_path.clone();
+
+    let profile = data
+        .profiles
+        .iter_mut()
+        .find(|p| p.id == profile_id)
+        .ok_or_else(|| "Profile not found".to_string())?;
+
+    // 1. Wipe mod listings and virtual folders
+    profile.installed_mod_ids.clear();
+    profile.enabled_mod_ids.clear();
+    profile.mod_folders.clear();
+
+    // 2. Wipe physical backup directories of this profile
+    let p_dir = get_profile_dir(&program_path, profile_id);
+    if p_dir.exists() {
+        for folder in &["ue4ss", "palschema", "paks", "logicmods", "disabled_mods"] {
+            let sub = p_dir.join(folder);
+            if sub.exists() {
+                let _ = fs::remove_dir_all(&sub);
+            }
+        }
+        let dwmapi = p_dir.join("dwmapi.dll");
+        if dwmapi.exists() {
+            let _ = fs::remove_file(&dwmapi);
+        }
+        
+        // Write the empty profile.json back
+        if let Ok(json) = serde_json::to_string_pretty(profile) {
+            let _ = fs::write(p_dir.join("profile.json"), json);
+        }
+    }
+
+    // 3. If it is the current active profile, clear the physical files from the game folder
+    if profile_id == data.current_profile_id && !game_path.is_empty() {
+        let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
+        let ue4ss_game = win64.join("ue4ss");
+        let dwmapi_game = win64.join("dwmapi.dll");
+        let paks_game = PathBuf::from(&game_path).join("Pal").join("Content").join("Paks").join("~mods");
+        let logic_game = PathBuf::from(&game_path).join("Pal").join("Content").join("Paks").join("LogicMods");
+
+        if dwmapi_game.exists() { let _ = fs::remove_file(&dwmapi_game); }
+        if ue4ss_game.exists() { let _ = fs::remove_dir_all(&ue4ss_game); }
+        if paks_game.exists() { let _ = fs::remove_dir_all(&paks_game); }
+        if logic_game.exists() { let _ = fs::remove_dir_all(&logic_game); }
+
+        // Trigger restore dependency defaults to keep UE4SS and PalSchema active if configured
+        restore_profile_files_to_game(&game_path, &p_dir, profile, &program_path);
+    }
+
+    Ok(())
+}
+
+
 pub fn rename_profile(data: &mut AppData, profile_id: &str, name: String) -> Result<(), String> {
     let name = name.trim().to_string();
     if name.is_empty() || name.len() > 100 {
@@ -542,11 +598,22 @@ pub fn disable_mod_internal(
     if is_native {
         let mod_info = &mut data.mods[mod_index];
         let game_dir = PathBuf::from(&mod_info.game_path);
-        if let Some(ue4ss_dir) = game_dir.parent().and_then(|p| p.parent()) {
-            let mods_txt = ue4ss_dir.join("mods.txt");
-            if mods_txt.exists() {
-                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+        let mut mods_txt = None;
+        if let Some(mods_dir) = game_dir.parent() {
+            let path1 = mods_dir.join("mods.txt");
+            if path1.exists() {
+                mods_txt = Some(path1);
+            } else if let Some(parent_dir) = mods_dir.parent() {
+                let path2 = parent_dir.join("mods.txt");
+                if path2.exists() {
+                    mods_txt = Some(path2);
+                }
             }
+        }
+        if let Some(path) = mods_txt {
+            update_mods_txt_setting(&path, &mod_info.name, false)?;
+        } else {
+            return Err("mods.txt not found relative to native mod game_path".to_string());
         }
         mod_info.enabled = false;
         // Native mods are not tracked in profile enabled_mod_ids
@@ -722,11 +789,22 @@ pub fn enable_mod_internal(
     if is_native {
         let mod_info = &mut data.mods[mod_index];
         let game_dir = PathBuf::from(&mod_info.game_path);
-        if let Some(ue4ss_dir) = game_dir.parent().and_then(|p| p.parent()) {
-            let mods_txt = ue4ss_dir.join("mods.txt");
-            if mods_txt.exists() {
-                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
+        let mut mods_txt = None;
+        if let Some(mods_dir) = game_dir.parent() {
+            let path1 = mods_dir.join("mods.txt");
+            if path1.exists() {
+                mods_txt = Some(path1);
+            } else if let Some(parent_dir) = mods_dir.parent() {
+                let path2 = parent_dir.join("mods.txt");
+                if path2.exists() {
+                    mods_txt = Some(path2);
+                }
             }
+        }
+        if let Some(path) = mods_txt {
+            update_mods_txt_setting(&path, &mod_info.name, true)?;
+        } else {
+            return Err("mods.txt not found relative to native mod game_path".to_string());
         }
         mod_info.enabled = true;
         // Native mods are not tracked in profile enabled_mod_ids
@@ -900,7 +978,7 @@ pub fn enable_mod_internal(
     Ok(())
 }
 
-fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+pub fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
     fs::create_dir_all(dst).map_err(|e| format!("Cannot create dest dir: {}", e))?;
     for entry in fs::read_dir(src).map_err(|e| format!("Cannot read source dir: {}", e))? {
         let entry = entry.map_err(|e| format!("Dir entry error: {}", e))?;

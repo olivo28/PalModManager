@@ -30,7 +30,7 @@ fn check_mod_dependencies(game_path: &str, mod_type: &str, analysis: &zip_handle
     let has_palschema_folder = analysis.files.iter().any(|f| f.to_lowercase().contains("palschema"));
     let palschema_required = match mod_type {
         "palschema" => true,
-        "hybrid" if (analysis.has_json || has_palschema_folder) => true,
+        "hybrid" if (analysis.has_palschema_json || has_palschema_folder) => true,
         _ => false,
     };
     if palschema_required {
@@ -81,6 +81,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         "detectedType": detected_type,
         "hasLua": analysis.has_lua,
         "hasJson": analysis.has_json,
+        "hasPalSchemaJson": analysis.has_palschema_json,
         "hasPak": analysis.has_pak,
         "hasInfoJson": analysis.has_info_json,
         "pakDestinationHint": analysis.pak_destination_hint,
@@ -286,23 +287,19 @@ pub async fn check_mod_exists_command(
     let analysis = zip_handler::analyze_zip(&zip_path)?;
     let (mod_folder_name, _has_game_path, _wrapper, _subdir) = zip_handler::detect_mod_folder(&analysis.files);
 
-    let folder_name = mod_folder_name.or_else(|| {
-        Path::new(&zip_path)
-            .file_stem()
-            .map(|s| s.to_string_lossy().to_string())
-    });
-
-    let data = state.data.lock().map_err(|e| e.to_string())?;
-
     let filename = Path::new(&zip_path)
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
     let nexus_id = nexus::extract_nexus_id(&filename);
 
-    let existing = folder_name
-        .as_ref()
-        .and_then(|name| installer::check_mod_exists(name, nexus_id, &data.mods));
+    let folder_name = mod_folder_name.unwrap_or_else(|| {
+        installer::clean_zip_name(&filename)
+    });
+
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+
+    let existing = installer::check_mod_exists(&folder_name, nexus_id, &data.mods);
 
     Ok(serde_json::json!({
         "exists": existing.is_some(),

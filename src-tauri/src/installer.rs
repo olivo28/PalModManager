@@ -35,7 +35,7 @@ fn find_files_with_ext(dir: &Path, ext: &str) -> Vec<PathBuf> {
 /// Rule: stop at the first token that is:
 ///   - purely numeric  (Nexus mod ID)
 ///   - starts with a digit followed by a hyphen that looks like a date
-fn clean_zip_name(zip_filename: &str) -> String {
+pub fn clean_zip_name(zip_filename: &str) -> String {
     let stem = Path::new(zip_filename)
         .file_stem()
         .map(|s| s.to_string_lossy().to_string())
@@ -52,6 +52,10 @@ fn clean_zip_name(zip_filename: &str) -> String {
         let starts_with_digit = word.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false);
         if starts_with_digit && word.contains('-') && word.len() > 6 {
             break;
+        }
+        let word_lower = word.to_lowercase();
+        if ["gamepass", "steam", "gdk", "xbox"].contains(&word_lower.as_str()) {
+            continue;
         }
         clean.push(word);
     }
@@ -110,27 +114,31 @@ fn navigate_to_mod_root(dir: &Path) -> PathBuf {
 fn find_ue4ss_mod_root(extracted: &Path, zip_filename: &str) -> (PathBuf, String) {
     let base = navigate_to_mod_root(extracted);
     
-    // Find all .lua files recursively
-    let lua_files = find_files_with_ext(&base, "lua");
+    // Find all .lua and .dll files recursively
+    let mut files = find_files_with_ext(&base, "lua");
+    files.extend(find_files_with_ext(&base, "dll"));
 
-    // 1. Prioritize finding a file named exactly "main.lua"
-    let main_lua = lua_files.iter().find(|p| {
+    // 1. Prioritize finding a file named exactly "main.lua" or "main.dll"
+    let main_file = files.iter().find(|p| {
         p.file_name()
-            .map(|n| n.to_string_lossy().to_lowercase() == "main.lua")
+            .map(|n| {
+                let name = n.to_string_lossy().to_lowercase();
+                name == "main.lua" || name == "main.dll"
+            })
             .unwrap_or(false)
     });
 
-    // Use main.lua path if found, otherwise fallback to the first lua file
-    let target_lua = main_lua.or_else(|| lua_files.first());
+    // Use main file path if found, otherwise fallback to the first file
+    let target_file = main_file.or_else(|| files.first());
 
-    if let Some(lua) = target_lua {
-        if let Some(parent) = lua.parent() {
+    if let Some(f) = target_file {
+        if let Some(parent) = f.parent() {
             let parent_lower = parent
                 .file_name()
                 .map(|n| n.to_string_lossy().to_lowercase())
                 .unwrap_or_default();
 
-            let mod_root = if parent_lower == "scripts" {
+            let mod_root = if parent_lower == "scripts" || parent_lower == "dlls" {
                 match parent.parent() {
                     Some(p) => p.to_path_buf(),
                     None => continue_fallback(extracted, zip_filename),
@@ -202,6 +210,137 @@ fn find_palschema_mod_root(extracted: &Path, zip_filename: &str) -> (PathBuf, St
 }
 
 // ---------------------------------------------------------------------------
+fn preprocess_extracted_dir(extracted: &Path, is_xbox: bool) -> Result<(), String> {
+    // 1. Collect all file paths
+    let mut all_files = Vec::new();
+    fn collect_files(dir: &Path, list: &mut Vec<PathBuf>) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let path = entry.path();
+                if path.is_dir() {
+                    collect_files(&path, list);
+                } else {
+                    list.push(path);
+                }
+            }
+        }
+    }
+    collect_files(extracted, &mut all_files);
+
+    // Check if the archive contains both platform-specific markers
+    let has_steam_tags = all_files.iter().any(|p| {
+        let rel = p.strip_prefix(extracted).unwrap().to_string_lossy().to_lowercase().replace('\\', "/");
+        rel.contains("/(steam)/") || rel.starts_with("(steam)/") ||
+        rel.contains("/steam/") || rel.starts_with("steam/") ||
+        rel.contains("/win64/") || rel.starts_with("win64/")
+    });
+
+    let has_xbox_tags = all_files.iter().any(|p| {
+        let rel = p.strip_prefix(extracted).unwrap().to_string_lossy().to_lowercase().replace('\\', "/");
+        rel.contains("/(xbox)/") || rel.starts_with("(xbox)/") ||
+        rel.contains("/xbox/") || rel.starts_with("xbox/") ||
+        rel.contains("/(gdk)/") || rel.starts_with("(gdk)/") ||
+        rel.contains("/gdk/") || rel.starts_with("gdk/") ||
+        rel.contains("/wingdk/") || rel.starts_with("wingdk/")
+    });
+
+    let has_both_platforms = has_steam_tags && has_xbox_tags;
+
+    // 2. Identify and delete files belonging to the inactive platform (only if both are present)
+    if has_both_platforms {
+        for file_path in &all_files {
+            if !file_path.exists() { continue; }
+            let rel_path = file_path.strip_prefix(extracted).unwrap();
+            let rel_lower = rel_path.to_string_lossy().to_lowercase().replace('\\', "/");
+            let segments: Vec<&str> = rel_lower.split('/').collect();
+
+            let is_inactive = if is_xbox {
+                segments.iter().any(|&s| {
+                    s == "(steam)" || s == "steam" || s == "win64"
+                })
+            } else {
+                segments.iter().any(|&s| {
+                    s == "(xbox)" || s == "xbox" || s == "(gdk)" || s == "gdk" || s == "wingdk"
+                })
+            };
+
+            if is_inactive {
+                let _ = fs::remove_file(file_path);
+            }
+        }
+    }
+
+    // 3. Normalize wrapper folders for the active platform.
+    // If a file resides inside a folder like (STEAM) or (XBOX) at the top level,
+    // we want to move it to the root of the extracted folder.
+    let mut remaining_files = Vec::new();
+    collect_files(extracted, &mut remaining_files);
+
+    for file_path in remaining_files {
+        if !file_path.exists() { continue; }
+        let rel_path = file_path.strip_prefix(extracted).unwrap();
+        let rel_str = rel_path.to_string_lossy().replace('\\', "/");
+        let parts: Vec<&str> = rel_str.split('/').collect();
+        if parts.len() > 1 {
+            let first_lower = parts[0].to_lowercase();
+            // If both are present, only strip our own platform wrapper.
+            // If only one is present, we strip whatever wrapper is present (as a fallback).
+            let is_wrapper = if has_both_platforms {
+                if is_xbox {
+                    first_lower == "(xbox)" || first_lower == "xbox" || first_lower == "(gdk)" || first_lower == "gdk" || first_lower == "wingdk"
+                } else {
+                    first_lower == "(steam)" || first_lower == "steam" || first_lower == "win64"
+                }
+            } else {
+                first_lower == "(steam)" || first_lower == "steam" || first_lower == "win64" ||
+                first_lower == "(xbox)" || first_lower == "xbox" || first_lower == "(gdk)" || first_lower == "gdk" || first_lower == "wingdk"
+            };
+
+            if is_wrapper {
+                // Determine target path at the root of extracted
+                let target_rel = parts[1..].join("/");
+                let target_path = extracted.join(target_rel);
+                if let Some(parent) = target_path.parent() {
+                    let _ = fs::create_dir_all(parent);
+                }
+                if let Err(_) = fs::rename(&file_path, &target_path) {
+                    if fs::copy(&file_path, &target_path).is_ok() {
+                        let _ = fs::remove_file(&file_path);
+                    }
+                }
+            }
+        }
+    }
+
+    // 4. Clean up any empty directories inside extracted
+    fn clean_empty_dirs(dir: &Path) {
+        if let Ok(entries) = fs::read_dir(dir) {
+            let mut subdirs = Vec::new();
+            let mut has_files = false;
+            for entry in entries.filter_map(|e| e.ok()) {
+                if entry.path().is_dir() {
+                    subdirs.push(entry.path());
+                } else {
+                    has_files = true;
+                }
+            }
+            for subdir in subdirs {
+                clean_empty_dirs(&subdir);
+            }
+            if !has_files {
+                if let Ok(mut check) = fs::read_dir(dir) {
+                    if check.next().is_none() {
+                        let _ = fs::remove_dir(dir);
+                    }
+                }
+            }
+        }
+    }
+    clean_empty_dirs(extracted);
+
+    Ok(())
+}
+
 // Public API
 // ---------------------------------------------------------------------------
 
@@ -217,7 +356,7 @@ pub fn install_mod(
     nexus_picture_url: Option<String>,
     nexus_downloads: Option<u32>,
     nexus_endorsements: Option<u32>,
-    _pak_destination: Option<&str>,
+    pak_destination: Option<&str>,
     custom_name: Option<String>,
     custom_type: Option<String>,
     nexus_category: Option<String>,
@@ -225,6 +364,13 @@ pub fn install_mod(
 ) -> Result<ModInfo, String> {
     let game = PathBuf::from(game_path);
     let now = Utc::now().to_rfc3339();
+
+    let win64 = crate::dependency_checker::get_binaries_dir(&game);
+    let is_xbox = win64.file_name().map(|n| n.to_string_lossy().to_lowercase()) == Some("wingdk".to_string());
+
+    if let Err(e) = preprocess_extracted_dir(extracted_dir, is_xbox) {
+        crate::logger::log(&format!("Warning: preprocess_extracted_dir failed: {}", e));
+    }
 
     // Determine the type to install: check custom override, fallback to analyzed type
     let target_type = if let Some(ref t) = custom_type {
@@ -271,6 +417,7 @@ pub fn install_mod(
             &game, extracted_dir, zip_filename, nexus_mod_id, nexus_name, nexus_author,
             nexus_summary, nexus_picture_url, nexus_downloads, nexus_endorsements,
             custom_name, &now, nexus_category, nexus_tags,
+            pak_destination,
             analysis,
         ),
         DetectedModType::Unknown => {
@@ -493,6 +640,7 @@ pub fn update_mod(
             now,
             existing.nexus_category.clone(),
             existing.nexus_tags.clone(),
+            existing.pak_destination.as_deref(),
             analysis,
         )?,
     };
@@ -690,6 +838,7 @@ pub fn install_hybrid(
     now: &str,
     nexus_category: Option<String>,
     nexus_tags: Vec<String>,
+    pak_destination: Option<&str>,
     _analysis: &ZipAnalysis,
 ) -> Result<ModInfo, String> {
     let win64 = crate::dependency_checker::get_binaries_dir(game);
@@ -711,14 +860,14 @@ pub fn install_hybrid(
     }
     collect_files(extracted, &mut all_files);
 
-    // 2. Identify UE4SS roots
+    // 2. Identify UE4SS roots (LUA files or DLL files)
     let mut ue4ss_roots = Vec::new();
     for file_path in &all_files {
         let ext = file_path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
-        if ext == "lua" {
+        if ext == "lua" || ext == "dll" {
             let parent = file_path.parent().unwrap();
             let parent_name = parent.file_name().unwrap().to_string_lossy().to_lowercase();
-            let root = if parent_name == "scripts" {
+            let root = if parent_name == "scripts" || parent_name == "dlls" {
                 parent.parent().unwrap().to_path_buf()
             } else {
                 parent.to_path_buf()
@@ -734,8 +883,18 @@ pub fn install_hybrid(
     for file_path in &all_files {
         let ext = file_path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
         if ext == "json" || ext == "jsonc" {
-            let is_in_ue4ss = ue4ss_roots.iter().any(|r| file_path.starts_with(r));
-            if !is_in_ue4ss {
+            let rel = file_path.strip_prefix(extracted).unwrap().to_string_lossy().to_lowercase().replace('\\', "/");
+            let is_palschema_json = rel.contains("palschema") || 
+                rel.contains("/unique/") || rel.starts_with("unique/") ||
+                rel.contains("/translations/") || rel.starts_with("translations/") ||
+                rel.contains("/spawns/") || rel.starts_with("spawns/") ||
+                rel.contains("/skins/") || rel.starts_with("skins/") ||
+                rel.contains("/raw/") || rel.starts_with("raw/") ||
+                rel.contains("/pals/") || rel.starts_with("pals/") ||
+                rel.contains("/items/") || rel.starts_with("items/") ||
+                rel.contains("/enums/") || rel.starts_with("enums/") ||
+                rel.contains("/blueprints/") || rel.starts_with("blueprints/");
+            if is_palschema_json {
                 let root = find_palschema_root(file_path, extracted);
                 if !palschema_roots.contains(&root) {
                     palschema_roots.push(root);
@@ -745,10 +904,20 @@ pub fn install_hybrid(
     }
 
     // Determine target mod folder name
-    let detected_folder_name = if !ue4ss_roots.is_empty() {
-        ue4ss_roots[0].file_name().unwrap().to_string_lossy().to_string()
-    } else if !palschema_roots.is_empty() {
-        palschema_roots[0].file_name().unwrap().to_string_lossy().to_string()
+    let detected_folder_name = if ue4ss_roots.len() == 1 {
+        let name = ue4ss_roots[0].file_name().unwrap().to_string_lossy().to_string();
+        if name.is_empty() || name.to_lowercase() == "temp_extracted" || name.starts_with("palmodmanager_") || ue4ss_roots[0] == extracted {
+            clean_stem.clone()
+        } else {
+            name
+        }
+    } else if palschema_roots.len() == 1 && ue4ss_roots.is_empty() {
+        let name = palschema_roots[0].file_name().unwrap().to_string_lossy().to_string();
+        if name.is_empty() || name.to_lowercase() == "temp_extracted" || name.starts_with("palmodmanager_") || palschema_roots[0] == extracted {
+            clean_stem.clone()
+        } else {
+            name
+        }
     } else {
         clean_stem.clone()
     };
@@ -778,10 +947,18 @@ pub fn install_hybrid(
 
         // A. Pak files
         if rel_lower.ends_with(".pak") || rel_lower.ends_with(".ucas") || rel_lower.ends_with(".utoc") {
-            let dest_dir = if rel_lower.contains("logicmods") {
-                &logicmods_dest_dir
+            let dest_dir = if let Some(dest) = pak_destination {
+                if dest.to_lowercase() == "logicmods" {
+                    &logicmods_dest_dir
+                } else {
+                    &paks_dest_dir
+                }
             } else {
-                &paks_dest_dir
+                if rel_lower.contains("logicmods") {
+                    &logicmods_dest_dir
+                } else {
+                    &paks_dest_dir
+                }
             };
             let dest_file = dest_dir.join(file_basename);
             let _ = fs::create_dir_all(dest_file.parent().unwrap());
@@ -790,28 +967,47 @@ pub fn install_hybrid(
             continue;
         }
 
-        // B. UE4SS files
-        if let Some(ue4ss_root) = ue4ss_roots.iter().find(|r| file_path.starts_with(r)) {
-            let folder_name = ue4ss_root.file_name().unwrap().to_string_lossy().to_string();
-            let file_rel_to_root = file_path.strip_prefix(ue4ss_root).unwrap();
-            let dest_file = ue4ss_mods_dest.join(&folder_name).join(file_rel_to_root);
-            let _ = fs::create_dir_all(dest_file.parent().unwrap());
-            fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy UE4SS file: {}", e))?;
-            copied_ue4ss_base = ue4ss_mods_dest.join(&folder_name);
-            copied_ue4ss = true;
-            continue;
-        }
+        // Longest prefix match routing for UE4SS and PalSchema roots
+        let matching_ue4ss = ue4ss_roots.iter().filter(|r| file_path.starts_with(r)).max_by_key(|r| r.as_path().components().count());
+        let matching_palschema = palschema_roots.iter().filter(|r| file_path.starts_with(r)).max_by_key(|r| r.as_path().components().count());
 
-        // C. PalSchema files
-        if let Some(palschema_root) = palschema_roots.iter().find(|r| file_path.starts_with(r)) {
-            let folder_name = palschema_root.file_name().unwrap().to_string_lossy().to_string();
-            let file_rel_to_root = file_path.strip_prefix(palschema_root).unwrap();
-            let dest_file = palschema_mods_dest.join(&folder_name).join(file_rel_to_root);
-            let _ = fs::create_dir_all(dest_file.parent().unwrap());
-            fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy PalSchema file: {}", e))?;
-            copied_palschema_base = palschema_mods_dest.join(&folder_name);
-            copied_palschema = true;
-            continue;
+        match (matching_ue4ss, matching_palschema) {
+            (Some(u_root), Some(p_root)) => {
+                let u_count = u_root.as_path().components().count();
+                let p_count = p_root.as_path().components().count();
+                if p_count > u_count {
+                    let file_rel_to_root = file_path.strip_prefix(p_root).unwrap();
+                    let dest_file = palschema_mods_dest.join(&safe_folder_name).join(file_rel_to_root);
+                    let _ = fs::create_dir_all(dest_file.parent().unwrap());
+                    fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy PalSchema file: {}", e))?;
+                    copied_palschema_base = palschema_mods_dest.join(&safe_folder_name);
+                    copied_palschema = true;
+                } else {
+                    let file_rel_to_root = file_path.strip_prefix(u_root).unwrap();
+                    let dest_file = ue4ss_mods_dest.join(&safe_folder_name).join(file_rel_to_root);
+                    let _ = fs::create_dir_all(dest_file.parent().unwrap());
+                    fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy UE4SS file: {}", e))?;
+                    copied_ue4ss_base = ue4ss_mods_dest.join(&safe_folder_name);
+                    copied_ue4ss = true;
+                }
+            }
+            (None, Some(p_root)) => {
+                let file_rel_to_root = file_path.strip_prefix(p_root).unwrap();
+                let dest_file = palschema_mods_dest.join(&safe_folder_name).join(file_rel_to_root);
+                let _ = fs::create_dir_all(dest_file.parent().unwrap());
+                fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy PalSchema file: {}", e))?;
+                copied_palschema_base = palschema_mods_dest.join(&safe_folder_name);
+                copied_palschema = true;
+            }
+            (Some(u_root), None) => {
+                let file_rel_to_root = file_path.strip_prefix(u_root).unwrap();
+                let dest_file = ue4ss_mods_dest.join(&safe_folder_name).join(file_rel_to_root);
+                let _ = fs::create_dir_all(dest_file.parent().unwrap());
+                fs::copy(file_path, &dest_file).map_err(|e| format!("Cannot copy UE4SS file: {}", e))?;
+                copied_ue4ss_base = ue4ss_mods_dest.join(&safe_folder_name);
+                copied_ue4ss = true;
+            }
+            (None, None) => {}
         }
     }
 
@@ -855,7 +1051,7 @@ pub fn install_hybrid(
         enabled: true,
         game_path: primary_path,
         disabled_path: String::new(),
-        pak_destination: None,
+        pak_destination: pak_destination.map(|d| d.to_string()),
         has_enabled_txt,
         mods_txt_order: None,
         extra_files: installed_extras,

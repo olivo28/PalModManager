@@ -6,6 +6,7 @@ export interface ZipAnalysis {
   detectedType: string;
   hasLua: boolean;
   hasJson: boolean;
+  hasPalSchemaJson: boolean;
   hasPak: boolean;
   hasInfoJson: boolean;
   pakDestinationHint: string | null;
@@ -43,6 +44,10 @@ export async function setHideNativeMods(hide: boolean): Promise<AppSettings> {
 
 export async function setDebugConsole(enabled: boolean): Promise<AppSettings> {
   return invoke('set_debug_console', { enabled });
+}
+
+export async function setCustomDataPath(path: string | null): Promise<AppSettings> {
+  return invoke('set_custom_data_path', { path });
 }
 
 
@@ -220,6 +225,11 @@ export async function deleteProfile(profileId: string): Promise<{ success: boole
 export async function renameProfile(profileId: string, name: string): Promise<Profile> {
   return invoke('rename_profile_command', { profileId, name });
 }
+
+export async function clearProfile(profileId: string): Promise<Profile[]> {
+  return invoke('clear_profile_command', { profileId });
+}
+
 
 export async function setModProfileState(modId: string, enabled: boolean): Promise<{ success: boolean }> {
   return invoke('set_mod_profile_state', { modId, enabled });

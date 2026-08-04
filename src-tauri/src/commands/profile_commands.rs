@@ -408,3 +408,38 @@ pub fn toggle_folder_mods_command(
 
     Ok(profile)
 }
+
+#[tauri::command]
+pub fn clear_profile_command(
+    profile_id: String,
+    state: State<AppState>,
+) -> Result<Vec<Profile>, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    
+    // 1. Wipe database mod listing and backing physical files
+    profiles::clear_profile(&mut data, &profile_id)?;
+
+    // 2. Re-scan and clean up states
+    let game_path = data.settings.game_path.clone();
+    let db_mods = data.mods.clone();
+    let current_profile_id = data.current_profile_id.clone();
+    let current_profile = data.profiles.iter().find(|p| p.id == current_profile_id);
+    let installed_ids = current_profile.map(|p| p.installed_mod_ids.clone()).unwrap_or_default();
+
+    let fresh_mods = crate::commands::mod_commands::scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &db_mods);
+    data.mods = fresh_mods;
+    
+    profiles::cleanup_profile_mod_lists(&mut data);
+    profiles::sync_current_profile_states(&mut data);
+
+    // 3. Save database
+    db::save_db(&program_path, &data).map_err(|e| e.to_string())?;
+
+    Ok(data.profiles.clone())
+}
+

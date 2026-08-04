@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setNexusApiKey, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema } from '../api';
+import { getSettings, setGamePath, setNexusApiKey, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -6,6 +6,8 @@ import { showToast } from './toast';
 import { escapeHtml } from '../utils/helpers';
 
 // === SETTINGS MODAL ===
+
+let _tempCustomDataPath: string | null = null;
 
 export function openSettingsModal(): void {
   const modal = document.getElementById('settings-modal')!;
@@ -34,12 +36,85 @@ export function openSettingsModal(): void {
     pathStatus.className = 'settings-path-status invalid';
   }
 
+  const dataPathSelect = document.getElementById('settings-data-path-select') as HTMLSelectElement | null;
+  const dataPathDisplay = document.getElementById('settings-custom-data-path-display');
+  _tempCustomDataPath = state.currentSettings?.customDataPath || null;
+
+  if (dataPathSelect) {
+    if (!_tempCustomDataPath) {
+      dataPathSelect.value = 'default';
+      if (dataPathDisplay) dataPathDisplay.style.display = 'none';
+    } else if (_tempCustomDataPath === '__portable__') {
+      dataPathSelect.value = 'portable';
+      if (dataPathDisplay) dataPathDisplay.style.display = 'none';
+    } else {
+      dataPathSelect.value = 'custom';
+      if (dataPathDisplay) {
+        dataPathDisplay.style.display = 'block';
+        dataPathDisplay.textContent = `Custom Folder: ${_tempCustomDataPath}`;
+      }
+    }
+  }
+
   modal.classList.add('visible');
 }
 
 
 export function closeSettingsModal(): void {
   document.getElementById('settings-modal')!.classList.remove('visible');
+}
+
+export async function handleDataPathChange(): Promise<void> {
+  const select = document.getElementById('settings-data-path-select') as HTMLSelectElement | null;
+  const display = document.getElementById('settings-custom-data-path-display');
+  if (!select) return;
+
+  const value = select.value;
+  if (value === 'default') {
+    _tempCustomDataPath = null;
+    if (display) display.style.display = 'none';
+  } else if (value === 'portable') {
+    _tempCustomDataPath = '__portable__';
+    if (display) display.style.display = 'none';
+  } else if (value === 'custom') {
+    try {
+      const { open } = await import('@tauri-apps/plugin-dialog');
+      const selected = await open({
+        directory: true,
+        multiple: false,
+        title: 'Select Custom Data Storage Directory',
+      });
+      if (selected) {
+        const path = typeof selected === 'string' ? selected : selected as string;
+        _tempCustomDataPath = path;
+        if (display) {
+          display.style.display = 'block';
+          display.textContent = `Custom Folder: ${path}`;
+        }
+      } else {
+        revertDataPathSelect(select, display);
+      }
+    } catch (e) {
+      console.error('Failed to open directory dialog:', e);
+      revertDataPathSelect(select, display);
+    }
+  }
+}
+
+function revertDataPathSelect(select: HTMLSelectElement, display: HTMLElement | null): void {
+  if (!_tempCustomDataPath) {
+    select.value = 'default';
+    if (display) display.style.display = 'none';
+  } else if (_tempCustomDataPath === '__portable__') {
+    select.value = 'portable';
+    if (display) display.style.display = 'none';
+  } else {
+    select.value = 'custom';
+    if (display) {
+      display.style.display = 'block';
+      display.textContent = `Custom Folder: ${_tempCustomDataPath}`;
+    }
+  }
 }
 
 export async function handleSettingsBrowse(): Promise<void> {
@@ -114,6 +189,12 @@ export async function handleSaveSettings(): Promise<void> {
 
     if (debugConsole !== !!state.currentSettings?.debugConsole) {
       const settings = await setDebugConsole(debugConsole);
+      updateState({ currentSettings: settings });
+    }
+
+    if (_tempCustomDataPath !== (state.currentSettings?.customDataPath || null)) {
+      showToast('Migrating data files to new location...', 'info');
+      const settings = await setCustomDataPath(_tempCustomDataPath);
       updateState({ currentSettings: settings });
     }
 
@@ -231,11 +312,11 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
   const cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
 
   let pakDestHtml = `
-    <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${analysis.detectedType === 'pak' || analysis.detectedType === 'logicmods' ? 'block' : 'none'}; margin-top:8px;">
+    <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${analysis.detectedType === 'pak' || analysis.detectedType === 'logicmods' || (analysis.detectedType === 'hybrid' && analysis.hasPak) ? 'block' : 'none'}; margin-top:8px;">
       <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Pak destination</label>
       <div class="pak-dest-options" style="display:flex;gap:12px;">
         <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
-          <input type="radio" name="pak-dest" value="~mods" ${analysis.detectedType === 'pak' ? 'checked' : ''} />
+          <input type="radio" name="pak-dest" value="~mods" ${analysis.detectedType === 'pak' || analysis.detectedType === 'hybrid' ? 'checked' : ''} />
           <span>~mods/ (Resource Paks)</span>
         </label>
         <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
@@ -317,10 +398,14 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
   if (typeSelect && pakDestSection) {
     typeSelect.addEventListener('change', () => {
       const type = typeSelect.value;
-      if (type === 'pak' || type === 'logicmods') {
+      const analysis = getState().currentAnalysis;
+      const hasPak = analysis ? analysis.hasPak : false;
+      if (type === 'pak' || type === 'logicmods' || (type === 'hybrid' && hasPak)) {
         pakDestSection.style.display = 'block';
-        const radio = pakDestSection.querySelector(`input[value="${type}"]`) as HTMLInputElement;
-        if (radio) radio.checked = true;
+        if (type !== 'hybrid') {
+          const radio = pakDestSection.querySelector(`input[value="${type}"]`) as HTMLInputElement;
+          if (radio) radio.checked = true;
+        }
       } else {
         pakDestSection.style.display = 'none';
       }
@@ -578,7 +663,7 @@ export async function handleConfirmInstall(): Promise<void> {
         } else {
           // Install new
           let pakDestination: string | null = null;
-          if (item.customType === 'pak' || item.customType === 'logicmods') {
+          if (item.customType === 'pak' || item.customType === 'logicmods' || item.customType === 'hybrid') {
             pakDestination = item.customType === 'logicmods' ? 'logicmods' : '~mods';
           }
           await installMod(item.path, item.customType, pakDestination, item.customName);
@@ -637,7 +722,7 @@ export async function handleConfirmInstall(): Promise<void> {
   // Check dependencies first
   const depStatus = await checkDependencies();
   const ue4ssRequired = ['ue4ss', 'palschema', 'hybrid'].includes(customType);
-  const palschemaRequired = (customType === 'palschema') || (customType === 'hybrid' && (state.currentAnalysis.hasJson || (state.currentAnalysis.files || []).some((f: string) => f.toLowerCase().includes('palschema'))));
+  const palschemaRequired = (customType === 'palschema') || (customType === 'hybrid' && (state.currentAnalysis.hasPalSchemaJson || (state.currentAnalysis.files || []).some((f: string) => f.toLowerCase().includes('palschema'))));
 
   const missingUe4ss = ue4ssRequired && !depStatus.ue4ss_installed;
   const missingPalSchema = palschemaRequired && !depStatus.palschema_installed;
@@ -732,7 +817,7 @@ async function executeModInstallation(
 
   try {
     let pakDestination: string | null = null;
-    if (customType === 'pak' || customType === 'logicmods') {
+    if (customType === 'pak' || customType === 'logicmods' || customType === 'hybrid') {
       const checked = document.querySelector('input[name="pak-dest"]:checked') as HTMLInputElement;
       pakDestination = checked ? checked.value : (customType === 'logicmods' ? 'logicmods' : '~mods');
     }

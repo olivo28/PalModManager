@@ -204,6 +204,13 @@
   transition: background 0.2s;
 }
 
+.profile-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+
 .profile-item:hover {
   background: var(--bg-hover);
 }
@@ -230,14 +237,18 @@
 }
 
 .profile-item-delete {
-  background: none;
-  border: none;
+  background: none !important;
+  border: none !important;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: 13px;
   cursor: pointer;
-  padding: 4px;
+  padding: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: color 0.2s;
 }
+
 
 .profile-item-delete:hover:not(.disabled) {
   color: var(--danger);
@@ -350,4 +361,10 @@
 .confirm-cancel:hover {
   background: var(--bg-hover);
   border-color: var(--text-muted);
+}
+
+.btn-sm {
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  font-weight: 500 !important;
 }

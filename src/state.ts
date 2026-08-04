@@ -13,7 +13,8 @@ export interface AppState {
   currentDetailMod: ModInfo | null;
   searchQuery: string;
   currentSort: { field: string; asc: boolean };
-  activeTab: 'mods' | 'editor' | 'library';
+  activeTab: 'mods' | 'editor' | 'library' | 'db';
+  viewLayout: 'grid' | 'list';
   editorModId: string | null;
   editorFiles: string[];
   editorSelectedFile: string | null;
@@ -28,6 +29,7 @@ export interface AppState {
   selectedLibraryIds: Set<string>;
   availableUpdates: Map<string, string>;
   currentFolderId: string | null;
+  isDraggingCard: boolean;
 }
 
 let state: AppState = {
@@ -43,6 +45,7 @@ let state: AppState = {
   searchQuery: '',
   currentSort: { field: 'name', asc: true },
   activeTab: 'mods',
+  viewLayout: (localStorage.getItem('pmm-layout') as 'grid' | 'list') || 'grid',
   editorModId: null,
   editorFiles: [],
   editorSelectedFile: null,
@@ -57,6 +60,7 @@ let state: AppState = {
   selectedLibraryIds: new Set(),
   availableUpdates: new Map(),
   currentFolderId: null,
+  isDraggingCard: false,
 };
 
 

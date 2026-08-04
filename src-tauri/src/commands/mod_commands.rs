@@ -361,6 +361,24 @@ fn merge_scan_with_db(
 ) -> Vec<models::ModInfo> {
     let mut consolidated_db: Vec<models::ModInfo> = Vec::new();
     for db_mod in db_mods {
+        let db_path_norm = if !db_mod.game_path.is_empty() {
+            db_mod.game_path.replace("\\", "/").to_lowercase()
+        } else {
+            db_mod.disabled_path.replace("\\", "/").to_lowercase()
+        };
+
+        if !db_path_norm.is_empty() {
+            let is_extra_of_other = db_mods.iter().any(|other| {
+                other.id != db_mod.id && other.extra_files.iter().any(|extra| {
+                    extra.replace("\\", "/").to_lowercase() == db_path_norm
+                })
+            });
+            if is_extra_of_other {
+                crate::logger::log(&format!("merge_scan_with_db: Purging duplicate sub-component mod '{}' because its files are owned by another mod.", db_mod.name));
+                continue;
+            }
+        }
+
         let db_id = get_physical_identity(&db_mod.game_path, &db_mod.disabled_path);
         if let Some(existing_idx) = consolidated_db.iter().position(|m| {
             let existing_id = get_physical_identity(&m.game_path, &m.disabled_path);
@@ -393,6 +411,23 @@ fn merge_scan_with_db(
     let mut matched_db: Vec<bool> = vec![false; consolidated_db.len()];
 
     for fs_mod in fs_mods {
+        let fs_path_norm = if !fs_mod.game_path.is_empty() {
+            fs_mod.game_path.replace("\\", "/").to_lowercase()
+        } else {
+            fs_mod.disabled_path.replace("\\", "/").to_lowercase()
+        };
+
+        if !fs_path_norm.is_empty() {
+            let is_registered_as_extra = consolidated_db.iter().any(|dm| {
+                dm.extra_files.iter().any(|extra| {
+                    extra.replace("\\", "/").to_lowercase() == fs_path_norm
+                })
+            });
+            if is_registered_as_extra {
+                continue;
+            }
+        }
+
         let fs_id = get_physical_identity(&fs_mod.game_path, &fs_mod.disabled_path);
         if let Some(db_idx) = consolidated_db.iter().position(|dm| {
             let dm_idx = consolidated_db.iter().position(|x| x as *const _ == dm as *const _).unwrap_or(0);
