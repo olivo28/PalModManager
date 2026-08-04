@@ -2,6 +2,29 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.1] - Hotfixes
+
+### Added
+- **Pak Destination Selector for Hybrid Mods**: Added a dropdown/selector in the install preview dialog to choose where `.pak` files inside Hybrid mods are installed (`~mods` or `LogicMods`).
+- **Profile Purging (Clear Profile)**: Added a "Clear" button to the profile manager, allowing users to wipe all backing files, configurations, and mod lists from a profile (including the Default profile) without deleting the profile container itself.
+- **Explorer-style Details List View**: Added an alternative compact Details List View resembling Windows File Explorer, featuring columns for Name, Status, Type, Version, Installed Path, Extra Files, and Date Installed, with interactive column header sorting.
+- **Custom Data Storage Redirection & Migration**: Added support under Settings to choose where database, profiles, and library files are stored (Default AppData, Portable executable folder, or Custom directory) with automatic file migration.
+- **Database Renaming and Auto-Migration**: Renamed backing database to `pmm_database.db` and added automatic transparent renaming/migration of legacy `mod-manager.db` files on launch.
+
+### Changed
+- **Profile Modal Layout Refinement**: Redesigned the Manage Profiles layout and increased the modal width to 480px to accommodate additional action buttons cleanly.
+
+### Fixed
+- **Dependency Warnings False Positive**: Resolved a bug where installing standard mods with metadata JSON files (such as `modinfo.json` in *Smart Breeding Planner*) would show a false "PalSchema is missing" warning.
+- **PalSchema Detection Precision**: Restrained automatic PalSchema detection to JSON/JSONC configuration files located inside standard configuration folders (like `pals/`, `spawns/`, `items/`, etc.), preventing false positive type detections.
+- **Search Clutter Fix**: Fixed a bug where virtual folders were still rendered in the grid when a search query was active, cluttering search results.
+- **Duplicate Mod Cards on Update**: Fixed a bug where updating a Hybrid mod would cause its sub-component folders to be imported as duplicate standalone cards during background disk scans.
+- **Duplicate Mod Warning on Pak Updates**: Resolved a bug where updating a `.pak` mod with Nexus suffix identifiers in the ZIP filename failed to detect that the mod was already installed.
+- **Platform-Specific Folder Filtering**: Updated the installer to automatically strip platform wrapper folders (like `(STEAM)`, `(XBOX)`, `Win64`, `WinGDK`) and conditionally discard inactive platform files depending on the active game edition (Steam vs Game Pass/GDK).
+- **C++ DLL Mod Support**: Improved UE4SS/Hybrid mod detection to recognize C++ mods that only package `.dll` files in a `dlls` folder without any `.lua` scripts.
+- **Native UE4SS Mod Toggling**: Resolved a bug where enabling or disabling native UE4SS mods failed to update the `mods.txt` configuration file due to incorrect parent directory paths. The path resolution is now resolved dynamically and relatively to the mod's install folder across all game platforms.
+
+
 ---
 
 ## [1.2.0]
