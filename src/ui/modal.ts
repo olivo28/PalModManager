@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setNexusApiKey, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath } from '../api';
+import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -12,15 +12,12 @@ let _tempCustomDataPath: string | null = null;
 export function openSettingsModal(): void {
   const modal = document.getElementById('settings-modal')!;
   const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
-  const keyInput = document.getElementById('settings-api-key')! as HTMLInputElement;
   const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
   const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
   const pathStatus = document.getElementById('settings-path-status')!;
   const state = getState();
 
   pathInput.value = state.currentSettings?.gamePath || '';
-  keyInput.value = state.currentSettings?.nexusApiKey || '';
-  keyInput.type = 'password';
   if (hideNativeCheckbox) {
     hideNativeCheckbox.checked = !!state.currentSettings?.hideNativeMods;
   }
@@ -135,21 +132,8 @@ export async function handleSettingsBrowse(): Promise<void> {
   }
 }
 
-export function handleToggleKeyVisibility(): void {
-  const keyInput = document.getElementById('settings-api-key')! as HTMLInputElement;
-  const toggleBtn = document.getElementById('settings-toggle-key')!;
-  if (keyInput.type === 'password') {
-    keyInput.type = 'text';
-    toggleBtn.textContent = '\uD83D\uDE48';
-  } else {
-    keyInput.type = 'password';
-    toggleBtn.textContent = '\uD83D\uDC41';
-  }
-}
-
 export async function handleSaveSettings(): Promise<void> {
   const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
-  const keyInput = document.getElementById('settings-api-key')! as HTMLInputElement;
   const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
   const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
   const saveBtn = document.getElementById('settings-save')! as HTMLButtonElement;
@@ -158,7 +142,6 @@ export async function handleSaveSettings(): Promise<void> {
 
   try {
     const newPath = pathInput.value.trim();
-    const apiKey = keyInput.value.trim();
     const hideNative = hideNativeCheckbox ? hideNativeCheckbox.checked : false;
     const debugConsole = debugConsoleCheckbox ? debugConsoleCheckbox.checked : false;
     const state = getState();
@@ -175,11 +158,6 @@ export async function handleSaveSettings(): Promise<void> {
         saveBtn.disabled = false;
         return;
       }
-    }
-
-    if (apiKey !== (state.currentSettings?.nexusApiKey || '')) {
-      const settings = await setNexusApiKey(apiKey || null);
-      updateState({ currentSettings: settings });
     }
 
     if (hideNative !== !!state.currentSettings?.hideNativeMods) {

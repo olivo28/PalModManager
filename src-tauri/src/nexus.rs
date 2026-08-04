@@ -247,40 +247,80 @@ pub fn extract_nexus_id(filename: &str) -> Option<u32> {
     parse_mod_filename(filename).nexus_id
 }
 
-/// Fetch the latest MAIN/UPDATE file version for a mod via REST v1 API.
-/// Returns None if no api_key or on error.
-async fn fetch_latest_file_version(mod_id: u32, api_key: &str) -> Option<String> {
-    if api_key.is_empty() {
-        return None;
-    }
-    let url = format!(
-        "https://api.nexusmods.com/v1/games/palworld/mods/{}/files.json",
-        mod_id
-    );
+/// Fetch the latest MAIN/UPDATE file version for a mod via GraphQL v2 API anonymously.
+async fn fetch_latest_file_version(mod_id: u32) -> Option<String> {
+    let query = r#"
+query GetModFiles($modId: ID!, $gameId: ID!) {
+  modFiles(modId: $modId, gameId: $gameId) {
+    category
+    version
+    fileId
+  }
+}
+"#;
+
+    let payload = serde_json::json!({
+        "query": query,
+        "variables": {
+            "modId": mod_id.to_string(),
+            "gameId": "6063"
+        }
+    });
+
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.0.0 (Tauri App)")
+        .user_agent("PalModManager/1.2.2 (Tauri App)")
+        .timeout(std::time::Duration::from_secs(10))
         .build()
         .ok()?;
-    let resp = client
-        .get(&url)
-        .header("apikey", api_key)
-        .send()
-        .await
-        .ok()?;
 
-    if !resp.status().is_success() {
-        crate::logger::log(&format!("fetch_latest_file_version: REST v1 returned HTTP {}", resp.status()));
+    let req = client
+        .post(GRAPHQL_ENDPOINT)
+        .header("Content-Type", "application/json")
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", "1.2.2")
+        .json(&payload);
+
+    let resp = req.send().await.ok()?;
+    let status = resp.status();
+    let text = resp.text().await.unwrap_or_default();
+    
+
+
+    if !status.is_success() {
         return None;
     }
 
-    let files_resp: NexusFilesResponse = resp.json().await.ok()?;
-    let files = files_resp.files?;
+    #[derive(Debug, Deserialize)]
+    struct GqlFilesResponse {
+        data: Option<GqlFilesData>,
+    }
+    #[derive(Debug, Deserialize)]
+    struct GqlFilesData {
+        #[serde(rename = "modFiles")]
+        mod_files: Option<Vec<GqlModFile>>,
+    }
+    #[derive(Debug, Deserialize)]
+    struct GqlModFile {
+        category: Option<String>,
+        version: Option<String>,
+        #[serde(rename = "fileId")]
+        file_id: Option<i64>,
+    }
+
+    let gql_resp: GqlFilesResponse = match serde_json::from_str(&text) {
+        Ok(r) => r,
+        Err(e) => {
+            crate::logger::log(&format!("fetch_latest_file_version: JSON parse failed: {}", e));
+            return None;
+        }
+    };
+    let files = gql_resp.data?.mod_files?;
 
     let mut best_version: Option<String> = None;
     let mut max_file_id = 0i64;
 
     for entry in files {
-        if let Some(cat) = &entry.category_name {
+        if let Some(cat) = &entry.category {
             if cat == "MAIN" || cat == "UPDATE" {
                 if let Some(fid) = entry.file_id {
                     if fid > max_file_id {
@@ -299,7 +339,7 @@ async fn fetch_latest_file_version(mod_id: u32, api_key: &str) -> Option<String>
     best_version
 }
 
-pub async fn fetch_mod_info(mod_id: u32, api_key: Option<&str>) -> Result<NexusModInfo, String> {
+pub async fn fetch_mod_info(mod_id: u32) -> Result<NexusModInfo, String> {
     let query = r#"
 query GetPalworldMod($modId: ID!) {
   mod(modId: $modId, gameId: "6063") {
@@ -327,21 +367,17 @@ query GetPalworldMod($modId: ID!) {
     });
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.0.0 (Tauri App)")
+        .user_agent("PalModManager/1.2.2 (Tauri App)")
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .unwrap_or_else(|_| reqwest::Client::new());
 
-    let mut req = client
+    let req = client
         .post(GRAPHQL_ENDPOINT)
         .header("Content-Type", "application/json")
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", "1.2.2")
         .json(&payload);
-
-    if let Some(key) = api_key {
-        if !key.is_empty() {
-            req = req.header("apikey", key);
-        }
-    }
 
     let resp = req
         .send()
@@ -356,15 +392,12 @@ query GetPalworldMod($modId: ID!) {
     let text = resp
         .text()
         .await
-        .map_err(|e| format!("Read text error: {}", e))?;
+        .map_err(|e| format!("Failed to get response text: {}", e))?;
 
-    let body: GraphQLResponse = match serde_json::from_str(&text) {
-        Ok(b) => b,
-        Err(e) => {
-            crate::logger::log(&format!("fetch_mod_info: JSON parse failed. Error: {}. Body: {}", e, &text[..text.len().min(500)]));
-            return Err(format!("Parse error: {}", e));
-        }
-    };
+    let body: GraphQLResponse = serde_json::from_str(&text).map_err(|e| {
+        crate::logger::log(&format!("fetch_mod_info: Failed to parse body: {}", e));
+        format!("JSON parse error: {}", e)
+    })?;
 
     if let Some(errors) = body.errors {
         if !errors.is_empty() {
@@ -376,14 +409,9 @@ query GetPalworldMod($modId: ID!) {
     let data = body.data.ok_or("No data in response")?;
     let r#mod = data.r#mod.ok_or("Mod not found")?;
 
-    // Try to get the real file version from REST v1 API
     let graphql_version = r#mod.version.clone().unwrap_or_default();
-    let best_version = if let Some(key) = api_key {
-        fetch_latest_file_version(mod_id, key).await
-            .unwrap_or(graphql_version)
-    } else {
-        graphql_version
-    };
+    let best_version = fetch_latest_file_version(mod_id).await
+        .unwrap_or(graphql_version);
 
     Ok(NexusModInfo {
         mod_id,

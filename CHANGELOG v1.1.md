@@ -29,3 +29,12 @@ All notable changes to this project will be documented in this file.
 - **Xbox GDK Path Installation Fix**: Resolved the bug where reinstalling UE4SS on Game Pass versions erroneously targeted Steam-like paths (`Pal/Binaries/Win64`) instead of Xbox-specific paths (`Pal/Binaries/WinGDK/ue4ss`).
 - **Profile Synchronization & Persistence**: Fixed a bug where scanning mods did not update or write changes to the active profile's `profile.json` file. Scans now immediately write profile settings to disk.
 - **Real-Time Badge Updates**: Fixed dependency check casing bugs to ensure UI toolbar badges (`UE4SS` / `PalSchema`) immediately turn green after successful installation.
+
+---
+
+### 📦 Installation Instructions
+
+You can choose between the portable version or the full installer:
+
+*   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
+*   **Installer Version:** Download `PalModManager_1.1.1_x64-setup.exe` and follow the setup wizard to install the application on your system.

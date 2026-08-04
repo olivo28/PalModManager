@@ -103,9 +103,9 @@ pub async fn install_mod_command(
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
     println!("[INFO] Installing mod from zip: {}, custom_type: {:?}, pak_destination: {:?}", zip_path, custom_type, pak_destination);
-    let (game_path, program_path, api_key) = {
+    let (game_path, program_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.settings.program_path.clone(), data.settings.nexus_api_key.clone())
+        (data.settings.game_path.clone(), data.settings.program_path.clone())
     };
 
     if game_path.is_empty() {
@@ -135,7 +135,7 @@ pub async fn install_mod_command(
     };
 
     let nexus_info = if let Some(id) = nexus_id {
-        nexus::fetch_mod_info(id, api_key.as_deref()).await.ok()
+        nexus::fetch_mod_info(id).await.ok()
     } else {
         None
     };
@@ -314,13 +314,12 @@ pub async fn update_mod_command(
     mod_id: String,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    let (game_path, program_path, current_profile_id, api_key) = {
+    let (game_path, program_path, current_profile_id) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (
             data.settings.game_path.clone(),
             data.settings.program_path.clone(),
             data.current_profile_id.clone(),
-            data.settings.nexus_api_key.clone(),
         )
     };
 
@@ -334,7 +333,7 @@ pub async fn update_mod_command(
     };
 
     let nexus_info = if let Some(id) = nexus_id {
-        crate::nexus::fetch_mod_info(id, api_key.as_deref()).await.ok()
+        crate::nexus::fetch_mod_info(id).await.ok()
     } else {
         None
     };

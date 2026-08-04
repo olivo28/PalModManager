@@ -140,7 +140,6 @@ const MOD_INFO_MAPPING: &[(&str, &str)] = &[
 const SETTINGS_MAPPING: &[(&str, &str)] = &[
     ("game_path", "gamePath"),
     ("program_path", "programPath"),
-    ("nexus_api_key", "nexusApiKey"),
     ("hide_native_mods", "hideNativeMods"),
     ("custom_data_path", "customDataPath"),
 ];

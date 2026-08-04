@@ -2,6 +2,18 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.2.2] - Hotfixes
+
+### Added
+- **Quick Access Folders**: Added buttons in the Settings panel to quickly open the Palworld `~mods`, `LogicMods`, and `UE4SS/Mods` directories, as well as the application's base storage (App Storage) and the active profile's folder in the system file explorer.
+
+### Fixed
+- **Pak Destination Selection**: Fixed a frontend bug where the selected Pak destination (e.g. `LogicMods` vs `~mods`) was ignored for `Hybrid` mods due to the destination DOM element being destroyed before its value was read.
+- **Updates Badge Persistence**: Resolved a bug where updating a mod did not correctly write the `.nexus.json` cache file and `.pmm.json` sidecar metadata on disk, causing the "Update available" badge to persist across full scans or profile switches.
+
+### Removed
+- **NexusMods API Key**: Completely removed the use and support of NexusMods API keys.
+
 ## [1.2.1] - Hotfixes
 
 ### Added
@@ -53,4 +65,13 @@ All notable changes to this project will be documented in this file.
 - **Mod Update Workflow**: Fixed a bug where updating a mod would corrupt `.pak` file structures or ignore `Hybrid` mod layout separation. The update flow now correctly purges previous files, runs the mod-type specific installation rules, and preserves the active or disabled state.
 - **Unified Mod Naming Heuristics**: Unified individual and batch mod installation naming behaviors. Both installation pathways now clean and propose the user-facing name based on the ZIP filename by default (with automatic Nexus metadata fallback if available), instead of pre-filling with the technical inner folder name (`rootFolder`).
 - **JSONC File Support in Editor**: Fixed a bug where saving or formatting `.jsonc` files (JSON with comments) in the configuration editor would fail due to standard JSON parsing syntax errors. Comments are now dynamically stripped during syntax validation while keeping them completely intact when saving the file to disk.
+
+---
+
+### 📦 Installation Instructions
+
+You can choose between the portable version or the full installer:
+
+*   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
+*   **Installer Version:** Download `PalModManager_1.2.2_x64-setup.exe` and follow the setup wizard to install the application on your system.
 

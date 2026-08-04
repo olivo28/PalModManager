@@ -33,21 +33,6 @@ pub fn set_game_path(path: String, state: State<AppState>) -> Result<Value, Stri
 }
 
 #[tauri::command]
-pub fn set_nexus_api_key(api_key: Option<String>, state: State<AppState>) -> Result<Value, String> {
-    let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    data.settings.nexus_api_key = if let Some(key) = &api_key {
-        if key.trim().is_empty() { None } else { Some(key.clone()) }
-    } else {
-        None
-    };
-    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
-    let data_clone = data.clone();
-    drop(data);
-    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
-    Ok(result)
-}
-
-#[tauri::command]
 pub fn set_hide_native_mods(hide: bool, state: State<AppState>) -> Result<Value, String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     data.settings.hide_native_mods = Some(hide);
@@ -80,8 +65,10 @@ pub fn log_from_js(msg: String) {
 pub fn open_url(url: String) -> Result<(), String> {
     #[cfg(target_os = "windows")]
     {
+        use std::os::windows::process::CommandExt;
         std::process::Command::new("cmd")
             .args(&["/C", "start", "", &url])
+            .creation_flags(0x08000000) // CREATE_NO_WINDOW
             .spawn()
             .map_err(|e| e.to_string())?;
     }

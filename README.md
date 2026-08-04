@@ -43,8 +43,7 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **Smart UI Reset**: Instantly clears active files and paths upon changing profiles to keep the workspace clean.
 
 ### 🔄 NexusMods Integration & Updates
-- **Update Checks**: One-click check for new mod releases on NexusMods.
-- **Nexus API Key Support**: Link your NexusMods API key for fast metadata sync.
+- **Update Checks & Metadata Sync**: Automatically check for new mod releases and sync metadata/thumbnails directly from NexusMods.
 
 ---
 
@@ -112,15 +111,6 @@ pnpm tauri build
 The compiled binaries will be generated at:
 - **Standalone Portable `.exe`**: `src-tauri/target/release/palmodmanager.exe`
 - **Installer Setup**: `src-tauri/target/release/bundle/nsis/` or `bundle/msi/`
-
----
-
-## 🗺️ Roadmap / Future Features
-
-Here are the features currently planned for upcoming releases:
-- 📥 **Direct Mod Downloader**: Download mods directly inside the manager using your NexusMods API Key (premium and free download link support).
-- 🔍 **In-App Nexus Mod Browser**: Browse, search, and filter Palworld mods on NexusMods directly from the app interface without opening a browser.
-
 
 ---
 

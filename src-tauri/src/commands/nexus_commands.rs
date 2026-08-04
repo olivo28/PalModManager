@@ -20,19 +20,15 @@ pub struct UpdateCheckResult {
 
 #[tauri::command]
 pub async fn fetch_nexus_info_async(mod_id: u32, state: State<'_, AppState>) -> Result<Value, String> {
-    let api_key = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_api_key.clone()
-    };
-    let info = nexus::fetch_mod_info(mod_id, api_key.as_deref()).await?;
+    let info = nexus::fetch_mod_info(mod_id).await?;
     Ok(serde_json::to_value(&info).map_err(|e| e.to_string())?)
 }
 
 #[tauri::command]
 pub async fn refresh_nexus_cache(mod_id_str: String, state: State<'_, AppState>) -> Result<Value, String> {
-    let (api_key, program_path) = {
+    let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.nexus_api_key.clone(), data.settings.program_path.clone())
+        data.settings.program_path.clone()
     };
 
     let mod_index = {
@@ -51,7 +47,7 @@ pub async fn refresh_nexus_cache(mod_id_str: String, state: State<'_, AppState>)
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.mods[mod_index].name.clone()
     }));
-    let info = nexus::fetch_mod_info(nexus_id, api_key.as_deref()).await?;
+    let info = nexus::fetch_mod_info(nexus_id).await?;
 
     let needs_refresh = match &cached_version {
         Some(v) => v != &info.version,
@@ -158,11 +154,6 @@ pub async fn set_nexus_mod_id(mod_id_str: String, nexus_id: u32, state: State<'_
 
 #[tauri::command]
 pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateCheckResult>, String> {
-    let api_key = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_api_key.clone()
-    };
-
     let mods_to_check: Vec<(String, String, String, u32)> = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.mods.iter()
@@ -180,7 +171,7 @@ pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateC
 
     for (mod_id, name, cached_ver, nexus_id) in mods_to_check {
         crate::logger::log(&format!("check_for_updates: Checking '{}' (NexusID {})", name, nexus_id));
-        match crate::nexus::fetch_mod_info(nexus_id, api_key.as_deref()).await {
+        match crate::nexus::fetch_mod_info(nexus_id).await {
             Ok(info) => {
                 let norm_cached = cached_ver.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
                 let norm_latest = info.version.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();

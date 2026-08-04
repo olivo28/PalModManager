@@ -1,7 +1,7 @@
 import 'highlight.js/styles/github-dark.css';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema } from './api';
 import { getState, updateState } from './state';
-import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleToggleKeyVisibility, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange } from './ui/modal';
+import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers } from './ui/editorView';
@@ -96,12 +96,6 @@ function setupEventListeners() {
   safeEl('settings-save')?.addEventListener('click', handleSaveSettings);
   safeEl('settings-browse-btn')?.addEventListener('click', handleSettingsBrowse);
   safeEl('settings-data-path-select')?.addEventListener('change', handleDataPathChange);
-  safeEl('settings-toggle-key')?.addEventListener('click', handleToggleKeyVisibility);
-  safeEl('nexus-api-key-link')?.addEventListener('click', async (e) => {
-    e.preventDefault();
-    const { openUrl } = await import('./api');
-    openUrl('https://www.nexusmods.com/settings/api-keys');
-  });
 
   const registerOpenFolderBtn = (id: string, type: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile') => {
     safeEl(id)?.addEventListener('click', async () => {

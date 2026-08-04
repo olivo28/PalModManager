@@ -38,7 +38,6 @@ export interface ModInfo {
 export interface AppSettings {
   gamePath: string;
   programPath: string;
-  nexusApiKey: string | null;
   hideNativeMods?: boolean;
   debugConsole?: boolean;
   customDataPath?: string | null;

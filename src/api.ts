@@ -34,10 +34,6 @@ export async function setGamePath(path: string): Promise<AppSettings> {
   return invoke('set_game_path', { path });
 }
 
-export async function setNexusApiKey(apiKey: string | null): Promise<AppSettings> {
-  return invoke('set_nexus_api_key', { apiKey });
-}
-
 export async function setHideNativeMods(hide: boolean): Promise<AppSettings> {
   return invoke('set_hide_native_mods', { hide });
 }

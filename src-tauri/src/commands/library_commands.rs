@@ -151,9 +151,9 @@ pub async fn copy_to_library_command(
     mod_name: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    let (program_path, api_key) = {
+    let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.program_path.clone(), data.settings.nexus_api_key.clone())
+        data.settings.program_path.clone()
     };
 
     let filename = std::path::Path::new(&zip_path)
@@ -174,7 +174,7 @@ pub async fn copy_to_library_command(
         .or_else(|| crate::nexus::extract_nexus_id(&filename));
 
     if let Some(mod_id) = nexus_id {
-        if let Ok(info) = crate::nexus::fetch_mod_info(mod_id, api_key.as_deref()).await {
+        if let Ok(info) = crate::nexus::fetch_mod_info(mod_id).await {
             let lib_path = library::get_library_path(&program_path, &folder_name);
             let json_path = lib_path.join(".nexus.json");
             let json_data = serde_json::json!({

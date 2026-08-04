@@ -68,7 +68,6 @@ pub struct ModInfo {
 pub struct AppSettings {
     pub game_path: String,
     pub program_path: String,
-    pub nexus_api_key: Option<String>,
     #[serde(default)]
     pub hide_native_mods: Option<bool>,
     #[serde(default)]
@@ -125,7 +124,6 @@ impl Default for AppData {
             settings: AppSettings {
                 game_path: String::new(),
                 program_path: String::new(),
-                nexus_api_key: None,
                 hide_native_mods: Some(false),
                 debug_console: Some(false),
                 custom_data_path: None,

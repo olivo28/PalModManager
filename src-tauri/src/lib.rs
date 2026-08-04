@@ -91,7 +91,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             settings_commands::get_settings,
             settings_commands::set_game_path,
-            settings_commands::set_nexus_api_key,
             settings_commands::set_hide_native_mods,
             settings_commands::set_debug_console,
             settings_commands::set_custom_data_path,
