@@ -105,6 +105,7 @@ pub fn run() {
             mod_commands::enable_all_mods,
             mod_commands::open_folder,
             mod_commands::open_extra_folder,
+            mod_commands::open_folder_by_type,
             mod_commands::rename_mod,
             mod_commands::set_mod_version,
             mod_commands::check_github_version,

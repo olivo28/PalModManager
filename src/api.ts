@@ -117,6 +117,10 @@ export async function setNexusModId(modId: string, nexusId: number): Promise<Mod
   return invoke('set_nexus_mod_id', { modIdStr: modId, nexusId });
 }
 
+export async function openFolderByType(folderType: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile'): Promise<void> {
+  return invoke('open_folder_by_type', { folderType });
+}
+
 export async function openModFolder(modId: string): Promise<void> {
   return invoke('open_folder', { modId });
 }

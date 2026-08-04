@@ -406,12 +406,12 @@ pub fn install_mod(
         DetectedModType::Pak => install_pak(
             &game, extracted_dir, zip_filename, nexus_mod_id, nexus_name, nexus_author,
             nexus_summary, nexus_picture_url, nexus_downloads, nexus_endorsements,
-            Some("~mods"), custom_name, &now, nexus_category, nexus_tags,
+            pak_destination, custom_name, &now, nexus_category, nexus_tags,
         ),
         DetectedModType::LogicMods => install_pak(
             &game, extracted_dir, zip_filename, nexus_mod_id, nexus_name, nexus_author,
             nexus_summary, nexus_picture_url, nexus_downloads, nexus_endorsements,
-            Some("logicmods"), custom_name, &now, nexus_category, nexus_tags,
+            pak_destination, custom_name, &now, nexus_category, nexus_tags,
         ),
         DetectedModType::Hybrid => install_hybrid(
             &game, extracted_dir, zip_filename, nexus_mod_id, nexus_name, nexus_author,
@@ -602,7 +602,7 @@ pub fn update_mod(
             existing.nexus_picture_url.clone(),
             existing.nexus_downloads,
             existing.nexus_endorsements,
-            Some("~mods"),
+            existing.pak_destination.as_deref(),
             Some(existing.name.clone()),
             now,
             existing.nexus_category.clone(),
@@ -619,7 +619,7 @@ pub fn update_mod(
             existing.nexus_picture_url.clone(),
             existing.nexus_downloads,
             existing.nexus_endorsements,
-            Some("logicmods"),
+            existing.pak_destination.as_deref(),
             Some(existing.name.clone()),
             now,
             existing.nexus_category.clone(),
@@ -1269,7 +1269,7 @@ fn install_pak(
     nexus_tags: Vec<String>,
 ) -> Result<ModInfo, String> {
     let dest_subdir = match pak_destination {
-        Some("logicmods") => "LogicMods",
+        Some(d) if d.to_lowercase() == "logicmods" => "LogicMods",
         _ => "~mods",
     };
 

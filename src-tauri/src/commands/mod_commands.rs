@@ -1245,5 +1245,69 @@ pub fn analyze_backup(zip_path: String) -> Result<Value, String> {
     }))
 }
 
+#[tauri::command]
+pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> Result<(), String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let game_path_str = &data.settings.game_path;
+    let program_path = &data.settings.program_path;
+    let current_profile_id = &data.current_profile_id;
+
+    let path = match folder_type.as_str() {
+        "ue4ss" => {
+            if game_path_str.is_empty() { return Err("Game path not configured".to_string()); }
+            let game = std::path::Path::new(game_path_str);
+            crate::dependency_checker::get_binaries_dir(&game).join("ue4ss").join("Mods")
+        }
+        "palschema" => {
+            if game_path_str.is_empty() { return Err("Game path not configured".to_string()); }
+            let game = std::path::Path::new(game_path_str);
+            crate::dependency_checker::get_binaries_dir(&game).join("ue4ss").join("Mods").join("PalSchema").join("mods")
+        }
+        "paks" => {
+            if game_path_str.is_empty() { return Err("Game path not configured".to_string()); }
+            let game = std::path::Path::new(game_path_str);
+            game.join("Pal").join("Content").join("Paks")
+        }
+        "app_data" => {
+            std::path::PathBuf::from(program_path)
+        }
+        "profile" => {
+            std::path::PathBuf::from(program_path).join("profiles").join(current_profile_id)
+        }
+        _ => return Err("Unknown folder type".to_string()),
+    };
+
+    if !path.exists() {
+        if folder_type == "app_data" || folder_type == "profile" {
+            let _ = std::fs::create_dir_all(&path);
+        } else {
+            return Err(format!("Folder does not exist: {}", path.display()));
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(path)
+            .spawn()
+            .map_err(|e| format!("Failed to open folder: {}", e))?;
+    }
+    Ok(())
+}
+
 
 

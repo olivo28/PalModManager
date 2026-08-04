@@ -701,6 +701,12 @@ export async function handleConfirmInstall(): Promise<void> {
   const nameInput = document.getElementById('mod-name-input') as HTMLInputElement | null;
   const customName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : null;
 
+  let pakDestination: string | null = null;
+  if (customType === 'pak' || customType === 'logicmods' || customType === 'hybrid') {
+    const checked = document.querySelector('input[name="pak-dest"]:checked') as HTMLInputElement;
+    pakDestination = checked ? checked.value : (customType === 'logicmods' ? 'logicmods' : '~mods');
+  }
+
   confirmBtn.textContent = _pendingUpdateModId ? 'Updating...' : 'Installing...';
   statusEl.textContent = _pendingUpdateModId ? 'Updating mod...' : 'Extracting and installing mod...';
 
@@ -782,7 +788,7 @@ export async function handleConfirmInstall(): Promise<void> {
           
           // Small timeout so the user sees the final dependency status log before mod installation proceeds
           setTimeout(() => {
-            executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state);
+            executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state, pakDestination);
           }, 1000);
         } catch (err) {
           logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Failed to install dependencies: ${escapeHtml(String(err))}</div>`);
@@ -798,7 +804,7 @@ export async function handleConfirmInstall(): Promise<void> {
     return;
   }
 
-  await executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state);
+  await executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state, pakDestination);
 }
 
 async function executeModInstallation(
@@ -809,19 +815,14 @@ async function executeModInstallation(
   cancelBtn: HTMLButtonElement,
   customType: string,
   customName: string | null,
-  state: any
+  state: any,
+  pakDestination: string | null
 ) {
 
   logs.push(`<div style="color:#e0af68;">&gt; Extracting ZIP contents to temporary directory...</div>`);
   resultsList.innerHTML = logs.join('');
 
   try {
-    let pakDestination: string | null = null;
-    if (customType === 'pak' || customType === 'logicmods' || customType === 'hybrid') {
-      const checked = document.querySelector('input[name="pak-dest"]:checked') as HTMLInputElement;
-      pakDestination = checked ? checked.value : (customType === 'logicmods' ? 'logicmods' : '~mods');
-    }
-
     logs.push(`<div style="color:#e0af68;">&gt; Copying files to destination folder...</div>`);
     resultsList.innerHTML = logs.join('');
     resultsList.scrollTop = resultsList.scrollHeight;

@@ -102,6 +102,25 @@ function setupEventListeners() {
     const { openUrl } = await import('./api');
     openUrl('https://www.nexusmods.com/settings/api-keys');
   });
+
+  const registerOpenFolderBtn = (id: string, type: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile') => {
+    safeEl(id)?.addEventListener('click', async () => {
+      const { openFolderByType } = await import('./api');
+      try {
+        await openFolderByType(type);
+      } catch (err) {
+        const { showToast } = await import('./ui/toast');
+        showToast(String(err), 'error');
+      }
+    });
+  };
+
+  registerOpenFolderBtn('open-folder-paks', 'paks');
+  registerOpenFolderBtn('open-folder-ue4ss', 'ue4ss');
+  registerOpenFolderBtn('open-folder-palschema', 'palschema');
+  registerOpenFolderBtn('open-folder-appdata', 'app_data');
+  registerOpenFolderBtn('open-folder-profile', 'profile');
+
   safeEl('theme-toggle-btn')?.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme || 'dark';
     applyTheme(current === 'dark' ? 'light' : 'dark');

@@ -102,7 +102,7 @@ pub async fn install_mod_command(
     custom_name: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    println!("[INFO] Installing mod from zip: {}", zip_path);
+    println!("[INFO] Installing mod from zip: {}, custom_type: {:?}, pak_destination: {:?}", zip_path, custom_type, pak_destination);
     let (game_path, program_path, api_key) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (data.settings.game_path.clone(), data.settings.program_path.clone(), data.settings.nexus_api_key.clone())
@@ -314,14 +314,30 @@ pub async fn update_mod_command(
     mod_id: String,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    let (game_path, program_path, current_profile_id) = {
+    let (game_path, program_path, current_profile_id, api_key) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.settings.program_path.clone(), data.current_profile_id.clone())
+        (
+            data.settings.game_path.clone(),
+            data.settings.program_path.clone(),
+            data.current_profile_id.clone(),
+            data.settings.nexus_api_key.clone(),
+        )
     };
 
     if game_path.is_empty() {
         return Err("No game path configured. Set it first.".to_string());
     }
+
+    let nexus_id = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.mods.iter().find(|m| m.id == mod_id).and_then(|m| m.nexus_mod_id)
+    };
+
+    let nexus_info = if let Some(id) = nexus_id {
+        crate::nexus::fetch_mod_info(id, api_key.as_deref()).await.ok()
+    } else {
+        None
+    };
 
     let analysis = zip_handler::analyze_zip(&zip_path)?;
 
@@ -365,7 +381,7 @@ pub async fn update_mod_command(
         existing.clone()
     };
 
-    {
+    let final_mod = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
         // Update library zip using mod name instead of UUID (if not already in library)
         let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
@@ -373,16 +389,59 @@ pub async fn update_mod_command(
             let lib_folder_name = updated_mod.name.clone();
             let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name);
         }
-        if let Some(existing) = data.mods.iter_mut().find(|m| m.id == mod_id) {
-            existing.update_date = Some(now);
+        let final_m = if let Some(existing) = data.mods.iter_mut().find(|m| m.id == mod_id) {
+            existing.update_date = Some(now.clone());
             existing.source_zip = zip_filename.clone();
-        }
+            if let Some(ref info) = nexus_info {
+                if existing.version == "unknown" || existing.version.is_empty() {
+                    existing.version = info.version.clone();
+                }
+                existing.nexus_version_cached = Some(info.version.clone());
+                existing.nexus_cached_at = Some(now.clone());
+                existing.nexus_picture_url = Some(info.picture_url.clone());
+                existing.nexus_author = Some(info.author.clone());
+                existing.nexus_summary = Some(info.summary.clone());
+                existing.nexus_description = Some(info.description.clone());
+                existing.nexus_endorsements = Some(info.endorsements);
+                existing.nexus_downloads = Some(info.downloads);
+
+                let cache_dir = if existing.enabled {
+                    PathBuf::from(&existing.game_path)
+                } else {
+                    PathBuf::from(&existing.disabled_path)
+                };
+                if cache_dir.exists() {
+                    let cache_json = serde_json::json!({
+                        "modId": nexus_id,
+                        "name": info.name,
+                        "author": info.author,
+                        "summary": info.summary,
+                        "description": info.description,
+                        "version": info.version,
+                        "downloads": info.downloads,
+                        "endorsements": info.endorsements,
+                        "pictureUrl": info.picture_url,
+                        "createdAt": info.created_at,
+                        "updatedAt": info.updated_at,
+                    });
+                    let _ = fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
+                }
+            } else {
+                existing.nexus_version_cached = Some(existing.version.clone());
+                existing.nexus_cached_at = Some(now.clone());
+            }
+            let _ = crate::profiles::save_pmm_meta(existing);
+            existing.clone()
+        } else {
+            updated_mod.clone()
+        };
         let data_clone = data.clone();
         drop(data);
         let _ = db::save_db(&program_path, &data_clone);
-    }
+        final_m
+    };
 
     let _ = fs::remove_dir_all(&temp_dir);
 
-    Ok(serde_json::to_value(&updated_mod).map_err(|e| e.to_string())?)
+    Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
 }
