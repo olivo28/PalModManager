@@ -134,6 +134,14 @@ Because this is an independent community project without a commercial Code Signi
 - **Is it safe?** Absolutely. The program is completely clean. If you download it from the official page, there is no threat. 
 - **Workaround**: If Windows Defender blocks the manager, click *"More Info"* -> *"Run Anyway"* on the SmartScreen prompt, or add `palmodmanager.exe` to your antivirus exclusions list.
 
+
+---
+
+## Contact me
+
+If you want to contact me, you can do it in Discord with my tag: olivo28
+I'm in the Nexus Mods discord, Palworld Modding Community and PalSchema
+
 ---
 
 ## 📄 License
