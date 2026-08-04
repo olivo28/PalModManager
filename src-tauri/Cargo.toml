@@ -4,18 +4,6 @@ version = "1.2.2"
 edition = "2021"
 default-run = "palmodmanager"
 
-[[bin]]
-name = "test_zips"
-path = "../scratch/test_palvariety_zip.rs"
-
-[[bin]]
-name = "test_install_sim"
-path = "../scratch/test_installation_simulation.rs"
-
-[[bin]]
-name = "test_progressive_weapon"
-path = "../scratch/test_progressive_weapon.rs"
-
 
 
 [lib]

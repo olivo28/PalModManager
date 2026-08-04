@@ -6,7 +6,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::Instant;
 use tauri::State;
-use uuid::Uuid;
 use walkdir::WalkDir;
 
 #[tauri::command]
@@ -812,6 +811,7 @@ fn detect_config(mod_path: &Path) -> Option<String> {
     None
 }
 
+#[allow(dead_code)]
 fn reorder_mods_txt(mods_dir: &Path, mod_name: &str, adding: bool) {
     let mods_txt = mods_dir.join("mods.txt");
     if !mods_txt.exists() {

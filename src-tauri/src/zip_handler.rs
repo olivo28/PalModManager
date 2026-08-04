@@ -28,6 +28,7 @@ pub struct ZipAnalysis {
     pub has_json: bool,
     pub has_palschema_json: bool,
     pub has_pak: bool,
+    #[allow(dead_code)]
     pub has_dll: bool,
     pub has_info_json: bool,
     pub pak_destination_hint: Option<String>,

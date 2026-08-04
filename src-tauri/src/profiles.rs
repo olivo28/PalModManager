@@ -45,6 +45,7 @@ pub fn cleanup_profile_enabled_ids(data: &mut AppData) {
 
 /// Returns the set of mod names installed in the given profile.
 /// Used by get_mods/scan_mods to filter the global mod list to only profile-relevant mods.
+#[allow(dead_code)]
 pub fn get_profile_mod_names(data: &AppData, profile_id: &str) -> std::collections::HashSet<String> {
     if let Some(profile) = data.profiles.iter().find(|p| p.id == profile_id) {
         profile.installed_mod_ids.iter()

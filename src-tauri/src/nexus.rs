@@ -62,6 +62,7 @@ struct GraphQLMod {
 }
 
 /// REST v1 file entry from /v1/games/{game}/mods/{id}/files.json
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct NexusFileEntry {
     file_id: Option<i64>,
@@ -69,6 +70,7 @@ struct NexusFileEntry {
     category_name: Option<String>,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Deserialize)]
 struct NexusFilesResponse {
     files: Option<Vec<NexusFileEntry>>,

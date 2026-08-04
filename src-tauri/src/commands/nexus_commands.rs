@@ -19,7 +19,7 @@ pub struct UpdateCheckResult {
 }
 
 #[tauri::command]
-pub async fn fetch_nexus_info_async(mod_id: u32, state: State<'_, AppState>) -> Result<Value, String> {
+pub async fn fetch_nexus_info_async(mod_id: u32, _state: State<'_, AppState>) -> Result<Value, String> {
     let info = nexus::fetch_mod_info(mod_id).await?;
     Ok(serde_json::to_value(&info).map_err(|e| e.to_string())?)
 }

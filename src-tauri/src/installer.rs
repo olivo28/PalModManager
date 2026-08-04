@@ -4,7 +4,6 @@ use crate::zip_handler::{DetectedModType, ZipAnalysis};
 use chrono::Utc;
 use std::fs;
 use std::path::{Path, PathBuf};
-use uuid::Uuid;
 use walkdir::WalkDir;
 
 /// Recursively collect all files with the given extension (case-insensitive).
