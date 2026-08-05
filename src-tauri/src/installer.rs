@@ -903,7 +903,7 @@ pub fn install_hybrid(
     }
 
     // Determine target mod folder name
-    let detected_folder_name = if ue4ss_roots.len() == 1 {
+    let detected_folder_name = if ue4ss_roots.len() == 1 && palschema_roots.is_empty() {
         let name = ue4ss_roots[0].file_name().unwrap().to_string_lossy().to_string();
         if name.is_empty() || name.to_lowercase() == "temp_extracted" || name.starts_with("palmodmanager_") || ue4ss_roots[0] == extracted {
             clean_stem.clone()
