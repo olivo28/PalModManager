@@ -67,7 +67,12 @@
           <span class="sidebar-tab-icon">📦</span>
           <span class="sidebar-tab-label">Library</span>
         </button>
+        <button class="sidebar-tab" data-tab="build" title="Mod Packer">
+          <span class="sidebar-tab-icon">🛠</span>
+          <span class="sidebar-tab-label">Build</span>
+        </button>
       </div>
+
       <div class="sidebar-footer">
         <div id="sidebar-version" class="sidebar-version">V1.2.2</div>
         <button id="settings-btn" class="sidebar-btn" title="Settings">⚙</button>
@@ -221,7 +226,116 @@
           </div>
         </div>
       </div>
+
+      <!-- BUILD / PACKER TAB -->
+      <div id="build-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%;">
+        <!-- View 1: Projects Hub (Grid/Dashboard) -->
+        <div id="packer-projects-hub" style="display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
+          <div class="packer-toolbar">
+            <span class="packer-toolbar-title">Mod Packer Workspace</span>
+            <button id="packer-hub-new-btn" class="toolbar-btn toolbar-btn-primary" style="font-size: 12px; padding: 6px 12px; line-height: 1;">+ Create New Project</button>
+          </div>
+          <div id="packer-projects-grid" class="packer-projects-grid" style="flex: 1; padding: 24px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; align-content: start;">
+            <!-- Project folder cards populated dynamically -->
+          </div>
+        </div>
+
+        <!-- View 2: Active Workspace (Staging Area) -->
+        <div id="packer-workspace-view" style="display: none; flex-direction: row; width: 100%; height: 100%; overflow: hidden;">
+          <div class="packer-left">
+            <div class="packer-toolbar">
+              <button id="packer-workspace-back-btn" class="toolbar-btn-sm" style="margin-right: 8px;">← Projects</button>
+              <span id="packer-workspace-title" class="packer-toolbar-title">Staged Files</span>
+              <div id="packer-layout-toggle-bar" style="display:flex;align-items:center;gap:4px;margin-right:8px;">
+                <button id="packer-view-list-btn" class="layout-btn active" title="List View">☰</button>
+                <button id="packer-view-tree-btn" class="layout-btn" title="Tree View">⊞</button>
+              </div>
+              <button id="packer-add-files-btn" class="toolbar-btn-sm">+ Add Files</button>
+              <button id="packer-add-folder-btn" class="toolbar-btn-sm">📁 Add Folder</button>
+              <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;">Auto-Structure</button>
+              <button id="packer-clear-btn" class="toolbar-btn-sm">Clear All</button>
+            </div>
+            <div class="packer-files-container">
+              <table id="packer-list-table" class="packer-table">
+                <thead>
+                  <tr>
+                    <th>Source File</th>
+                    <th>Size</th>
+                    <th>Archive Target Path</th>
+                    <th style="width: 40px;"></th>
+                  </tr>
+                </thead>
+                <tbody id="packer-files-body">
+                  <!-- Staged files populated dynamically -->
+                </tbody>
+              </table>
+              <div id="packer-tree-view" style="display:none; padding: 12px; height: 100%; overflow-y: auto;">
+                <!-- Hierarchical files tree populated dynamically -->
+              </div>
+              <div id="packer-empty-state" class="packer-empty-state">
+                <span class="packer-empty-icon">🛠</span>
+                <strong>Workspace is Empty</strong>
+                <span>Drag & drop files or folders here, or use the "Add Files" button to begin staging.</span>
+              </div>
+            </div>
+            <div id="packer-drag-overlay" class="packer-drop-overlay">
+              <div class="packer-drop-overlay-content">📥 Drop files here to stage</div>
+            </div>
+          </div>
+          <div class="packer-right">
+            <div class="packer-form-header" style="display:flex;align-items:center;justify-content:space-between;">
+              <span>Project Save Options</span>
+              <button id="packer-workspace-delete-btn" class="btn-tiny" style="background:var(--danger-dim);color:var(--danger);border:none;padding: 2px 6px;" title="Delete Project">Delete</button>
+            </div>
+            <div class="packer-form-group" style="margin-bottom: 12px; display: flex; flex-direction: row; gap: 6px;">
+              <input type="text" id="packer-project-name" class="packer-form-input" style="flex: 1; padding: 4px 8px; font-size: 11px; height:28px;" placeholder="Project Name..." />
+              <button id="packer-project-save-btn" class="toolbar-btn-sm" style="padding: 4px 10px; height:28px;">Save</button>
+            </div>
+
+            <div class="packer-form-header">Mod Metadata</div>
+            <div class="packer-form-group">
+              <label for="packer-meta-name">Mod Name</label>
+              <input type="text" id="packer-meta-name" class="packer-form-input" placeholder="e.g. MyAmazingMod" />
+            </div>
+            <div class="packer-form-group">
+              <label for="packer-meta-version">Version</label>
+              <input type="text" id="packer-meta-version" class="packer-form-input" placeholder="e.g. 1.0.0" value="1.0.0" />
+            </div>
+            <div class="packer-form-group">
+              <label for="packer-meta-author">Author</label>
+              <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName" />
+            </div>
+            <div class="packer-form-group">
+              <label for="packer-meta-type">Mod Type</label>
+              <select id="packer-meta-type" class="packer-form-select">
+                <option value="">Select type...</option>
+                <option value="ue4ss">UE4SS Mod</option>
+                <option value="palschema">PalSchema Mod</option>
+                <option value="pak">Pak Mod (~mods)</option>
+                <option value="logicmods">LogicMods (~mods/LogicMods)</option>
+                <option value="hybrid">Hybrid Mod</option>
+              </select>
+            </div>
+            <div class="packer-form-group">
+              <label for="packer-meta-desc">Description</label>
+              <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..."></textarea>
+            </div>
+            <div class="packer-format-row">
+              <select id="packer-format-select" class="packer-select-format">
+                <option value="zip">.zip</option>
+                <option value="7z">.7z</option>
+                <option value="rar">.rar</option>
+              </select>
+              <button id="packer-build-btn" class="packer-btn-build" disabled>
+                📦 Package Mod
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
     </main>
+
   </div>
 
   <!-- DETAIL MODAL -->
