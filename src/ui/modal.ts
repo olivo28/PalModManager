@@ -287,7 +287,10 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
     confirmBtn.textContent = 'Install';
   }
 
-  const cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
+  let cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
+  if (!analysis.nexusInfo && analysis.modinfo?.name) {
+    cleanName = analysis.modinfo.name;
+  }
 
   let pakDestHtml = `
     <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${analysis.detectedType === 'pak' || analysis.detectedType === 'logicmods' || (analysis.detectedType === 'hybrid' && analysis.hasPak) ? 'block' : 'none'}; margin-top:8px;">
@@ -306,11 +309,17 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
   `;
 
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
-  const versionVal = analysis.detectedVersion || analysis.nexusInfo?.version || '1.0';
+  let versionVal = analysis.detectedVersion || analysis.nexusInfo?.version || '1.0';
+  if (!analysis.nexusInfo && analysis.modinfo?.version) {
+    versionVal = analysis.modinfo.version;
+  }
+
+  const hasModinfoType = analysis.modinfo?.modType ? true : false;
+  const modinfoTypeLower = analysis.modinfo?.modType?.toLowerCase() || '';
 
   content.innerHTML = `
     <div style="display:flex;gap:24px;align-items:stretch;padding:4px 0;">
-       <!-- Left Column: Card Preview (Nexus Info) -->
+       <!-- Left Column: Card Preview (Nexus Info or Local Modinfo) -->
        ${analysis.nexusInfo ? `
        <div style="width:260px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
           <div style="position:relative;width:100%;height:140px;overflow:hidden;background:#000;">
@@ -325,7 +334,21 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
              <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
           </div>
        </div>
-       ` : ''}
+       ` : (analysis.modinfo ? `
+       <div style="width:260px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+          <div style="position:relative;width:100%;height:140px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
+             <div style="font-size:42px;color:var(--accent);">🛠</div>
+             <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                Local Package
+             </div>
+          </div>
+          <div style="padding:14px;display:flex;flex-direction:column;gap:8px;flex:1;">
+             <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
+             <div style="font-size:10px;color:var(--text-muted)">by ${escapeHtml(analysis.modinfo.author || 'Unknown')}</div>
+             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || 'No description provided.')}</div>
+          </div>
+       </div>
+       ` : '')}
 
        <!-- Right Column: Settings Form -->
        <div style="flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center;">
@@ -340,11 +363,11 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Install Type</label>
                 <select id="mod-type-select" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:12px;cursor:pointer;">
-                  <option value="ue4ss" ${analysis.detectedType === 'ue4ss' ? 'selected' : ''}>UE4SS</option>
-                  <option value="palschema" ${analysis.detectedType === 'palschema' ? 'selected' : ''}>PalSchema</option>
-                  <option value="pak" ${analysis.detectedType === 'pak' ? 'selected' : ''}>Pak (~mods)</option>
-                  <option value="logicmods" ${analysis.detectedType === 'logicmods' ? 'selected' : ''}>LogicMods</option>
-                  <option value="hybrid" ${analysis.detectedType === 'hybrid' ? 'selected' : ''}>Hybrid</option>
+                  <option value="ue4ss" ${ (hasModinfoType && modinfoTypeLower === 'ue4ss') || (!hasModinfoType && analysis.detectedType === 'ue4ss') ? 'selected' : ''}>UE4SS</option>
+                  <option value="palschema" ${ (hasModinfoType && modinfoTypeLower === 'palschema') || (!hasModinfoType && analysis.detectedType === 'palschema') ? 'selected' : ''}>PalSchema</option>
+                  <option value="pak" ${ (hasModinfoType && (modinfoTypeLower === 'pak' || modinfoTypeLower === 'pak mod (~mods)')) || (!hasModinfoType && analysis.detectedType === 'pak') ? 'selected' : ''}>Pak (~mods)</option>
+                  <option value="logicmods" ${ (hasModinfoType && (modinfoTypeLower === 'logicmods' || modinfoTypeLower === 'logicmods (~mods/logicmods)')) || (!hasModinfoType && analysis.detectedType === 'logicmods') ? 'selected' : ''}>LogicMods</option>
+                  <option value="hybrid" ${ (hasModinfoType && (modinfoTypeLower === 'hybrid' || modinfoTypeLower === 'hybrid mod')) || (!hasModinfoType && analysis.detectedType === 'hybrid') ? 'selected' : ''}>Hybrid</option>
                 </select>
              </div>
              <div style="width:120px;display:flex;flex-direction:column;gap:6px;">

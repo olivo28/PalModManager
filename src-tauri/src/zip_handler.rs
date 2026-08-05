@@ -367,3 +367,49 @@ pub fn find_pak_companions(pak_path: &Path) -> Vec<PathBuf> {
     }
     companions
 }
+
+pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
+    let lower_target = target_file.to_lowercase();
+    let lower_zip = zip_path.to_lowercase();
+    if lower_zip.ends_with(".rar") || lower_zip.ends_with(".7z") {
+        let timestamp = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap_or_default()
+            .as_millis();
+        let temp_dir = std::env::temp_dir().join(format!("pmm_temp_{}", timestamp));
+        let _ = fs::create_dir_all(&temp_dir);
+        let mut cmd = std::process::Command::new("tar");
+        cmd.args(&["-xf", zip_path, "-C", &temp_dir.to_string_lossy(), target_file]);
+        #[cfg(target_os = "windows")]
+        cmd.creation_flags(0x08000000);
+        
+        let mut result = None;
+        if let Ok(output) = cmd.output() {
+            if output.status.success() {
+                let extracted_path = temp_dir.join(target_file);
+                if let Ok(content) = fs::read_to_string(&extracted_path) {
+                    result = Some(content);
+                }
+            }
+        }
+        let _ = fs::remove_dir_all(&temp_dir);
+        result
+    } else {
+        if let Ok(file) = fs::File::open(zip_path) {
+            if let Ok(mut archive) = ZipArchive::new(file) {
+                for i in 0..archive.len() {
+                    if let Ok(mut entry) = archive.by_index(i) {
+                        if entry.name().to_lowercase() == lower_target {
+                            let mut buf = String::new();
+                            if entry.read_to_string(&mut buf).is_ok() {
+                                return Some(buf);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        None
+    }
+}
+

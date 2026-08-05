@@ -76,6 +76,21 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         nexus::parse_mod_filename(&filename).version
     };
 
+    let mut modinfo_data = None;
+    if analysis.has_info_json {
+        let info_file_path = analysis.files.iter().find(|f| {
+            let fl = f.to_lowercase();
+            fl.ends_with("modinfo.json") || fl.ends_with("info.json")
+        });
+        if let Some(target_file) = info_file_path {
+            if let Some(content) = zip_handler::read_archive_file(&zip_path, target_file) {
+                if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                    modinfo_data = Some(val);
+                }
+            }
+        }
+    }
+
     Ok(serde_json::json!({
         "zipPath": zip_path,
         "detectedType": detected_type,
@@ -90,6 +105,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         "nexusModId": nexus_id,
         "detectedVersion": detected_version,
         "nexusInfo": null,
+        "modinfo": modinfo_data,
         "files": analysis.files,
     }))
 }

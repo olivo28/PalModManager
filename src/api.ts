@@ -24,6 +24,13 @@ export interface ZipAnalysis {
     endorsements: number;
     pictureUrl: string;
   } | null;
+  modinfo?: {
+    name?: string;
+    version?: string;
+    description?: string;
+    author?: string;
+    modType?: string;
+  } | null;
 }
 
 export async function getSettings(): Promise<AppSettings> {
