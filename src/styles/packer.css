@@ -1,0 +1,464 @@
+#build-view {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.packer-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+
+.packer-right {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow-y: auto;
+  gap: 16px;
+}
+
+.packer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.packer-toolbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: auto;
+}
+
+.packer-files-container {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background: var(--bg-primary);
+}
+
+.packer-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 80%;
+  max-width: 380px;
+  pointer-events: none;
+}
+
+.packer-empty-icon {
+  font-size: 32px;
+  opacity: 0.6;
+}
+
+.packer-drop-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 120, 212, 0.08);
+  border: 2px dashed var(--accent);
+  margin: 8px;
+  border-radius: var(--card-radius);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.packer-drop-overlay.drag-over {
+  display: flex;
+}
+
+.packer-drop-overlay-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  padding: 16px 24px;
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Staged Files Table */
+.packer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.packer-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.packer-table td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+  color: var(--text-primary);
+  vertical-align: middle;
+}
+
+.packer-table tr:hover {
+  background: var(--bg-hover);
+}
+
+.packer-input-target {
+  width: 100%;
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 4px 8px;
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.packer-input-target:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.packer-remove-file-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 2px 6px;
+  border-radius: var(--radius);
+}
+
+.packer-remove-file-btn:hover {
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
+/* Metadata Form */
+.packer-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.packer-form-group label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.packer-form-input,
+.packer-form-select,
+.packer-form-textarea {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.packer-form-textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.packer-form-input:focus,
+.packer-form-select:focus,
+.packer-form-textarea:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+.packer-form-header {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.packer-format-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: auto;
+  border-top: 1px solid var(--border);
+  padding-top: 16px;
+}
+
+.packer-btn-build {
+  flex: 1;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 8px 16px;
+  border-radius: var(--radius);
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.packer-btn-build:hover {
+  background: var(--accent-hover);
+}
+
+.packer-btn-build:disabled {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  cursor: not-allowed;
+}
+
+.packer-select-format {
+  width: 90px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  border-radius: var(--radius);
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Tree View Styles */
+.packer-tree-root {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.packer-tree-node {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-family: monospace;
+  font-size: 12px;
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  user-select: none;
+  max-width: 600px;
+  margin: 2px 0;
+  transition: background 0.1s ease, outline 0.1s ease;
+}
+
+.packer-tree-node:hover {
+  background: var(--bg-hover);
+}
+
+.packer-tree-icon {
+  margin-right: 8px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.packer-tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packer-tree-size {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+  padding-left: 20px;
+  flex-shrink: 0;
+}
+
+.packer-tree-dir {
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.packer-tree-dir.drag-over {
+  background: var(--accent-dim) !important;
+  outline: 1px dashed var(--accent) !important;
+}
+
+.packer-tree-file {
+  cursor: grab;
+}
+
+.packer-tree-file:active {
+  cursor: grabbing;
+}
+
+
+
+/* Layout Button Toggles (Matching system) */
+.layout-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.layout-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.layout-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Projects Hub Dashboard Card Styles */
+.packer-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.packer-project-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 180px;
+}
+
+.packer-project-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  background: var(--bg-hover);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.packer-project-card-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: var(--warning);
+}
+
+.packer-project-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packer-project-card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: auto;
+}
+
+.packer-project-card-actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.packer-project-card-btn {
+  flex: 1;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.packer-project-card-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.packer-project-card-btn.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.packer-project-card-btn.primary:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.packer-project-card-btn.danger:hover {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* "New Project" card placeholder */
+.packer-project-card.new-placeholder {
+  border-style: dashed;
+  border-width: 2px;
+  background: transparent;
+  justify-content: center;
+}
+
+.packer-project-card.new-placeholder:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.packer-project-card.new-placeholder .packer-project-card-icon {
+  color: var(--text-muted);
+}
+
+

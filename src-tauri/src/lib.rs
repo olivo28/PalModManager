@@ -18,7 +18,9 @@ use commands::nexus_commands;
 use commands::library_commands;
 use commands::profile_commands;
 use commands::dependency_commands;
+use commands::packer_commands;
 use state::AppState;
+
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -155,9 +157,17 @@ pub fn run() {
             settings_commands::log_from_js,
             settings_commands::open_url,
             mod_commands::create_backup,
+
             mod_commands::restore_backup,
             mod_commands::analyze_backup,
+            packer_commands::scan_paths_for_packing,
+            packer_commands::pack_mod,
+            packer_commands::save_packer_project,
+            packer_commands::load_packer_projects,
+            packer_commands::delete_packer_project,
         ])
+
+
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

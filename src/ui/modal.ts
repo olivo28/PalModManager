@@ -816,11 +816,16 @@ async function executeModInstallation(
     const versionInput = document.getElementById('mod-version-input') as HTMLInputElement | null;
     if (versionInput && versionInput.value.trim()) {
       try {
-        const afterInstall = getState().allMods;
-        const last = afterInstall[afterInstall.length - 1];
-        if (last && !_pendingUpdateModId) {
-          await setModVersionApi(last.id, versionInput.value.trim());
+        if (_pendingUpdateModId) {
+          await setModVersionApi(_pendingUpdateModId, versionInput.value.trim());
           logs.push(`<div style="color:#888;">&gt; Setting version parameter to: v${versionInput.value.trim()}</div>`);
+        } else {
+          const afterInstall = getState().allMods;
+          const last = afterInstall[afterInstall.length - 1];
+          if (last) {
+            await setModVersionApi(last.id, versionInput.value.trim());
+            logs.push(`<div style="color:#888;">&gt; Setting version parameter to: v${versionInput.value.trim()}</div>`);
+          }
         }
       } catch {}
     }

@@ -13,17 +13,35 @@ export function setupDragAndDrop(): void {
     webview.onDragDropEvent((event) => {
       const payload = event.payload;
       if (payload.type === 'enter') {
-        if (getState().activeTab !== 'editor' && !getState().isDraggingCard) {
+        const tab = getState().activeTab;
+        if (tab !== 'editor' && tab !== 'build' && !getState().isDraggingCard) {
           overlay.classList.add('visible');
+        } else if (tab === 'build') {
+          const packerOverlay = document.getElementById('packer-drag-overlay');
+          if (packerOverlay) packerOverlay.classList.add('drag-over');
         }
       } else if (payload.type === 'leave') {
         overlay.classList.remove('visible');
+        const packerOverlay = document.getElementById('packer-drag-overlay');
+        if (packerOverlay) packerOverlay.classList.remove('drag-over');
       } else if (payload.type === 'drop') {
         overlay.classList.remove('visible');
-        if (getState().activeTab === 'editor') return;
+        const packerOverlay = document.getElementById('packer-drag-overlay');
+        if (packerOverlay) packerOverlay.classList.remove('drag-over');
+
+        const tab = getState().activeTab;
+        if (tab === 'editor') return;
 
         const paths = payload.paths;
         if (!paths || paths.length === 0) return;
+
+        if (tab === 'build') {
+          import('../ui/packerView').then(mod => {
+            mod.addStagedPaths(paths);
+          });
+          return;
+        }
+
 
         const archives: string[] = [];
         let skipped = 0;

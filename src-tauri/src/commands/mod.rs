@@ -6,3 +6,5 @@ pub mod nexus_commands;
 pub mod library_commands;
 pub mod profile_commands;
 pub mod dependency_commands;
+pub mod packer_commands;
+

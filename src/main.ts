@@ -9,8 +9,10 @@ import { setupDragAndDrop } from './features/dragdrop';
 import { autoFetchNexusInfo } from './features/nexus';
 import { showToast } from './ui/toast';
 import { setupSelection } from './features/selection';
+import { initPackerView } from './ui/packerView';
 
 const THEME_KEY = 'pmm-theme';
+
 
 function getPreferredTheme(): 'dark' | 'light' {
   const stored = localStorage.getItem(THEME_KEY);
@@ -75,6 +77,7 @@ async function init() {
     }
 
     setupEventListeners();
+    initPackerView();
   } catch (e) {
     console.error('Error initializing:', e);
   }
@@ -289,7 +292,7 @@ function setupEventListeners() {
 
   document.querySelectorAll('.sidebar-tab').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const tab = (btn as HTMLElement).dataset.tab as 'mods' | 'editor' | 'library';
+      const tab = (btn as HTMLElement).dataset.tab as 'mods' | 'editor' | 'library' | 'build';
       const state = getState();
       if (state.activeTab === 'editor' && tab !== 'editor') {
         const { confirmDiscardOrSave } = await import('./ui/editorView');
@@ -297,6 +300,7 @@ function setupEventListeners() {
         if (!proceed) return;
       }
       switchTab(tab);
+
       if (tab === 'editor') {
         if (!state.editorModId && state.allMods.length > 0) {
           const select = document.getElementById('editor-mod-select') as HTMLSelectElement;

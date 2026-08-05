@@ -8,7 +8,7 @@ function getToastContainer(): HTMLElement {
   return container;
 }
 
-export function showToast(message: string, type: 'success' | 'error' | 'info' = 'info'): void {
+export function showToast(message: string, type: 'success' | 'error' | 'info' | 'warning' = 'info'): void {
   const container = getToastContainer();
   const toast = document.createElement('div');
   toast.className = `toast toast-${type}`;
