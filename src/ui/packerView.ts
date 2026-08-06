@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { showToast } from './toast';
+import { showConfirm, showPrompt } from './confirm';
 
 interface StagedFile {
   sourcePath: string;
@@ -27,6 +28,8 @@ interface PackerProject {
 let stagedFiles: StagedFile[] = [];
 let sourcePaths: string[] = [];
 let targetOverrides: Map<string, string> = new Map();
+let virtualFolders: string[] = [];
+let backupPaths: Map<string, string> = new Map();
 
 let viewMode: 'list' | 'tree' = 'list';
 let savedProjects: PackerProject[] = [];
@@ -154,8 +157,26 @@ function setupPackerEventListeners(): void {
     stagedFiles = [];
     sourcePaths = [];
     targetOverrides.clear();
+    virtualFolders = [];
+    backupPaths.clear();
     renderWorkspace();
     showToast('Staged workspace cleared', 'info');
+  });
+
+  // New Virtual Folder button
+  document.getElementById('packer-new-virtual-folder-btn')?.addEventListener('click', async () => {
+    const folderName = await showPrompt('Enter virtual folder path (e.g. Mods/MyMod/Scripts):');
+    if (folderName) {
+      const cleaned = folderName.replace(/\\/g, '/').trim();
+      if (cleaned) {
+        if (!virtualFolders.includes(cleaned)) {
+          virtualFolders.push(cleaned);
+          targetOverrides.set(`__VIRTUAL_DIR__:${cleaned}`, '__VIRTUAL_DIR__');
+          renderWorkspace();
+          showToast(`Virtual folder '${cleaned}' created`, 'success');
+        }
+      }
+    }
   });
 
   // Auto-Structure button
@@ -205,16 +226,20 @@ function setViewMode(mode: 'list' | 'tree'): void {
   const listTable = document.getElementById('packer-list-table');
   const treeView = document.getElementById('packer-tree-view');
 
+  const newFolderBtn = document.getElementById('packer-new-virtual-folder-btn');
+
   if (mode === 'list') {
     listBtn?.classList.add('active');
     treeBtn?.classList.remove('active');
     if (listTable) listTable.style.display = 'table';
     if (treeView) treeView.style.display = 'none';
+    if (newFolderBtn) newFolderBtn.style.display = 'none';
   } else {
     listBtn?.classList.remove('active');
     treeBtn?.classList.add('active');
     if (listTable) listTable.style.display = 'none';
     if (treeView) treeView.style.display = 'block';
+    if (newFolderBtn) newFolderBtn.style.display = 'inline-block';
   }
 
   renderWorkspace();
@@ -273,18 +298,24 @@ function renderListMode(): void {
 
   container.innerHTML = stagedFiles.map((file, index) => {
     const filename = file.sourcePath.split(/[/\\]/).pop() || file.relativePath;
+    const isSkipped = file.targetPath === '__SKIP__';
+    const displayPath = isSkipped ? (backupPaths.get(file.sourcePath) || file.relativePath) : file.targetPath;
+    
     return `
-      <tr data-index="${index}">
+      <tr data-index="${index}" class="${isSkipped ? 'skipped' : ''}">
         <td title="${escapeHtml(file.sourcePath)}" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          <strong>${escapeHtml(filename)}</strong>
+          <strong style="${isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(filename)}</strong>
           <div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;">${escapeHtml(file.sourcePath)}</div>
         </td>
         <td style="white-space: nowrap;">${formatBytes(file.size)}</td>
         <td>
-          <input type="text" class="packer-input-target" value="${escapeHtml(file.targetPath)}" data-index="${index}" />
+          <input type="text" class="packer-input-target" value="${escapeHtml(displayPath)}" data-index="${index}" ${isSkipped ? 'disabled' : ''} />
         </td>
         <td>
-          <button class="packer-remove-file-btn" data-index="${index}" title="Remove file">✕</button>
+          <div style="display: flex; align-items: center; gap: 4px;">
+            <button class="packer-skip-file-btn" data-index="${index}" title="${isSkipped ? 'Include file' : 'Skip/Omit file'}">${isSkipped ? '↩️' : '🚫'}</button>
+            <button class="packer-remove-file-btn" data-index="${index}" title="Remove file">✕</button>
+          </div>
         </td>
       </tr>
     `;
@@ -296,8 +327,15 @@ function renderListMode(): void {
       const idx = parseInt((e.target as HTMLInputElement).dataset.index || '0');
       const val = (e.target as HTMLInputElement).value.trim();
       stagedFiles[idx].targetPath = val;
-      // Stash this override
       targetOverrides.set(stagedFiles[idx].sourcePath, val);
+    });
+  });
+
+  // Add listeners to skip buttons
+  container.querySelectorAll('.packer-skip-file-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const idx = parseInt((e.currentTarget as HTMLButtonElement).dataset.index || '0');
+      toggleSkipFile(idx);
     });
   });
 
@@ -308,17 +346,30 @@ function renderListMode(): void {
       const removedFile = stagedFiles[idx];
       stagedFiles.splice(idx, 1);
       
-      // If we removed all files originating from a specific source path, remove that source path
-      // Note: for folders, we scan recursively. We can check if any stagedFile still contains the sourcePath.
       const stillHasSource = stagedFiles.some(f => f.sourcePath === removedFile.sourcePath || f.sourcePath.startsWith(removedFile.sourcePath));
       if (!stillHasSource) {
         sourcePaths = sourcePaths.filter(p => p !== removedFile.sourcePath && !removedFile.sourcePath.startsWith(p));
       }
       targetOverrides.delete(removedFile.sourcePath);
+      backupPaths.delete(removedFile.sourcePath);
 
       renderWorkspace();
     });
   });
+}
+
+function toggleSkipFile(index: number): void {
+  const file = stagedFiles[index];
+  if (file.targetPath === '__SKIP__') {
+    const restored = backupPaths.get(file.sourcePath) || file.relativePath;
+    file.targetPath = restored === '__SKIP__' ? file.relativePath : restored;
+    targetOverrides.set(file.sourcePath, file.targetPath);
+  } else {
+    backupPaths.set(file.sourcePath, file.targetPath);
+    file.targetPath = '__SKIP__';
+    targetOverrides.set(file.sourcePath, '__SKIP__');
+  }
+  renderWorkspace();
 }
 
 function renderTreeMode(): void {
@@ -327,14 +378,29 @@ function renderTreeMode(): void {
 
   const root: any = { name: 'root', isDir: true, children: {} };
 
+  // 1. Add virtual empty folders
+  virtualFolders.forEach(folderPath => {
+    const parts = folderPath.replace(/\\/g, '/').split('/').filter(p => p.trim() !== '');
+    let current = root;
+    parts.forEach(part => {
+      if (!current.children[part]) {
+        current.children[part] = { name: part, isDir: true, children: {} };
+      }
+      current = current.children[part];
+    });
+  });
+
+  // 2. Add staged files
   stagedFiles.forEach((file, index) => {
-    const parts = file.targetPath.replace(/\\/g, '/').split('/').filter(p => p.trim() !== '');
+    const isSkipped = file.targetPath === '__SKIP__';
+    const treePath = isSkipped ? (backupPaths.get(file.sourcePath) || file.relativePath) : file.targetPath;
+    const parts = treePath.replace(/\\/g, '/').split('/').filter(p => p.trim() !== '');
     let current = root;
 
     parts.forEach((part, i) => {
       const isLast = i === parts.length - 1;
       if (isLast) {
-        current.children[part] = { name: part, isDir: false, file, index };
+        current.children[part] = { name: part, isDir: false, file, index, isSkipped };
       } else {
         if (!current.children[part]) {
           current.children[part] = { name: part, isDir: true, children: {} };
@@ -348,12 +414,144 @@ function renderTreeMode(): void {
 
   setupTreeDragAndDropHandlers(container);
 
+  // 1. Rename Dir listener
+  container.querySelectorAll('.packer-rename-dir-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const oldPath = (btn as HTMLElement).dataset.path || '';
+      const newPath = await showPrompt(`Rename/Move folder to (e.g. 'Mods/MyNewMod'):`, oldPath);
+      if (newPath && newPath.trim() !== oldPath) {
+        const cleaned = newPath.trim().replace(/\\/g, '/');
+        stagedFiles.forEach(f => {
+          if (f.targetPath === oldPath) {
+            f.targetPath = cleaned;
+            targetOverrides.set(f.sourcePath, cleaned);
+          } else if (f.targetPath.startsWith(oldPath + '/')) {
+            f.targetPath = cleaned + f.targetPath.substring(oldPath.length);
+            targetOverrides.set(f.sourcePath, f.targetPath);
+          }
+        });
+
+        virtualFolders = virtualFolders.map(vf => {
+          if (vf === oldPath) return cleaned;
+          if (vf.startsWith(oldPath + '/')) {
+            return cleaned + vf.substring(oldPath.length);
+          }
+          return vf;
+        });
+
+        targetOverrides.forEach((val, key) => {
+          if (key.startsWith('__VIRTUAL_DIR__:')) {
+            const path = key.substring('__VIRTUAL_DIR__:'.length);
+            if (path === oldPath || path.startsWith(oldPath + '/')) {
+              targetOverrides.delete(key);
+            }
+          }
+        });
+        virtualFolders.forEach(vf => {
+          targetOverrides.set(`__VIRTUAL_DIR__:${vf}`, '__VIRTUAL_DIR__');
+        });
+        renderWorkspace();
+      }
+    });
+  });
+
+  // 2. Add Subdir listener
+  container.querySelectorAll('.packer-add-subdir-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const parentPath = (btn as HTMLElement).dataset.path || '';
+      const subName = await showPrompt(`Enter name for new subfolder inside '${parentPath}':`);
+      if (subName && subName.trim()) {
+        const cleanedSub = subName.trim().replace(/\\/g, '/');
+        const nextPath = `${parentPath}/${cleanedSub}`;
+        if (!virtualFolders.includes(nextPath)) {
+          virtualFolders.push(nextPath);
+          targetOverrides.set(`__VIRTUAL_DIR__:${nextPath}`, '__VIRTUAL_DIR__');
+          renderWorkspace();
+        }
+      }
+    });
+  });
+
+  // 3. Remove Dir listener
+  container.querySelectorAll('.packer-remove-dir-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const oldPath = (btn as HTMLElement).dataset.path || '';
+      const confirmed = await showConfirm(`Are you sure you want to remove folder '${oldPath}' and all its contents from staging?`);
+      if (confirmed) {
+        stagedFiles = stagedFiles.filter(f => {
+          const match = f.targetPath === oldPath || f.targetPath.startsWith(oldPath + '/');
+          if (match) {
+            targetOverrides.delete(f.sourcePath);
+            backupPaths.delete(f.sourcePath);
+          }
+          return !match;
+        });
+
+        sourcePaths = sourcePaths.filter(sp => {
+          return stagedFiles.some(sf => sf.sourcePath === sp || sf.sourcePath.startsWith(sp + '/') || sf.sourcePath.startsWith(sp + '\\'));
+        });
+
+        virtualFolders = virtualFolders.filter(vf => {
+          const match = vf === oldPath || vf.startsWith(oldPath + '/');
+          if (match) {
+            targetOverrides.delete(`__VIRTUAL_DIR__:${vf}`);
+          }
+          return !match;
+        });
+
+        renderWorkspace();
+      }
+    });
+  });
+
+  // 4. Rename File listener
+  container.querySelectorAll('.packer-rename-file-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const idx = parseInt((btn as HTMLElement).dataset.index || '0');
+      const file = stagedFiles[idx];
+      const isSkipped = file.targetPath === '__SKIP__';
+      const currentVal = isSkipped ? (backupPaths.get(file.sourcePath) || file.relativePath) : file.targetPath;
+      const newVal = await showPrompt(`Enter new target path for file:`, currentVal);
+      if (newVal && newVal.trim() !== currentVal) {
+        const cleaned = newVal.trim().replace(/\\/g, '/');
+        if (isSkipped) {
+          backupPaths.set(file.sourcePath, cleaned);
+        } else {
+          file.targetPath = cleaned;
+          targetOverrides.set(file.sourcePath, cleaned);
+        }
+        renderWorkspace();
+      }
+    });
+  });
+
+  // 5. Skip File listener
+  container.querySelectorAll('.packer-skip-file-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const idx = parseInt((btn as HTMLElement).dataset.index || '0');
+      toggleSkipFile(idx);
+    });
+  });
+
+  // 6. Remove File listener
   container.querySelectorAll('.packer-remove-file-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
-      const idx = parseInt((e.currentTarget as HTMLButtonElement).dataset.index || '0');
+      e.stopPropagation();
+      const idx = parseInt((btn as HTMLElement).dataset.index || '0');
       const removedFile = stagedFiles[idx];
       stagedFiles.splice(idx, 1);
+
+      const stillHasSource = stagedFiles.some(f => f.sourcePath === removedFile.sourcePath || f.sourcePath.startsWith(removedFile.sourcePath));
+      if (!stillHasSource) {
+        sourcePaths = sourcePaths.filter(p => p !== removedFile.sourcePath && !removedFile.sourcePath.startsWith(p));
+      }
       targetOverrides.delete(removedFile.sourcePath);
+      backupPaths.delete(removedFile.sourcePath);
       renderWorkspace();
     });
   });
@@ -374,20 +572,29 @@ function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
     if (child.isDir) {
       const nextPath = currentPath ? `${currentPath}/${key}` : key;
       html += `
-        <div class="packer-tree-node packer-tree-dir" style="padding-left: ${depth * 16}px;" data-path="${escapeHtml(nextPath)}">
+        <div class="packer-tree-node packer-tree-dir" style="padding-left: ${depth * 16}px;" draggable="true" data-path="${escapeHtml(nextPath)}">
           <span class="packer-tree-icon">📁</span>
           <span class="packer-tree-name">${escapeHtml(child.name)}</span>
+          <div class="packer-tree-actions">
+            <button class="packer-tree-action-btn packer-rename-dir-btn" data-path="${escapeHtml(nextPath)}" title="Rename/Move folder">✏️</button>
+            <button class="packer-tree-action-btn packer-add-subdir-btn" data-path="${escapeHtml(nextPath)}" title="Add subfolder">➕</button>
+            <button class="packer-tree-action-btn danger packer-remove-dir-btn" data-path="${escapeHtml(nextPath)}" title="Remove folder">✕</button>
+          </div>
         </div>
       `;
       html += renderTreeHtml(child, depth + 1, nextPath);
     } else {
       const sizeStr = formatBytes(child.file.size);
       html += `
-        <div class="packer-tree-node packer-tree-file" style="padding-left: ${depth * 16}px;" draggable="true" data-index="${child.index}">
+        <div class="packer-tree-node packer-tree-file ${child.isSkipped ? 'skipped' : ''}" style="padding-left: ${depth * 16}px;" draggable="true" data-index="${child.index}">
           <span class="packer-tree-icon">📄</span>
-          <span class="packer-tree-name" title="Source: ${escapeHtml(child.file.sourcePath)}">${escapeHtml(child.name)}</span>
+          <span class="packer-tree-name" title="Source: ${escapeHtml(child.file.sourcePath)}" style="${child.isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(child.name)}</span>
           <span class="packer-tree-size">${sizeStr}</span>
-          <button class="packer-remove-file-btn" data-index="${child.index}" title="Remove file" style="margin-left: 8px; padding: 2px 6px; font-size: 11px;">✕</button>
+          <div class="packer-tree-actions">
+            <button class="packer-tree-action-btn packer-rename-file-btn" data-index="${child.index}" title="Rename/Move file">✏️</button>
+            <button class="packer-tree-action-btn packer-skip-file-btn" data-index="${child.index}" title="${child.isSkipped ? 'Include file' : 'Skip/Omit file'}">${child.isSkipped ? '↩️' : '🚫'}</button>
+            <button class="packer-tree-action-btn danger packer-remove-file-btn" data-index="${child.index}" title="Remove file">✕</button>
+          </div>
         </div>
       `;
     }
@@ -397,11 +604,14 @@ function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
 
 function setupTreeDragAndDropHandlers(container: HTMLElement): void {
   let draggedIndex: number | null = null;
+  let draggedDirPath: string | null = null;
 
+  // 1. Files Drag Listeners
   container.querySelectorAll('.packer-tree-file').forEach(node => {
     node.addEventListener('dragstart', (e) => {
       const dragEvent = e as DragEvent;
       draggedIndex = parseInt((node as HTMLElement).dataset.index || '0');
+      draggedDirPath = null;
       if (dragEvent.dataTransfer) {
         dragEvent.dataTransfer.effectAllowed = 'move';
         dragEvent.dataTransfer.setData('text/plain', draggedIndex.toString());
@@ -415,7 +625,24 @@ function setupTreeDragAndDropHandlers(container: HTMLElement): void {
     });
   });
 
+  // 2. Directories Drag Listeners
   container.querySelectorAll('.packer-tree-dir').forEach(node => {
+    node.addEventListener('dragstart', (e) => {
+      const dragEvent = e as DragEvent;
+      draggedDirPath = (node as HTMLElement).dataset.path || '';
+      draggedIndex = null;
+      if (dragEvent.dataTransfer) {
+        dragEvent.dataTransfer.effectAllowed = 'move';
+        dragEvent.dataTransfer.setData('text/plain', draggedDirPath);
+      }
+      (node as HTMLElement).style.opacity = '0.5';
+    });
+
+    node.addEventListener('dragend', () => {
+      (node as HTMLElement).style.opacity = '1';
+      draggedDirPath = null;
+    });
+
     node.addEventListener('dragover', (e) => {
       e.preventDefault();
       const dragEvent = e as DragEvent;
@@ -436,6 +663,7 @@ function setupTreeDragAndDropHandlers(container: HTMLElement): void {
 
     node.addEventListener('drop', async (e) => {
       e.preventDefault();
+      e.stopPropagation();
       (node as HTMLElement).classList.remove('drag-over');
 
       const targetFolderPath = (node as HTMLElement).dataset.path || '';
@@ -448,11 +676,113 @@ function setupTreeDragAndDropHandlers(container: HTMLElement): void {
         file.targetPath = newTarget.replace(/\\/g, '/');
         targetOverrides.set(file.sourcePath, file.targetPath);
         
-        showToast(`Moved ${filename} to ${targetFolderPath || 'root'}`, 'success');
+        showToast(`Moved ${filename} to ${targetFolderPath}`, 'success');
+        renderWorkspace();
+      } else if (draggedDirPath !== null) {
+        const oldPath = draggedDirPath;
+        if (targetFolderPath === oldPath || targetFolderPath.startsWith(oldPath + '/')) {
+          showToast('Cannot move folder inside itself', 'warning');
+          return;
+        }
+
+        const dirname = oldPath.split('/').pop() || oldPath;
+        const newPath = `${targetFolderPath}/${dirname}`;
+
+        stagedFiles.forEach(f => {
+          if (f.targetPath === oldPath) {
+            f.targetPath = newPath;
+            targetOverrides.set(f.sourcePath, newPath);
+          } else if (f.targetPath.startsWith(oldPath + '/')) {
+            f.targetPath = newPath + f.targetPath.substring(oldPath.length);
+            targetOverrides.set(f.sourcePath, f.targetPath);
+          }
+        });
+
+        virtualFolders = virtualFolders.map(vf => {
+          if (vf === oldPath) return newPath;
+          if (vf.startsWith(oldPath + '/')) {
+            return newPath + vf.substring(oldPath.length);
+          }
+          return vf;
+        });
+
+        targetOverrides.forEach((val, key) => {
+          if (key.startsWith('__VIRTUAL_DIR__:')) {
+            const path = key.substring('__VIRTUAL_DIR__:'.length);
+            if (path === oldPath || path.startsWith(oldPath + '/')) {
+              targetOverrides.delete(key);
+            }
+          }
+        });
+        virtualFolders.forEach(vf => {
+          targetOverrides.set(`__VIRTUAL_DIR__:${vf}`, '__VIRTUAL_DIR__');
+        });
+
+        showToast(`Moved folder ${dirname} to ${targetFolderPath}`, 'success');
         renderWorkspace();
       }
     });
   });
+
+  // 3. Root Level Drop Handler
+  const rootNode = container.querySelector('.packer-tree-root');
+  if (rootNode) {
+    rootNode.addEventListener('dragover', (e) => {
+      e.preventDefault();
+    });
+    rootNode.addEventListener('drop', (e) => {
+      if ((e.target as HTMLElement).closest('.packer-tree-dir')) {
+        return;
+      }
+      e.preventDefault();
+
+      if (draggedIndex !== null && draggedIndex >= 0 && draggedIndex < stagedFiles.length) {
+        const file = stagedFiles[draggedIndex];
+        const filename = file.sourcePath.split(/[/\\]/).pop() || file.relativePath;
+        file.targetPath = filename;
+        targetOverrides.set(file.sourcePath, filename);
+        showToast(`Moved ${filename} to root`, 'success');
+        renderWorkspace();
+      } else if (draggedDirPath !== null) {
+        const oldPath = draggedDirPath;
+        const dirname = oldPath.split('/').pop() || oldPath;
+        const newPath = dirname;
+
+        stagedFiles.forEach(f => {
+          if (f.targetPath === oldPath) {
+            f.targetPath = newPath;
+            targetOverrides.set(f.sourcePath, newPath);
+          } else if (f.targetPath.startsWith(oldPath + '/')) {
+            f.targetPath = newPath + f.targetPath.substring(oldPath.length);
+            targetOverrides.set(f.sourcePath, f.targetPath);
+          }
+        });
+
+        virtualFolders = virtualFolders.map(vf => {
+          if (vf === oldPath) return newPath;
+          if (vf.startsWith(oldPath + '/')) {
+            return newPath + vf.substring(oldPath.length);
+          }
+          return vf;
+        });
+
+        targetOverrides.forEach((val, key) => {
+          if (key.startsWith('__VIRTUAL_DIR__:')) {
+            const path = key.substring('__VIRTUAL_DIR__:'.length);
+            if (path === oldPath || path.startsWith(oldPath + '/')) {
+              targetOverrides.delete(key);
+            }
+          }
+        });
+        virtualFolders.forEach(vf => {
+          targetOverrides.set(`__VIRTUAL_DIR__:${vf}`, '__VIRTUAL_DIR__');
+        });
+
+        showToast(`Moved folder ${dirname} to root`, 'success');
+        renderWorkspace();
+      }
+    });
+  }
 }
 
 
@@ -578,8 +908,14 @@ async function buildModPackage(): Promise<void> {
 
     showToast(`Packaging mod to ${format.toUpperCase()}... Please wait.`, 'info');
 
+    const activeFiles = stagedFiles.filter(f => f.targetPath !== '__SKIP__');
+    if (activeFiles.length === 0) {
+      showToast('All files are skipped/omitted. Nothing to package.', 'warning');
+      return;
+    }
+
     const result = await invoke<string>('pack_mod', {
-      files: stagedFiles,
+      files: activeFiles,
       metadata,
       outputPath: outputLocation,
       format
@@ -673,6 +1009,8 @@ function openNewProjectWorkspace(): void {
   stagedFiles = [];
   sourcePaths = [];
   targetOverrides.clear();
+  virtualFolders = [];
+  backupPaths.clear();
   clearMetadataForm();
   
   const nameInput = document.getElementById('packer-project-name') as HTMLInputElement;
@@ -691,8 +1029,23 @@ function loadSelectedProject(name: string): void {
   activeProjectName = name;
   sourcePaths = [...project.sourcePaths];
   
-  // Re-build Map overrides
-  targetOverrides = new Map(Object.entries(project.targetPathsOverride || {}));
+  // Re-build Map overrides, virtual folders, and skipped files backup paths
+  targetOverrides = new Map();
+  virtualFolders = [];
+  backupPaths = new Map();
+
+  if (project.targetPathsOverride) {
+    Object.entries(project.targetPathsOverride).forEach(([k, v]) => {
+      if (k.startsWith('__VIRTUAL_DIR__:')) {
+        virtualFolders.push(k.substring('__VIRTUAL_DIR__:'.length));
+        targetOverrides.set(k, v);
+      } else if (k.startsWith('__SKIP_ORIGINAL__:')) {
+        backupPaths.set(k.substring('__SKIP_ORIGINAL__:'.length), v);
+      } else {
+        targetOverrides.set(k, v);
+      }
+    });
+  }
 
   // Restore metadata
   if (project.metadata) {
@@ -758,6 +1111,12 @@ async function saveCurrentProject(): Promise<void> {
   const overridesRecord: Record<string, string> = {};
   targetOverrides.forEach((v, k) => {
     overridesRecord[k] = v;
+  });
+  backupPaths.forEach((v, k) => {
+    overridesRecord[`__SKIP_ORIGINAL__:${k}`] = v;
+  });
+  virtualFolders.forEach(vf => {
+    overridesRecord[`__VIRTUAL_DIR__:${vf}`] = '__VIRTUAL_DIR__';
   });
 
   try {

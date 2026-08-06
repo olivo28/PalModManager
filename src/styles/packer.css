@@ -461,4 +461,66 @@
   color: var(--text-muted);
 }
 
+/* Staging Skip and Tree Actions */
+tr.skipped {
+  opacity: 0.45;
+}
+tr.skipped td strong {
+  text-decoration: line-through;
+}
+tr.skipped .packer-input-target {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.packer-tree-node {
+  position: relative;
+}
+
+.packer-tree-actions {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+.packer-tree-node:hover .packer-tree-actions {
+  display: flex;
+}
+
+.packer-tree-action-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.packer-tree-action-btn:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.packer-tree-action-btn.danger:hover {
+  color: var(--danger);
+  background: var(--danger-dim);
+}
+
+.packer-tree-node.skipped {
+  opacity: 0.45;
+}
+.packer-tree-node.skipped .packer-tree-name {
+  text-decoration: line-through;
+}
+
+
 
