@@ -76,9 +76,9 @@ export function renderEditorModTree(): void {
     m.nexusAuthor !== 'UE4SS Native Mod'
   );
 
-  const ue4ssMods = editableMods.filter(m => m.type === 'ue4ss');
-  const palSchemaMods = editableMods.filter(m => m.type === 'palschema');
-  const hybridMods = editableMods.filter(m => m.type === 'hybrid');
+  const ue4ssMods = editableMods.filter(m => m.type === 'ue4ss').sort((a, b) => a.name.localeCompare(b.name));
+  const palSchemaMods = editableMods.filter(m => m.type === 'palschema').sort((a, b) => a.name.localeCompare(b.name));
+  const hybridMods = editableMods.filter(m => m.type === 'hybrid').sort((a, b) => a.name.localeCompare(b.name));
 
   function renderSection(label: string, mods: typeof editableMods, sectionId: string): string {
     if (mods.length === 0) return '';

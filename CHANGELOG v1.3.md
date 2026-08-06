@@ -2,6 +2,12 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.3.1] - 2026-08-06
+
+### Fixed
+- **Native Mod Filtering**: Added the `adapters` mod to the internal core dependencies registry. It will now be properly hidden from the main list when the "Hide Native/Core Mods" settings checkbox is active.
+- **Editor Sidebar Sorting**: Fixed the configuration tree list inside the **Edit** workspace panel to sort all active mods alphabetically within their respective type groupings (UE4SS, PalSchema, and Hybrid) instead of arbitrary filesystem order.
+
 ## [1.3.0] - 2026-08-05
 
 ### Added

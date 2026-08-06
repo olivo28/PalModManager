@@ -570,7 +570,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
             let mod_path = entry.path();
             if ["ConsoleUnlocker", "LuaPlugin", "PalSchema"].contains(&mod_name.as_str()) { continue; }
 
-            let is_native_mod = ["BPModLoaderMod", "CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod", "Keybinds", "LineTraceMod", "SplitScreenMod", "BPML_GenericFunctions", "shared"].contains(&mod_name.as_str());
+            let is_native_mod = ["BPModLoaderMod", "CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod", "Keybinds", "LineTraceMod", "SplitScreenMod", "BPML_GenericFunctions", "shared", "adapters"].contains(&mod_name.as_str());
 
             let is_enabled = if let Some(&state) = mods_txt_states.get(&mod_name.to_lowercase()) {
                 state
