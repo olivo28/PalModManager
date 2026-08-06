@@ -7,4 +7,7 @@ pub mod library_commands;
 pub mod profile_commands;
 pub mod dependency_commands;
 pub mod packer_commands;
+pub mod scanner_commands;
+pub mod db_commands;
+
 

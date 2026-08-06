@@ -19,6 +19,8 @@ use commands::library_commands;
 use commands::profile_commands;
 use commands::dependency_commands;
 use commands::packer_commands;
+use commands::scanner_commands;
+use commands::db_commands;
 use state::AppState;
 
 use tauri::Manager;
@@ -165,6 +167,9 @@ pub fn run() {
             packer_commands::save_packer_project,
             packer_commands::load_packer_projects,
             packer_commands::delete_packer_project,
+            scanner_commands::scan_conflicts,
+            db_commands::db_get_all,
+            db_commands::db_write_record,
         ])
 
 

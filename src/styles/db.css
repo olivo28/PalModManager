@@ -1,0 +1,319 @@
+/* ============================================================
+   DB Inspector & Editor — db.css
+   ============================================================ */
+
+/* ── Outer container ── */
+#db-view {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.db-view-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  background: var(--bg-primary);
+}
+
+/* ── Top toolbar ── */
+.db-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.db-toolbar-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  letter-spacing: 0.2px;
+}
+
+.db-tab-group {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  border-radius: var(--radius);
+  padding: 3px;
+}
+
+.db-tab-btn {
+  background: transparent;
+  border: none;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  transition: background 0.15s, color 0.15s;
+}
+
+.db-tab-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.db-tab-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+.db-action-btn {
+  margin-left: auto;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 4px 10px;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.db-action-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* ── Split layout ── */
+.db-split {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  gap: 0;
+}
+
+/* ── Left: data grid panel ── */
+.db-grid-panel {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  border-right: 1px solid var(--border);
+}
+
+.db-grid-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.db-grid-table thead th {
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 8px 12px;
+  text-align: left;
+  text-transform: uppercase;
+}
+
+.db-row {
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.db-row:hover {
+  background: var(--bg-hover);
+}
+
+.db-row.selected {
+  background: var(--accent-dim);
+  outline: 1px solid var(--accent);
+  outline-offset: -1px;
+}
+
+.db-row-active td {
+  background: rgba(46, 160, 67, 0.05);
+}
+
+.db-cell {
+  border-bottom: 1px solid var(--border);
+  color: var(--text-secondary);
+  padding: 7px 12px;
+  vertical-align: middle;
+}
+
+.db-cell-name {
+  color: var(--text-primary);
+  font-weight: 600;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-cell-mono {
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.db-cell-date {
+  color: var(--text-muted);
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.db-cell-key {
+  color: var(--accent);
+  font-family: monospace;
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.db-cell-val {
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.db-type-badge {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.db-status-dot {
+  border-radius: 50%;
+  display: inline-block;
+  height: 8px;
+  width: 8px;
+}
+
+.db-status-dot.on {
+  background: var(--success);
+  box-shadow: 0 0 4px rgba(46,160,67,0.5);
+}
+
+.db-status-dot.off {
+  background: var(--text-muted);
+}
+
+.db-active-badge {
+  background: var(--success-dim);
+  border-radius: 10px;
+  color: var(--success);
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 6px;
+  padding: 1px 6px;
+  text-transform: uppercase;
+}
+
+.db-loading {
+  align-items: center;
+  color: var(--text-muted);
+  display: flex;
+  font-size: 12px;
+  justify-content: center;
+  padding: 40px;
+}
+
+.db-error {
+  color: var(--danger);
+  font-size: 12px;
+  padding: 20px;
+}
+
+.db-empty {
+  color: var(--text-muted);
+  font-size: 12px;
+  padding: 20px;
+  text-align: center;
+}
+
+/* ── Right: JSON inspector ── */
+.db-inspector-panel {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+  width: 380px;
+  background: var(--bg-secondary);
+  overflow: hidden;
+}
+
+.db-inspector-toolbar {
+  align-items: center;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-shrink: 0;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.db-inspector-label {
+  color: var(--text-muted);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.db-json-status {
+  font-size: 11px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.db-json-status.valid {
+  color: var(--success);
+}
+
+.db-json-status.invalid {
+  color: var(--danger);
+}
+
+.db-save-btn {
+  background: var(--accent);
+  border: none;
+  border-radius: var(--radius);
+  color: #fff;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 12px;
+  transition: background 0.15s, opacity 0.15s;
+}
+
+.db-save-btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.db-save-btn:disabled {
+  opacity: 0.4;
+  cursor: default;
+}
+
+.db-json-editor {
+  background: var(--bg-code);
+  border: none;
+  color: var(--text-primary);
+  flex: 1;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+  line-height: 1.6;
+  outline: none;
+  padding: 12px;
+  resize: none;
+  width: 100%;
+}
+
+.db-json-editor:disabled {
+  color: var(--text-muted);
+  cursor: default;
+}

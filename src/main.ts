@@ -5,11 +5,14 @@ import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBro
 import { loadMods, handleSort, handleCheckUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers } from './ui/editorView';
+import { navigateTo } from './ui/tabManager';
+import { renderDbView } from './ui/dbView';
 import { setupDragAndDrop } from './features/dragdrop';
 import { autoFetchNexusInfo } from './features/nexus';
 import { showToast } from './ui/toast';
 import { setupSelection } from './features/selection';
 import { initPackerView } from './ui/packerView';
+import { renderScannerView } from './ui/scannerView';
 
 const THEME_KEY = 'pmm-theme';
 
@@ -292,14 +295,14 @@ function setupEventListeners() {
 
   document.querySelectorAll('.sidebar-tab').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const tab = (btn as HTMLElement).dataset.tab as 'mods' | 'editor' | 'library' | 'build';
+      const tab = (btn as HTMLElement).dataset.tab as 'mods' | 'editor' | 'library' | 'build' | 'scanner' | 'db';
       const state = getState();
       if (state.activeTab === 'editor' && tab !== 'editor') {
         const { confirmDiscardOrSave } = await import('./ui/editorView');
         const proceed = await confirmDiscardOrSave();
         if (!proceed) return;
       }
-      switchTab(tab);
+      navigateTo(tab);
 
       if (tab === 'editor') {
         if (!state.editorModId && state.allMods.length > 0) {
@@ -311,6 +314,10 @@ function setupEventListeners() {
         }
       } else if (tab === 'library') {
         loadLibrary();
+      } else if (tab === 'scanner') {
+        renderScannerView();
+      } else if (tab === 'db') {
+        renderDbView();
       }
     });
   });

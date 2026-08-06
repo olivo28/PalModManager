@@ -71,6 +71,14 @@
           <span class="sidebar-tab-icon">🛠</span>
           <span class="sidebar-tab-label">Build</span>
         </button>
+        <button class="sidebar-tab" data-tab="scanner" title="Conflict Scanner">
+          <span class="sidebar-tab-icon">🛡</span>
+          <span class="sidebar-tab-label">Scan</span>
+        </button>
+        <button class="sidebar-tab" data-tab="db" title="DB Inspector">
+          <span class="sidebar-tab-icon">🗄</span>
+          <span class="sidebar-tab-label">DB</span>
+        </button>
       </div>
 
       <div class="sidebar-footer">
@@ -334,6 +342,15 @@
         </div>
       </div>
 
+      <!-- CONFLICT SCANNER TAB -->
+      <div id="scanner-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
+        <!-- View rendered dynamically by scannerView.ts -->
+      </div>
+
+      <!-- DB INSPECTOR TAB -->
+      <div id="db-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
+        <!-- View rendered dynamically by dbView.ts -->
+      </div>
     </main>
 
   </div>

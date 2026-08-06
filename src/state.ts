@@ -13,7 +13,7 @@ export interface AppState {
   currentDetailMod: ModInfo | null;
   searchQuery: string;
   currentSort: { field: string; asc: boolean };
-  activeTab: 'mods' | 'editor' | 'library' | 'db' | 'build';
+  activeTab: 'mods' | 'editor' | 'library' | 'db' | 'build' | 'scanner';
   viewLayout: 'grid' | 'list';
   editorModId: string | null;
   editorFiles: string[];

@@ -32,7 +32,7 @@ export async function openConfigEditor(modId: string): Promise<void> {
   if (firstFile) firstFile.click();
 }
 
-export function switchTab(tab: 'mods' | 'editor' | 'library' | 'build'): void {
+export function switchTab(tab: 'mods' | 'editor' | 'library' | 'build' | 'scanner'): void {
   updateState({ activeTab: tab as any });
   document.querySelectorAll('.sidebar-tab').forEach(b => b.classList.remove('active'));
   const tabBtn = document.querySelector(`.sidebar-tab[data-tab="${tab}"]`);
@@ -44,6 +44,8 @@ export function switchTab(tab: 'mods' | 'editor' | 'library' | 'build'): void {
   if (libView) libView.style.display = tab === 'library' ? 'flex' : 'none';
   const buildView = document.getElementById('build-view');
   if (buildView) buildView.style.display = tab === 'build' ? 'flex' : 'none';
+  const scannerView = document.getElementById('scanner-view');
+  if (scannerView) scannerView.style.display = tab === 'scanner' ? 'flex' : 'none';
 
   if (tab === 'editor') renderEditorModTree();
 }
