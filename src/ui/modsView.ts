@@ -220,6 +220,16 @@ function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state: any): 
 export function renderModsView(): void {
   const state = getState();
   const container = document.getElementById('mods-container')!;
+  
+  const openAllBtn = document.getElementById('open-all-updates-btn');
+  if (openAllBtn) {
+    const hasNexusUpdates = Array.from(state.availableUpdates.keys()).some(id => {
+      const m = state.allMods.find(mod => mod.id === id);
+      return m && m.nexusModId;
+    });
+    openAllBtn.style.display = hasNexusUpdates ? 'inline-block' : 'none';
+  }
+
   const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
 
   if (state.viewLayout === 'list') {
@@ -599,6 +609,23 @@ export async function handleCheckUpdates(): Promise<void> {
   } finally {
     btn.disabled = false;
     btn.innerHTML = '<span class="btn-icon-text">&#8634;</span> Updates';
+  }
+}
+
+export function handleOpenAllUpdates(): void {
+  const state = getState();
+  const updates = state.availableUpdates;
+  let count = 0;
+  for (const [modId, _] of updates) {
+    const mod = state.allMods.find(m => m.id === modId);
+    if (mod && mod.nexusModId) {
+      const url = `https://www.nexusmods.com/palworld/mods/${mod.nexusModId}`;
+      openUrl(url).catch(e => console.error(e));
+      count++;
+    }
+  }
+  if (count > 0) {
+    showToast(`Opening ${count} NexusMods update page(s) in browser`, 'success');
   }
 }
 
@@ -1982,20 +2009,42 @@ function showGlobalContextMenu(x: number, y: number): void {
           handleDepBadgeClick('palschema');
           break;
         case 'uninstall-ue4ss':
-          showToast('Uninstalling UE4SS...', 'info');
-          uninstallUe4ss().then(msg => {
-            showToast(msg, 'success');
-            loadDependencies();
-            loadMods();
-          }).catch(e => showToast('Failed: ' + e, 'error'));
+          {
+            const state = getState();
+            const dependentMods = state.allMods.filter(m => m.enabled && (m.type === 'ue4ss' || m.type === 'hybrid'));
+            const proceed = dependentMods.length > 0
+              ? showConfirm(`Warning: You have ${dependentMods.length} enabled mod(s) that depend on UE4SS (e.g. ${dependentMods[0].name}). Uninstalling UE4SS will disable these mods. Do you want to proceed?`)
+              : Promise.resolve(true);
+
+            proceed.then(confirmed => {
+              if (!confirmed) return;
+              showToast('Uninstalling UE4SS...', 'info');
+              uninstallUe4ss().then(msg => {
+                showToast(msg, 'success');
+                loadDependencies();
+                loadMods();
+              }).catch(e => showToast('Failed: ' + e, 'error'));
+            });
+          }
           break;
         case 'uninstall-palschema':
-          showToast('Uninstalling PalSchema...', 'info');
-          uninstallPalschema().then(msg => {
-            showToast(msg, 'success');
-            loadDependencies();
-            loadMods();
-          }).catch(e => showToast('Failed: ' + e, 'error'));
+          {
+            const state = getState();
+            const dependentMods = state.allMods.filter(m => m.enabled && (m.type === 'palschema' || m.type === 'hybrid'));
+            const proceed = dependentMods.length > 0
+              ? showConfirm(`Warning: You have ${dependentMods.length} enabled mod(s) that depend on PalSchema (e.g. ${dependentMods[0].name}). Uninstalling PalSchema will disable these mods. Do you want to proceed?`)
+              : Promise.resolve(true);
+
+            proceed.then(confirmed => {
+              if (!confirmed) return;
+              showToast('Uninstalling PalSchema...', 'info');
+              uninstallPalschema().then(msg => {
+                showToast(msg, 'success');
+                loadDependencies();
+                loadMods();
+              }).catch(e => showToast('Failed: ' + e, 'error'));
+            });
+          }
           break;
 
         case 'settings':

@@ -2,7 +2,7 @@ import 'highlight.js/styles/github-dark.css';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema } from './api';
 import { getState, updateState } from './state';
 import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange } from './ui/modal';
-import { loadMods, handleSort, handleCheckUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
+import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers } from './ui/editorView';
 import { navigateTo } from './ui/tabManager';
@@ -134,6 +134,7 @@ function setupEventListeners() {
   safeEl('detail-toggle')?.addEventListener('click', handleDetailToggle);
   safeEl('detail-remove')?.addEventListener('click', handleDetailRemove);
   safeEl('check-updates-btn')?.addEventListener('click', handleCheckUpdates);
+  safeEl('open-all-updates-btn')?.addEventListener('click', handleOpenAllUpdates);
   safeEl('disable-all-btn')?.addEventListener('click', handleDisableAll);
   safeEl('enable-all-btn')?.addEventListener('click', handleEnableAll);
   safeEl('export-json-btn')?.addEventListener('click', async () => {

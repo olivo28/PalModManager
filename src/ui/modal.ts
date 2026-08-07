@@ -3,6 +3,7 @@ import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
 import { showToast } from './toast';
+import { showConfirm } from './confirm';
 import { escapeHtml } from '../utils/helpers';
 
 // === SETTINGS MODAL ===
@@ -836,6 +837,14 @@ export async function handleConfirmInstall(): Promise<void> {
           retryBtn.disabled = false;
         }
       };
+
+      // Prompt the user automatically
+      showConfirm(`This mod requires missing dependencies: ${missingNames.join(' and ')}. Would you like to download and install them automatically now?`)
+        .then(confirmed => {
+          if (confirmed) {
+            retryBtn.click();
+          }
+        });
     }
     return;
   }
