@@ -171,8 +171,57 @@ pub fn run() {
             db_commands::db_get_all,
             db_commands::db_write_record,
         ])
-
-
+        .setup(|app| {
+            let state = app.state::<AppState>();
+            let settings = {
+                let data = state.data.lock().unwrap();
+                data.settings.clone()
+            };
+            if let Some(window) = app.get_webview_window("main") {
+                if let (Some(w), Some(h)) = (settings.window_width, settings.window_height) {
+                    let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(w, h)));
+                }
+                if let Some(true) = settings.window_maximized {
+                    let _ = window.maximize();
+                }
+            }
+            Ok(())
+        })
+        .on_window_event(|window, event| {
+            if window.label() == "main" {
+                match event {
+                    tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Moved(_) => {
+                        let is_maximized = window.is_maximized().unwrap_or(false);
+                        let state = window.state::<AppState>();
+                        let lock_res = state.data.lock();
+                        if let Ok(mut data) = lock_res {
+                            data.settings.window_maximized = Some(is_maximized);
+                            if !is_maximized {
+                                if let Ok(size) = window.inner_size() {
+                                    if let Ok(scale_factor) = window.scale_factor() {
+                                        let logical = size.to_logical::<f64>(scale_factor);
+                                        if logical.width > 100.0 && logical.height > 100.0 {
+                                            data.settings.window_width = Some(logical.width);
+                                            data.settings.window_height = Some(logical.height);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    tauri::WindowEvent::CloseRequested { .. } | tauri::WindowEvent::Destroyed => {
+                        let state = window.state::<AppState>();
+                        let lock_res = state.data.lock();
+                        if let Ok(data) = lock_res {
+                            let data_clone = data.clone();
+                            drop(data);
+                            let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+                        }
+                    }
+                    _ => {}
+                }
+            }
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

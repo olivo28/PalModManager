@@ -74,6 +74,12 @@ pub struct AppSettings {
     pub debug_console: Option<bool>,
     #[serde(default)]
     pub custom_data_path: Option<String>,
+    #[serde(default)]
+    pub window_width: Option<f64>,
+    #[serde(default)]
+    pub window_height: Option<f64>,
+    #[serde(default)]
+    pub window_maximized: Option<bool>,
 }
 
 
@@ -127,6 +133,9 @@ impl Default for AppData {
                 hide_native_mods: Some(false),
                 debug_console: Some(false),
                 custom_data_path: None,
+                window_width: None,
+                window_height: None,
+                window_maximized: None,
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),
