@@ -450,3 +450,252 @@ pub fn strip_jsonc_comments(input: &str) -> String {
     }
     output
 }
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct ModHotkey {
+    pub mod_id: String,
+    pub mod_name: String,
+    pub file_path: String,
+    pub absolute_file_path: String,
+    pub line_number: usize,
+    pub keys: String,
+    pub raw_line: String,
+}
+
+fn extract_keys_from_line(line: &str) -> Option<String> {
+    let rkb = "RegisterKeyBind";
+    let start = line.find(rkb)?;
+    let after = &line[start + rkb.len()..];
+    let open_paren = after.find('(')?;
+    let content = &after[open_paren + 1..];
+    
+    let mut parts = Vec::new();
+    let mut current_part = String::new();
+    let mut paren_depth = 0;
+    let mut brace_depth = 0;
+    let mut in_string = false;
+    let mut quote_char = ' ';
+    let mut chars = content.chars().peekable();
+    
+    while let Some(c) = chars.next() {
+        if in_string {
+            if c == '\\' {
+                current_part.push(c);
+                if let Some(next_c) = chars.next() {
+                    current_part.push(next_c);
+                }
+            } else if c == quote_char {
+                in_string = false;
+                current_part.push(c);
+            } else {
+                current_part.push(c);
+            }
+        } else {
+            match c {
+                '"' | '\'' => {
+                    in_string = true;
+                    quote_char = c;
+                    current_part.push(c);
+                }
+                '(' => {
+                    paren_depth += 1;
+                    current_part.push(c);
+                }
+                ')' => {
+                    paren_depth -= 1;
+                    if paren_depth < 0 {
+                        break;
+                    }
+                    current_part.push(c);
+                }
+                '{' | '[' => {
+                    brace_depth += 1;
+                    current_part.push(c);
+                }
+                '}' | ']' => {
+                    brace_depth -= 1;
+                    current_part.push(c);
+                }
+                ',' => {
+                    if paren_depth == 0 && brace_depth == 0 {
+                        parts.push(current_part.trim().to_string());
+                        current_part = String::new();
+                    } else {
+                        current_part.push(c);
+                    }
+                }
+                _ => {
+                    current_part.push(c);
+                }
+            }
+        }
+    }
+    
+    if !parts.is_empty() {
+        let keys = parts.join(", ");
+        if !keys.is_empty() {
+            return Some(keys);
+        }
+    } else {
+        let single = current_part.trim().to_string();
+        if !single.is_empty() {
+            return Some(single);
+        }
+    }
+    None
+}
+
+fn update_line_keybind(line: &str, new_keys: &str) -> Option<String> {
+    let rkb = "RegisterKeyBind";
+    let start = line.find(rkb)?;
+    let after = &line[start + rkb.len()..];
+    let open_paren = after.find('(')?;
+    let content = &after[open_paren + 1..];
+    
+    let mut last_comma_idx = None;
+    let mut paren_depth = 0;
+    let mut brace_depth = 0;
+    let mut in_string = false;
+    let mut quote_char = ' ';
+    let mut chars = content.char_indices().peekable();
+    
+    while let Some((i, c)) = chars.next() {
+        if in_string {
+            if c == '\\' {
+                let _ = chars.next();
+            } else if c == quote_char {
+                in_string = false;
+            }
+        } else {
+            match c {
+                '"' | '\'' => {
+                    in_string = true;
+                    quote_char = c;
+                }
+                '(' => {
+                    paren_depth += 1;
+                }
+                ')' => {
+                    paren_depth -= 1;
+                    if paren_depth < 0 {
+                        break;
+                    }
+                }
+                '{' | '[' => {
+                    brace_depth += 1;
+                }
+                '}' | ']' => {
+                    brace_depth -= 1;
+                }
+                ',' => {
+                    if paren_depth == 0 && brace_depth == 0 {
+                        last_comma_idx = Some(i);
+                    }
+                }
+                _ => {}
+            }
+        }
+    }
+    
+    if let Some(comma_idx) = last_comma_idx {
+        let prefix = &line[..start + rkb.len() + open_paren + 1];
+        let suffix = &content[comma_idx..];
+        return Some(format!("{}{}{}", prefix, new_keys, suffix));
+    }
+    
+    None
+}
+
+#[tauri::command]
+pub fn scan_mod_hotkeys(state: State<'_, AppState>) -> Result<Vec<ModHotkey>, String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+    let mut hotkeys = Vec::new();
+
+    for m in &profile_mods {
+        if !m.enabled || m.game_path.is_empty() {
+            continue;
+        }
+        if m.nexus_author.as_deref() == Some("UE4SS Native Mod") {
+            continue;
+        }
+        if m.mod_type != ModType::Ue4ss && m.mod_type != ModType::Hybrid {
+            continue;
+        }
+
+        let mod_path = Path::new(&m.game_path);
+        if !mod_path.exists() {
+            continue;
+        }
+
+        let scripts_path = mod_path.join("Scripts");
+        if !scripts_path.exists() {
+            continue;
+        }
+
+        let mut files_to_scan = Vec::new();
+        collect_files_with_extensions(&scripts_path, &["lua"], &mut files_to_scan);
+
+        for file_path in files_to_scan {
+            if let Ok(content) = fs::read_to_string(&file_path) {
+                let lines: Vec<&str> = content.lines().collect();
+                for (idx, line) in lines.iter().enumerate() {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with("--") {
+                        continue;
+                    }
+                    if trimmed.contains("RegisterKeyBind") {
+                        if let Some(keys) = extract_keys_from_line(line) {
+                            let rel_path = match file_path.strip_prefix(mod_path) {
+                                Ok(rel) => rel.to_string_lossy().to_string(),
+                                Err(_) => file_path.to_string_lossy().to_string(),
+                            };
+                            hotkeys.push(ModHotkey {
+                                mod_id: m.id.clone(),
+                                mod_name: m.name.clone(),
+                                file_path: rel_path,
+                                absolute_file_path: file_path.to_string_lossy().to_string(),
+                                line_number: idx + 1,
+                                keys,
+                                raw_line: line.to_string(),
+                            });
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(hotkeys)
+}
+
+#[tauri::command]
+pub fn update_mod_hotkey(
+    absolute_file_path: String,
+    line_number: usize,
+    new_keys: String,
+) -> Result<(), String> {
+    let path = Path::new(&absolute_file_path);
+    if !path.exists() {
+        return Err("File not found".to_string());
+    }
+
+    let content = fs::read_to_string(path).map_err(|e| format!("Failed to read file: {}", e))?;
+    let mut lines: Vec<String> = content.lines().map(|s| s.to_string()).collect();
+
+    if line_number == 0 || line_number > lines.len() {
+        return Err("Invalid line number".to_string());
+    }
+
+    let target_line = &lines[line_number - 1];
+    if let Some(updated_line) = update_line_keybind(target_line, &new_keys) {
+        lines[line_number - 1] = updated_line;
+        let ending = if content.contains("\r\n") { "\r\n" } else { "\n" };
+        let new_content = lines.join(ending) + ending;
+        fs::write(path, new_content).map_err(|e| format!("Failed to write file: {}", e))?;
+        Ok(())
+    } else {
+        Err("Failed to parse RegisterKeyBind on target line".to_string())
+    }
+}

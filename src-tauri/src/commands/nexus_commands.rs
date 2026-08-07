@@ -75,11 +75,7 @@ pub async fn refresh_nexus_cache(mod_id_str: String, state: State<'_, AppState>)
     {
         let local_ver = m.version.trim().to_lowercase();
         let is_missing = local_ver.is_empty()
-            || local_ver == "unknown"
-            || local_ver == "1.0"
-            || local_ver == "v1.0"
-            || local_ver == "1"
-            || local_ver == "v1";
+            || local_ver == "unknown";
         if is_missing && !info.version.is_empty() && info.version != "unknown" {
             crate::logger::log(&format!(
                 "refresh_nexus_cache: version was '{}', updating to Nexus version '{}'",
@@ -154,12 +150,12 @@ pub async fn set_nexus_mod_id(mod_id_str: String, nexus_id: u32, state: State<'_
 
 #[tauri::command]
 pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateCheckResult>, String> {
-    let mods_to_check: Vec<(String, String, String, u32)> = {
+    let mods_to_check: Vec<(String, String, String, u32, Option<String>)> = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.mods.iter()
             .filter_map(|m| {
                 if let (Some(nid), Some(ref cached_ver)) = (m.nexus_mod_id, &m.nexus_version_cached) {
-                    Some((m.id.clone(), m.name.clone(), cached_ver.clone(), nid))
+                    Some((m.id.clone(), m.name.clone(), cached_ver.clone(), nid, m.ignored_version.clone()))
                 } else {
                     None
                 }
@@ -169,7 +165,7 @@ pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateC
 
     let mut results = Vec::new();
 
-    for (mod_id, name, cached_ver, nexus_id) in mods_to_check {
+    for (mod_id, name, cached_ver, nexus_id, ignored_ver) in mods_to_check {
         crate::logger::log(&format!("check_for_updates: Checking '{}' (NexusID {})", name, nexus_id));
         match crate::nexus::fetch_mod_info(nexus_id).await {
             Ok(info) => {
@@ -183,6 +179,14 @@ pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateC
                     && !(norm_cached.starts_with(&norm_latest) && norm_cached.len() > norm_latest.len());
 
                 if is_different {
+                    // Check if this latest version has been ignored
+                    if let Some(ref ignored) = ignored_ver {
+                        let norm_ignored = ignored.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
+                        if norm_ignored == norm_latest {
+                            continue;
+                        }
+                    }
+
                     results.push(UpdateCheckResult {
                         mod_id,
                         name,
@@ -197,4 +201,28 @@ pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateC
     }
 
     Ok(results)
+}
+
+#[tauri::command]
+pub fn ignore_mod_version(
+    mod_id: String,
+    version: Option<String>,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    if let Some(m) = data.mods.iter_mut().find(|m| m.id == mod_id) {
+        m.ignored_version = version;
+    } else {
+        return Err("Mod not found".to_string());
+    }
+
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&program_path, &data_clone);
+    Ok(())
 }

@@ -61,6 +61,8 @@ pub struct ModInfo {
     pub update_date: Option<String>,
     #[serde(default)]
     pub library_zip: Option<String>,
+    #[serde(default)]
+    pub ignored_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

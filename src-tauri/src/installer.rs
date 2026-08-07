@@ -545,6 +545,23 @@ pub fn update_mod(
         }
     };
 
+    // 0. Deduce/preserve existing pak destination before paths are cleared/deleted
+    let dest_deduced = if let Some(ref d) = existing.pak_destination {
+        if !d.is_empty() {
+            Some(d.clone())
+        } else {
+            None
+        }
+    } else {
+        None
+    }.or_else(|| {
+        if existing.game_path.contains("LogicMods") || existing.disabled_path.contains("LogicMods") {
+            Some("LogicMods".to_string())
+        } else {
+            None
+        }
+    });
+
     // 1. Physically delete previous mod files
     delete_path_and_sidecar(&existing.game_path);
     delete_path_and_sidecar(&existing.disabled_path);
@@ -601,7 +618,7 @@ pub fn update_mod(
             existing.nexus_picture_url.clone(),
             existing.nexus_downloads,
             existing.nexus_endorsements,
-            existing.pak_destination.as_deref(),
+            dest_deduced.as_deref(),
             Some(existing.name.clone()),
             now,
             existing.nexus_category.clone(),
@@ -618,7 +635,7 @@ pub fn update_mod(
             existing.nexus_picture_url.clone(),
             existing.nexus_downloads,
             existing.nexus_endorsements,
-            existing.pak_destination.as_deref(),
+            dest_deduced.as_deref(),
             Some(existing.name.clone()),
             now,
             existing.nexus_category.clone(),
@@ -639,7 +656,7 @@ pub fn update_mod(
             now,
             existing.nexus_category.clone(),
             existing.nexus_tags.clone(),
-            existing.pak_destination.as_deref(),
+            dest_deduced.as_deref(),
             analysis,
         )?,
     };
@@ -1064,6 +1081,7 @@ pub fn install_hybrid(
         github_cached_at: None,
         update_date: None,
         library_zip: None,
+        ignored_version: None,
     })
 }
 
@@ -1170,6 +1188,7 @@ pub fn install_ue4ss(
         github_cached_at: None,
         update_date: None,
         library_zip: None,
+        ignored_version: None,
     })
 }
 
@@ -1247,6 +1266,7 @@ fn install_palschema(
         github_cached_at: None,
         update_date: None,
         library_zip: None,
+        ignored_version: None,
     })
 }
 
@@ -1361,6 +1381,7 @@ fn install_pak(
         github_cached_at: None,
         update_date: None,
         library_zip: None,
+        ignored_version: None,
     })
 }
 

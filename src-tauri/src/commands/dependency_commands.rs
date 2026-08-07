@@ -425,6 +425,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
                     github_cached_at: None,
                     update_date: None,
                     library_zip: None,
+                    ignored_version: None,
                 });
             }
         }

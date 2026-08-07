@@ -13,7 +13,8 @@ function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
     if (m.nexusVersionCached && m.version) {
       const normNexus = m.nexusVersionCached.replace(/^v/i, '').trim().toLowerCase();
       const normLocal = m.version.replace(/^v/i, '').trim().toLowerCase();
-      if (normNexus !== '' && normNexus !== 'unknown' && normLocal !== 'unknown' && normNexus !== normLocal && !normLocal.startsWith(normNexus)) {
+      const normIgnored = m.ignoredVersion ? m.ignoredVersion.replace(/^v/i, '').trim().toLowerCase() : '';
+      if (normNexus !== '' && normNexus !== 'unknown' && normLocal !== 'unknown' && normNexus !== normLocal && !normLocal.startsWith(normNexus) && normNexus !== normIgnored) {
         updatesMap.set(m.id, m.nexusVersionCached);
       }
     }
@@ -1555,6 +1556,20 @@ function runContextAction(action: string, modId: string): void {
         }
       })();
       break;
+    case 'ignore-update':
+      (async () => {
+        try {
+          const updateVer = getState().availableUpdates.get(modId);
+          if (!updateVer) return;
+          const { ignoreModVersion } = await import('../api');
+          await ignoreModVersion(modId, updateVer);
+          showToast('Update version ignored', 'success');
+          await loadMods();
+        } catch (e) {
+          showToast('Failed to ignore version: ' + e, 'error');
+        }
+      })();
+      break;
     case 'toggle':
       (async () => {
         try {
@@ -1611,6 +1626,18 @@ function showContextMenu(modId: string, x: number, y: number): void {
       <span class="ctx-icon">&#8634;</span>
       Check for updates
     </button>
+  `;
+  const hasUpdate = getState().availableUpdates?.has(modId);
+  if (hasUpdate) {
+    const updateVer = getState().availableUpdates.get(modId)!;
+    html += `
+      <button type="button" class="context-menu-item" data-action="ignore-update">
+        <span class="ctx-icon">✕</span>
+        Ignore update (v${escapeHtml(updateVer)})
+      </button>
+    `;
+  }
+  html += `
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="toggle">
       <span class="ctx-icon">${mod.enabled ? '◌' : '●'}</span>

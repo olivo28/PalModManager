@@ -533,6 +533,17 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     const idText = item.nexusModId ? `#${item.nexusModId}` : '<span style="color:var(--text-muted)">—</span>';
     const verText = item.version ? `v${item.version}` : '<span style="color:var(--text-muted)">—</span>';
 
+    const isPakOrLogicOrHybrid = item.type === 'pak' || item.type === 'logicmods' || item.type === 'hybrid';
+    let pakDestSelectHtml = `<span style="color:var(--text-muted);font-size:10px;">—</span>`;
+    if (isPakOrLogicOrHybrid) {
+      pakDestSelectHtml = `
+        <select id="batch-pak-dest-${idx}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
+          <option value="~mods" ${item.type === 'pak' || item.type === 'hybrid' ? 'selected' : ''}>~mods</option>
+          <option value="LogicMods" ${item.type === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+        </select>
+      `;
+    }
+
     return `
       <tr style="border-bottom:1px solid var(--border-light)">
         <td style="padding:6px 4px;width:28px;"><input type="checkbox" id="batch-install-${idx}" checked style="cursor:pointer;" /></td>
@@ -549,6 +560,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             <option value="hybrid" ${item.type === 'hybrid' ? 'selected' : ''}>Hybrid</option>
           </select>
         </td>
+        <td id="batch-pak-dest-container-${idx}" style="padding:6px;width:95px;">${pakDestSelectHtml}</td>
         <td style="padding:6px;width:50px;text-align:right;">${stateBadge}</td>
       </tr>
     `;
@@ -565,6 +577,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             <th style="padding:6px;width:60px;">Version</th>
             <th style="padding:6px;">Target Mod Folder</th>
             <th style="padding:6px;width:90px;">Type</th>
+            <th style="padding:6px;width:95px;">Pak Target</th>
             <th style="padding:6px;width:50px;text-align:right;padding-right:12px;">Status</th>
           </tr>
         </thead>
@@ -575,10 +588,33 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     </div>
   `;
 
+  // Add listeners to type selectors to dynamically show/hide/set the pak destination selector
+  for (let i = 0; i < _batchItems.length; i++) {
+    const typeSelect = document.getElementById(`batch-type-${i}`) as HTMLSelectElement | null;
+    if (typeSelect) {
+      typeSelect.addEventListener('change', () => {
+        const val = typeSelect.value;
+        const destContainer = document.getElementById(`batch-pak-dest-container-${i}`);
+        if (destContainer) {
+          if (val === 'pak' || val === 'logicmods' || val === 'hybrid') {
+            destContainer.innerHTML = `
+              <select id="batch-pak-dest-${i}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
+                <option value="~mods" ${val === 'pak' || val === 'hybrid' ? 'selected' : ''}>~mods</option>
+                <option value="LogicMods" ${val === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+              </select>
+            `;
+          } else {
+            destContainer.innerHTML = `<span style="color:var(--text-muted);font-size:10px;">—</span>`;
+          }
+        }
+      });
+    }
+  }
+
   // Fixed width — no dynamic growing
   const modalEl = document.querySelector('#install-modal .modal') as HTMLElement | null;
   if (modalEl) {
-    modalEl.style.width = '850px';
+    modalEl.style.width = '900px';
   }
   const wrapper = document.getElementById('batch-table-wrapper');
   if (wrapper) {
@@ -604,6 +640,7 @@ export async function handleConfirmInstall(): Promise<void> {
       filename: string;
       customName: string;
       customType: string;
+      pakDestination: string | null;
       existingModId: string | null;
     }> = [];
 
@@ -614,12 +651,14 @@ export async function handleConfirmInstall(): Promise<void> {
       if (installCheckbox && installCheckbox.checked && !item.error) {
         const nameInput = document.getElementById(`batch-name-${i}`) as HTMLInputElement | null;
         const typeSelect = document.getElementById(`batch-type-${i}`) as HTMLSelectElement | null;
+        const pakDestSelect = document.getElementById(`batch-pak-dest-${i}`) as HTMLSelectElement | null;
         
         itemsToInstall.push({
           path: item.path,
           filename: item.filename,
           customName: nameInput && nameInput.value.trim() ? nameInput.value.trim() : item.name,
           customType: typeSelect ? typeSelect.value : item.type,
+          pakDestination: pakDestSelect ? pakDestSelect.value : null,
           existingModId: item.existingModId,
         });
       }
@@ -663,11 +702,7 @@ export async function handleConfirmInstall(): Promise<void> {
           resultsHtml.push(`<div class="batch-result-item success" style="color:#00bcff;font-weight:bold;"><span style="color:#777;">[UP]</span> Updated successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
         } else {
           // Install new
-          let pakDestination: string | null = null;
-          if (item.customType === 'pak' || item.customType === 'logicmods' || item.customType === 'hybrid') {
-            pakDestination = item.customType === 'logicmods' ? 'logicmods' : '~mods';
-          }
-          await installMod(item.path, item.customType, pakDestination, item.customName);
+          await installMod(item.path, item.customType, item.pakDestination, item.customName);
           installed++;
           resultsHtml.pop(); // Remove "Extracting..." line
           resultsHtml.push(`<div class="batch-result-item success" style="color:#4af626;font-weight:bold;"><span style="color:#777;">[OK]</span> Installed successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);

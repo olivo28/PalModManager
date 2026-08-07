@@ -609,6 +609,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                 nexus_category: None, nexus_tags: Vec::new(),
                 github_repo: None, github_version: None, github_cached_at: None,
                 update_date: None, library_zip: None,
+                ignored_version: None,
             });
         }
     }
@@ -651,6 +652,7 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                     nexus_category: None, nexus_tags: Vec::new(),
                     github_repo: None, github_version: None, github_cached_at: None,
                     update_date: None, library_zip: None,
+                    ignored_version: None,
                 });
             }
         }
@@ -699,6 +701,7 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<models::ModInfo>)
             github_cached_at: None,
             update_date: None,
             library_zip: None,
+            ignored_version: None,
         });
     }
 }
@@ -737,6 +740,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                     github_cached_at: None,
                     update_date: None,
                     library_zip: None,
+                    ignored_version: None,
                 });
             }
         }
@@ -778,6 +782,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                     github_cached_at: None,
                     update_date: None,
                     library_zip: None,
+                    ignored_version: None,
                 });
             }
         }
@@ -1307,6 +1312,129 @@ pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> R
             .map_err(|e| format!("Failed to open folder: {}", e))?;
     }
     Ok(())
+}
+
+#[tauri::command]
+pub fn change_pak_destination(
+    mod_id: String,
+    destination: String,
+    state: State<AppState>,
+) -> Result<models::ModInfo, String> {
+    if destination != "~mods" && destination != "LogicMods" {
+        return Err("Invalid destination. Must be '~mods' or 'LogicMods'.".to_string());
+    }
+
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    let program_path = data.settings.program_path.clone();
+    let game_path_base = data.settings.game_path.clone();
+
+    let mod_index = data.mods.iter().position(|m| m.id == mod_id)
+        .ok_or_else(|| "Mod not found".to_string())?;
+    
+    let mut mod_info = data.mods[mod_index].clone();
+    if mod_info.mod_type != models::ModType::Pak && mod_info.mod_type != models::ModType::LogicMods {
+        return Err("Mod is not a Pak mod".to_string());
+    }
+
+    let old_dest = mod_info.pak_destination.clone().unwrap_or_else(|| {
+        if mod_info.mod_type == models::ModType::LogicMods {
+            "LogicMods".to_string()
+        } else {
+            "~mods".to_string()
+        }
+    });
+
+    if old_dest == destination {
+        return Ok(mod_info);
+    }
+
+    let new_type = if destination == "LogicMods" {
+        models::ModType::LogicMods
+    } else {
+        models::ModType::Pak
+    };
+
+    if mod_info.enabled {
+        // Move active files in game directory
+        let paks_dir = std::path::PathBuf::from(&game_path_base)
+            .join("Pal")
+            .join("Content")
+            .join("Paks");
+        
+        let old_dir = paks_dir.join(&old_dest);
+        let new_dir = paks_dir.join(&destination);
+        let _ = std::fs::create_dir_all(&new_dir);
+
+        let file_path = std::path::Path::new(&mod_info.game_path);
+        if file_path.exists() {
+            let file_stem = file_path.file_stem().unwrap().to_string_lossy().to_string();
+            let mut new_game_path = String::new();
+
+            for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
+                let old_file = old_dir.join(format!("{}.{}", file_stem, ext));
+                if old_file.exists() {
+                    let new_file = new_dir.join(format!("{}.{}", file_stem, ext));
+                    std::fs::rename(&old_file, &new_file)
+                        .map_err(|e| format!("Failed to move file {:?}: {}", old_file, e))?;
+                    if ext == &"pak" {
+                        new_game_path = new_file.to_string_lossy().to_string();
+                    }
+                }
+            }
+            if !new_game_path.is_empty() {
+                mod_info.game_path = new_game_path;
+            }
+        }
+    } else {
+        // Move disabled files in profile directory
+        let profile_dir = std::path::PathBuf::from(&program_path)
+            .join("profiles")
+            .join(&data.current_profile_id);
+        let disabled_base = profile_dir.join("disabled_mods");
+
+        let old_type_dir = if old_dest == "LogicMods" { "logicmods" } else { "pak" };
+        let new_type_dir = if destination == "LogicMods" { "logicmods" } else { "pak" };
+
+        let old_dir = disabled_base.join(old_type_dir);
+        let new_dir = disabled_base.join(new_type_dir);
+        let _ = std::fs::create_dir_all(&new_dir);
+
+        let file_path = std::path::Path::new(&mod_info.disabled_path);
+        if file_path.exists() {
+            let file_stem = file_path.file_stem().unwrap().to_string_lossy().to_string();
+            let mut new_disabled_path = String::new();
+            let mut new_extra_files = Vec::new();
+
+            for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
+                let old_file = old_dir.join(format!("{}.{}", file_stem, ext));
+                if old_file.exists() {
+                    let new_file = new_dir.join(format!("{}.{}", file_stem, ext));
+                    std::fs::rename(&old_file, &new_file)
+                        .map_err(|e| format!("Failed to move disabled file {:?}: {}", old_file, e))?;
+                    if ext == &"pak" {
+                        new_disabled_path = new_file.to_string_lossy().to_string();
+                    } else {
+                        new_extra_files.push(new_file.to_string_lossy().to_string());
+                    }
+                }
+            }
+            if !new_disabled_path.is_empty() {
+                mod_info.disabled_path = new_disabled_path;
+                mod_info.extra_files = new_extra_files;
+            }
+        }
+    }
+
+    mod_info.mod_type = new_type;
+    mod_info.pak_destination = Some(destination);
+
+    // Save back to db
+    data.mods[mod_index] = mod_info.clone();
+    let data_clone = data.clone();
+    drop(data);
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(mod_info)
 }
 
 

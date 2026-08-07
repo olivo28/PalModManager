@@ -33,6 +33,7 @@ export interface ModInfo {
   githubCachedAt: string | null;
   updateDate: string | null;
   libraryZip: string | null;
+  ignoredVersion: string | null;
 }
 
 export interface AppSettings {

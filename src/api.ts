@@ -195,6 +195,11 @@ export async function updateModCommand(zipPath: string, modId: string): Promise<
   return invoke('update_mod_command', { zipPath, modId });
 }
 
+// Change pak destination
+export async function changePakDestination(modId: string, destination: string): Promise<ModInfo> {
+  return invoke('change_pak_destination', { modId, destination });
+}
+
 // Library
 export async function getLibrary(): Promise<LibraryEntry[]> {
   return invoke('get_library');
@@ -321,6 +326,28 @@ export async function restoreBackup(zipPath: string): Promise<void> {
 
 export async function analyzeBackup(zipPath: string): Promise<{ hasUe4ss: boolean; hasPalSchema: boolean }> {
   return invoke('analyze_backup', { zipPath });
+}
+
+export interface ModHotkey {
+  modId: string;
+  modName: string;
+  filePath: string;
+  absoluteFilePath: string;
+  lineNumber: number;
+  keys: string;
+  rawLine: string;
+}
+
+export async function scanModHotkeys(): Promise<ModHotkey[]> {
+  return invoke('scan_mod_hotkeys');
+}
+
+export async function updateModHotkey(absoluteFilePath: string, lineNumber: number, newKeys: string): Promise<void> {
+  return invoke('update_mod_hotkey', { absoluteFilePath, lineNumber, newKeys });
+}
+
+export async function ignoreModVersion(modId: string, version: string | null): Promise<void> {
+  return invoke('ignore_mod_version', { modId, version });
 }
 
 

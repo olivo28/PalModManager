@@ -129,6 +129,7 @@ pub fn run() {
             nexus_commands::refresh_nexus_cache,
             nexus_commands::set_nexus_mod_id,
             nexus_commands::check_for_updates,
+            nexus_commands::ignore_mod_version,
             library_commands::get_library,
             library_commands::install_mod_from_library,
             library_commands::remove_from_library,
@@ -159,6 +160,7 @@ pub fn run() {
             settings_commands::log_from_js,
             settings_commands::open_url,
             mod_commands::create_backup,
+            mod_commands::change_pak_destination,
 
             mod_commands::restore_backup,
             mod_commands::analyze_backup,
@@ -168,6 +170,8 @@ pub fn run() {
             packer_commands::load_packer_projects,
             packer_commands::delete_packer_project,
             scanner_commands::scan_conflicts,
+            scanner_commands::scan_mod_hotkeys,
+            scanner_commands::update_mod_hotkey,
             db_commands::db_get_all,
             db_commands::db_write_record,
         ])

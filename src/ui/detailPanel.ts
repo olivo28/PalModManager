@@ -1,4 +1,4 @@
-import { disableMod, enableMod, removeMod, refreshNexusCache, setModConfig, setNexusModId, openModFolder, readConfig, renameMod, setModVersion, checkGitHubVersion, setGithubVersion, openUrl } from '../api';
+import { disableMod, enableMod, removeMod, refreshNexusCache, setModConfig, setNexusModId, openModFolder, readConfig, renameMod, setModVersion, checkGitHubVersion, setGithubVersion, openUrl, changePakDestination, ignoreModVersion } from '../api';
 import { getState, updateState } from '../state';
 import { openConfigEditor } from './editorView';
 import { loadMods, renderModsView } from './modsView';
@@ -148,12 +148,43 @@ export function openDetailPanel(modId: string): void {
   const configRow = configPathEl.closest('.detail-row') as HTMLElement;
   const isPakType = mod.type === 'pak' || mod.type === 'logicmods';
 
+  const pakDestRow = document.getElementById('detail-pak-destination-row')!;
+  const pakDestSelect = document.getElementById('detail-pak-destination-select') as HTMLSelectElement;
+
   if (isPakType) {
     configPathEl.textContent = 'N/A';
     configRow.style.display = 'none';
+    
+    pakDestRow.style.display = '';
+    const currentDest = mod.pakDestination || (mod.type === 'logicmods' ? 'LogicMods' : '~mods');
+    pakDestSelect.value = currentDest;
+
+    const newSelect = pakDestSelect.cloneNode(true) as HTMLSelectElement;
+    pakDestSelect.parentNode!.replaceChild(newSelect, pakDestSelect);
+
+    newSelect.addEventListener('change', async () => {
+      const selectedDest = newSelect.value;
+      try {
+        const updated = await changePakDestination(mod.id, selectedDest);
+        const idx = state.allMods.findIndex(m => m.id === mod.id);
+        if (idx >= 0) {
+          const newMods = [...state.allMods];
+          newMods[idx] = updated;
+          updateState({ allMods: newMods });
+        }
+        await loadMods();
+        openDetailPanel(updated.id);
+        renderModsView();
+        showToast(`Pak destination changed to ${selectedDest}`, 'success');
+      } catch (err) {
+        showToast('Failed to change Pak destination: ' + err, 'error');
+        newSelect.value = currentDest;
+      }
+    });
   } else {
     configPathEl.textContent = mod.configPath || 'Not detected';
     configRow.style.display = '';
+    pakDestRow.style.display = 'none';
   }
 
   // Populate Folder Dropdown
@@ -431,13 +462,54 @@ function renderVersion(mod: ModInfo): void {
   const el = document.getElementById('detail-version')!;
   const state = getState();
   const updateVer = state.availableUpdates?.get(mod.id);
-  const updateBadge = updateVer
-    ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle;">&#9650; Update (v${escapeHtml(updateVer)})</span>`
+  
+  let updateBadge = '';
+  if (updateVer) {
+    updateBadge = `
+      <span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle;">&#9650; Update (v${escapeHtml(updateVer)})</span>
+      <button class="btn-tiny ignore-update-btn" data-latest="${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">Ignore</button>
+    `;
+  }
+
+  const ignoredLabel = mod.ignoredVersion
+    ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 6px; vertical-align: middle;">(Ignored v${escapeHtml(mod.ignoredVersion)}) <button class="btn-tiny unignore-update-btn" style="margin-left: 4px; vertical-align: middle; background: transparent; border: none; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0;">Unignore</button></span>`
     : '';
 
-  el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> ${updateBadge} <button class="btn-tiny version-edit-btn" style="margin-left: 6px;">Edit</button>`;
+  el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> ${updateBadge} ${ignoredLabel} <button class="btn-tiny version-edit-btn" style="margin-left: 6px;">Edit</button>`;
+  
   const editBtn = el.querySelector('.version-edit-btn') as HTMLButtonElement;
   const valSpan = el.querySelector('.version-value') as HTMLSpanElement;
+  
+  // Event listeners for ignore/unignore
+  const ignoreBtn = el.querySelector('.ignore-update-btn') as HTMLButtonElement | null;
+  if (ignoreBtn) {
+    ignoreBtn.addEventListener('click', async () => {
+      const latest = ignoreBtn.dataset.latest || '';
+      try {
+        await ignoreModVersion(mod.id, latest);
+        showToast('Update version ignored', 'success');
+        await loadMods();
+        openDetailPanel(mod.id);
+      } catch (e) {
+        showToast('Failed to ignore version: ' + e, 'error');
+      }
+    });
+  }
+
+  const unignoreBtn = el.querySelector('.unignore-update-btn') as HTMLButtonElement | null;
+  if (unignoreBtn) {
+    unignoreBtn.addEventListener('click', async () => {
+      try {
+        await ignoreModVersion(mod.id, null);
+        showToast('Update version unignored', 'success');
+        await loadMods();
+        openDetailPanel(mod.id);
+      } catch (e) {
+        showToast('Failed to unignore version: ' + e, 'error');
+      }
+    });
+  }
+
   editBtn.addEventListener('click', () => {
     const input = document.createElement('input');
     input.type = 'text';
