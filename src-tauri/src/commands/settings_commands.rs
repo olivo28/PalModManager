@@ -143,3 +143,14 @@ pub fn set_custom_data_path(path: Option<String>, state: State<AppState>) -> Res
     serde_json::to_value(&data.settings).map_err(|e| e.to_string())
 }
 
+#[tauri::command]
+pub fn set_toolbar_scale(scale: f64, state: State<AppState>) -> Result<Value, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    data.settings.toolbar_scale = Some(scale);
+    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    Ok(result)
+}
+

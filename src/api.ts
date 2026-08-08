@@ -350,5 +350,9 @@ export async function ignoreModVersion(modId: string, version: string | null): P
   return invoke('ignore_mod_version', { modId, version });
 }
 
+export async function setToolbarScale(scale: number): Promise<AppSettings> {
+  return invoke('set_toolbar_scale', { scale });
+}
+
 
 

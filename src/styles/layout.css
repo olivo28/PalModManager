@@ -1167,4 +1167,14 @@ main {
   background: var(--bg-hover) !important;
 }
 
+/* ===== TOOLBAR SCALING ===== */
+#toolbar,
+#library-toolbar,
+#editor-toolbar,
+.packer-toolbar,
+.db-toolbar,
+.db-inspector-toolbar {
+  zoom: var(--toolbar-scale, 1);
+}
+
 

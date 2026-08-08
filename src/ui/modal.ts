@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath } from '../api';
+import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -54,12 +54,33 @@ export function openSettingsModal(): void {
     }
   }
 
+  // Toolbar Scaling slider
+  const scaleInput = document.getElementById('settings-toolbar-scale') as HTMLInputElement | null;
+  const scaleValue = document.getElementById('settings-toolbar-scale-value');
+  const initialScale = state.currentSettings?.toolbarScale || 1.0;
+  if (scaleInput) {
+    scaleInput.value = initialScale.toString();
+    if (scaleValue) {
+      scaleValue.textContent = `${Math.round(initialScale * 100)}%`;
+    }
+    
+    scaleInput.addEventListener('input', () => {
+      const scale = parseFloat(scaleInput.value);
+      if (scaleValue) {
+        scaleValue.textContent = `${Math.round(scale * 100)}%`;
+      }
+      document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
+    });
+  }
+
   modal.classList.add('visible');
 }
 
 
 export function closeSettingsModal(): void {
   document.getElementById('settings-modal')!.classList.remove('visible');
+  const savedScale = getState().currentSettings?.toolbarScale || 1.0;
+  document.documentElement.style.setProperty('--toolbar-scale', savedScale.toString());
 }
 
 export async function handleDataPathChange(): Promise<void> {
@@ -175,6 +196,16 @@ export async function handleSaveSettings(): Promise<void> {
       showToast('Migrating data files to new location...', 'info');
       const settings = await setCustomDataPath(_tempCustomDataPath);
       updateState({ currentSettings: settings });
+    }
+
+    const scaleInput = document.getElementById('settings-toolbar-scale') as HTMLInputElement | null;
+    if (scaleInput) {
+      const scale = parseFloat(scaleInput.value);
+      if (scale !== (state.currentSettings?.toolbarScale || 1.0)) {
+        const settings = await setToolbarScale(scale);
+        updateState({ currentSettings: settings });
+        document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
+      }
     }
 
     closeSettingsModal();

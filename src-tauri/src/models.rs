@@ -82,6 +82,8 @@ pub struct AppSettings {
     pub window_height: Option<f64>,
     #[serde(default)]
     pub window_maximized: Option<bool>,
+    #[serde(default)]
+    pub toolbar_scale: Option<f64>,
 }
 
 
@@ -138,6 +140,7 @@ impl Default for AppData {
                 window_width: None,
                 window_height: None,
                 window_maximized: None,
+                toolbar_scale: Some(1.0),
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

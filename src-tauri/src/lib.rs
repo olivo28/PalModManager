@@ -98,6 +98,7 @@ pub fn run() {
             settings_commands::set_hide_native_mods,
             settings_commands::set_debug_console,
             settings_commands::set_custom_data_path,
+            settings_commands::set_toolbar_scale,
 
             mod_commands::get_mods,
             mod_commands::scan_mods,

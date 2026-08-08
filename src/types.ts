@@ -42,6 +42,7 @@ export interface AppSettings {
   hideNativeMods?: boolean;
   debugConsole?: boolean;
   customDataPath?: string | null;
+  toolbarScale?: number;
 }
 
 export interface ModFolder {

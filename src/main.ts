@@ -57,6 +57,8 @@ async function init() {
     await logFromJs("JS: Iniciando script de frontend (main.ts)");
     const settings = await getSettings();
     updateState({ currentSettings: settings });
+    const scale = settings.toolbarScale || 1.0;
+    document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
 
     // Load additional data in parallel
     console.time('loadStartupData');
