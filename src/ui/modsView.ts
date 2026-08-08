@@ -1,4 +1,4 @@
-import { getMods, scanMods, disableMod, enableMod, removeMod, checkForUpdates, disableAllMods, enableAllMods, getGameVersion, getLibrary, installModFromLibrary, getProfiles, switchProfile, setModProfileState, checkDependencies, openModFolder, openExtraFolder, installUe4ss, installPalschema, uninstallUe4ss, uninstallPalschema, openUrl, removeFromLibrary, setHideNativeMods, clearProfile } from '../api';
+import { getMods, scanMods, disableMod, enableMod, removeMod, checkForUpdates, disableAllMods, enableAllMods, getGameVersion, getLibrary, installModFromLibrary, getProfiles, switchProfile, setModProfileState, checkDependencies, openModFolder, openExtraFolder, installUe4ss, installPalschema, uninstallUe4ss, uninstallPalschema, openUrl, removeFromLibrary, setHideNativeMods, clearProfile, openFolderByType } from '../api';
 import { getState, updateState } from '../state';
 import { openDetailPanel, closeDetailPanel } from './detailPanel';
 import { openConfigEditor, populateEditorModSelect } from './editorView';
@@ -1968,6 +1968,20 @@ function showGlobalContextMenu(x: number, y: number): void {
       </button>
     `}
     <div class="context-menu-sep"></div>
+    <div style="padding: 4px 12px 2px; font-size: 9px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; opacity: 0.7;">Open Folder</div>
+    <button type="button" class="context-menu-item" data-action="open-folder-ue4ss">
+      <span class="ctx-icon">📂</span>
+      UE4SS Mods
+    </button>
+    <button type="button" class="context-menu-item" data-action="open-folder-palschema">
+      <span class="ctx-icon">📂</span>
+      PalSchema Mods
+    </button>
+    <button type="button" class="context-menu-item" data-action="open-folder-paks">
+      <span class="ctx-icon">📂</span>
+      Pak Mods (Paks)
+    </button>
+    <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="settings">
       <span class="ctx-icon">⚙</span>
       Settings
@@ -2048,6 +2062,15 @@ function showGlobalContextMenu(x: number, y: number): void {
           }
           break;
 
+        case 'open-folder-ue4ss':
+          openFolderByType('ue4ss').catch(e => showToast('Failed: ' + e, 'error'));
+          break;
+        case 'open-folder-palschema':
+          openFolderByType('palschema').catch(e => showToast('Failed: ' + e, 'error'));
+          break;
+        case 'open-folder-paks':
+          openFolderByType('paks').catch(e => showToast('Failed: ' + e, 'error'));
+          break;
         case 'settings':
           document.getElementById('settings-btn')?.click();
           break;
