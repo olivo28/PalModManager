@@ -1052,7 +1052,7 @@ export async function handleProfileChange(profileId: string): Promise<void> {
 
     showToast('Profile switched', 'success');
     // Full refresh for complete reactivity
-    await Promise.all([loadProfiles(), loadDependencies()]);
+    await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
 
     renderModsView();
 
@@ -1204,7 +1204,7 @@ function renderLibraryView(): void {
           </div>
           <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
             <button class="library-item-install btn-action" data-id="${e.modId}" style="flex:1;padding:4px;font-size:10px;cursor:pointer;">Install</button>
-            <button class="library-item-delete btn-action btn-action-danger" data-id="${e.modId}" style="padding:4px 8px;font-size:10px;cursor:pointer;">✕</button>
+            <button class="library-item-delete btn-action btn-action-danger" data-id="${e.modId}" data-zip="${escapeHtml(e.zipName)}" style="padding:4px 8px;font-size:10px;cursor:pointer;">✕</button>
           </div>
         </div>
       </div>
@@ -1225,10 +1225,11 @@ function renderLibraryView(): void {
     btn.addEventListener('click', async (ev) => {
       ev.stopPropagation();
       const id = (btn as HTMLElement).dataset.id!;
-      if (confirm('Are you sure you want to remove this mod from your library?')) {
+      const zip = (btn as HTMLElement).dataset.zip!;
+      if (confirm(`Are you sure you want to remove "${zip}" from your library?`)) {
         try {
-          await removeFromLibrary(id);
-          showToast('Mod removed from library', 'success');
+          await removeFromLibrary(id, zip);
+          showToast('Mod version removed from library', 'success');
           await loadLibrary();
         } catch (err) {
           showToast('Failed to remove: ' + err, 'error');
@@ -2338,7 +2339,7 @@ function showEditorContextMenu(x: number, y: number): void {
   });
 }
 
-function showLibraryContextMenu(modId: string | null, x: number, y: number): void {
+function showLibraryContextMenu(modId: string | null, zipName: string | null, x: number, y: number): void {
   const menu = document.getElementById('context-menu')!;
   const state = getState();
   const selectedCount = state.selectedLibraryIds.size;
@@ -2394,9 +2395,12 @@ function showLibraryContextMenu(modId: string | null, x: number, y: number): voi
         loadLibrary();
       }
     } else if (modId) {
-      if (confirm('Remove this mod from library?')) {
-        await removeFromLibrary(modId).catch(() => { });
-        showToast('Mod removed from library', 'success');
+      const confirmMsg = zipName 
+        ? `Remove "${zipName}" from library?`
+        : 'Remove this mod from library?';
+      if (confirm(confirmMsg)) {
+        await removeFromLibrary(modId, zipName || undefined).catch(() => { });
+        showToast(zipName ? 'Version removed from library' : 'Mod removed from library', 'success');
         loadLibrary();
       }
     }
@@ -2437,8 +2441,9 @@ export function setupContextMenu(): void {
       e.preventDefault();
       hideContextMenu();
       const id = libCard?.dataset.id || null;
+      const zip = libCard?.querySelector('.library-item-delete')?.getAttribute('data-zip') || null;
       if (id) {
-        showLibraryContextMenu(id, e.clientX, e.clientY);
+        showLibraryContextMenu(id, zip, e.clientX, e.clientY);
       }
       return;
     }

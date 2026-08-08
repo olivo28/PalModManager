@@ -257,27 +257,44 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path) {
     let dwmapi_game = win64.join("dwmapi.dll");
 
     let ue4ss_backup = profile_dir.join("ue4ss");
+    if ue4ss_backup.exists() {
+        let _ = fs::remove_dir_all(&ue4ss_backup);
+    }
     if ue4ss_game.exists() {
         let _ = copy_dir_all(&ue4ss_game, &ue4ss_backup);
     }
+
+    let dwmapi_backup = profile_dir.join("dwmapi.dll");
+    if dwmapi_backup.exists() {
+        let _ = fs::remove_file(&dwmapi_backup);
+    }
     if dwmapi_game.exists() {
-        let _ = fs::copy(&dwmapi_game, profile_dir.join("dwmapi.dll"));
+        let _ = fs::copy(&dwmapi_game, &dwmapi_backup);
     }
 
     let palschema_game = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
     let palschema_backup = profile_dir.join("palschema");
+    if palschema_backup.exists() {
+        let _ = fs::remove_dir_all(&palschema_backup);
+    }
     if palschema_game.exists() {
         let _ = copy_dir_all(&palschema_game, &palschema_backup);
     }
 
     let paks_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("~mods");
     let paks_backup = profile_dir.join("paks");
+    if paks_backup.exists() {
+        let _ = fs::remove_dir_all(&paks_backup);
+    }
     if paks_game.exists() {
         let _ = copy_dir_all(&paks_game, &paks_backup);
     }
 
     let logic_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("LogicMods");
     let logic_backup = profile_dir.join("logicmods");
+    if logic_backup.exists() {
+        let _ = fs::remove_dir_all(&logic_backup);
+    }
     if logic_game.exists() {
         let _ = copy_dir_all(&logic_game, &logic_backup);
     }
@@ -1194,7 +1211,9 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
             }
 
             let is_in_game = !m.game_path.is_empty() && Path::new(&m.game_path).exists();
-            let is_disabled = !m.disabled_path.is_empty() && Path::new(&m.disabled_path).exists();
+            let is_disabled = !m.disabled_path.is_empty()
+                && m.disabled_path.replace("\\", "/").contains(&format!("/profiles/{}/disabled_mods/", profile.id))
+                && Path::new(&m.disabled_path).exists();
 
             if is_in_game || is_disabled {
                 let already_installed = profile.installed_mod_ids.iter().any(|id| {

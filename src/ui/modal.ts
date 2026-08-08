@@ -447,12 +447,18 @@ interface BatchItem {
   name: string;
   type: string;
   existingModId: string | null;
+  existingModInfo?: any;
   existingVersion?: string | null;
   nexusModId?: number | null;
   version?: string | null;
   error?: string;
 }
 let _batchItems: BatchItem[] = [];
+
+function getModFolderName(m: any): string {
+  const path = m.game_path || m.disabled_path || '';
+  return path.split(/[/\\]/).pop() || '';
+}
 
 export async function renderBatchInstallPreview(paths: string[]): Promise<void> {
   _pendingBatchPaths = paths;
@@ -493,6 +499,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
         name: cleanName,
         type: analysis.detectedType,
         existingModId: check.exists && check.modInfo ? check.modInfo.id : null,
+        existingModInfo: check.exists && check.modInfo ? check.modInfo : null,
         existingVersion: check.exists && check.modInfo ? check.modInfo.version : null,
         nexusModId: analysis.nexusModId,
         version: analysis.detectedVersion || null,
@@ -654,13 +661,17 @@ export async function handleConfirmInstall(): Promise<void> {
         const typeSelect = document.getElementById(`batch-type-${i}`) as HTMLSelectElement | null;
         const pakDestSelect = document.getElementById(`batch-pak-dest-${i}`) as HTMLSelectElement | null;
         
+        const inputName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : item.name;
+        const existingFolder = item.existingModInfo ? getModFolderName(item.existingModInfo) : '';
+        const isUpdate = item.existingModId && (inputName.toLowerCase() === existingFolder.toLowerCase());
+
         itemsToInstall.push({
           path: item.path,
           filename: item.filename,
-          customName: nameInput && nameInput.value.trim() ? nameInput.value.trim() : item.name,
+          customName: inputName,
           customType: typeSelect ? typeSelect.value : item.type,
           pakDestination: pakDestSelect ? pakDestSelect.value : null,
-          existingModId: item.existingModId,
+          existingModId: isUpdate ? item.existingModId : null,
         });
       }
     }

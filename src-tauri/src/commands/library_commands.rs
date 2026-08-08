@@ -112,13 +112,14 @@ pub fn install_mod_from_library(
 #[tauri::command]
 pub fn remove_from_library(
     mod_id: String,
+    zip_name: Option<String>,
     state: tauri::State<AppState>,
 ) -> Result<Value, String> {
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.settings.program_path.clone()
     };
-    library::remove_from_library(&program_path, &mod_id)?;
+    library::remove_from_library(&program_path, &mod_id, zip_name.as_deref())?;
     Ok(serde_json::json!({ "success": true }))
 }
 

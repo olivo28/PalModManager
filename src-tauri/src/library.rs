@@ -64,10 +64,35 @@ pub fn copy_to_library(
 }
 
 #[allow(dead_code)]
-pub fn remove_from_library(program_path: &str, mod_id: &str) -> Result<(), String> {
+pub fn remove_from_library(
+    program_path: &str,
+    mod_id: &str,
+    zip_name: Option<&str>,
+) -> Result<(), String> {
     let lib_path = get_library_path(program_path, mod_id);
-    if lib_path.exists() {
-        fs::remove_dir_all(&lib_path).map_err(|e| format!("Cannot remove from library: {}", e))?;
+    if let Some(zip) = zip_name {
+        let file_path = lib_path.join(zip);
+        if file_path.exists() {
+            fs::remove_file(&file_path).map_err(|e| format!("Cannot remove file: {}", e))?;
+        }
+        // If directory is now empty (or only contains .nexus.json), clean it up
+        if let Ok(entries) = fs::read_dir(&lib_path) {
+            let mut has_other_zips = false;
+            for entry in entries.filter_map(|e| e.ok()) {
+                let name = entry.file_name().to_string_lossy().to_string();
+                if name != ".nexus.json" {
+                    has_other_zips = true;
+                    break;
+                }
+            }
+            if !has_other_zips {
+                let _ = fs::remove_dir_all(&lib_path);
+            }
+        }
+    } else {
+        if lib_path.exists() {
+            fs::remove_dir_all(&lib_path).map_err(|e| format!("Cannot remove from library: {}", e))?;
+        }
     }
     Ok(())
 }

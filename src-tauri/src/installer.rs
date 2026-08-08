@@ -109,6 +109,23 @@ fn navigate_to_mod_root(dir: &Path) -> PathBuf {
     current
 }
 
+fn find_ue4ss_root_for_file(file_path: &Path, extracted: &Path) -> PathBuf {
+    let mut current = file_path.to_path_buf();
+    while let Some(parent) = current.parent() {
+        if parent == extracted {
+            break;
+        }
+        let name = parent.file_name().unwrap().to_string_lossy().to_lowercase();
+        if name == "scripts" || name == "dlls" {
+            if let Some(grandparent) = parent.parent() {
+                return grandparent.to_path_buf();
+            }
+        }
+        current = parent.to_path_buf();
+    }
+    file_path.parent().unwrap_or(extracted).to_path_buf()
+}
+
 /// Locate the UE4SS mod root inside the extracted directory.
 fn find_ue4ss_mod_root(extracted: &Path, zip_filename: &str) -> (PathBuf, String) {
     let base = navigate_to_mod_root(extracted);
@@ -131,45 +148,28 @@ fn find_ue4ss_mod_root(extracted: &Path, zip_filename: &str) -> (PathBuf, String
     let target_file = main_file.or_else(|| files.first());
 
     if let Some(f) = target_file {
-        if let Some(parent) = f.parent() {
-            let parent_lower = parent
-                .file_name()
-                .map(|n| n.to_string_lossy().to_lowercase())
-                .unwrap_or_default();
+        let mod_root = find_ue4ss_root_for_file(f, extracted);
 
-            let mod_root = if parent_lower == "scripts" || parent_lower == "dlls" {
-                match parent.parent() {
-                    Some(p) => p.to_path_buf(),
-                    None => continue_fallback(extracted, zip_filename),
-                }
-            } else {
-                parent.to_path_buf()
-            };
-
-            if !mod_root.starts_with(&base) {
-                return (base.to_path_buf(), clean_zip_name(zip_filename));
-            }
-
-            if mod_root == base {
-                return (base.to_path_buf(), clean_zip_name(zip_filename));
-            }
-
-            let name = mod_root
-                .file_name()
-                .map(|n| n.to_string_lossy().to_string())
-                .unwrap_or_else(|| clean_zip_name(zip_filename));
-
-            return (mod_root, name);
+        if !mod_root.starts_with(&base) {
+            return (base.to_path_buf(), clean_zip_name(zip_filename));
         }
+
+        if mod_root == base {
+            return (base.to_path_buf(), clean_zip_name(zip_filename));
+        }
+
+        let name = mod_root
+            .file_name()
+            .map(|n| n.to_string_lossy().to_string())
+            .unwrap_or_else(|| clean_zip_name(zip_filename));
+
+        return (mod_root, name);
     }
 
     (base.to_path_buf(), clean_zip_name(zip_filename))
 }
 
-// Helper to keep compiler happy in fallback option
-fn continue_fallback(extracted: &Path, _zip_filename: &str) -> PathBuf {
-    extracted.to_path_buf()
-}
+
 
 /// Locate the PalSchema mod root inside the extracted directory.
 fn find_palschema_mod_root(extracted: &Path, zip_filename: &str) -> (PathBuf, String) {
@@ -480,9 +480,16 @@ pub fn check_mod_exists(folder_name: &str, nexus_id: Option<u32>, existing_mods:
             }
             if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
                 if nid1 == nid2 {
-                    let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id);
-                    if name_sim {
-                        return true;
+                    if m.mod_type == ModType::Pak || m.mod_type == ModType::LogicMods {
+                        let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id);
+                        if name_sim {
+                            return true;
+                        }
+                    } else {
+                        // Folder-based mods: must have the exact same folder name
+                        if db_id == zip_norm {
+                            return true;
+                        }
                     }
                 }
             }
@@ -881,13 +888,7 @@ pub fn install_hybrid(
     for file_path in &all_files {
         let ext = file_path.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
         if ext == "lua" || ext == "dll" {
-            let parent = file_path.parent().unwrap();
-            let parent_name = parent.file_name().unwrap().to_string_lossy().to_lowercase();
-            let root = if parent_name == "scripts" || parent_name == "dlls" {
-                parent.parent().unwrap().to_path_buf()
-            } else {
-                parent.to_path_buf()
-            };
+            let root = find_ue4ss_root_for_file(file_path, extracted);
             if !ue4ss_roots.contains(&root) {
                 ue4ss_roots.push(root);
             }
@@ -939,7 +940,7 @@ pub fn install_hybrid(
     };
 
     let mod_name = custom_name.unwrap_or_else(|| detected_folder_name.clone());
-    let safe_folder_name = sanitize_folder_name(&detected_folder_name);
+    let safe_folder_name = sanitize_folder_name(&mod_name);
 
     let mut installed_extras = Vec::new();
     let mut primary_path = String::new();
@@ -1107,7 +1108,7 @@ pub fn install_ue4ss(
 
     let (mod_root, detected_name) = find_ue4ss_mod_root(extracted, zip_filename);
     let mod_name = custom_name.unwrap_or_else(|| detected_name.clone());
-    let safe_folder_name = sanitize_folder_name(&detected_name);
+    let safe_folder_name = sanitize_folder_name(&mod_name);
     let dest = mods_dir.join(&safe_folder_name);
 
     if dest.exists() {
@@ -1217,7 +1218,7 @@ fn install_palschema(
 
     let (mod_root, detected_name) = find_palschema_mod_root(extracted, zip_filename);
     let mod_name = custom_name.unwrap_or_else(|| detected_name.clone());
-    let safe_folder_name = sanitize_folder_name(&detected_name);
+    let safe_folder_name = sanitize_folder_name(&mod_name);
     let dest = mods_dir.join(&safe_folder_name);
 
     if dest.exists() {

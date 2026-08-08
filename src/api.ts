@@ -300,8 +300,8 @@ export async function openUrl(url: string): Promise<void> {
   return invoke('open_url', { url });
 }
 
-export async function removeFromLibrary(modId: string): Promise<{ success: boolean }> {
-  return invoke('remove_from_library', { modId });
+export async function removeFromLibrary(modId: string, zipName?: string): Promise<{ success: boolean }> {
+  return invoke('remove_from_library', { modId, zipName: zipName || null });
 }
 
 export async function fetchNexusInfoAsync(modId: number): Promise<any> {
