@@ -270,7 +270,7 @@ query GetModFiles($modId: ID!, $gameId: ID!) {
     });
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.3.0 (Tauri App)")
+        .user_agent("PalModManager/1.3.1 (Tauri App)")
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .ok()?;
@@ -279,7 +279,7 @@ query GetModFiles($modId: ID!, $gameId: ID!) {
         .post(GRAPHQL_ENDPOINT)
         .header("Content-Type", "application/json")
         .header("Application-Name", "PalModManager")
-        .header("Application-Version", "1.3.0")
+        .header("Application-Version", "1.3.1")
         .json(&payload);
 
     let resp = req.send().await.ok()?;
@@ -369,7 +369,7 @@ query GetPalworldMod($modId: ID!) {
     });
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.3.0 (Tauri App)")
+        .user_agent("PalModManager/1.3.1 (Tauri App)")
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .unwrap_or_else(|_| reqwest::Client::new());
@@ -378,7 +378,7 @@ query GetPalworldMod($modId: ID!) {
         .post(GRAPHQL_ENDPOINT)
         .header("Content-Type", "application/json")
         .header("Application-Name", "PalModManager")
-        .header("Application-Version", "1.3.0")
+        .header("Application-Version", "1.3.1")
         .json(&payload);
 
     let resp = req
