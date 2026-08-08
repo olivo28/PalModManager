@@ -15,6 +15,7 @@ interface ModMetadata {
   description: string;
   author: string;
   modType: string;
+  nexusModId?: number | null;
 }
 
 interface PackerProject {
@@ -211,7 +212,7 @@ function setupPackerEventListeners(): void {
   });
 
   // Automatically update build button disabled state on form changes
-  const inputs = ['packer-meta-name', 'packer-meta-version', 'packer-meta-author'];
+  const inputs = ['packer-meta-name', 'packer-meta-version', 'packer-meta-author', 'packer-meta-nexus-id'];
   inputs.forEach(id => {
     document.getElementById(id)?.addEventListener('input', updateBuildButtonState);
   });
@@ -869,6 +870,8 @@ async function buildModPackage(): Promise<void> {
   const description = (document.getElementById('packer-meta-desc') as HTMLTextAreaElement)?.value.trim();
   const author = (document.getElementById('packer-meta-author') as HTMLInputElement)?.value.trim();
   const modType = (document.getElementById('packer-meta-type') as HTMLSelectElement)?.value;
+  const nexusIdStr = (document.getElementById('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
+  const nexusModId = nexusIdStr ? parseInt(nexusIdStr, 10) : null;
   const formatSelect = document.getElementById('packer-format-select') as HTMLSelectElement;
   const format = formatSelect?.value || 'zip';
 
@@ -898,21 +901,43 @@ async function buildModPackage(): Promise<void> {
       return;
     }
 
-    const metadata: ModMetadata = {
-      name,
-      version,
-      description,
-      author,
-      modType
-    };
-
-    showToast(`Packaging mod to ${format.toUpperCase()}... Please wait.`, 'info');
-
     const activeFiles = stagedFiles.filter(f => f.targetPath !== '__SKIP__');
     if (activeFiles.length === 0) {
       showToast('All files are skipped/omitted. Nothing to package.', 'warning');
       return;
     }
+
+    const routes = activeFiles.map(f => {
+      let routeType = 'passthrough';
+      const pathLower = f.targetPath.toLowerCase();
+      if (pathLower.includes('ue4ss/mods/') || pathLower.includes('ue4ss/scripts/') || pathLower.endsWith('.lua') || pathLower.endsWith('.dll')) {
+        routeType = 'ue4ss';
+      } else if (pathLower.includes('palschema/mods/') || pathLower.includes('palschema/')) {
+        routeType = 'palschema';
+      } else if (pathLower.endsWith('.pak')) {
+        if (pathLower.includes('logicmods')) {
+          routeType = 'logicmods';
+        } else {
+          routeType = 'pak';
+        }
+      }
+      return {
+        zipPath: f.targetPath,
+        routeType
+      };
+    });
+
+    const metadata: ModMetadata = {
+      name,
+      version,
+      description,
+      author,
+      modType,
+      nexusModId: isNaN(nexusModId as any) ? null : nexusModId,
+      routes
+    };
+
+    showToast(`Packaging mod to ${format.toUpperCase()}... Please wait.`, 'info');
 
     const result = await invoke<string>('pack_mod', {
       files: activeFiles,
@@ -1054,6 +1079,7 @@ function loadSelectedProject(name: string): void {
     (document.getElementById('packer-meta-version') as HTMLInputElement).value = m.version || '1.0.0';
     (document.getElementById('packer-meta-author') as HTMLInputElement).value = m.author || '';
     (document.getElementById('packer-meta-type') as HTMLSelectElement).value = m.modType || '';
+    (document.getElementById('packer-meta-nexus-id') as HTMLInputElement).value = m.nexusModId ? String(m.nexusModId) : '';
     (document.getElementById('packer-meta-desc') as HTMLTextAreaElement).value = m.description || '';
   } else {
     clearMetadataForm();
@@ -1096,6 +1122,8 @@ async function saveCurrentProject(): Promise<void> {
   const metaAuthor = (document.getElementById('packer-meta-author') as HTMLInputElement)?.value.trim();
   const metaType = (document.getElementById('packer-meta-type') as HTMLSelectElement)?.value;
   const metaDesc = (document.getElementById('packer-meta-desc') as HTMLTextAreaElement)?.value.trim();
+  const metaNexusIdStr = (document.getElementById('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
+  const metaNexusId = metaNexusIdStr ? parseInt(metaNexusIdStr, 10) : null;
   const formatSelect = document.getElementById('packer-format-select') as HTMLSelectElement;
   const format = formatSelect?.value || 'zip';
 
@@ -1104,7 +1132,8 @@ async function saveCurrentProject(): Promise<void> {
     version: metaVersion || '1.0.0',
     author: metaAuthor,
     modType: metaType,
-    description: metaDesc
+    description: metaDesc,
+    nexusModId: isNaN(metaNexusId as any) ? null : metaNexusId
   } : null;
 
   // Convert targetOverrides Map to Record/Object for serialization
@@ -1159,6 +1188,7 @@ function clearMetadataForm(): void {
   (document.getElementById('packer-meta-name') as HTMLInputElement).value = '';
   (document.getElementById('packer-meta-version') as HTMLInputElement).value = '1.0.0';
   (document.getElementById('packer-meta-author') as HTMLInputElement).value = '';
+  (document.getElementById('packer-meta-nexus-id') as HTMLInputElement).value = '';
   (document.getElementById('packer-meta-type') as HTMLSelectElement).value = '';
   (document.getElementById('packer-meta-desc') as HTMLTextAreaElement).value = '';
 }

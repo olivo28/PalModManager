@@ -18,12 +18,21 @@ pub struct StagedFile {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct PackerRoute {
+    pub zip_path: String,
+    pub route_type: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ModMetadata {
     pub name: String,
     pub version: String,
     pub description: String,
     pub author: String,
     pub mod_type: String,
+    pub nexus_mod_id: Option<u32>,
+    pub routes: Option<Vec<PackerRoute>>,
 }
 
 #[tauri::command]
@@ -124,11 +133,11 @@ pub async fn pack_mod(
             .compression_method(zip::CompressionMethod::Deflated)
             .unix_permissions(0o755);
 
-        // Write modinfo.json if metadata is present
+        // Write modinfo.pmm.json if metadata is present
         if let Some(ref meta) = metadata {
             let json_str = serde_json::to_string_pretty(meta)
                 .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
-            zip.start_file("modinfo.json", options)
+            zip.start_file("modinfo.pmm.json", options)
                 .map_err(|e| format!("Failed to start file in zip: {}", e))?;
             use std::io::Write;
             zip.write_all(json_str.as_bytes())
@@ -162,7 +171,7 @@ pub async fn pack_mod(
         if let Some(ref meta) = metadata {
             let json_str = serde_json::to_string_pretty(meta)
                 .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
-            let meta_path = temp_dir.join("modinfo.json");
+            let meta_path = temp_dir.join("modinfo.pmm.json");
             fs::write(meta_path, json_str)
                 .map_err(|e| format!("Failed to write temp metadata: {}", e))?;
         }

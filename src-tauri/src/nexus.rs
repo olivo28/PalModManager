@@ -22,6 +22,7 @@ pub struct NexusModInfo {
 pub struct ParsedModInfo {
     pub name: Option<String>,
     pub nexus_id: Option<u32>,
+    pub nexus_file_id: Option<u32>,
     pub version: Option<String>,
     pub date: Option<String>,
 }
@@ -130,6 +131,7 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
                 return ParsedModInfo {
                     name: Some(name),
                     nexus_id: Some(nexus_id),
+                    nexus_file_id: None,
                     version: Some(version),
                     date: Some(date_str),
                 };
@@ -145,6 +147,7 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
                 return ParsedModInfo {
                     name: Some(name),
                     nexus_id: Some(nexus_id),
+                    nexus_file_id: None,
                     version: Some(version),
                     date: Some(last_token.to_string()),
                 };
@@ -158,7 +161,7 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
         .collect();
 
     if parts.is_empty() {
-        return ParsedModInfo { name: None, nexus_id: None, version: None, date: None };
+        return ParsedModInfo { name: None, nexus_id: None, nexus_file_id: None, version: None, date: None };
     }
 
     let id_candidates: Vec<(usize, u32)> = parts.iter().enumerate()
@@ -189,10 +192,12 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
             None
         };
 
+        let start_idx = id_idx + 1;
+
         let mut date: Option<String> = None;
         let mut date_idx: Option<usize> = None;
 
-        for i in (id_idx + 1)..parts.len() {
+        for i in start_idx..parts.len() {
             let p = parts[i];
             let is_date = p.len() >= 10
                 && p.as_bytes()[0] == b'2'
@@ -209,14 +214,14 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
         }
 
         let version = match date_idx {
-            Some(di) if di > id_idx + 1 => {
-                let ver_parts: Vec<&str> = parts[id_idx + 1..di].to_vec();
+            Some(di) if di > start_idx => {
+                let ver_parts: Vec<&str> = parts[start_idx..di].to_vec();
                 let joined = ver_parts.join(".");
                 if joined.is_empty() { None } else { Some(joined) }
             }
             _ => {
-                if parts.len() > id_idx + 1 {
-                    let ver_parts: Vec<&str> = parts[id_idx + 1..].to_vec();
+                if parts.len() > start_idx {
+                    let ver_parts: Vec<&str> = parts[start_idx..].to_vec();
                     let joined = ver_parts.join(".");
                     if joined.is_empty() { None } else { Some(joined) }
                 } else {
@@ -237,11 +242,12 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
         ParsedModInfo {
             name,
             nexus_id: Some(nexus_id),
+            nexus_file_id: None,
             version: cleaned_version,
             date,
         }
     } else {
-        ParsedModInfo { name: None, nexus_id: None, version: None, date: None }
+        ParsedModInfo { name: None, nexus_id: None, nexus_file_id: None, version: None, date: None }
     }
 }
 

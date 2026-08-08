@@ -204,6 +204,17 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         delete_path_and_sidecar(extra);
     }
 
+    // Clean up reference in mods.txt
+    if !game_path_str.is_empty() {
+        let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path_str));
+        let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
+        if mods_txt.exists() {
+            let folder_name = crate::profiles::get_mod_folder_name(&mod_info);
+            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &folder_name);
+            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &mod_info.name);
+        }
+    }
+
     // 4. For Pak/LogicMods, cleanup remnants by name in target folders
     if mod_info.mod_type == models::ModType::Pak || mod_info.mod_type == models::ModType::LogicMods {
         if !game_path_str.is_empty() {
@@ -323,6 +334,76 @@ fn get_physical_identity(game_path: &str, disabled_path: &str) -> String {
     path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default()
 }
 
+fn load_from_modinfo_pmm_json(path: &Path) -> Option<models::ModInfo> {
+    if !path.is_dir() {
+        return None;
+    }
+    let pmm_path = path.join("modinfo.pmm.json");
+    if !pmm_path.exists() {
+        return None;
+    }
+    let content = fs::read_to_string(&pmm_path).ok()?;
+    let meta: serde_json::Value = serde_json::from_str(&content).ok()?;
+    
+    let name = meta.get("name").and_then(|n| n.as_str()).unwrap_or("Scanned Mod").to_string();
+    let version = meta.get("version").and_then(|v| v.as_str()).unwrap_or("1.0.0").to_string();
+    let description = meta.get("description").and_then(|d| d.as_str()).unwrap_or("").to_string();
+    let author = meta.get("author").and_then(|a| a.as_str()).map(|s| s.to_string());
+    let nexus_id = meta.get("nexusModId").and_then(|id| id.as_u64()).map(|n| n as u32);
+    let mod_type_str = meta.get("modType").and_then(|t| t.as_str()).unwrap_or("ue4ss");
+    
+    let mod_type = match mod_type_str.to_lowercase().as_str() {
+        "ue4ss" => models::ModType::Ue4ss,
+        "palschema" => models::ModType::PalSchema,
+        "pak" => models::ModType::Pak,
+        "logicmods" => models::ModType::LogicMods,
+        _ => models::ModType::Hybrid,
+    };
+
+    let path_str = path.to_string_lossy().to_string();
+    let is_disabled = path_str.contains("disabled_mods");
+    
+    let game_path = if is_disabled { String::new() } else { path_str.clone() };
+    let disabled_path = if is_disabled { path_str.clone() } else { String::new() };
+
+    Some(models::ModInfo {
+        id: name.clone(),
+        name: name.clone(),
+        mod_type,
+        nexus_mod_id: nexus_id,
+        nexus_url: nexus_id.map(|id| format!("https://www.nexusmods.com/palworld/mods/{}", id)),
+        nexus_author: author,
+        nexus_summary: Some(description),
+        nexus_picture_url: None,
+        nexus_endorsements: None,
+        nexus_downloads: None,
+        version,
+        install_date: file_install_date(path),
+        source_zip: String::new(),
+        config_path: detect_config(path),
+        config_type: Some("auto".to_string()),
+        enabled: !is_disabled,
+        game_path,
+        disabled_path,
+        pak_destination: None,
+        has_enabled_txt: path.join("enabled.txt").exists(),
+        mods_txt_order: None,
+        extra_files: Vec::new(),
+        nexus_description: None,
+        nexus_version_cached: None,
+        nexus_cached_at: None,
+        nexus_category: None,
+        nexus_tags: Vec::new(),
+        github_repo: None,
+        github_version: None,
+        github_cached_at: None,
+        update_date: None,
+        library_zip: None,
+        ignored_version: None,
+        nexus_file_id: None,
+    })
+}
+
 fn load_pmm_meta(path: &Path) -> Option<models::ModInfo> {
     let pmm_path = if path.is_file() {
         PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()))
@@ -347,6 +428,11 @@ fn load_pmm_meta(path: &Path) -> Option<models::ModInfo> {
                 }
                 return Some(mod_info);
             }
+        }
+    }
+    if path.is_dir() {
+        if let Some(m) = load_from_modinfo_pmm_json(path) {
+            return Some(m);
         }
     }
     None
@@ -380,6 +466,9 @@ fn merge_scan_with_db(
 
         let db_id = get_physical_identity(&db_mod.game_path, &db_mod.disabled_path);
         if let Some(existing_idx) = consolidated_db.iter().position(|m| {
+            if m.mod_type != db_mod.mod_type {
+                return false;
+            }
             let existing_id = get_physical_identity(&m.game_path, &m.disabled_path);
             existing_id == db_id
         }) {
@@ -434,7 +523,7 @@ fn merge_scan_with_db(
                 return false;
             }
             let db_id = get_physical_identity(&dm.game_path, &dm.disabled_path);
-            (db_id == fs_id && !db_id.is_empty()) || 
+            (db_id == fs_id && !db_id.is_empty() && dm.mod_type == fs_mod.mod_type) || 
             (dm.id.to_lowercase() == fs_mod.id.to_lowercase()) ||
             (dm.name.to_lowercase() == fs_mod.name.to_lowercase() && dm.mod_type == fs_mod.mod_type)
         }) {
@@ -610,6 +699,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                 github_repo: None, github_version: None, github_cached_at: None,
                 update_date: None, library_zip: None,
                 ignored_version: None,
+                nexus_file_id: None,
             });
         }
     }
@@ -653,6 +743,7 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                     github_repo: None, github_version: None, github_cached_at: None,
                     update_date: None, library_zip: None,
                     ignored_version: None,
+                    nexus_file_id: None,
                 });
             }
         }
@@ -702,6 +793,7 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<models::ModInfo>)
             update_date: None,
             library_zip: None,
             ignored_version: None,
+            nexus_file_id: None,
         });
     }
 }
@@ -741,6 +833,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                     update_date: None,
                     library_zip: None,
                     ignored_version: None,
+                    nexus_file_id: None,
                 });
             }
         }
@@ -783,6 +876,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                     update_date: None,
                     library_zip: None,
                     ignored_version: None,
+                    nexus_file_id: None,
                 });
             }
         }
@@ -817,7 +911,7 @@ fn detect_config(mod_path: &Path) -> Option<String> {
 }
 
 #[allow(dead_code)]
-fn reorder_mods_txt(mods_dir: &Path, mod_name: &str, adding: bool) {
+pub fn reorder_mods_txt(mods_dir: &Path, mod_name: &str, adding: bool) {
     let mods_txt = mods_dir.join("mods.txt");
     if !mods_txt.exists() {
         if adding {

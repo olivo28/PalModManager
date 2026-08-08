@@ -77,6 +77,7 @@ pub fn ensure_default_profile(data: &mut AppData) {
             ue4ss_enabled: ue4ss_installed,
             palschema_enabled: palschema_installed,
             mod_folders: Vec::new(),
+            load_order_metadata: None,
         });
     }
 
@@ -400,6 +401,7 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
         ue4ss_enabled: false,
         palschema_enabled: false,
         mod_folders: Vec::new(),
+        load_order_metadata: None,
     };
 
     let program_path = data.settings.program_path.clone();
@@ -436,6 +438,7 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
         ue4ss_enabled: source_profile.ue4ss_enabled,
         palschema_enabled: source_profile.palschema_enabled,
         mod_folders: source_profile.mod_folders.clone(),
+        load_order_metadata: source_profile.load_order_metadata.clone(),
     };
 
     let program_path = data.settings.program_path.clone();
@@ -598,6 +601,97 @@ fn update_mods_txt_setting(mods_txt: &Path, mod_name: &str, enabled: bool) -> Re
     Ok(())
 }
 
+pub fn get_mod_folder_name(mod_info: &ModInfo) -> String {
+    if !mod_info.game_path.is_empty() {
+        if let Some(name) = Path::new(&mod_info.game_path).file_name() {
+            return name.to_string_lossy().to_string();
+        }
+    }
+    if !mod_info.disabled_path.is_empty() {
+        if let Some(name) = Path::new(&mod_info.disabled_path).file_name() {
+            let name_str = name.to_string_lossy().to_string();
+            if let Some(stripped) = name_str.strip_suffix(".disabled") {
+                return stripped.to_string();
+            }
+            return name_str;
+        }
+    }
+    mod_info.name.clone()
+}
+
+pub fn update_mods_txt_load_order(mods_txt: &Path, mod_name: &str, enabled: bool) -> Result<(), String> {
+    let content = fs::read_to_string(mods_txt).map_err(|e| e.to_string())?;
+    let target_val = if enabled { "1" } else { "0" };
+
+    let mut lines_to_process = Vec::new();
+    for line in content.lines() {
+        let line_clean = line.trim();
+        if !line_clean.starts_with(';') && !line_clean.starts_with("//") {
+            if let Some(pos) = line_clean.find(':') {
+                let name = line_clean[..pos].trim();
+                if name.to_lowercase() == mod_name.to_lowercase() {
+                    continue;
+                }
+            } else if line_clean.to_lowercase() == mod_name.to_lowercase() {
+                continue;
+            }
+        }
+        lines_to_process.push(line.to_string());
+    }
+
+    let mut insert_index = None;
+    for (idx, line) in lines_to_process.iter().enumerate() {
+        let line_clean = line.trim();
+        if line_clean.contains("BPModLoaderMod") {
+            insert_index = Some(idx + 1);
+        }
+    }
+
+    if insert_index.is_none() {
+        for (idx, line) in lines_to_process.iter().enumerate() {
+            let line_clean = line.trim();
+            if line_clean.contains("; Built-in keybinds") {
+                insert_index = Some(idx);
+            }
+        }
+    }
+
+    let final_idx = insert_index.unwrap_or(lines_to_process.len());
+    let new_entry = format!("{} : {}", mod_name, target_val);
+    lines_to_process.insert(final_idx, new_entry);
+
+    fs::write(mods_txt, lines_to_process.join("\r\n") + "\r\n").map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+pub fn remove_from_mods_txt(mods_txt: &Path, mod_name: &str) -> Result<(), String> {
+    let content = fs::read_to_string(mods_txt).map_err(|e| e.to_string())?;
+    let mut new_lines = Vec::new();
+    let mut changed = false;
+
+    for line in content.lines() {
+        let line_clean = line.trim();
+        if !line_clean.starts_with(';') && !line_clean.starts_with("//") {
+            if let Some(pos) = line_clean.find(':') {
+                let name = line_clean[..pos].trim();
+                if name.to_lowercase() == mod_name.to_lowercase() {
+                    changed = true;
+                    continue;
+                }
+            } else if line_clean.to_lowercase() == mod_name.to_lowercase() {
+                changed = true;
+                continue;
+            }
+        }
+        new_lines.push(line.to_string());
+    }
+
+    if changed {
+        fs::write(mods_txt, new_lines.join("\r\n") + "\r\n").map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
 pub fn disable_mod_internal(
     data: &mut AppData,
     program_path: &str,
@@ -649,7 +743,9 @@ pub fn disable_mod_internal(
             if let Some(ue4ss_mods_dir) = src_path.parent() {
                 let mods_txt = ue4ss_mods_dir.join("mods.txt");
                 if mods_txt.exists() {
-                    let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+                    let folder_name = get_mod_folder_name(mod_info);
+                    let _ = remove_from_mods_txt(&mods_txt, &folder_name);
+                    let _ = remove_from_mods_txt(&mods_txt, &mod_info.name);
                 }
             }
             let enabled_file = src_path.join("enabled.txt");
@@ -745,7 +841,9 @@ pub fn disable_mod_internal(
             if let Some(ue4ss_mods_dir) = src_path.parent() {
                 let mods_txt = ue4ss_mods_dir.join("mods.txt");
                 if mods_txt.exists() {
-                    let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, false);
+                    let folder_name = get_mod_folder_name(mod_info);
+                    let _ = remove_from_mods_txt(&mods_txt, &folder_name);
+                    let _ = remove_from_mods_txt(&mods_txt, &mod_info.name);
                 }
             }
             let enabled_file = src_path.join("enabled.txt");
@@ -846,14 +944,26 @@ pub fn enable_mod_internal(
         mod_info.game_path = dest_path.to_string_lossy().to_string();
         mod_info.disabled_path = String::new();
 
+        let force_order = data.settings.force_load_order.unwrap_or(false);
         if let Some(ue4ss_mods_dir) = dest_path.parent() {
             let mods_txt = ue4ss_mods_dir.join("mods.txt");
             if mods_txt.exists() {
-                let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
+                let folder_name = get_mod_folder_name(mod_info);
+                if force_order {
+                    let _ = update_mods_txt_load_order(&mods_txt, &folder_name, true);
+                } else {
+                    let _ = remove_from_mods_txt(&mods_txt, &folder_name);
+                }
             }
         }
         let enabled_file = dest_path.join("enabled.txt");
-        let _ = fs::write(&enabled_file, "");
+        if force_order {
+            if enabled_file.exists() {
+                let _ = fs::remove_file(&enabled_file);
+            }
+        } else {
+            let _ = fs::write(&enabled_file, "");
+        }
         mod_info.enabled = true;
     } else if mod_type == ModType::PalSchema {
         let mod_info = &mut data.mods[mod_index];
@@ -913,41 +1023,61 @@ pub fn enable_mod_internal(
             dest_path = dest;
             
             if has_scripts {
+                let force_order = data.settings.force_load_order.unwrap_or(false);
                 if let Some(ue4ss_mods_dir) = dest_path.parent() {
                     let mods_txt = ue4ss_mods_dir.join("mods.txt");
                     if mods_txt.exists() {
-                        let _ = update_mods_txt_setting(&mods_txt, &mod_info.name, true);
+                        let folder_name = get_mod_folder_name(mod_info);
+                        if force_order {
+                            let _ = update_mods_txt_load_order(&mods_txt, &folder_name, true);
+                        } else {
+                            let _ = remove_from_mods_txt(&mods_txt, &folder_name);
+                        }
                     }
                 }
                 let enabled_file = dest_path.join("enabled.txt");
-                let _ = fs::write(&enabled_file, "");
+                if force_order {
+                    if enabled_file.exists() {
+                        let _ = fs::remove_file(&enabled_file);
+                    }
+                } else {
+                    let _ = fs::write(&enabled_file, "");
+                }
             }
         }
         
         let mut moved_back = Vec::new();
-        let dest_dir = game_paks.join("~mods");
         for extra_disabled_str in &mod_info.extra_files {
             let extra_disabled = PathBuf::from(extra_disabled_str);
             if extra_disabled.exists() {
                 let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
-                let dest = dest_dir.join(&filename);
-                let _ = fs::create_dir_all(&dest_dir);
+                let dest = if filename.ends_with(".pak") {
+                    let dest_dir = game_paks.join("~mods");
+                    let _ = fs::create_dir_all(&dest_dir);
+                    dest_dir.join(&filename)
+                } else {
+                    let dest_dir = win64.join("ue4ss").join("Mods");
+                    let _ = fs::create_dir_all(&dest_dir);
+                    dest_dir.join(&filename)
+                };
                 move_path(&extra_disabled, &dest)?;
                 moved_back.push(dest.to_string_lossy().to_string());
                 
                 let parent = extra_disabled.parent().unwrap();
                 let stem = extra_disabled.file_stem().unwrap().to_string_lossy().to_string();
-                for c_ext in &["ucas", "utoc"] {
-                    let companion = parent.join(format!("{}.{}", stem, c_ext));
-                    if companion.exists() {
-                        let c_dest = dest_dir.join(format!("{}.{}", stem, c_ext));
-                        let _ = move_path(&companion, &c_dest);
+                if filename.ends_with(".pak") {
+                    for c_ext in &["ucas", "utoc"] {
+                        let companion = parent.join(format!("{}.{}", stem, c_ext));
+                        if companion.exists() {
+                            let c_dest = game_paks.join("~mods").join(format!("{}.{}", stem, c_ext));
+                            let _ = move_path(&companion, &c_dest);
+                        }
                     }
-                }
-                let sidecar = parent.join(format!("{}.pmm.json", filename));
-                if sidecar.exists() {
-                    let c_dest = dest_dir.join(format!("{}.pmm.json", filename));
-                    let _ = move_path(&sidecar, &c_dest);
+                    let sidecar = parent.join(format!("{}.pmm.json", filename));
+                    if sidecar.exists() {
+                        let c_dest = game_paks.join("~mods").join(format!("{}.pmm.json", filename));
+                        let _ = move_path(&sidecar, &c_dest);
+                    }
                 }
             }
         }
@@ -1057,7 +1187,9 @@ pub fn save_pmm_meta(m: &crate::models::ModInfo) -> Result<(), String> {
     let _ = save_pmm_meta_path(m, primary_path);
 
     for extra in &m.extra_files {
-        let _ = save_pmm_meta_path(m, extra);
+        if extra.to_lowercase().ends_with(".pak") {
+            let _ = save_pmm_meta_path(m, extra);
+        }
     }
     Ok(())
 }

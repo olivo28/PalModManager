@@ -78,10 +78,9 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
 
     let mut modinfo_data = None;
     if analysis.has_info_json {
-        let info_file_path = analysis.files.iter().find(|f| {
-            let fl = f.to_lowercase();
-            fl.ends_with("modinfo.json") || fl.ends_with("info.json")
-        });
+        let info_file_path = analysis.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.pmm.json"))
+            .or_else(|| analysis.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.json")))
+            .or_else(|| analysis.files.iter().find(|f| f.to_lowercase().ends_with("info.json")));
         if let Some(target_file) = info_file_path {
             if let Some(content) = zip_handler::read_archive_file(&zip_path, target_file) {
                 if let Ok(val) = serde_json::from_str::<Value>(&content) {
@@ -166,6 +165,11 @@ pub async fn install_mod_command(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
+    let force_load_order = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.force_load_order.unwrap_or(false)
+    };
+
     let mod_info = installer::install_mod(
         &game_path,
         &extracted,
@@ -183,6 +187,7 @@ pub async fn install_mod_command(
         custom_type,
         nexus_info.as_ref().and_then(|i| if i.category.is_empty() { None } else { Some(i.category.clone()) }),
         nexus_info.as_ref().map(|i| i.tags.clone()).unwrap_or_default(),
+        force_load_order,
     )?;
 
     let _ = fs::remove_dir_all(&temp_dir);
@@ -315,7 +320,16 @@ pub async fn check_mod_exists_command(
 
     let data = state.data.lock().map_err(|e| e.to_string())?;
 
-    let existing = installer::check_mod_exists(&folder_name, nexus_id, &data.mods);
+    let mod_type = match analysis.detected_type {
+        zip_handler::DetectedModType::Ue4ss => crate::models::ModType::Ue4ss,
+        zip_handler::DetectedModType::PalSchema => crate::models::ModType::PalSchema,
+        zip_handler::DetectedModType::Pak => crate::models::ModType::Pak,
+        zip_handler::DetectedModType::LogicMods => crate::models::ModType::LogicMods,
+        zip_handler::DetectedModType::Hybrid => crate::models::ModType::Hybrid,
+        _ => crate::models::ModType::Pak,
+    };
+
+    let existing = installer::check_mod_exists(&folder_name, &mod_type, nexus_id, &data.mods);
 
     Ok(serde_json::json!({
         "exists": existing.is_some(),
@@ -386,13 +400,14 @@ pub async fn update_mod_command(
 
     let updated_mod = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let force_load_order = data.settings.force_load_order.unwrap_or(false);
         let existing = data
             .mods
             .iter_mut()
             .find(|m| m.id == mod_id)
             .ok_or_else(|| "Mod not found".to_string())?;
 
-        installer::update_mod(existing, &game_path, &program_path, &current_profile_id, &extracted, &analysis, &zip_filename, &now)?;
+        installer::update_mod(existing, &game_path, &program_path, &current_profile_id, &extracted, &analysis, &zip_filename, &now, force_load_order)?;
         existing.clone()
     };
 
@@ -460,3 +475,137 @@ pub async fn update_mod_command(
 
     Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
 }
+
+#[tauri::command]
+pub async fn build_install_manifest(
+    zip_path: String,
+    game_path: String,
+    pak_destination: Option<String>,
+    custom_name: Option<String>,
+) -> Result<crate::models::InstallManifest, String> {
+    crate::zip_handler::build_install_manifest(
+        &zip_path,
+        Path::new(&game_path),
+        pak_destination.as_deref(),
+        custom_name,
+    )
+}
+
+#[tauri::command]
+pub async fn install_mod_with_manifest(
+    manifest: crate::models::InstallManifest,
+    zip_path: String,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    println!("[INFO] Installing mod with manifest: {}", manifest.display_name);
+    let (game_path, program_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (data.settings.game_path.clone(), data.settings.program_path.clone())
+    };
+
+    if game_path.is_empty() {
+        return Err("No game path configured. Set it first.".to_string());
+    }
+
+    let mod_type_str = match manifest.mod_type {
+        crate::models::ModType::Ue4ss => "ue4ss",
+        crate::models::ModType::PalSchema => "palschema",
+        crate::models::ModType::Hybrid => "hybrid",
+        _ => "pak",
+    };
+    let analysis = zip_handler::analyze_zip(&zip_path)?;
+    check_mod_dependencies(&game_path, mod_type_str, &analysis)?;
+
+    let nexus_info = if let Some(id) = manifest.nexus_mod_id {
+        nexus::fetch_mod_info(id).await.ok()
+    } else {
+        None
+    };
+
+    let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
+    let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
+
+    let force_load_order = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.force_load_order.unwrap_or(false)
+    };
+
+    let now_str = Utc::now().to_rfc3339();
+    let mut final_mod = installer::execute_manifest(
+        &manifest,
+        &extracted,
+        Path::new(&game_path),
+        nexus_info.as_ref().map(|i| i.author.clone()),
+        nexus_info.as_ref().map(|i| i.summary.clone()),
+        nexus_info.as_ref().map(|i| i.picture_url.clone()),
+        nexus_info.as_ref().map(|i| i.downloads),
+        nexus_info.as_ref().map(|i| i.endorsements),
+        &now_str,
+        force_load_order,
+    )?;
+
+    final_mod.source_zip = Path::new(&zip_path).file_name().unwrap().to_string_lossy().to_string();
+
+    if let Some(ref info) = nexus_info {
+        if final_mod.version == "unknown" || final_mod.version.is_empty() {
+            final_mod.version = info.version.clone();
+        }
+        final_mod.nexus_description = if info.description.is_empty() { None } else { Some(info.description.clone()) };
+        final_mod.nexus_version_cached = if info.version.is_empty() { None } else { Some(info.version.clone()) };
+        final_mod.nexus_cached_at = Some(Utc::now().to_rfc3339());
+
+        let cache_dir = if final_mod.enabled {
+            PathBuf::from(&final_mod.game_path)
+        } else {
+            PathBuf::from(&final_mod.disabled_path)
+        };
+        let cache_json = serde_json::json!({
+            "modId": manifest.nexus_mod_id,
+            "name": info.name,
+            "author": info.author,
+            "summary": info.summary,
+            "description": info.description,
+            "version": info.version,
+            "downloads": info.downloads,
+            "endorsements": info.endorsements,
+            "pictureUrl": info.picture_url,
+            "createdAt": info.created_at,
+            "updatedAt": info.updated_at,
+        });
+        if cache_dir.exists() {
+            let _ = std::fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
+        }
+    }
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+
+    // Save to DB and profiles
+    {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        
+        // Remove existing mod with the same ID if it is an update
+        if let Some(pos) = data.mods.iter().position(|m| m.id == final_mod.id) {
+            data.mods.remove(pos);
+        }
+        data.mods.push(final_mod.clone());
+
+        // Update profile
+        let current_profile_id = data.current_profile_id.clone();
+        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+            if !profile.installed_mod_ids.contains(&final_mod.id) {
+                profile.installed_mod_ids.push(final_mod.id.clone());
+            }
+            if !profile.enabled_mod_ids.contains(&final_mod.id) {
+                profile.enabled_mod_ids.push(final_mod.id.clone());
+            }
+        }
+
+        let data_clone = data.clone();
+        let _ = db::save_db(&program_path, &data_clone);
+    }
+
+    let _ = crate::profiles::save_pmm_meta(&final_mod);
+
+    Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
+}
+

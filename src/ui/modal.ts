@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale } from '../api';
+import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale, buildInstallManifest, installModWithManifest } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -15,6 +15,7 @@ export function openSettingsModal(): void {
   const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
   const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
   const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
+  const forceLoadOrderCheckbox = document.getElementById('settings-force-load-order')! as HTMLInputElement;
   const pathStatus = document.getElementById('settings-path-status')!;
   const state = getState();
 
@@ -24,6 +25,9 @@ export function openSettingsModal(): void {
   }
   if (debugConsoleCheckbox) {
     debugConsoleCheckbox.checked = !!state.currentSettings?.debugConsole;
+  }
+  if (forceLoadOrderCheckbox) {
+    forceLoadOrderCheckbox.checked = !!state.currentSettings?.forceLoadOrder;
   }
 
   if (state.currentSettings?.gamePath) {
@@ -158,6 +162,7 @@ export async function handleSaveSettings(): Promise<void> {
   const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
   const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
   const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
+  const forceLoadOrderCheckbox = document.getElementById('settings-force-load-order')! as HTMLInputElement;
   const saveBtn = document.getElementById('settings-save')! as HTMLButtonElement;
   const pathStatus = document.getElementById('settings-path-status')!;
   saveBtn.disabled = true;
@@ -166,6 +171,7 @@ export async function handleSaveSettings(): Promise<void> {
     const newPath = pathInput.value.trim();
     const hideNative = hideNativeCheckbox ? hideNativeCheckbox.checked : false;
     const debugConsole = debugConsoleCheckbox ? debugConsoleCheckbox.checked : false;
+    const forceLoadOrder = forceLoadOrderCheckbox ? forceLoadOrderCheckbox.checked : false;
     const state = getState();
 
     if (newPath && newPath !== state.currentSettings?.gamePath) {
@@ -190,6 +196,14 @@ export async function handleSaveSettings(): Promise<void> {
     if (debugConsole !== !!state.currentSettings?.debugConsole) {
       const settings = await setDebugConsole(debugConsole);
       updateState({ currentSettings: settings });
+    }
+
+    if (forceLoadOrder !== !!state.currentSettings?.forceLoadOrder) {
+      const { setForceLoadOrder } = await import('../api');
+      const settings = await setForceLoadOrder(forceLoadOrder);
+      updateState({ currentSettings: settings });
+      const { updateLoadTabVisibility } = await import('./loadView');
+      updateLoadTabVisibility();
     }
 
     if (_tempCustomDataPath !== (state.currentSettings?.customDataPath || null)) {
@@ -271,12 +285,176 @@ export function closeInstallModal(): void {
     cancelBtn.disabled = false;
   }
 }
+interface FileTreeNode {
+  name: string;
+  routeType?: string;
+  destPath?: string;
+  children: Map<string, FileTreeNode>;
+}
+
+export function showFileTreeModal(routes: any[], modName: string): void {
+  const state = getState();
+  const gamePath = state.currentSettings?.gamePath || '';
+
+  function buildFileTree(routes: any[]): FileTreeNode {
+    const root: FileTreeNode = { name: 'Root', children: new Map() };
+    for (const r of routes) {
+      const parts = r.zipPath.split('/').filter((p: string) => p.length > 0);
+      let current = root;
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        const isLeaf = i === parts.length - 1;
+        if (!current.children.has(part)) {
+          current.children.set(part, { name: part, children: new Map() });
+        }
+        current = current.children.get(part)!;
+        if (isLeaf) {
+          current.routeType = r.routeType;
+          current.destPath = r.destPath;
+        }
+      }
+    }
+    return root;
+  }
+
+  function compactFileTree(node: FileTreeNode): void {
+    for (const child of node.children.values()) {
+      compactFileTree(child);
+    }
+
+    if (node.name !== 'Root' && node.children.size === 1) {
+      const childKey = Array.from(node.children.keys())[0];
+      const childNode = node.children.get(childKey)!;
+      if (childNode.children.size > 0) {
+        node.name = `${node.name}/${childNode.name}`;
+        node.children = childNode.children;
+        compactFileTree(node);
+      }
+    }
+  }
+
+  function getRelativeDestPath(destPath: string, gamePath: string): string {
+    if (!destPath || !gamePath) return destPath;
+    const normalizedDest = destPath.replace(/\\/g, '/').toLowerCase();
+    const normalizedGame = gamePath.replace(/\\/g, '/').toLowerCase();
+    
+    if (normalizedDest.startsWith(normalizedGame)) {
+      let rel = destPath.substring(gamePath.length);
+      if (rel.startsWith('/') || rel.startsWith('\\')) {
+        rel = rel.substring(1);
+      }
+      return rel;
+    }
+    return destPath;
+  }
+
+  function renderFileTreeHTML(node: FileTreeNode, depth: number = 0): string {
+    const sortedChildren = Array.from(node.children.values()).sort((a, b) => {
+      const aIsFolder = a.children.size > 0;
+      const bIsFolder = b.children.size > 0;
+      if (aIsFolder !== bIsFolder) {
+        return aIsFolder ? -1 : 1;
+      }
+      return a.name.localeCompare(b.name);
+    });
+
+    return sortedChildren.map(child => {
+      const isFolder = child.children.size > 0;
+      if (isFolder) {
+        return `
+          <div class="tree-folder-node" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; flex-direction: column; gap: 4px;">
+            <div class="tree-folder-header" style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; color: var(--text-primary); font-weight: 600; font-size: 12px; background: rgba(255,255,255,0.02); user-select: none; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">
+              <span style="color: #ffd166; font-size: 13px; display: flex; align-items: center;">📁</span>
+              <span style="font-family: monospace;">${escapeHtml(child.name)}</span>
+            </div>
+            <div class="tree-folder-children" style="border-left: 1px dashed var(--border); margin-left: 7px; padding-left: 6px; display: flex; flex-direction: column; gap: 2px;">
+              ${renderFileTreeHTML(child, depth + 1)}
+            </div>
+          </div>
+        `;
+      } else {
+        const relativeDest = getRelativeDestPath(child.destPath || '', gamePath);
+        return `
+          <div class="tree-file-node" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; align-items: center; justify-content: space-between; padding: 6px 8px; border-radius: 4px; font-size: 11px; gap: 12px; transition: background 0.2s;" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='transparent'">
+            <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; flex-grow: 1;">
+              <span style="color: var(--text-secondary); font-size: 12px; display: flex; align-items: center;">📄</span>
+              <div style="display: flex; flex-direction: column; overflow: hidden;">
+                <span style="font-family: monospace; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-weight: 500;">${escapeHtml(child.name)}</span>
+                <span style="font-size: 9px; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-family: monospace;" title="${escapeHtml(child.destPath || '')}">→ ${escapeHtml(relativeDest)}</span>
+              </div>
+            </div>
+            <span style="font-size: 8px; padding: 2px 4px; border-radius: 3px; background: var(--bg-secondary); color: var(--accent); border: 1px solid var(--border); text-transform: uppercase; font-weight: 700; height: fit-content; white-space: nowrap;">${escapeHtml(child.routeType || '')}</span>
+          </div>
+        `;
+      }
+    }).join('');
+  }
+
+  const overlay = document.createElement('div');
+  overlay.id = 'full-files-modal-overlay';
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100vw';
+  overlay.style.height = '100vh';
+  overlay.style.background = 'rgba(0,0,0,0.85)';
+  overlay.style.display = 'flex';
+  overlay.style.alignItems = 'center';
+  overlay.style.justifyContent = 'center';
+  overlay.style.zIndex = '9999';
+
+  const content = document.createElement('div');
+  content.style.background = 'var(--bg-secondary)';
+  content.style.border = '1px solid var(--border)';
+  content.style.borderRadius = 'var(--card-radius)';
+  content.style.width = '90%';
+  content.style.maxWidth = '750px';
+  content.style.maxHeight = '80vh';
+  content.style.display = 'flex';
+  content.style.flexDirection = 'column';
+  content.style.overflow = 'hidden';
+  content.style.boxShadow = '0 12px 30px rgba(0,0,0,0.6)';
+
+  const header = document.createElement('div');
+  header.style.padding = '16px';
+  header.style.borderBottom = '1px solid var(--border)';
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'center';
+  header.innerHTML = `
+    <h3 style="margin:0;font-size:15px;font-weight:600;color:var(--text-primary);">Files to Install for ${escapeHtml(modName)} (${routes.length})</h3>
+    <button id="close-full-files-btn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;font-size:22px;line-height:1;padding:4px;">&times;</button>
+  `;
+
+  const listContainer = document.createElement('div');
+  listContainer.style.padding = '16px';
+  listContainer.style.overflowY = 'auto';
+  listContainer.style.flexGrow = '1';
+  listContainer.style.display = 'flex';
+  listContainer.style.flexDirection = 'column';
+  listContainer.style.gap = '8px';
+
+  const fileTree = buildFileTree(routes);
+  compactFileTree(fileTree);
+  listContainer.innerHTML = renderFileTreeHTML(fileTree);
+
+  content.appendChild(header);
+  content.appendChild(listContainer);
+  overlay.appendChild(content);
+  document.body.appendChild(overlay);
+
+  const closeBtn = document.getElementById('close-full-files-btn');
+  closeBtn?.addEventListener('click', () => overlay.remove());
+  overlay.addEventListener('click', (ev) => {
+    if (ev.target === overlay) overlay.remove();
+  });
+}
 
 export function setModalStatus(text: string): void {
   document.getElementById('modal-status')!.textContent = text;
 }
 
-export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: string; name: string; version?: string } | null): void {
+export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: string; name: string; version?: string } | null): Promise<void> {
   updateState({ currentAnalysis: analysis });
   const content = document.getElementById('modal-content')!;
   const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
@@ -287,7 +465,8 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
     retryBtn.style.display = 'none';
   }
 
-  statusEl.textContent = '';
+  statusEl.textContent = 'Preparing install...';
+  confirmBtn.disabled = true;
 
   // Background fetch of Nexus metadata for rich single-mod preview card
   if (analysis.nexusModId && !analysis.nexusInfo) {
@@ -299,19 +478,39 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
     }).catch(() => {});
   }
 
+  let cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
+  if (!analysis.nexusInfo && analysis.modinfo?.name) {
+    cleanName = analysis.modinfo.name;
+  }
+
+  let manifest;
+  try {
+    manifest = await buildInstallManifest(
+      analysis.zipPath,
+      getState().currentSettings?.gamePath || '',
+      analysis.detectedType === 'logicmods' ? 'logicmods' : '~mods',
+      cleanName
+    );
+  } catch (err) {
+    content.innerHTML = `<div style="padding:20px;color:#ff4a4a;font-weight:bold;">Error analyzing manifest: ${escapeHtml(String(err))}</div>`;
+    return;
+  }
+
+  confirmBtn.disabled = false;
+  statusEl.textContent = '';
+
   // Update banner if existing mod found
   let updateHtml = '';
   if (existingMod) {
     _pendingUpdateModId = existingMod.id;
     updateHtml = `
       <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.1);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">"${escapeHtml(existingMod.name)}" already exists. (Installed: v${existingMod.version || 'unknown'}). Update it?</span>
+        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists. (Installed: v${existingMod.version || 'unknown'}). Update it?</span>
         <div style="display:flex;gap:8px;">
           <button class="update-banner-btn" id="update-banner-btn" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Update</button>
           <button class="update-banner-btn" id="install-new-btn" style="padding:4px 10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Install as New</button>
         </div>
       </div>
-
     `;
     confirmBtn.textContent = 'Update';
   } else {
@@ -319,35 +518,31 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
     confirmBtn.textContent = 'Install';
   }
 
-  let cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
-  if (!analysis.nexusInfo && analysis.modinfo?.name) {
-    cleanName = analysis.modinfo.name;
-  }
-
-  let pakDestHtml = `
-    <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${analysis.detectedType === 'pak' || analysis.detectedType === 'logicmods' || (analysis.detectedType === 'hybrid' && analysis.hasPak) ? 'block' : 'none'}; margin-top:8px;">
-      <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Pak destination</label>
-      <div class="pak-dest-options" style="display:flex;gap:12px;">
-        <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
-          <input type="radio" name="pak-dest" value="~mods" ${analysis.detectedType === 'pak' || analysis.detectedType === 'hybrid' ? 'checked' : ''} />
-          <span>~mods/ (Resource Paks)</span>
-        </label>
-        <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
-          <input type="radio" name="pak-dest" value="logicmods" ${analysis.detectedType === 'logicmods' ? 'checked' : ''} />
-          <span>LogicMods/ (Blueprint Logic)</span>
-        </label>
-      </div>
-    </div>
-  `;
-
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
   let versionVal = analysis.detectedVersion || analysis.nexusInfo?.version || '1.0';
   if (!analysis.nexusInfo && analysis.modinfo?.version) {
     versionVal = analysis.modinfo.version;
   }
 
-  const hasModinfoType = analysis.modinfo?.modType ? true : false;
-  const modinfoTypeLower = analysis.modinfo?.modType?.toLowerCase() || '';
+  const displayType = manifest.modType === 'hybrid' ? `Hybrid (${[manifest.hasUe4ss ? 'UE4SS' : '', manifest.hasPalschema ? 'PalSchema' : '', manifest.hasPak ? 'Pak' : ''].filter(Boolean).join(' + ')})` : manifest.modType.toUpperCase();
+
+  const isLogicModsDefault = manifest.modType === 'logicmods' || manifest.routes.some((r: any) => r.routeType === 'logicmods');
+
+  let pakDestHtml = `
+    <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${manifest.hasPak ? 'block' : 'none'}; margin-top:8px;">
+      <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Pak destination</label>
+      <div class="pak-dest-options" style="display:flex;gap:12px;">
+        <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+          <input type="radio" name="pak-dest" value="~mods" ${isLogicModsDefault ? '' : 'checked'} />
+          <span>~mods/ (Resource Paks)</span>
+        </label>
+        <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+          <input type="radio" name="pak-dest" value="logicmods" ${isLogicModsDefault ? 'checked' : ''} />
+          <span>LogicMods/ (Blueprint Logic)</span>
+        </label>
+      </div>
+    </div>
+  `;
 
   content.innerHTML = `
     <div style="display:flex;gap:24px;align-items:stretch;padding:4px 0;">
@@ -386,21 +581,21 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
        <div style="flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center;">
           ${updateHtml}
           
-          <div style="display:flex;flex-direction:column;gap:6px;">
-             <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Mod Name</label>
-             <input type="text" id="mod-name-input" value="${escapeHtml(cleanName)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;" />
+          <div style="display:flex;gap:12px;">
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+               <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Mod Display Name</label>
+               <input type="text" id="mod-name-input" value="${escapeHtml(cleanName)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;" />
+            </div>
+            <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+               <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Folder Name (Disk)</label>
+               <input type="text" id="mod-folder-name-input" value="${escapeHtml(manifest.folderName)}" disabled style="width:100%;padding:8px 12px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;cursor:not-allowed;" />
+            </div>
           </div>
 
           <div style="display:flex;gap:12px;">
              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Install Type</label>
-                <select id="mod-type-select" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:12px;cursor:pointer;">
-                  <option value="ue4ss" ${ (hasModinfoType && modinfoTypeLower === 'ue4ss') || (!hasModinfoType && analysis.detectedType === 'ue4ss') ? 'selected' : ''}>UE4SS</option>
-                  <option value="palschema" ${ (hasModinfoType && modinfoTypeLower === 'palschema') || (!hasModinfoType && analysis.detectedType === 'palschema') ? 'selected' : ''}>PalSchema</option>
-                  <option value="pak" ${ (hasModinfoType && (modinfoTypeLower === 'pak' || modinfoTypeLower === 'pak mod (~mods)')) || (!hasModinfoType && analysis.detectedType === 'pak') ? 'selected' : ''}>Pak (~mods)</option>
-                  <option value="logicmods" ${ (hasModinfoType && (modinfoTypeLower === 'logicmods' || modinfoTypeLower === 'logicmods (~mods/logicmods)')) || (!hasModinfoType && analysis.detectedType === 'logicmods') ? 'selected' : ''}>LogicMods</option>
-                  <option value="hybrid" ${ (hasModinfoType && (modinfoTypeLower === 'hybrid' || modinfoTypeLower === 'hybrid mod')) || (!hasModinfoType && analysis.detectedType === 'hybrid') ? 'selected' : ''}>Hybrid</option>
-                </select>
+                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Detected Type</label>
+                <input type="text" value="${escapeHtml(displayType)}" disabled style="width:100%;padding:8px 12px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;cursor:not-allowed;" />
              </div>
              <div style="width:120px;display:flex;flex-direction:column;gap:6px;">
                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Version</label>
@@ -408,42 +603,59 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
              </div>
           </div>
 
-          <div style="display:flex;align-items:center;gap:8px;font-size:11px;color:var(--text-muted);background:var(--bg-secondary);padding:8px 12px;border-radius:4px;border:1px solid var(--border);">
-             <span style="font-size:14px;">📂</span>
-             <span>Archive contains <strong>${analysis.fileCount}</strong> files</span>
-          </div>
-
-          ${analysis.nexusModId && !analysis.nexusInfo ? `
-             <div style="font-size:11px;color:var(--text-muted);background:var(--bg-secondary);border:1px solid var(--border);padding:6px 12px;border-radius:4px;display:flex;align-items:center;gap:6px;">
-                <span style="font-weight:700;color:var(--accent);">N</span> NexusMods ID: <strong>#${analysis.nexusModId}</strong>
+          <div style="display:flex;flex-direction:column;gap:6px;">
+             <div style="display:flex;justify-content:space-between;align-items:center;">
+                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Files to install</label>
+                <button id="view-all-files-btn" class="btn btn-secondary" style="font-size:10px;padding:2px 6px;height:auto;line-height:1;margin:0;">Show Full List</button>
              </div>
-          ` : ''}
+             <div class="manifest-files-list" style="max-height:85px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:6px;font-family:monospace;font-size:10px;display:flex;flex-direction:column;gap:4px;">
+               ${manifest.routes.map((r: any) => `
+                 <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:2px;background:rgba(255,255,255,0.02);">
+                   <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
+                   <span style="font-size:8px;padding:1px 3px;border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;">${r.routeType}</span>
+                 </div>
+               `).join('')}
+             </div>
+          </div>
 
           ${pakDestHtml}
        </div>
     </div>
-  `;
-
-
-  // Dynamically show/hide pak destination options based on selected type
-  const typeSelect = document.getElementById('mod-type-select') as HTMLSelectElement;
-  const pakDestSection = document.getElementById('single-pak-dest-section');
-  if (typeSelect && pakDestSection) {
-    typeSelect.addEventListener('change', () => {
-      const type = typeSelect.value;
-      const analysis = getState().currentAnalysis;
-      const hasPak = analysis ? analysis.hasPak : false;
-      if (type === 'pak' || type === 'logicmods' || (type === 'hybrid' && hasPak)) {
-        pakDestSection.style.display = 'block';
-        if (type !== 'hybrid') {
-          const radio = pakDestSection.querySelector(`input[value="${type}"]`) as HTMLInputElement;
-          if (radio) radio.checked = true;
-        }
-      } else {
-        pakDestSection.style.display = 'none';
-      }
+  `;  // Wire up Show Full List button
+  const viewAllBtn = document.getElementById('view-all-files-btn');
+  if (viewAllBtn) {
+    viewAllBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      showFileTreeModal(manifest.routes, cleanName);
     });
   }
+
+  const pakDestRadios = document.querySelectorAll('input[name="pak-dest"]');
+  pakDestRadios.forEach(radio => {
+    radio.addEventListener('change', async (e) => {
+      const selectedDest = (e.target as HTMLInputElement).value;
+      try {
+        const newManifest = await buildInstallManifest(
+          analysis.zipPath,
+          getState().currentSettings?.gamePath || '',
+          selectedDest,
+          cleanName
+        );
+        const filesListContainer = document.querySelector('.manifest-files-list');
+        if (filesListContainer) {
+          filesListContainer.innerHTML = newManifest.routes.map((r: any) => `
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:2px;background:rgba(255,255,255,0.02);">
+              <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
+              <span style="font-size:8px;padding:1px 3px;border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;">${r.routeType}</span>
+            </div>
+          `).join('');
+        }
+        manifest = newManifest;
+      } catch (err) {
+        console.error("Failed to rebuild manifest on pak dest change:", err);
+      }
+    });
+  });
 
   // Wire up update/install-new buttons
   const updateBannerBtn = document.getElementById('update-banner-btn');
@@ -468,9 +680,7 @@ export function renderInstallPreview(analysis: ZipAnalysis, existingMod?: { id: 
   confirmBtn.disabled = false;
 }
 
-
 let _pendingBatchPaths: string[] = [];
-
 
 interface BatchItem {
   path: string;
@@ -483,6 +693,7 @@ interface BatchItem {
   nexusModId?: number | null;
   version?: string | null;
   error?: string;
+  hasPak?: boolean;
 }
 let _batchItems: BatchItem[] = [];
 
@@ -520,20 +731,39 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     const filename = path.split(/[/\\]/).pop() || '';
     try {
       const analysis = await analyzeZip(path);
-      const check = await checkModExistsCommand(path);
+      let existingModId: string | null = null;
+      let existingModInfo: any = null;
+      try {
+        const checkResult = await checkModExistsCommand(path);
+        if (checkResult.exists && checkResult.modInfo) {
+          existingModId = checkResult.modInfo.id;
+          existingModInfo = checkResult.modInfo;
+        }
+      } catch {}
 
-      const cleanName = getCleanNameFromFilename(filename);
+      let nameVal = getCleanNameFromFilename(filename);
+      if (!analysis.nexusInfo && analysis.modinfo?.name) {
+        nameVal = analysis.modinfo.name;
+      }
+
+      const manifest = await buildInstallManifest(
+        path,
+        getState().currentSettings?.gamePath || '',
+        analysis.detectedType === 'logicmods' ? 'logicmods' : '~mods',
+        nameVal
+      );
 
       results.push({
         path,
         filename,
-        name: cleanName,
-        type: analysis.detectedType,
-        existingModId: check.exists && check.modInfo ? check.modInfo.id : null,
-        existingModInfo: check.exists && check.modInfo ? check.modInfo : null,
-        existingVersion: check.exists && check.modInfo ? check.modInfo.version : null,
+        name: nameVal,
+        type: manifest.modType,
+        existingModId,
+        existingModInfo,
+        existingVersion: existingModInfo?.version,
         nexusModId: analysis.nexusModId,
-        version: analysis.detectedVersion || null,
+        version: analysis.detectedVersion || analysis.nexusInfo?.version || '1.0',
+        hasPak: manifest.hasPak,
       });
     } catch (e) {
       results.push({
@@ -546,20 +776,11 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
       });
     }
   }
+
   _batchItems = results;
 
   // Render interactive list
   const rows = _batchItems.map((item, idx) => {
-    if (item.error) {
-      return `
-        <tr style="border-bottom:1px solid var(--border-light)">
-          <td style="padding:6px 4px;width:28px;"><input type="checkbox" id="batch-install-${idx}" disabled /></td>
-          <td style="padding:6px;font-size:10px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--danger);" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</td>
-          <td colspan="5" style="padding:6px;color:var(--danger);font-size:10px;font-style:italic;">Failed to analyze: ${escapeHtml(item.error)}</td>
-        </tr>
-      `;
-    }
-
     let stateBadge = `<span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);font-size:8px;padding:1px 4px;font-weight:700;border-radius:2px;">NEW</span>`;
     if (item.existingModId) {
       if (item.existingVersion && item.version && item.existingVersion.trim().toLowerCase() === item.version.trim().toLowerCase()) {
@@ -572,7 +793,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     const idText = item.nexusModId ? `#${item.nexusModId}` : '<span style="color:var(--text-muted)">—</span>';
     const verText = item.version ? `v${item.version}` : '<span style="color:var(--text-muted)">—</span>';
 
-    const isPakOrLogicOrHybrid = item.type === 'pak' || item.type === 'logicmods' || item.type === 'hybrid';
+    const isPakOrLogicOrHybrid = item.type === 'pak' || item.type === 'logicmods' || (item.type === 'hybrid' && item.hasPak);
     let pakDestSelectHtml = `<span style="color:var(--text-muted);font-size:10px;">—</span>`;
     if (isPakOrLogicOrHybrid) {
       pakDestSelectHtml = `
@@ -586,7 +807,12 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     return `
       <tr style="border-bottom:1px solid var(--border-light)">
         <td style="padding:6px 4px;width:28px;"><input type="checkbox" id="batch-install-${idx}" checked style="cursor:pointer;" /></td>
-        <td style="padding:6px;font-size:10px;width:160px;max-width:160px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--text-secondary);" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</td>
+        <td style="padding:6px;font-size:10px;width:180px;max-width:180px;color:var(--text-secondary);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden;">
+            <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-grow:1;" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</span>
+            <button id="batch-view-files-${idx}" style="padding:2px 6px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);border-radius:4px;font-size:9px;cursor:pointer;white-space:nowrap;font-weight:600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='var(--bg-secondary)'">Show Files</button>
+          </div>
+        </td>
         <td style="padding:6px;font-size:11px;width:70px;white-space:nowrap;color:var(--text-muted);font-weight:600;">${idText}</td>
         <td style="padding:6px;font-size:11px;width:60px;white-space:nowrap;color:var(--text-primary);font-weight:600;">${verText}</td>
         <td style="padding:6px;"><input type="text" id="batch-name-${idx}" value="${escapeHtml(item.name)}" style="width:100%;padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:11px;" /></td>
@@ -594,8 +820,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
           <select id="batch-type-${idx}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
             <option value="ue4ss" ${item.type === 'ue4ss' ? 'selected' : ''}>UE4SS</option>
             <option value="palschema" ${item.type === 'palschema' ? 'selected' : ''}>PalSchema</option>
-            <option value="pak" ${item.type === 'pak' ? 'selected' : ''}>Pak (~mods)</option>
-            <option value="logicmods" ${item.type === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+            <option value="pak" ${item.type === 'pak' || item.type === 'logicmods' ? 'selected' : ''}>Pak</option>
             <option value="hybrid" ${item.type === 'hybrid' ? 'selected' : ''}>Hybrid</option>
           </select>
         </td>
@@ -611,7 +836,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
         <thead style="position:sticky;top:0;z-index:2;">
           <tr style="background:var(--bg-tertiary);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
             <th style="padding:6px;width:28px;">Inst.</th>
-            <th style="padding:6px;width:160px;">Archive</th>
+            <th style="padding:6px;width:180px;">Archive</th>
             <th style="padding:6px;width:70px;">Nexus ID</th>
             <th style="padding:6px;width:60px;">Version</th>
             <th style="padding:6px;">Target Mod Folder</th>
@@ -627,15 +852,16 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     </div>
   `;
 
-  // Add listeners to type selectors to dynamically show/hide/set the pak destination selector
+  // Add listeners to type selectors and view files buttons
   for (let i = 0; i < _batchItems.length; i++) {
+    const item = _batchItems[i];
     const typeSelect = document.getElementById(`batch-type-${i}`) as HTMLSelectElement | null;
     if (typeSelect) {
       typeSelect.addEventListener('change', () => {
         const val = typeSelect.value;
         const destContainer = document.getElementById(`batch-pak-dest-container-${i}`);
         if (destContainer) {
-          if (val === 'pak' || val === 'logicmods' || val === 'hybrid') {
+          if (val === 'pak' || val === 'logicmods' || (val === 'hybrid' && item.hasPak)) {
             destContainer.innerHTML = `
               <select id="batch-pak-dest-${i}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
                 <option value="~mods" ${val === 'pak' || val === 'hybrid' ? 'selected' : ''}>~mods</option>
@@ -645,6 +871,31 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
           } else {
             destContainer.innerHTML = `<span style="color:var(--text-muted);font-size:10px;">—</span>`;
           }
+        }
+      });
+    }
+
+    const viewBtn = document.getElementById(`batch-view-files-${i}`) as HTMLButtonElement | null;
+    if (viewBtn) {
+      viewBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        viewBtn.textContent = 'Loading...';
+        viewBtn.disabled = true;
+        try {
+          const customName = (document.getElementById(`batch-name-${i}`) as HTMLInputElement)?.value || item.name;
+          const pakDest = (document.getElementById(`batch-pak-dest-${i}`) as HTMLSelectElement)?.value || '~mods';
+          const manifest = await buildInstallManifest(
+            item.path,
+            getState().currentSettings?.gamePath || '',
+            pakDest,
+            customName
+          );
+          showFileTreeModal(manifest.routes, customName);
+        } catch (err) {
+          showToast(`Error loading file list: ${err}`, 'error');
+        } finally {
+          viewBtn.textContent = 'Show Files';
+          viewBtn.disabled = false;
         }
       });
     }
@@ -914,30 +1165,22 @@ async function executeModInstallation(
     resultsList.innerHTML = logs.join('');
     resultsList.scrollTop = resultsList.scrollHeight;
 
-    if (_pendingUpdateModId) {
-      await updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId);
-      logs.push(`<div style="color:#00bcff;font-weight:bold;">[UP] Mod updated successfully!</div>`);
-    } else {
-      await installMod(state.currentAnalysis.zipPath, customType, pakDestination, customName);
-      logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] Mod installed successfully!</div>`);
-    }
+    const manifest = await buildInstallManifest(
+      state.currentAnalysis.zipPath,
+      state.currentSettings?.gamePath || '',
+      pakDestination,
+      customName
+    );
 
     const versionInput = document.getElementById('mod-version-input') as HTMLInputElement | null;
     if (versionInput && versionInput.value.trim()) {
-      try {
-        if (_pendingUpdateModId) {
-          await setModVersionApi(_pendingUpdateModId, versionInput.value.trim());
-          logs.push(`<div style="color:#888;">&gt; Setting version parameter to: v${versionInput.value.trim()}</div>`);
-        } else {
-          const afterInstall = getState().allMods;
-          const last = afterInstall[afterInstall.length - 1];
-          if (last) {
-            await setModVersionApi(last.id, versionInput.value.trim());
-            logs.push(`<div style="color:#888;">&gt; Setting version parameter to: v${versionInput.value.trim()}</div>`);
-          }
-        }
-      } catch {}
+      manifest.version = versionInput.value.trim();
     }
+
+    await installModWithManifest(manifest, state.currentAnalysis.zipPath);
+    logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] Mod installed successfully!</div>`);
+
+
 
     resultsList.innerHTML = logs.join('');
     resultsList.scrollTop = resultsList.scrollHeight;

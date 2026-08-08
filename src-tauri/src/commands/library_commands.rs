@@ -59,10 +59,16 @@ pub fn install_mod_from_library(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
+    let force_load_order = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.force_load_order.unwrap_or(false)
+    };
+
     let mod_info = crate::installer::install_mod(
         &game_path, &extracted, &analysis, &zip_filename,
         None, None, None, None, None, None, None, None,
         None, None, None, Vec::new(),
+        force_load_order,
     )?;
 
     let _ = std::fs::remove_dir_all(&temp_dir);

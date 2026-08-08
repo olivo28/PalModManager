@@ -1,7 +1,7 @@
-[size=5][b]PalModManager (PMM) - Mod Manager & Editor for Palworld[/b][/size]
+[size=5][b]PalModManager (PMM) - Next-Gen Mod Manager & Config Editor for Palworld[/b][/size]
 
 [line]
-Latest version: 1.3.0
+Latest version: 1.4.0
 
 Changelog: You can find the latest update notes in the pinned comments section or check the full history on [url=https://github.com/olivo28/PalModManager]GitHub[/url].
 
@@ -10,7 +10,7 @@ Changelog: You can find the latest update notes in the pinned comments section o
 [size=4][b]Description[/b][/size]
 [b]PalModManager[/b] is a modern, high-performance desktop application built specifically for [b]Palworld[/b] players and modders on [b]Steam[/b] and [b]Xbox Game Pass (PC)[/b].
 
-Unlike generic mod managers, PalModManager is tailor-made for Palworld: it natively handles all mod structures ([b]UE4SS[/b], [b]PalSchema[/b], [b]Pak[/b], and [b]LogicMods[/b]), provides conflict detection, and includes a full-featured built-in JSON configuration code editor.
+Unlike generic mod managers, PalModManager is tailor-made for Palworld: it natively handles all mod structures ([b]UE4SS[/b], [b]PalSchema[/b], [b]Pak[/b], [b]LogicMods[/b], and [b]Hybrids[/b]), provides conflict detection, and includes a full-featured built-in JSON configuration code editor.
 
 Built with [b]Tauri v2[/b] and [b]Rust[/b], PalModManager launches instantly and uses minimal RAM and CPU.
 
@@ -19,9 +19,9 @@ Built with [b]Tauri v2[/b] and [b]Rust[/b], PalModManager launches instantly and
 [size=4][b]Installation instructions[/b][/size]
 [list=1]
 [*]Download [b]PalModManager[/b] from the Files section.[/*]
-[*]Run [b]PalModManager.exe[/b].[/*]
+[*]Run [b]PalModManager.exe[/b] (or use the portable standalone exe directly without installation).[/*]
 [*]Open [b]Settings[/b] (⚙ icon) and select your Palworld installation directory.[/*]
-[*]Drag & drop any mod [i].zip[/i] or [i].rar[/i] file directly into the app window to install![/*]
+[*]Drag & drop any mod [i].zip[/i], [i].rar[/i], or [i].7z[/i] file directly into the app window to install![/*]
 [/list]
 
 [line]
@@ -29,16 +29,23 @@ Built with [b]Tauri v2[/b] and [b]Rust[/b], PalModManager launches instantly and
 [size=4][b]Main features[/b][/size]
 [list]
 [*][b]Ultra-Fast & Lightweight[/b]: Built on Rust and Tauri v2 for instantaneous response times and zero bloat.[/*]
-[*][b]Smart Mod Auto-Detection[/b]: Automatically identifies and categorizes UE4SS, PalSchema, Pak, and LogicMods.[/*]
-[*][b]Smart Heuristic Zip Unpacker[/b]: Never worry about how mod files are structured. Generic managers fail when mod authors zip their files with custom structures or nested folders. PalModManager implements a custom layout sanitizer that automatically parses, flattens, and reorganizes any zipped layout into clean game-ready directories before installation.[/*]
-[*][b]Automated Dependency Management[/b]: Detects missing core dependencies (UE4SS or PalSchema) and offers one-click automatic installation. Uses Github official links.[/*]
+[*][b]Smart Mod Auto-Detection[/b]: Automatically identifies and categorizes UE4SS, PalSchema, Pak, LogicMods, and Hybrids.[/*]
+[*][b]Interactive ZIP File Tree Preview (New!)[/b]: Open a collapsible tree previewer in both single and batch mod installers to inspect ZIP contents and projected targets in real-time before installing.[/*]
+[*][b]Dynamic UE4SS Load Order Manager (New!)[/b]: Manage loading sequences interactively with a drag-and-drop ordering interface in the sidebar, syncing state transitions between `enabled.txt` and `mods.txt` dynamically.[/*]
+[*][b]Integrated Mod Packer & Manifesting (New!)[/b]: Package mods with custom target routing, author/version tags, and Nexus IDs. Saves layout manifests into a dedicated `modinfo.pmm.json` file inside the ZIP, enabling instant, heuristic-free native installation on client machines.[/*]
+[*][b]Pre-installed Mod Scanner (New!)[/b]: Scans local game directories and parses `modinfo.pmm.json` to load rich mod descriptions, versions, and authors automatically.[/*]
+[*][b]Mod Conflict & Compatibility Scanner[/b]: Analyzes enabled mods to identify table row overlaps (PalSchema overrides) and hook overlaps (multiple mods hooking the same engine function in Lua) in a side-by-side split view.[/*]
+[*][b]Lua Hotkeys Manager[/b]: Scan active Lua scripts for keybind configurations (`RegisterKeyBind`), display them in an interactive table, highlight conflicts, and inline edit the key combinations.[/*]
+[*][b]Smart Heuristic ZIP Unpacker[/b]: Never worry about how mod files are structured. Generic managers fail when mod authors zip their files with custom structures or nested folders. PalModManager implements a custom layout sanitizer that automatically parses, flattens, and reorganizes any zipped layout into clean game-ready directories before installation, bypassing platform wrappers like `(STEAM)` and `(XBOX)` seamlessly.[/*]
+[*][b]Automated Dependency Management[/b]: Detects missing core dependencies (UE4SS or PalSchema) and offers one-click automatic installation using official GitHub releases.[/*]
 [*][b]Batch & Drag-and-Drop Installation[/b]: Drop single or multiple zip files to preview mod details, check versions, and install in bulk.[/*]
 [*][b]Installed Version Warnings[/b]: The upgrade assistant explicitly warns and displays your currently installed version when dragging files to update existing mods.[/*]
 [*][b]Mod Library[/b]: Maintain a centralized library of downloaded mods complete with auto-fetched NexusMods thumbnails, authors, and summary metadata.[/*]
 [*][b]Reactive Profile Manager (File Explorer style)[/b]: Create and switch between isolated mod profiles (e.g. Singleplayer, Multiplayer, Hardcore) with instant physical folder deployment. Shows virtual folders as folder cards side-by-side with ungrouped mods, supporting double-click navigation and a right-click custom folder options menu.[/*]
 [*][b]ID Stability System[/b]: Uses the [b]Nexus Mod ID[/b] or [b]Sanitized descriptive names[/b] to identify mods (no random UUIDs), ensuring upgrades and profile matching are 100% stable.[/*]
 [*][b]Built-in Code Editor[/b]: Edit mod json and jsonc configuration files directly within the application with syntax highlighting, auto-formatting, search (Ctrl+F), and safety checks preventing loss of changes when switching profiles.[/*]
-[*][b]NexusMods Metadata & Update Sync[/b]: Automatically check for mod updates and sync metadata/thumbnails directly from NexusMods.[/*]
+[*][b]NexusMods Metadata & Update Sync[/b]: Automatically check for mod updates and sync metadata/thumbnails directly from NexusMods. Includes "Open Updates" to open all Nexus pages for mods with available updates at once.[/*]
+[*][b]Settings & Database Inspector[/b]: Advanced database inspector to view and edit Mods, Profiles, and Settings tables with raw JSON record validation, custom app storage redirection/migration, and toolbar UI scaling (80% to 180%).[/*]
 [*][b]Modern Dark Mode[/b]: Sleek glassmorphism UI designed for maximum usability and aesthetic clarity.[/*]
 [/list]
 

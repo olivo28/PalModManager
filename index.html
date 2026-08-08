@@ -59,6 +59,10 @@
           <span class="sidebar-tab-icon">⊞</span>
           <span class="sidebar-tab-label">Mods</span>
         </button>
+        <button id="sidebar-tab-load" class="sidebar-tab" data-tab="load" title="Load Order" style="display:none">
+          <span class="sidebar-tab-icon">⇅</span>
+          <span class="sidebar-tab-label">Load</span>
+        </button>
         <button class="sidebar-tab" data-tab="editor" title="Editor">
           <span class="sidebar-tab-icon">✎</span>
           <span class="sidebar-tab-label">Edit</span>
@@ -159,6 +163,19 @@
         </div>
         <div id="mods-container">
           <div id="empty-state">No mods found. Install a mod or configure your game path in Settings.</div>
+        </div>
+      </div>
+      
+      <!-- LOAD TAB -->
+      <div id="load-view" class="tab-content" style="display:none; flex-direction:column; height: 100%;">
+        <div id="load-toolbar" style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
+          <span style="font-size:13px;font-weight:700;color:var(--text-primary)">UE4SS Load Order</span>
+          <div class="settings-hint" style="margin-left:8px; font-size:11px; color:var(--text-muted);">
+            Drag and drop mods to reorder. Toggles reflect enabled/disabled status in mods.txt.
+          </div>
+        </div>
+        <div id="load-list-container" style="flex:1; padding:16px; overflow-y:auto; display:flex; flex-direction:column; gap:8px;">
+          <!-- Dynamically populated list of draggable cards -->
         </div>
       </div>
 
@@ -314,6 +331,10 @@
             <div class="packer-form-group">
               <label for="packer-meta-author">Author</label>
               <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName" />
+            </div>
+            <div class="packer-form-group">
+              <label for="packer-meta-nexus-id">Nexus ID</label>
+              <input type="number" id="packer-meta-nexus-id" class="packer-form-input" placeholder="e.g. 1234 (Optional)" min="1" step="1" />
             </div>
             <div class="packer-form-group">
               <label for="packer-meta-type">Mod Type</label>
@@ -487,6 +508,14 @@
             </label>
             <div class="settings-hint" style="margin-left:22px;">Hide pre-installed mods that come with UE4SS
               (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-group">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="settings-force-load-order" />
+              <span>Force Mod Load Order (mods.txt) (Experimental)</span>
+            </label>
+            <div class="settings-hint" style="margin-left:22px;">Force load order of UE4SS mods via mods.txt. When disabled (default), mods are enabled via enabled.txt.</div>
           </div>
           <div class="settings-divider"></div>
           <div class="settings-group">

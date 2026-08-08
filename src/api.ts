@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus } from './types';
+import type { ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus, InstallManifest } from './types';
 
 export interface ZipAnalysis {
   zipPath: string;
@@ -49,6 +49,10 @@ export async function setDebugConsole(enabled: boolean): Promise<AppSettings> {
   return invoke('set_debug_console', { enabled });
 }
 
+export async function setForceLoadOrder(enabled: boolean): Promise<AppSettings> {
+  return invoke('set_force_load_order', { enabled });
+}
+
 export async function setCustomDataPath(path: string | null): Promise<AppSettings> {
   return invoke('set_custom_data_path', { path });
 }
@@ -78,6 +82,22 @@ export async function installMod(
     pakDestination,
     customName,
   });
+}
+
+export async function buildInstallManifest(
+  zipPath: string,
+  gamePath: string,
+  pakDestination: string | null,
+  customName: string | null
+): Promise<InstallManifest> {
+  return invoke('build_install_manifest', { zipPath, gamePath, pakDestination, customName });
+}
+
+export async function installModWithManifest(
+  manifest: InstallManifest,
+  zipPath: string
+): Promise<ModInfo> {
+  return invoke('install_mod_with_manifest', { manifest, zipPath });
 }
 
 export async function removeMod(modId: string): Promise<{ success: boolean }> {

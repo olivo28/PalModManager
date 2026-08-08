@@ -21,6 +21,7 @@ use commands::dependency_commands;
 use commands::packer_commands;
 use commands::scanner_commands;
 use commands::db_commands;
+use commands::load_order_commands;
 use state::AppState;
 
 use tauri::Manager;
@@ -97,6 +98,7 @@ pub fn run() {
             settings_commands::set_game_path,
             settings_commands::set_hide_native_mods,
             settings_commands::set_debug_console,
+            settings_commands::set_force_load_order,
             settings_commands::set_custom_data_path,
             settings_commands::set_toolbar_scale,
 
@@ -120,6 +122,8 @@ pub fn run() {
             install_commands::install_mod_command,
             install_commands::check_mod_exists_command,
             install_commands::update_mod_command,
+            install_commands::build_install_manifest,
+            install_commands::install_mod_with_manifest,
             config_commands::read_config,
             config_commands::save_config,
             config_commands::set_mod_config,
@@ -175,6 +179,8 @@ pub fn run() {
             scanner_commands::update_mod_hotkey,
             db_commands::db_get_all,
             db_commands::db_write_record,
+            load_order_commands::get_ue4ss_load_order,
+            load_order_commands::save_ue4ss_load_order,
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

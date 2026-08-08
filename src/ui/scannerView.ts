@@ -429,7 +429,7 @@ export function renderScannerView(): void {
 
     container.innerHTML = `
       ${subTabHeader}
-      <div style="flex: 1; overflow-y: auto; padding: 24px; box-sizing: border-box;">
+      <div style="flex: 1; overflow-y: auto; min-height: 0; padding: 24px; box-sizing: border-box;">
         <div class="scanner-stats-grid" style="margin-bottom: 20px;">
           <div class="premium-stat-card">
             <div class="scanner-stat-label">Total Scanned</div>
@@ -551,7 +551,7 @@ export function renderScannerView(): void {
 
     container.innerHTML = `
       ${subTabHeader}
-      <div style="flex: 1; overflow-y: auto; padding: 24px; box-sizing: border-box; display:flex; flex-direction:column; gap:16px;">
+      <div style="flex: 1; overflow-y: auto; min-height: 0; padding: 24px; box-sizing: border-box; display:flex; flex-direction:column; gap:16px;">
         
         <!-- Stats and Filter Bar -->
         <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">

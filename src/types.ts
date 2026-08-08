@@ -34,6 +34,7 @@ export interface ModInfo {
   updateDate: string | null;
   libraryZip: string | null;
   ignoredVersion: string | null;
+  nexusFileId: number | null;
 }
 
 export interface AppSettings {
@@ -41,6 +42,7 @@ export interface AppSettings {
   programPath: string;
   hideNativeMods?: boolean;
   debugConsole?: boolean;
+  forceLoadOrder?: boolean;
   customDataPath?: string | null;
   toolbarScale?: number;
 }
@@ -90,3 +92,25 @@ export interface DependencyStatus {
   palschema_needs_update: boolean;
   game_platform: string;
 }
+
+export type RouteType = 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'companion' | 'passthrough';
+
+export interface FileRoute {
+  zipPath: string;
+  destPath: string;
+  routeType: RouteType;
+}
+
+export interface InstallManifest {
+  folderName: string;
+  displayName: string;
+  modType: ModType;
+  routes: FileRoute[];
+  nexusModId: number | null;
+  nexusFileId: number | null;
+  hasPak: boolean;
+  hasUe4ss: boolean;
+  hasPalschema: boolean;
+  version: string;
+}
+

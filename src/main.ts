@@ -57,6 +57,8 @@ async function init() {
     await logFromJs("JS: Iniciando script de frontend (main.ts)");
     const settings = await getSettings();
     updateState({ currentSettings: settings });
+    const { updateLoadTabVisibility } = await import('./ui/loadView');
+    updateLoadTabVisibility();
     const scale = settings.toolbarScale || 1.0;
     document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
 
@@ -298,7 +300,7 @@ function setupEventListeners() {
 
   document.querySelectorAll('.sidebar-tab').forEach((btn) => {
     btn.addEventListener('click', async () => {
-      const tab = (btn as HTMLElement).dataset.tab as 'mods' | 'editor' | 'library' | 'build' | 'scanner' | 'db';
+      const tab = (btn as HTMLElement).dataset.tab as any;
       const state = getState();
       if (state.activeTab === 'editor' && tab !== 'editor') {
         const { confirmDiscardOrSave } = await import('./ui/editorView');
@@ -376,6 +378,12 @@ function setupEventListeners() {
   setupContextMenu();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      const fullFilesOverlay = document.getElementById('full-files-modal-overlay');
+      if (fullFilesOverlay) {
+        fullFilesOverlay.remove();
+        return;
+      }
+
       const detailOverlay = document.getElementById('detail-overlay');
       if (detailOverlay?.classList.contains('visible')) closeDetailPanel();
       

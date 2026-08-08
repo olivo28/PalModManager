@@ -63,6 +63,8 @@ pub struct ModInfo {
     pub library_zip: Option<String>,
     #[serde(default)]
     pub ignored_version: Option<String>,
+    #[serde(default)]
+    pub nexus_file_id: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,6 +76,8 @@ pub struct AppSettings {
     pub hide_native_mods: Option<bool>,
     #[serde(default)]
     pub debug_console: Option<bool>,
+    #[serde(default)]
+    pub force_load_order: Option<bool>,
     #[serde(default)]
     pub custom_data_path: Option<String>,
     #[serde(default)]
@@ -111,6 +115,8 @@ pub struct Profile {
     pub palschema_enabled: bool,
     #[serde(default)]
     pub mod_folders: Vec<ModFolder>,
+    #[serde(default)]
+    pub load_order_metadata: Option<Vec<(String, bool)>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -136,6 +142,7 @@ impl Default for AppData {
                 program_path: String::new(),
                 hide_native_mods: Some(false),
                 debug_console: Some(false),
+                force_load_order: Some(false),
                 custom_data_path: None,
                 window_width: None,
                 window_height: None,
@@ -146,5 +153,39 @@ impl Default for AppData {
             current_profile_id: "default".to_string(),
         }
     }
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum RouteType {
+    Ue4ss,
+    PalSchema,
+    Pak,
+    LogicMods,
+    Companion,
+    Passthrough,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct FileRoute {
+    pub zip_path: String,
+    pub dest_path: String,
+    pub route_type: RouteType,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallManifest {
+    pub folder_name: String,
+    pub display_name: String,
+    pub mod_type: ModType,
+    pub routes: Vec<FileRoute>,
+    pub nexus_mod_id: Option<u32>,
+    pub nexus_file_id: Option<u32>,
+    pub has_pak: bool,
+    pub has_ue4ss: bool,
+    pub has_palschema: bool,
+    pub version: String,
 }
 
