@@ -510,11 +510,20 @@
               (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
           </div>
           <div class="settings-group">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" id="settings-force-load-order" />
-              <span>Force Load Order (UE4SS & PalSchema) (Experimental / Windows Only)</span>
-            </label>
-            <div class="settings-hint" style="margin-left:22px;">Force load order of UE4SS mods via mods.txt and PalSchema mods via NTFS junctions. When disabled, load order is ignored.</div>
+            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;">Force Load Order (Experimental)</div>
+            <div class="settings-hint" style="margin-bottom:10px;">Select which load order system components you want to enforce:</div>
+            
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="settings-force-load-order-ue4ss" />
+                <span>Enforce UE4SS Load Order (via mods.txt)</span>
+              </label>
+              
+              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+                <input type="checkbox" id="settings-force-load-order-palschema" />
+                <span>Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
+              </label>
+            </div>
           </div>
           <div class="settings-divider"></div>
           <div class="settings-group">

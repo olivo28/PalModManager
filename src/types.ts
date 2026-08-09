@@ -43,6 +43,8 @@ export interface AppSettings {
   hideNativeMods?: boolean;
   debugConsole?: boolean;
   forceLoadOrder?: boolean;
+  forceLoadOrderUe4ss?: boolean;
+  forceLoadOrderPalschema?: boolean;
   customDataPath?: string | null;
   toolbarScale?: number;
 }

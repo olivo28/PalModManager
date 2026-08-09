@@ -13,10 +13,13 @@ export async function renderLoadView(): Promise<void> {
   const container = document.getElementById('load-list-container');
   if (!container) return;
 
-  // Render main sub-containers structure if it's the first render or reset
+  const state = getState();
+  const showUe4ss = !!state.currentSettings?.forceLoadOrderUe4ss;
+  const showPalschema = !!state.currentSettings?.forceLoadOrderPalschema;
+
   container.innerHTML = `
     <!-- UE4SS Section -->
-    <div class="load-section-container" style="flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 320px; background: rgba(20,20,20,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 100%;">
+    <div id="ue4ss-load-section" class="load-section-container" style="flex: 1; display: ${showUe4ss ? 'flex' : 'none'}; flex-direction: column; gap: 10px; min-width: 320px; background: rgba(20,20,20,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 100%;">
       <div style="display:flex; flex-direction:column; gap:4px; border-bottom:1px solid var(--border); padding-bottom:10px; flex-shrink:0;">
         <span style="font-size:14px; font-weight:700; color:var(--text-primary);">UE4SS Mods Load Order</span>
         <span style="font-size:10px; color:var(--text-muted);">Controlled via Mods/mods.txt</span>
@@ -27,7 +30,7 @@ export async function renderLoadView(): Promise<void> {
     </div>
 
     <!-- PalSchema Section -->
-    <div class="load-section-container" style="flex: 1; display: flex; flex-direction: column; gap: 10px; min-width: 320px; background: rgba(20,20,20,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 100%;">
+    <div id="palschema-load-section" class="load-section-container" style="flex: 1; display: ${showPalschema ? 'flex' : 'none'}; flex-direction: column; gap: 10px; min-width: 320px; background: rgba(20,20,20,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 100%;">
       <div style="display:flex; flex-direction:column; gap:4px; border-bottom:1px solid var(--border); padding-bottom:10px; flex-shrink:0;">
         <span style="font-size:14px; font-weight:700; color:var(--text-primary);">PalSchema Mods Load Order <span style="font-size:9px; color:var(--accent); font-weight:normal; margin-left:2px; vertical-align:middle; border: 1px solid rgba(0,188,255,0.2); padding: 1px 4px; border-radius: 3px;">Experimental</span></span>
         <span style="font-size:10px; color:var(--text-muted);">Controlled via NTFS Junction Prefixes (Windows Only)</span>
@@ -41,28 +44,32 @@ export async function renderLoadView(): Promise<void> {
   const ue4ssSub = document.getElementById('ue4ss-list-subcontainer')!;
   const palschemaSub = document.getElementById('palschema-list-subcontainer')!;
 
-  // 1. Load UE4SS Mods
-  try {
-    _ue4ssMods = await invoke<ModInfo[]>('get_ue4ss_load_order');
-    renderUe4ssList(ue4ssSub);
-    if (_ue4ssAbort) { _ue4ssAbort.abort(); }
-    _ue4ssAbort = new AbortController();
-    setupPointerDrag(ue4ssSub, _ue4ssMods, 'save_ue4ss_load_order', renderUe4ssList, _ue4ssAbort.signal);
-  } catch (e) {
-    console.error('Failed to load UE4SS load order:', e);
-    ue4ssSub.innerHTML = `<div style="color:var(--danger);font-size:12px;padding:8px;">Error: ${escapeHtml(String(e))}</div>`;
+  // 1. Load UE4SS Mods (if enabled)
+  if (showUe4ss) {
+    try {
+      _ue4ssMods = await invoke<ModInfo[]>('get_ue4ss_load_order');
+      renderUe4ssList(ue4ssSub);
+      if (_ue4ssAbort) { _ue4ssAbort.abort(); }
+      _ue4ssAbort = new AbortController();
+      setupPointerDrag(ue4ssSub, _ue4ssMods, 'save_ue4ss_load_order', renderUe4ssList, _ue4ssAbort.signal);
+    } catch (e) {
+      console.error('Failed to load UE4SS load order:', e);
+      ue4ssSub.innerHTML = `<div style="color:var(--danger);font-size:12px;padding:8px;">Error: ${escapeHtml(String(e))}</div>`;
+    }
   }
 
-  // 2. Load PalSchema Mods
-  try {
-    _palschemaMods = await invoke<ModInfo[]>('get_palschema_load_order');
-    renderPalSchemaList(palschemaSub);
-    if (_palschemaAbort) { _palschemaAbort.abort(); }
-    _palschemaAbort = new AbortController();
-    setupPointerDrag(palschemaSub, _palschemaMods, 'save_palschema_load_order', renderPalSchemaList, _palschemaAbort.signal);
-  } catch (e) {
-    console.error('Failed to load PalSchema load order:', e);
-    palschemaSub.innerHTML = `<div style="color:var(--danger);font-size:12px;padding:8px;">Error: ${escapeHtml(String(e))}</div>`;
+  // 2. Load PalSchema Mods (if enabled)
+  if (showPalschema) {
+    try {
+      _palschemaMods = await invoke<ModInfo[]>('get_palschema_load_order');
+      renderPalSchemaList(palschemaSub);
+      if (_palschemaAbort) { _palschemaAbort.abort(); }
+      _palschemaAbort = new AbortController();
+      setupPointerDrag(palschemaSub, _palschemaMods, 'save_palschema_load_order', renderPalSchemaList, _palschemaAbort.signal);
+    } catch (e) {
+      console.error('Failed to load PalSchema load order:', e);
+      palschemaSub.innerHTML = `<div style="color:var(--danger);font-size:12px;padding:8px;">Error: ${escapeHtml(String(e))}</div>`;
+    }
   }
 }
 

@@ -53,6 +53,14 @@ export async function setForceLoadOrder(enabled: boolean): Promise<AppSettings> 
   return invoke('set_force_load_order', { enabled });
 }
 
+export async function setForceLoadOrderUe4ss(enabled: boolean): Promise<AppSettings> {
+  return invoke('set_force_load_order_ue4ss', { enabled });
+}
+
+export async function setForceLoadOrderPalschema(enabled: boolean): Promise<AppSettings> {
+  return invoke('set_force_load_order_palschema', { enabled });
+}
+
 export async function setCustomDataPath(path: string | null): Promise<AppSettings> {
   return invoke('set_custom_data_path', { path });
 }

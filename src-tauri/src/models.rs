@@ -79,6 +79,10 @@ pub struct AppSettings {
     #[serde(default)]
     pub force_load_order: Option<bool>,
     #[serde(default)]
+    pub force_load_order_ue4ss: Option<bool>,
+    #[serde(default)]
+    pub force_load_order_palschema: Option<bool>,
+    #[serde(default)]
     pub custom_data_path: Option<String>,
     #[serde(default)]
     pub window_width: Option<f64>,
@@ -143,6 +147,8 @@ impl Default for AppData {
                 hide_native_mods: Some(false),
                 debug_console: Some(false),
                 force_load_order: Some(false),
+                force_load_order_ue4ss: Some(false),
+                force_load_order_palschema: Some(false),
                 custom_data_path: None,
                 window_width: None,
                 window_height: None,

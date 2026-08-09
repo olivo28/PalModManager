@@ -40,6 +40,18 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     data.settings.force_load_order = Some(enabled);
     
+    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    return Ok(result);
+}
+
+#[tauri::command]
+pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Result<Value, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    data.settings.force_load_order_ue4ss = Some(enabled);
+    
     let game_path = data.settings.game_path.clone();
     if !game_path.is_empty() {
         let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
@@ -47,8 +59,6 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
         
         if mods_txt.exists() {
             let current_profile_id = data.current_profile_id.clone();
-            
-            // Get all UE4SS/Hybrid custom mods that are physically installed in this profile
             if let Some(current_profile) = data.profiles.iter().find(|p| p.id == current_profile_id).cloned() {
                 let target_mods: Vec<crate::models::ModInfo> = data.mods.iter()
                     .filter(|m| {
@@ -61,38 +71,27 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                     .collect();
                     
                 if enabled {
-                    // Transition to mods.txt (Load order enabled)
-                    // 1. Reconcile with load_order_metadata
                     let mut reconciled_items: Vec<(String, bool)> = Vec::new();
                     if let Some(ref metadata) = current_profile.load_order_metadata {
                         for (folder_name, is_enabled) in metadata {
-                            // Check if this mod is currently installed/active in the profile
                             if target_mods.iter().any(|m| crate::profiles::get_mod_folder_name(m).to_lowercase() == folder_name.to_lowercase()) {
                                 reconciled_items.push((folder_name.clone(), *is_enabled));
                             }
                         }
                     }
-                    
-                    // Add any currently installed mod that wasn't in metadata
                     for m in &target_mods {
                         let folder_name = crate::profiles::get_mod_folder_name(m);
                         if !reconciled_items.iter().any(|(f, _)| f.to_lowercase() == folder_name.to_lowercase()) {
-                            reconciled_items.push((folder_name, true)); // default to enabled
+                            reconciled_items.push((folder_name, true));
                         }
                     }
-                    
-                    // 2. Write reconciled_items to mods.txt
                     if let Ok(content) = fs::read_to_string(&mods_txt) {
                         let ordered_folder_names: Vec<String> = reconciled_items.iter().map(|(f, _)| f.clone()).collect();
-                        
-                        // Build custom lines to insert
                         let mut custom_lines = Vec::new();
                         for (folder_name, is_enabled) in &reconciled_items {
                             let val = if *is_enabled { "1" } else { "0" };
                             custom_lines.push(format!("{} : {}", folder_name, val));
                         }
-                        
-                        // Filter out existing references in mods.txt
                         let mut lines_to_keep = Vec::new();
                         for line in content.lines() {
                             let line_clean = line.trim();
@@ -109,8 +108,6 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                             }
                             lines_to_keep.push(line.to_string());
                         }
-                        
-                        // Insertion index
                         let mut insert_index = None;
                         for (idx, line) in lines_to_keep.iter().enumerate() {
                             let line_clean = line.trim();
@@ -132,16 +129,7 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                         }
                         let _ = fs::write(&mods_txt, lines_to_keep.join("\r\n") + "\r\n");
                     }
-                    
-                    // 3. Delete enabled.txt from all target_mods
-                    for m in &target_mods {
-                        let enabled_file = Path::new(&m.game_path).join("enabled.txt");
-                        if enabled_file.exists() {
-                            let _ = fs::remove_file(&enabled_file);
-                        }
-                    }
                 } else {
-                    // Transition back to enabled.txt (Load order disabled)
                     if let Ok(content) = fs::read_to_string(&mods_txt) {
                         let mut enabled_in_mods_txt = std::collections::HashSet::new();
                         for line in content.lines() {
@@ -158,8 +146,6 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                                 }
                             }
                         }
-                        
-                        // 2. Clean up all custom mod lines from mods.txt
                         let mut lines_to_keep = Vec::new();
                         let target_folder_names: Vec<String> = target_mods.iter().map(|m| crate::profiles::get_mod_folder_name(m)).collect();
                         for line in content.lines() {
@@ -178,12 +164,9 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                             lines_to_keep.push(line.to_string());
                         }
                         let _ = fs::write(&mods_txt, lines_to_keep.join("\r\n") + "\r\n");
-                        
-                        // 3. For each mod: write enabled.txt only if it was enabled in mods.txt (or fallback to true)
                         for m in &target_mods {
                             let folder_name = crate::profiles::get_mod_folder_name(m);
                             let was_enabled = enabled_in_mods_txt.contains(&folder_name.to_lowercase()) || !content.contains(&folder_name);
-                            
                             let enabled_file = Path::new(&m.game_path).join("enabled.txt");
                             if was_enabled {
                                 if !enabled_file.exists() {
@@ -198,20 +181,38 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                     }
                 }
             }
+        }
+    }
+    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    Ok(result)
+}
 
-            // --- PalSchema Mods Migration on Toggle ---
+#[tauri::command]
+pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> Result<Value, String> {
+    #[cfg(not(target_os = "windows"))]
+    {
+        return Err("NTFS Junction Load Order for PalSchema is only supported on Windows".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.force_load_order_palschema = Some(enabled);
+        
+        let game_path = data.settings.game_path.clone();
+        if !game_path.is_empty() {
+            let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
             let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
             let palschema_storage_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
-
-            // Filter for installed PalSchema mods in current profile
             let current_profile_id = data.current_profile_id.clone();
             let (_palschema_mod_ids, enabled_mod_ids) = if let Some(current_profile) = data.profiles.iter().find(|p| p.id == current_profile_id) {
                 (current_profile.installed_mod_ids.clone(), current_profile.enabled_mod_ids.clone())
             } else {
                 (Vec::new(), Vec::new())
             };
-                
-            // Get list of current mods/ entries
             let mut current_mods_links = Vec::new();
             if palschema_mods_dir.exists() {
                 if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
@@ -224,13 +225,9 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
             }
 
             if !enabled {
-                // Moving back to Standard (Load Order Disabled)
-                // 1. Delete all junctions/symlinks under mods/
                 for (path, _) in &current_mods_links {
                     let _ = crate::profiles::remove_junction_or_symlink(path);
                 }
-
-                // 2. Read palschema_storage_dir physically and move every folder back to mods/
                 if palschema_storage_dir.exists() {
                     if let Ok(entries) = fs::read_dir(&palschema_storage_dir) {
                         for entry in entries.flatten() {
@@ -243,63 +240,50 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                             }
                         }
                     }
-                    // Clean up Storage dir if empty
                     let _ = fs::remove_dir(&palschema_storage_dir);
                 }
-
-                // 3. Reset game_path to standard mods/ folder path for all PalSchema mods in DB
-                for mod_info in &mut data.mods {
-                    if mod_info.mod_type == crate::models::ModType::PalSchema {
-                        let folder_name = crate::profiles::get_mod_folder_name(mod_info);
-                        let direct_path = palschema_mods_dir.join(&folder_name);
-                        if direct_path.exists() {
-                            mod_info.game_path = direct_path.to_string_lossy().to_string();
-                        }
+            for mod_info in &mut data.mods {
+                if mod_info.mod_type == crate::models::ModType::PalSchema || mod_info.mod_type == crate::models::ModType::Hybrid {
+                    let folder_name = crate::profiles::get_mod_folder_name(mod_info);
+                    let direct_path = palschema_mods_dir.join(&folder_name);
+                    if direct_path.exists() {
+                        mod_info.game_path = direct_path.to_string_lossy().to_string();
                     }
                 }
+            }
             } else {
-                // Moving to Storage + Junctions Load Order
                 let mut idx = 0;
                 for mod_info in &mut data.mods {
                     if mod_info.mod_type == crate::models::ModType::PalSchema || mod_info.mod_type == crate::models::ModType::Hybrid {
                         let folder_name = crate::profiles::get_mod_folder_name(mod_info);
                         let is_enabled = enabled_mod_ids.iter().any(|id| id.to_lowercase() == mod_info.id.to_lowercase() || id.to_lowercase() == mod_info.name.to_lowercase() || id.to_lowercase() == folder_name.to_lowercase());
-
-                        // For Hybrid mods, we only do PalSchema load ordering migration if they actually have a PalSchema component.
                         let storage_dest = palschema_storage_dir.join(&folder_name);
                         let has_palschema_folder = storage_dest.exists() || current_mods_links.iter().any(|(_, name)| name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name));
-
                         if !has_palschema_folder && mod_info.mod_type == crate::models::ModType::Hybrid {
                             continue;
                         }
-
                         if is_enabled {
-                            // Find any physical folder directly in mods/ matching name or numbered name, and migrate it to Storage
                             let mut physical_src = None;
                             for (path, name) in &current_mods_links {
                                 if (name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name)) && !junction::exists(path).unwrap_or(false) && path.is_dir() {
                                     physical_src = Some(path.clone());
                                 }
                             }
-
                             if let Some(src) = physical_src {
                                 let _ = fs::create_dir_all(&palschema_storage_dir);
                                 let _ = crate::profiles::move_path(&src, &storage_dest);
                             }
-
-                            // Delete any existing junction
                             for (path, name) in &current_mods_links {
                                 if name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name) {
                                     let _ = crate::profiles::remove_junction_or_symlink(path);
                                 }
                             }
-
                             if storage_dest.exists() {
                                 let link_name = format!("{:03}_{}", idx, folder_name);
                                 let link_path = palschema_mods_dir.join(&link_name);
                                 let _ = fs::create_dir_all(&palschema_mods_dir);
                                 let _ = crate::profiles::create_junction_or_symlink(&storage_dest, &link_path);
-                                if mod_info.mod_type == crate::models::ModType::PalSchema {
+                                if mod_info.mod_type == crate::models::ModType::PalSchema || mod_info.mod_type == crate::models::ModType::Hybrid {
                                     mod_info.game_path = link_path.to_string_lossy().to_string();
                                 }
                                 mod_info.mods_txt_order = Some(idx);
@@ -310,13 +294,12 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                 }
             }
         }
+        let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+        let data_clone = data.clone();
+        drop(data);
+        let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+        Ok(result)
     }
-
-    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
-    let data_clone = data.clone();
-    drop(data);
-    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
-    Ok(result)
 }
 
 #[tauri::command]

@@ -15,7 +15,8 @@ export function openSettingsModal(): void {
   const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
   const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
   const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
-  const forceLoadOrderCheckbox = document.getElementById('settings-force-load-order')! as HTMLInputElement;
+  const forceLoadOrderUe4ssCheckbox = document.getElementById('settings-force-load-order-ue4ss')! as HTMLInputElement;
+  const forceLoadOrderPalschemaCheckbox = document.getElementById('settings-force-load-order-palschema')! as HTMLInputElement;
   const pathStatus = document.getElementById('settings-path-status')!;
   const state = getState();
 
@@ -26,25 +27,50 @@ export function openSettingsModal(): void {
   if (debugConsoleCheckbox) {
     debugConsoleCheckbox.checked = !!state.currentSettings?.debugConsole;
   }
-  if (forceLoadOrderCheckbox) {
-    forceLoadOrderCheckbox.checked = !!state.currentSettings?.forceLoadOrder;
-    
-    // Clear old event listener to prevent multiple bindings if modal opens multiple times
-    const newCheckbox = forceLoadOrderCheckbox.cloneNode(true) as HTMLInputElement;
-    forceLoadOrderCheckbox.parentNode!.replaceChild(newCheckbox, forceLoadOrderCheckbox);
-    
-    newCheckbox.addEventListener('change', async () => {
-      if (newCheckbox.checked) {
+
+  // Detect platform to disable palschema on non-Windows (linux compatibility)
+  const isWindows = navigator.userAgent.toLowerCase().includes('win');
+  if (forceLoadOrderPalschemaCheckbox && !isWindows) {
+    forceLoadOrderPalschemaCheckbox.disabled = true;
+    forceLoadOrderPalschemaCheckbox.checked = false;
+  }
+
+  if (forceLoadOrderUe4ssCheckbox && forceLoadOrderPalschemaCheckbox) {
+    // 1. Clear old event listeners by cloning all checkboxes to avoid duplicate listener firing
+    const newUe4ss = forceLoadOrderUe4ssCheckbox.cloneNode(true) as HTMLInputElement;
+    forceLoadOrderUe4ssCheckbox.parentNode!.replaceChild(newUe4ss, forceLoadOrderUe4ssCheckbox);
+
+    const newPalschema = forceLoadOrderPalschemaCheckbox.cloneNode(true) as HTMLInputElement;
+    forceLoadOrderPalschemaCheckbox.parentNode!.replaceChild(newPalschema, forceLoadOrderPalschemaCheckbox);
+
+    // 2. Set initial values
+    newUe4ss.checked = !!state.currentSettings?.forceLoadOrderUe4ss;
+    newPalschema.checked = isWindows ? !!state.currentSettings?.forceLoadOrderPalschema : false;
+
+    // Subcheckbox listeners
+    const handleSubChange = async (elem: HTMLInputElement, systemName: string, detailMsg: string, requireConfirm: boolean) => {
+      if (elem.checked && requireConfirm) {
         const confirmed = await showConfirm(
-          'Enable Load Order Settings',
-          'Enabling Load Order moves PalSchema mods to a dynamic /Storage folder and creates NTFS junctions. This restructuring can cause issues with certain custom mod setups. It is highly recommended to back up your current profile/folder before proceeding.<br><br>Do you want to continue?',
+          `Enable ${systemName} Load Order`,
+          `Enabling this setting will enforce loading sequence for ${systemName} mods. ${detailMsg}<br><br>Do you want to continue?`,
           'Yes, Enable',
           'Cancel'
         );
         if (!confirmed) {
-          newCheckbox.checked = false;
+          elem.checked = false;
+          return;
         }
       }
+    };
+
+    newUe4ss.addEventListener('change', () => {
+      // UE4SS just alters mods.txt, no warning normally, warn if checking it explicitly
+      handleSubChange(newUe4ss, 'UE4SS', 'This will organize your mods via mods.txt.', true);
+    });
+
+    newPalschema.addEventListener('change', () => {
+      // PalSchema junction warning should ALWAYS show on check
+      handleSubChange(newPalschema, 'PalSchema', 'This will dynamically redirect your mods to a Storage folder and create NTFS junctions.', true);
     });
   }
 
@@ -180,7 +206,6 @@ export async function handleSaveSettings(): Promise<void> {
   const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
   const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
   const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
-  const forceLoadOrderCheckbox = document.getElementById('settings-force-load-order')! as HTMLInputElement;
   const saveBtn = document.getElementById('settings-save')! as HTMLButtonElement;
   const pathStatus = document.getElementById('settings-path-status')!;
   saveBtn.disabled = true;
@@ -189,7 +214,13 @@ export async function handleSaveSettings(): Promise<void> {
     const newPath = pathInput.value.trim();
     const hideNative = hideNativeCheckbox ? hideNativeCheckbox.checked : false;
     const debugConsole = debugConsoleCheckbox ? debugConsoleCheckbox.checked : false;
-    const forceLoadOrder = forceLoadOrderCheckbox ? forceLoadOrderCheckbox.checked : false;
+    const forceLoadOrderUe4ssCheckbox = document.getElementById('settings-force-load-order-ue4ss')! as HTMLInputElement;
+    const forceLoadOrderPalschemaCheckbox = document.getElementById('settings-force-load-order-palschema')! as HTMLInputElement;
+    
+    const forceLoadOrderUe4ss = forceLoadOrderUe4ssCheckbox ? forceLoadOrderUe4ssCheckbox.checked : false;
+    const forceLoadOrderPalschema = forceLoadOrderPalschemaCheckbox ? forceLoadOrderPalschemaCheckbox.checked : false;
+    // Master forceLoadOrder is active if either UE4SS or PalSchema features are active
+    const forceLoadOrder = forceLoadOrderUe4ss || forceLoadOrderPalschema;
     const state = getState();
 
     if (newPath && newPath !== state.currentSettings?.gamePath) {
@@ -216,8 +247,25 @@ export async function handleSaveSettings(): Promise<void> {
       updateState({ currentSettings: settings });
     }
 
-    if (forceLoadOrder !== !!state.currentSettings?.forceLoadOrder) {
+    let forceLoadOrderChanged = false;
+    if (forceLoadOrderUe4ss !== !!state.currentSettings?.forceLoadOrderUe4ss) {
+      const { setForceLoadOrderUe4ss } = await import('../api');
+      const settings = await setForceLoadOrderUe4ss(forceLoadOrderUe4ss);
+      updateState({ currentSettings: settings });
+      forceLoadOrderChanged = true;
+    }
+
+    if (forceLoadOrderPalschema !== !!state.currentSettings?.forceLoadOrderPalschema) {
+      const { setForceLoadOrderPalschema } = await import('../api');
+      const settings = await setForceLoadOrderPalschema(forceLoadOrderPalschema);
+      updateState({ currentSettings: settings });
+      forceLoadOrderChanged = true;
+    }
+
+    if (forceLoadOrder !== !!state.currentSettings?.forceLoadOrder || forceLoadOrderChanged) {
       const { setForceLoadOrder } = await import('../api');
+      // In the backend, we should make sure set_force_load_order only acts as a master toggle state save, 
+      // without overriding sub-option actions if they are run independently.
       const settings = await setForceLoadOrder(forceLoadOrder);
       updateState({ currentSettings: settings });
       const { updateLoadTabVisibility } = await import('./loadView');
