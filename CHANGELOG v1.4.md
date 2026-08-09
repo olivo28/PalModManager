@@ -9,10 +9,12 @@ All notable changes to this project will be documented in this file.
 - **Dynamic UE4SS Load Order Manager (Experimental)**: Added a new **Load** tab inside the sidebar to manage mod loading sequences interactively with drag-and-drop support.
 - **Side-by-Side Dual Load Order Panels**: Redesigned the "Load" tab to show two independent columns side-by-side with separate scrollbars, allowing you to organize UE4SS and PalSchema mods concurrently with full visual clarity.
 
+### Redesigned Installer
+Replaced the legacy file-heuristic installer with a robust, metadata-first packaging parser. It reads the local package manifest (`modinfo.pmm.json` / `.pmm.json`) to accurately extract mod metadata (version, author, description, and Nexus Mod ID) and maps complex multi-directory routes (such as hybrid files deploying concurrently to UE4SS and PalSchema) flawlessly.
+
 ### Added
 - **Interactive File Preview Tree**: Added a collapsible file tree viewer in both single and batch installers to inspect ZIP contents and installation targets before deploying.
 - **State Transition Sync**: Automatically manages turning on/off the load order setting, transitioning configuration states between `enabled.txt` and `mods.txt` dynamically.
-
 
 ### Improvements & Corrections
 - **Fixed Scrollbars in Scanner Views**: Added scrolling capability to the conflict scanner and hotkeys manager panels.

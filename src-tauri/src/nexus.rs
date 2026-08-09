@@ -384,7 +384,7 @@ query GetPalworldMod($modId: ID!) {
         .post(GRAPHQL_ENDPOINT)
         .header("Content-Type", "application/json")
         .header("Application-Name", "PalModManager")
-        .header("Application-Version", "1.3.1")
+        .header("Application-Version", "1.4.0")
         .json(&payload);
 
     let resp = req
