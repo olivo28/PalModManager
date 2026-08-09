@@ -37,6 +37,8 @@ export interface ScanResult {
   ue4ssScanned: number;
   tableConflicts: TableRowConflict[];
   hookConflicts: HookConflict[];
+  internalTableConflicts: TableRowConflict[];
+  internalHookConflicts: HookConflict[];
   warnings: string[];
   modSummaries: ModSummary[];
 }
@@ -344,6 +346,83 @@ export function renderScannerView(): void {
       `;
     }
 
+    const internalTableCount = res.internalTableConflicts ? res.internalTableConflicts.length : 0;
+    const internalHookCount = res.internalHookConflicts ? res.internalHookConflicts.length : 0;
+    const hasInternalConflicts = internalTableCount > 0 || internalHookCount > 0;
+
+    let internalConflictsHtml = '';
+    if (hasInternalConflicts) {
+      internalConflictsHtml = `
+        <div style="display: flex; gap: 20px; flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: 20px;">
+          <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer; border-color: rgba(255, 165, 0, 0.2);">
+            <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 165, 0, 0.03); border-bottom: 1px solid rgba(255, 165, 0, 0.08);">
+              <span style="color: var(--warning); display: flex; align-items: center; gap: 6px; font-weight: 700;">
+                ⚠️ Self-Conflicts / Internal Duplicates (${internalTableCount + internalHookCount})
+              </span>
+              <span style="font-size: 10px; color: var(--text-muted);">Duplicate files or repeated hooks within the same mod</span>
+            </summary>
+            <div class="scanner-card-body" style="cursor: default; gap: 14px; padding-top: 14px;">
+              ${internalHookCount > 0 ? `
+                <div style="font-weight: 700; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">UE4SS Duplicate Internal Hooks:</div>
+                ${res.internalHookConflicts.map(c => `
+                  <div class="scanner-conflict-item" style="border-left: 2.5px solid var(--warning);">
+                    <div class="scanner-conflict-header">
+                      <span class="scanner-conflict-title">${escapeHtml(c.hookTarget)}</span>
+                      <span class="scanner-conflict-type lua">${escapeHtml(c.hookFn)}</span>
+                    </div>
+                    <div class="scanner-conflict-mods">
+                      ${c.mods.map(m => `
+                        <div class="scanner-conflict-mod-row" style="flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
+                            <span class="scanner-conflict-mod-file">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
+                          </div>
+                          ${m.detail ? `
+                            <div style="font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; font-family: monospace; border: 1px solid var(--border); margin-left: 4px; margin-top: 2px;">
+                              Line ${m.lineNumber}: ${escapeHtml(m.detail)}
+                            </div>
+                          ` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              ` : ''}
+              
+              ${internalTableCount > 0 ? `
+                <div style="font-weight: 700; font-size: 11px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 4px;">PalSchema Duplicate Internal Rows:</div>
+                ${res.internalTableConflicts.map(c => `
+                  <div class="scanner-conflict-item" style="border-left: 2.5px solid var(--warning);">
+                    <div class="scanner-conflict-header">
+                      <span class="scanner-conflict-title">${escapeHtml(c.tableName)}::${escapeHtml(c.rowName)}</span>
+                      <span class="scanner-conflict-type">PalSchema</span>
+                    </div>
+                    <div class="scanner-conflict-mods">
+                      ${c.mods.map(m => `
+                        <div class="scanner-conflict-mod-row" style="flex-direction: column; align-items: flex-start; gap: 2px; margin-bottom: 6px;">
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
+                            <span class="scanner-conflict-mod-file">(${escapeHtml(m.filePath)})</span>
+                          </div>
+                          ${m.detail ? `
+                            <div style="font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; font-family: monospace; border: 1px solid var(--border); margin-left: 4px; margin-top: 2px;">
+                              ${escapeHtml(m.detail)}
+                            </div>
+                          ` : ''}
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              ` : ''}
+            </div>
+          </details>
+        </div>
+      `;
+    }
+
+    contentHtml = contentHtml + internalConflictsHtml;
+
     let summariesHtml = '';
     if (res.modSummaries && res.modSummaries.length > 0) {
       summariesHtml = `
@@ -490,11 +569,14 @@ export function renderScannerView(): void {
       return;
     }
 
-    // Identify collisions/conflicts
+    // Identify collisions/conflicts (excluding variables/dynamic lookups)
     const bindingsMap = new Map<string, number>();
     for (const hk of lastHotkeysResult) {
-      const cleanKey = hk.keys.trim().toLowerCase();
-      bindingsMap.set(cleanKey, (bindingsMap.get(cleanKey) || 0) + 1);
+      const isDynamic = !hk.keys.toLowerCase().includes('key.') && !hk.keys.toLowerCase().includes('keys.') && !hk.keys.includes('"') && !hk.keys.includes('\'');
+      if (!isDynamic) {
+        const cleanKey = hk.keys.trim().toLowerCase();
+        bindingsMap.set(cleanKey, (bindingsMap.get(cleanKey) || 0) + 1);
+      }
     }
 
     const filtered = lastHotkeysResult.filter(hk => {
@@ -512,10 +594,9 @@ export function renderScannerView(): void {
       const uniqueKey = `${hk.absoluteFilePath}::${hk.lineNumber}`;
       const isEditing = editingHotkeyKey === uniqueKey;
       const cleanKey = hk.keys.trim().toLowerCase();
-      const hasConflict = (bindingsMap.get(cleanKey) || 0) > 1;
-
-      // Check if it looks like a variable/dynamic lookup (e.g. no "Key." and no quotes)
+      
       const isDynamicVariable = !hk.keys.toLowerCase().includes('key.') && !hk.keys.toLowerCase().includes('keys.') && !hk.keys.includes('"') && !hk.keys.includes('\'');
+      const hasConflict = !isDynamicVariable && (bindingsMap.get(cleanKey) || 0) > 1;
 
       const keysCell = isEditing
         ? `
@@ -536,7 +617,8 @@ export function renderScannerView(): void {
       const actions = isEditing
         ? `<button class="btn-tiny hk-save-btn" data-idx="${idx}" style="background:var(--success);color:#000;font-weight:700;">Save</button>
            <button class="btn-tiny hk-cancel-btn" style="margin-left:4px;">Cancel</button>`
-        : `<button class="btn-tiny hk-edit-btn" data-key="${uniqueKey}">Edit</button>`;
+        : `<button class="btn-tiny hk-edit-btn" data-key="${uniqueKey}">Edit</button>
+           <button class="btn-tiny hk-code-btn" data-mod-id="${hk.modId}" data-file-path="${escapeHtml(hk.filePath)}" data-line="${hk.lineNumber}" style="margin-left:4px;background:rgba(255,255,255,0.06);color:var(--text-primary);border-color:var(--border);">Code</button>`;
 
       return `
         <tr style="${hasConflict ? 'background:rgba(255,95,86,0.025)' : ''}">
@@ -551,10 +633,10 @@ export function renderScannerView(): void {
 
     container.innerHTML = `
       ${subTabHeader}
-      <div style="flex: 1; overflow-y: auto; min-height: 0; padding: 24px; box-sizing: border-box; display:flex; flex-direction:column; gap:16px;">
+      <div style="flex: 1; overflow-y: auto; min-height: 0; padding: 24px; box-sizing: border-box;">
         
         <!-- Stats and Filter Bar -->
-        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:16px;">
           <div style="display:flex;gap:12px;">
             <div class="premium-stat-card">
               <div class="scanner-stat-label">Total Keybinds</div>
@@ -572,7 +654,7 @@ export function renderScannerView(): void {
         </div>
 
         <!-- Hotkeys Table -->
-        <div style="border:1px solid var(--border);background:var(--bg-secondary);border-radius:8px;box-shadow: 0 4px 16px rgba(0,0,0,0.35);overflow:hidden;">
+        <div style="border:1px solid var(--border);background:var(--bg-secondary);border-radius:8px;box-shadow: 0 4px 16px rgba(0,0,0,0.35);overflow-x:auto;overflow-y:hidden;">
           <table class="premium-table">
             <thead>
               <tr>
@@ -757,6 +839,16 @@ function setupEventListeners(): void {
         showToast(`Failed to update hotkey: ${err}`, 'error');
         (btn as HTMLButtonElement).disabled = false;
       }
+    });
+  });
+
+  document.querySelectorAll('.hk-code-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const modId = (btn as HTMLElement).dataset.modId!;
+      const filePath = (btn as HTMLElement).dataset.filePath!;
+      const line = parseInt((btn as HTMLElement).dataset.line || '1');
+      const { openFileAtLine } = await import('./editorView');
+      openFileAtLine(modId, filePath, line);
     });
   });
 }

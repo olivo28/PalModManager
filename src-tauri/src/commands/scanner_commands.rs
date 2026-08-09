@@ -50,6 +50,8 @@ pub struct ScanResult {
     pub ue4ss_scanned: u32,
     pub table_conflicts: Vec<TableRowConflict>,
     pub hook_conflicts: Vec<HookConflict>,
+    pub internal_table_conflicts: Vec<TableRowConflict>,
+    pub internal_hook_conflicts: Vec<HookConflict>,
     pub warnings: Vec<String>,
     pub mod_summaries: Vec<ModSummary>,
 }
@@ -117,27 +119,48 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
 
     // Filter conflicts
     let mut table_conflicts = Vec::new();
+    let mut internal_table_conflicts = Vec::new();
     for (entry_key, mods) in table_map.clone() {
         if mods.len() > 1 {
             let parts: Vec<&str> = entry_key.split("::").collect();
             let table_name = parts.get(0).copied().unwrap_or("Unknown").to_string();
             let row_name = parts.get(1).copied().unwrap_or("Unknown").to_string();
-            table_conflicts.push(TableRowConflict {
+            
+            let first_id = &mods[0].mod_id;
+            let is_internal = mods.iter().all(|m| &m.mod_id == first_id);
+            
+            let conflict = TableRowConflict {
                 table_name,
                 row_name,
                 mods,
-            });
+            };
+            
+            if is_internal {
+                internal_table_conflicts.push(conflict);
+            } else {
+                table_conflicts.push(conflict);
+            }
         }
     }
 
     let mut hook_conflicts = Vec::new();
+    let mut internal_hook_conflicts = Vec::new();
     for (hook_target, (hook_fn, mods)) in hook_map.clone() {
         if mods.len() > 1 {
-            hook_conflicts.push(HookConflict {
+            let first_id = &mods[0].mod_id;
+            let is_internal = mods.iter().all(|m| &m.mod_id == first_id);
+            
+            let conflict = HookConflict {
                 hook_target,
                 hook_fn,
                 mods,
-            });
+            };
+            
+            if is_internal {
+                internal_hook_conflicts.push(conflict);
+            } else {
+                hook_conflicts.push(conflict);
+            }
         }
     }
 
@@ -194,6 +217,8 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         ue4ss_scanned,
         table_conflicts,
         hook_conflicts,
+        internal_table_conflicts,
+        internal_hook_conflicts,
         warnings,
         mod_summaries,
     })
@@ -215,7 +240,11 @@ fn scan_palschema_mod(
         }
 
         if let Ok(content) = fs::read_to_string(&file_path) {
-            let stripped = strip_jsonc_comments(&content);
+            let content_clean = content.strip_prefix("\u{feff}").unwrap_or(&content);
+            if content_clean.trim().is_empty() {
+                continue;
+            }
+            let stripped = strip_jsonc_comments(content_clean);
             match serde_json::from_str::<serde_json::Value>(&stripped) {
                 Ok(val) => {
                     let mut file_info = conflict_info.clone();

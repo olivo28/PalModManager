@@ -148,14 +148,36 @@ pub async fn set_nexus_mod_id(mod_id_str: String, nexus_id: u32, state: State<'_
     Ok(result)
 }
 
+fn is_version_newer(local: &str, remote: &str) -> bool {
+    let local_parts: Vec<u32> = local.split('.')
+        .map(|p| p.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0))
+        .collect();
+    let remote_parts: Vec<u32> = remote.split('.')
+        .map(|p| p.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0))
+        .collect();
+    
+    let max_len = std::cmp::max(local_parts.len(), remote_parts.len());
+    for i in 0..max_len {
+        let l = *local_parts.get(i).unwrap_or(&0);
+        let r = *remote_parts.get(i).unwrap_or(&0);
+        if r > l {
+            return true;
+        }
+        if l > r {
+            return false;
+        }
+    }
+    false
+}
+
 #[tauri::command]
 pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateCheckResult>, String> {
     let mods_to_check: Vec<(String, String, String, u32, Option<String>)> = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.mods.iter()
             .filter_map(|m| {
-                if let (Some(nid), Some(ref cached_ver)) = (m.nexus_mod_id, &m.nexus_version_cached) {
-                    Some((m.id.clone(), m.name.clone(), cached_ver.clone(), nid, m.ignored_version.clone()))
+                if let Some(nid) = m.nexus_mod_id {
+                    Some((m.id.clone(), m.name.clone(), m.version.clone(), nid, m.ignored_version.clone()))
                 } else {
                     None
                 }
@@ -165,20 +187,14 @@ pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateC
 
     let mut results = Vec::new();
 
-    for (mod_id, name, cached_ver, nexus_id, ignored_ver) in mods_to_check {
+    for (mod_id, name, local_ver, nexus_id, ignored_ver) in mods_to_check {
         crate::logger::log(&format!("check_for_updates: Checking '{}' (NexusID {})", name, nexus_id));
         match crate::nexus::fetch_mod_info(nexus_id).await {
             Ok(info) => {
-                let norm_cached = cached_ver.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
+                let norm_local = local_ver.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
                 let norm_latest = info.version.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
 
-                let is_different = !norm_latest.is_empty() 
-                    && norm_latest != "unknown" 
-                    && norm_cached != "unknown"
-                    && norm_latest != norm_cached
-                    && !(norm_cached.starts_with(&norm_latest) && norm_cached.len() > norm_latest.len());
-
-                if is_different {
+                if norm_latest != "unknown" && norm_local != "unknown" && is_version_newer(&norm_local, &norm_latest) {
                     // Check if this latest version has been ignored
                     if let Some(ref ignored) = ignored_ver {
                         let norm_ignored = ignored.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
@@ -190,7 +206,7 @@ pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateC
                     results.push(UpdateCheckResult {
                         mod_id,
                         name,
-                        current_version: cached_ver,
+                        current_version: local_ver,
                         latest_version: info.version,
                         nexus_mod_id: nexus_id,
                     });

@@ -19,26 +19,49 @@ pub fn clean_zip_name(zip_filename: &str) -> String {
         .unwrap_or_default();
 
     let words: Vec<&str> = stem.split_whitespace().collect();
-    let mut clean: Vec<&str> = Vec::new();
-    for word in &words {
-        // Pure number == Nexus mod ID
-        if word.chars().all(|c| c.is_ascii_digit()) {
-            break;
+    
+    // Find index of the last purely numeric token (excluding years)
+    let mut id_index = None;
+    for i in (0..words.len()).rev() {
+        let clean_word: String = words[i].chars().filter(|c| c.is_ascii_digit()).collect();
+        if !clean_word.is_empty() && words[i].chars().all(|c| c.is_ascii_digit() || c == '(' || c == ')') {
+            if let Ok(num) = clean_word.parse::<u32>() {
+                if !(num >= 2020 && num <= 2038) {
+                    id_index = Some(i);
+                    break;
+                }
+            }
         }
-        // Date-like token (e.g. "2026-07-11T11-06Z")
-        let starts_with_digit = word.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false);
-        if starts_with_digit && word.contains('-') && word.len() > 6 {
-            break;
+    }
+
+    let clean_words = if let Some(idx) = id_index {
+        words[..idx].to_vec()
+    } else {
+        // Fallback: slice before date-like token
+        let mut idx = words.len();
+        for i in 0..words.len() {
+            let w = words[i];
+            let starts_with_digit = w.chars().next().map(|c| c.is_ascii_digit()).unwrap_or(false);
+            if starts_with_digit && w.contains('-') && w.len() > 6 {
+                idx = i;
+                break;
+            }
         }
-        let word_lower = word.to_lowercase();
-        if ["gamepass", "steam", "gdk", "xbox"].contains(&word_lower.as_str()) {
+        words[..idx].to_vec()
+    };
+
+    let mut clean = Vec::new();
+    for word in clean_words {
+        let word_clean: String = word.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_lowercase();
+        if ["gamepass", "steam", "gdk", "xbox", "singleplayer", "sp"].contains(&word_clean.as_str()) {
             continue;
         }
         clean.push(word);
     }
 
-    let result = clean.join(" ").trim_end_matches(|c: char| c == '(' || c == ' ').trim().to_string();
-    if result.len() < 2 { stem } else { result }
+    let result = clean.join(" ");
+    let final_result = result.trim_end_matches(|c: char| c == '-' || c == '_' || c == '(' || c == ' ' || c == ')').trim().to_string();
+    if final_result.len() < 2 { stem } else { final_result }
 }
 
 fn parse_version_from_filename(zip_filename: &str) -> String {

@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.1] - 2026-08-09
+
+### Added
+- **Direct Editor Code Navigation**: Added a `Code` action button next to hotkeys in the scanner view. Clicking it immediately opens the built-in Config Editor, switches to the target mod and script, and scrolls/focuses directly to the registration line.
+- **Segregated Self-Conflicts (Internal Duplicates)**: Modified the conflict scanner to distinguish between conflicts between different mods and internal duplicates within a single mod. Self-conflicts are now grouped in a dedicated collapsible warning panel.
+
+### Improvements & Corrections
+- **Excluded Dynamic Variables from Hotkey Conflicts**: Prevented false hotkey warning conflicts on dynamic keybind configurations that reference variables (e.g., config lookups) instead of static keys.
+- **Robust JSONC/JSON Parser**: Enhanced JSON parsing to automatically strip UTF-8 Byte Order Marks (BOM) and ignore empty/whitespace-only files, resolving generic parser warnings (e.g., `expected value at line 1 column 1`).
+- **Zip Folder Traversal & Batch Leaf Filtering**: Excluded non-folder leaves (such as `install.bat`) from mod root selection heuristics and corrected nested archive wrapper traversal.
+- **Unwrap Panic Prevention in Installer**: Resolved a Tokio thread panic in the ZIP extractor when processing empty paths or entries without valid filenames.
+- **Smart Mod Name & Nexus ID Extraction Heuristics**: Re-engineered name-cleaning algorithms in the backend and frontend to scan from right-to-left. This allows correct identification of Nexus Mod IDs at the end of the filename (even if they are single digits like `1`), while ignoring prefix numbers added by users (e.g., `1 - ModName`).
+- **Companion Mod Registry Cleanup**: Ensured companion/extra UE4SS subfolders are properly removed from `mods.txt` when a primary mod is deactivated or uninstalled.
+- **Expanded Backup & Restore Routines**: Added logic to target `LogicMods` in backups and preserve custom companion folder structures during deactivation/restoration.
+- **Vastly Optimized Config Searches**: Implemented a 300 match cap on search results within the configuration editor to prevent UI freezing on generic search strings.
+- **Source Zip Persistence**: Ensured source archives are copied to the library during manifest-based mod installations.
+
 ## [1.4.0] - 2026-08-08
 
 ### Features
@@ -33,4 +50,4 @@ Replaced the legacy file-heuristic installer with a robust, metadata-first packa
 You can choose between the portable version or the full installer:
 
 *   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
-*   **Installer Version:** Download `PalModManager_1.4.0_x64-setup.exe` and follow the setup wizard to install the application on your system.
+*   **Installer Version:** Download `PalModManager_1.4.1_x64-setup.exe` and follow the setup wizard to install the application on your system.

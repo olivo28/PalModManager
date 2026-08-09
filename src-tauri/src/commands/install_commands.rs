@@ -579,9 +579,43 @@ pub async fn install_mod_with_manifest(
 
     let _ = std::fs::remove_dir_all(&temp_dir);
 
+    // Copy to library using mod name instead of UUID (if not already in library)
+    let lib_folder_name = final_mod.name.clone();
+    let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
+    if !is_already_in_lib {
+        let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name);
+
+        if let Some(ref info) = nexus_info {
+            let lib_dir = library::get_library_path(&program_path, &lib_folder_name);
+            if lib_dir.exists() {
+                let cache_json = serde_json::json!({
+                    "modId": manifest.nexus_mod_id,
+                    "name": info.name,
+                    "author": info.author,
+                    "summary": info.summary,
+                    "description": info.description,
+                    "version": info.version,
+                    "downloads": info.downloads,
+                    "endorsements": info.endorsements,
+                    "pictureUrl": info.picture_url,
+                    "createdAt": info.created_at,
+                    "updatedAt": info.updated_at,
+                });
+                let _ = std::fs::write(lib_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
+            }
+        }
+    }
+
     // Save to DB and profiles
     {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
+
+        final_mod.library_zip = Some(
+            library::get_library_path(&program_path, &lib_folder_name)
+                .join(&final_mod.source_zip)
+                .to_string_lossy()
+                .to_string(),
+        );
         
         // Remove existing mod with the same ID if it is an update
         if let Some(pos) = data.mods.iter().position(|m| m.id == final_mod.id) {

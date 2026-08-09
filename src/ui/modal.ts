@@ -310,18 +310,46 @@ let _pendingUpdateModId: string | null = null;
 function getCleanNameFromFilename(filename: string): string {
   const stem = filename.substring(0, filename.lastIndexOf('.')) || filename;
   const words = stem.split(/\s+/);
-  const clean: string[] = [];
-  for (const word of words) {
+  
+  // Find index of the last purely numeric token (excluding years)
+  let idIndex = -1;
+  for (let i = words.length - 1; i >= 0; i--) {
+    const word = words[i].replace(/[()]/g, '');
     if (/^\d+$/.test(word)) {
-      break;
+      const num = parseInt(word, 10);
+      if (!(num >= 2020 && num <= 2038)) {
+        idIndex = i;
+        break;
+      }
     }
-    if (/^\d/.test(word) && word.includes('-') && word.length > 6) {
-      break;
+  }
+
+  let cleanWords = words;
+  if (idIndex !== -1) {
+    cleanWords = words.slice(0, idIndex);
+  } else {
+    // Fallback: slice before date-like token
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (/^\d{4}-\d{2}-\d{2}/.test(word) || (word.includes('-') && word.length > 6 && /^\d/.test(word))) {
+        cleanWords = words.slice(0, i);
+        break;
+      }
+    }
+  }
+
+  const clean: string[] = [];
+  for (const word of cleanWords) {
+    const lower = word.toLowerCase().replace(/[()]/g, '');
+    if (["gamepass", "steam", "gdk", "xbox", "singleplayer", "sp"].includes(lower)) {
+      continue;
     }
     clean.push(word);
   }
-  const result = clean.join(' ').replace(/\s*\(\s*$/, '').trim();
-  return result.length < 2 ? stem.trim() : result;
+
+  const result = clean.join(' ').trim();
+  const finalResult = result.replace(/[-\s_]+$/, '').trim();
+  return finalResult.length < 2 ? stem.trim() : finalResult;
 }
 
 export function showInstallModal(): void {
@@ -812,10 +840,11 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
         nameVal = analysis.modinfo.name;
       }
 
+      const isLogicModsDefault = analysis.detectedType === 'logicmods' || (analysis.files && analysis.files.some((f: string) => f.toLowerCase().includes('logicmods')));
       const manifest = await buildInstallManifest(
         path,
         getState().currentSettings?.gamePath || '',
-        analysis.detectedType === 'logicmods' ? 'logicmods' : '~mods',
+        isLogicModsDefault ? 'logicmods' : '~mods',
         nameVal
       );
 
@@ -830,6 +859,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
         nexusModId: analysis.nexusModId,
         version: analysis.detectedVersion || analysis.nexusInfo?.version || '1.0',
         hasPak: manifest.hasPak,
+        isLogicModsDefault,
       });
     } catch (e) {
       results.push({
@@ -864,8 +894,8 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     if (isPakOrLogicOrHybrid) {
       pakDestSelectHtml = `
         <select id="batch-pak-dest-${idx}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
-          <option value="~mods" ${item.type === 'pak' || item.type === 'hybrid' ? 'selected' : ''}>~mods</option>
-          <option value="LogicMods" ${item.type === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+          <option value="~mods" ${!item.isLogicModsDefault ? 'selected' : ''}>~mods</option>
+          <option value="logicmods" ${item.isLogicModsDefault ? 'selected' : ''}>logicmods</option>
         </select>
       `;
     }
@@ -931,7 +961,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             destContainer.innerHTML = `
               <select id="batch-pak-dest-${i}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
                 <option value="~mods" ${val === 'pak' || val === 'hybrid' ? 'selected' : ''}>~mods</option>
-                <option value="LogicMods" ${val === 'logicmods' ? 'selected' : ''}>LogicMods</option>
+                <option value="logicmods" ${val === 'logicmods' ? 'selected' : ''}>logicmods</option>
               </select>
             `;
           } else {

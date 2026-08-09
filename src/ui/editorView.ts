@@ -574,6 +574,8 @@ function clearFindHighlights(): void {
   syncHighlight();
 }
 
+let findTimeout: any = null;
+
 function updateFindMatches(): void {
   const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
   const findInput = document.getElementById('editor-find-input') as HTMLInputElement;
@@ -596,6 +598,9 @@ function updateFindMatches(): void {
   while ((idx = lowerText.indexOf(lowerQuery, idx)) !== -1) {
     findMatches.push({ index: idx, length: query.length });
     idx += query.length;
+    if (findMatches.length >= 300) {
+      break;
+    }
   }
 
   if (findMatches.length > 0) {
@@ -603,7 +608,7 @@ function updateFindMatches(): void {
     scrollToMatch(0, false); // Do NOT steal focus from find input while typing
   }
   countEl.textContent = findMatches.length > 0
-    ? `${findCurrentMatch + 1} of ${findMatches.length}`
+    ? `${findCurrentMatch + 1} of ${findMatches.length}${findMatches.length >= 300 ? '+' : ''}`
     : 'No matches';
   syncHighlight();
 }
@@ -648,8 +653,54 @@ function findPrev(): void {
   scrollToMatch(prev);
 }
 
+export async function openFileAtLine(modId: string, filePath: string, lineNumber: number): Promise<void> {
+  const { navigateTo } = await import('./tabManager');
+  navigateTo('editor');
+
+  const state = getState();
+  if (state.editorModId !== modId) {
+    await switchEditorMod(modId);
+  }
+
+  const normalizedPath = filePath.replace(/\\/g, '/');
+
+  setTimeout(() => {
+    const fileItem = document.querySelector(`.editor-file-item[data-path="${CSS.escape(normalizedPath)}"]`) as HTMLElement | null;
+    if (fileItem) {
+      if (getState().editorSelectedFile !== normalizedPath) {
+        fileItem.click();
+      }
+    }
+
+    setTimeout(() => {
+      const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+      if (editorContent) {
+        const text = editorContent.value;
+        const lines = text.split('\n');
+        if (lineNumber > 0 && lineNumber <= lines.length) {
+          let charIndex = 0;
+          for (let i = 0; i < lineNumber - 1; i++) {
+            charIndex += lines[i].length + 1;
+          }
+          const lineText = lines[lineNumber - 1];
+          editorContent.focus();
+          editorContent.setSelectionRange(charIndex, charIndex + lineText.length);
+          const lineHeight = 19;
+          editorContent.scrollTop = Math.max(0, (lineNumber - 5) * lineHeight);
+          syncHighlight();
+        }
+      }
+    }, 250);
+  }, 250);
+}
+
 export function setupEditorFindHandlers(): void {
-  document.getElementById('editor-find-input')!.addEventListener('input', updateFindMatches);
+  document.getElementById('editor-find-input')!.addEventListener('input', () => {
+    if (findTimeout) {
+      clearTimeout(findTimeout);
+    }
+    findTimeout = setTimeout(updateFindMatches, 250);
+  });
   document.getElementById('editor-find-next')!.addEventListener('click', findNext);
   document.getElementById('editor-find-prev')!.addEventListener('click', findPrev);
   document.getElementById('editor-find-close')!.addEventListener('click', closeFind);

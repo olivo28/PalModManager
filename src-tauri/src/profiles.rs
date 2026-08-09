@@ -770,6 +770,16 @@ pub fn disable_mod_internal(
                     let folder_name = get_mod_folder_name(mod_info);
                     let _ = remove_from_mods_txt(&mods_txt, &folder_name);
                     let _ = remove_from_mods_txt(&mods_txt, &mod_info.name);
+                    
+                    for extra_path_str in &mod_info.extra_files {
+                        let extra_path_lower = extra_path_str.to_lowercase();
+                        if extra_path_lower.contains("ue4ss/mods/") {
+                            let extra_path = Path::new(extra_path_str);
+                            if let Some(extra_folder_name) = extra_path.file_name().map(|n| n.to_string_lossy().to_string()) {
+                                let _ = remove_from_mods_txt(&mods_txt, &extra_folder_name);
+                            }
+                        }
+                    }
                 }
             }
             let enabled_file = src_path.join("enabled.txt");
@@ -874,7 +884,20 @@ pub fn disable_mod_internal(
             let extra_path = PathBuf::from(extra);
             if extra_path.exists() {
                 let file_name = extra_path.file_name().unwrap().to_string_lossy().to_string();
-                let dest_dir = disabled_base.join("hybrid").join("extras");
+                
+                let is_logic = extra.to_lowercase().contains("logicmods");
+                let is_palschema = extra.to_lowercase().contains("palschema");
+                let type_dir = if is_logic {
+                    "logicmods"
+                } else if is_palschema {
+                    "palschema"
+                } else if extra_path.extension().map(|e| e == "pak").unwrap_or(false) {
+                    "pak"
+                } else {
+                    "ue4ss"
+                };
+
+                let dest_dir = disabled_base.join("hybrid").join(type_dir);
                 let _ = fs::create_dir_all(&dest_dir);
                 
                 if extra_path.is_dir() {
@@ -1118,8 +1141,18 @@ pub fn enable_mod_internal(
             let extra_disabled = PathBuf::from(extra_disabled_str);
             if extra_disabled.exists() {
                 let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
+                let extra_lower = extra_disabled_str.to_lowercase();
+                
+                let is_logic = extra_lower.contains("logicmods");
+                let is_palschema = extra_lower.contains("palschema");
+                
                 let dest = if filename.ends_with(".pak") {
-                    let dest_dir = game_paks.join("~mods");
+                    let dest_subdir = if is_logic { "LogicMods" } else { "~mods" };
+                    let dest_dir = game_paks.join(dest_subdir);
+                    let _ = fs::create_dir_all(&dest_dir);
+                    dest_dir.join(&filename)
+                } else if is_palschema {
+                    let dest_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
                     let _ = fs::create_dir_all(&dest_dir);
                     dest_dir.join(&filename)
                 } else {
@@ -1127,22 +1160,25 @@ pub fn enable_mod_internal(
                     let _ = fs::create_dir_all(&dest_dir);
                     dest_dir.join(&filename)
                 };
+                
                 move_path(&extra_disabled, &dest)?;
                 moved_back.push(dest.to_string_lossy().to_string());
                 
                 let parent = extra_disabled.parent().unwrap();
                 let stem = extra_disabled.file_stem().unwrap().to_string_lossy().to_string();
                 if filename.ends_with(".pak") {
+                    let dest_subdir = if is_logic { "LogicMods" } else { "~mods" };
+                    let dest_dir = game_paks.join(dest_subdir);
                     for c_ext in &["ucas", "utoc"] {
                         let companion = parent.join(format!("{}.{}", stem, c_ext));
                         if companion.exists() {
-                            let c_dest = game_paks.join("~mods").join(format!("{}.{}", stem, c_ext));
+                            let c_dest = dest_dir.join(format!("{}.{}", stem, c_ext));
                             let _ = move_path(&companion, &c_dest);
                         }
                     }
                     let sidecar = parent.join(format!("{}.pmm.json", filename));
                     if sidecar.exists() {
-                        let c_dest = game_paks.join("~mods").join(format!("{}.pmm.json", filename));
+                        let c_dest = dest_dir.join(format!("{}.pmm.json", filename));
                         let _ = move_path(&sidecar, &c_dest);
                     }
                 }

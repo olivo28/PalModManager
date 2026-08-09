@@ -212,6 +212,16 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
             let folder_name = crate::profiles::get_mod_folder_name(&mod_info);
             let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &folder_name);
             let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &mod_info.name);
+            
+            for extra_path_str in &mod_info.extra_files {
+                let extra_path_lower = extra_path_str.to_lowercase();
+                if extra_path_lower.contains("ue4ss/mods/") {
+                    let extra_path = Path::new(extra_path_str);
+                    if let Some(extra_folder_name) = extra_path.file_name().map(|n| n.to_string_lossy().to_string()) {
+                        let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &extra_folder_name);
+                    }
+                }
+            }
         }
     }
 
@@ -1130,6 +1140,21 @@ pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), S
     Ok(())
 }
 
+fn determine_category_for_path(path: &Path) -> &'static str {
+    let path_lower = path.to_string_lossy().to_lowercase();
+    if path_lower.contains("logicmods") {
+        "LogicMods"
+    } else if path_lower.contains("~mods") {
+        "Paks"
+    } else if path_lower.contains("palschema") {
+        "PalSchema"
+    } else if path_lower.contains("ue4ss") {
+        "UE4SS"
+    } else {
+        "Paks"
+    }
+}
+
 #[tauri::command]
 pub async fn create_backup(target_dir: String, state: State<'_, AppState>) -> Result<String, String> {
     use std::fs::File;
@@ -1173,47 +1198,62 @@ pub async fn create_backup(target_dir: String, state: State<'_, AppState>) -> Re
             crate::models::ModType::LogicMods => "LogicMods",
         };
 
-        if src_path.is_dir() {
-            for entry in walkdir::WalkDir::new(&src_path) {
-                let entry = entry.map_err(|e| format!("Walkdir error: {}", e))?;
-                let path = entry.path();
-                if path.is_file() {
-                    let relative_path = path.strip_prefix(&src_path.parent().unwrap())
-                        .map_err(|e| format!("Failed to strip prefix: {}", e))?;
-                    let zip_entry_name = format!("{}/{}", category_folder, relative_path.to_string_lossy().replace('\\', "/"));
-                    
-                    zip.start_file(&zip_entry_name, options)
-                        .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-                    
-                    let mut file = File::open(path).map_err(|e| format!("Failed to open file: {}", e))?;
-                    let mut buffer = Vec::new();
-                    file.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file: {}", e))?;
-                    zip.write_all(&buffer).map_err(|e| format!("Failed to write to zip: {}", e))?;
-                }
+        let mut paths_to_backup = vec![(src_path, category_folder.to_string())];
+        for extra_str in &m.extra_files {
+            let extra_path = PathBuf::from(extra_str);
+            if extra_path.exists() {
+                let cat = determine_category_for_path(&extra_path).to_string();
+                paths_to_backup.push((extra_path, cat));
             }
-        } else if src_path.is_file() {
-            let filename = src_path.file_name().unwrap().to_string_lossy().to_string();
-            let zip_entry_name = format!("{}/{}", category_folder, filename);
-            zip.start_file(&zip_entry_name, options)
-                .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-            
-            let mut file = File::open(&src_path).map_err(|e| format!("Failed to open file: {}", e))?;
-            let mut buffer = Vec::new();
-            file.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file: {}", e))?;
-            zip.write_all(&buffer).map_err(|e| format!("Failed to write to zip: {}", e))?;
+        }
 
-            let companions = crate::zip_handler::find_pak_companions(&src_path);
-            for companion in companions {
-                if companion != src_path {
-                    let comp_filename = companion.file_name().unwrap().to_string_lossy().to_string();
-                    let zip_entry_name = format!("{}/{}", category_folder, comp_filename);
-                    zip.start_file(&zip_entry_name, options)
-                        .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-                    
-                    let mut file = File::open(&companion).map_err(|e| format!("Failed to open file: {}", e))?;
+        for (path, cat) in paths_to_backup {
+            if path.is_dir() {
+                for entry in walkdir::WalkDir::new(&path) {
+                    let entry = entry.map_err(|e| format!("Walkdir error: {}", e))?;
+                    let p = entry.path();
+                    if p.is_file() {
+                        let relative_path = p.strip_prefix(&path.parent().unwrap())
+                            .map_err(|e| format!("Failed to strip prefix: {}", e))?;
+                        let zip_entry_name = format!("{}/{}", cat, relative_path.to_string_lossy().replace('\\', "/"));
+                        
+                        let _ = zip.start_file(&zip_entry_name, options);
+                        if let Ok(mut file) = File::open(p) {
+                            let mut buffer = Vec::new();
+                            if file.read_to_end(&mut buffer).is_ok() {
+                                let _ = zip.write_all(&buffer);
+                            }
+                        }
+                    }
+                }
+            } else if path.is_file() {
+                let filename = path.file_name().unwrap().to_string_lossy().to_string();
+                let zip_entry_name = format!("{}/{}", cat, filename);
+                let _ = zip.start_file(&zip_entry_name, options);
+                
+                if let Ok(mut file) = File::open(&path) {
                     let mut buffer = Vec::new();
-                    file.read_to_end(&mut buffer).map_err(|e| format!("Failed to read file: {}", e))?;
-                    zip.write_all(&buffer).map_err(|e| format!("Failed to write to zip: {}", e))?;
+                    if file.read_to_end(&mut buffer).is_ok() {
+                        let _ = zip.write_all(&buffer);
+                    }
+                }
+
+                if path.extension().map(|ext| ext == "pak").unwrap_or(false) {
+                    let companions = crate::zip_handler::find_pak_companions(&path);
+                    for companion in companions {
+                        if companion != path {
+                            let comp_filename = companion.file_name().unwrap().to_string_lossy().to_string();
+                            let zip_entry_name = format!("{}/{}", cat, comp_filename);
+                            let _ = zip.start_file(&zip_entry_name, options);
+                            
+                            if let Ok(mut file) = File::open(&companion) {
+                                let mut buffer = Vec::new();
+                                if file.read_to_end(&mut buffer).is_ok() {
+                                    let _ = zip.write_all(&buffer);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
@@ -1325,6 +1365,7 @@ pub fn analyze_backup(zip_path: String) -> Result<Value, String> {
 
     let mut has_ue4ss = false;
     let mut has_palschema = false;
+    let mut has_paks = false;
 
     for i in 0..archive.len() {
         if let Ok(entry) = archive.by_index(i) {
@@ -1335,12 +1376,16 @@ pub fn analyze_backup(zip_path: String) -> Result<Value, String> {
             if name.starts_with("PalSchema/") {
                 has_palschema = true;
             }
+            if name.starts_with("Paks/") || name.starts_with("LogicMods/") {
+                has_paks = true;
+            }
         }
     }
 
     Ok(serde_json::json!({
         "hasUe4ss": has_ue4ss,
         "hasPalSchema": has_palschema,
+        "hasPaks": has_paks,
     }))
 }
 

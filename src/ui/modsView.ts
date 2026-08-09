@@ -7,6 +7,19 @@ import { showConfirm } from './confirm';
 import { escapeHtml } from '../utils/helpers';
 import type { ModInfo, Profile, LibraryEntry } from '../types';
 
+function isVersionNewer(local: string, remote: string): boolean {
+  const localParts = local.split('.').map(p => parseInt(p.replace(/[^0-9]/g, ''), 10) || 0);
+  const remoteParts = remote.split('.').map(p => parseInt(p.replace(/[^0-9]/g, ''), 10) || 0);
+  const maxLen = Math.max(localParts.length, remoteParts.length);
+  for (let i = 0; i < maxLen; i++) {
+    const l = localParts[i] || 0;
+    const r = remoteParts[i] || 0;
+    if (r > l) return true;
+    if (l > r) return false;
+  }
+  return false;
+}
+
 function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
   const updatesMap = new Map<string, string>();
   for (const m of mods) {
@@ -14,7 +27,7 @@ function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
       const normNexus = m.nexusVersionCached.replace(/^v/i, '').trim().toLowerCase();
       const normLocal = m.version.replace(/^v/i, '').trim().toLowerCase();
       const normIgnored = m.ignoredVersion ? m.ignoredVersion.replace(/^v/i, '').trim().toLowerCase() : '';
-      if (normNexus !== '' && normNexus !== 'unknown' && normLocal !== 'unknown' && normNexus !== normLocal && !normLocal.startsWith(normNexus) && normNexus !== normIgnored) {
+      if (normNexus !== '' && normNexus !== 'unknown' && normLocal !== 'unknown' && isVersionNewer(normLocal, normNexus) && normNexus !== normIgnored) {
         updatesMap.set(m.id, m.nexusVersionCached);
       }
     }

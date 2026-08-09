@@ -430,13 +430,50 @@ const PALSCHEMA_FOLDERS: &[&str] = &[
 ];
 
 fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> String {
+    // Strategy 1: Scan for structural boundary markers first (like PALSCHEMA_FOLDERS, scripts, dlls, logicmods)
+    // to find the true mod folder name even if it is nested under arbitrary wrapper directories.
     for file in files {
         if file.ends_with('/') {
             continue;
         }
         let normalized = file.replace('\\', "/");
         let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
-        for segment in segments {
+        for (i, segment) in segments.iter().enumerate() {
+            if i > 0 {
+                let lower = segment.to_lowercase();
+                let is_marker = lower == "scripts" || lower == "dlls" || lower == "logicmods"
+                    || PALSCHEMA_FOLDERS.contains(&lower.as_str());
+                if is_marker {
+                    let parent = segments[i - 1];
+                    if !is_forbidden(parent) {
+                        return parent.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // Strategy 2: Fallback to the first non-forbidden, non-file segment
+    for file in files {
+        if file.ends_with('/') {
+            continue;
+        }
+        let normalized = file.replace('\\', "/");
+        let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
+        let num_segments = segments.len();
+        for (i, segment) in segments.iter().enumerate() {
+            let is_last = i == num_segments - 1;
+            
+            // Skip the last segment (leaf file name) to avoid treating batch/txt/png/lua files as folder names
+            if is_last {
+                let lower = segment.to_lowercase();
+                let stem = Path::new(segment).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                if lower.ends_with(".dll") {
+                    return stem;
+                }
+                continue;
+            }
+
             let p = Path::new(segment);
             let stem = p.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
             let stem_lower = stem.to_lowercase();
@@ -464,7 +501,8 @@ fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> String
             if lower == "license" || lower == "readme" || lower == "changelog" ||
                lower.ends_with(".txt") || lower.ends_with(".md") || lower.ends_with(".png") ||
                lower.ends_with(".jpg") || lower.ends_with(".jpeg") || lower.ends_with(".git") ||
-               lower.ends_with(".gitattributes") || lower.ends_with(".gitignore") {
+               lower.ends_with(".gitattributes") || lower.ends_with(".gitignore") ||
+               lower.ends_with(".bat") || lower.ends_with(".sh") || lower.ends_with(".py") {
                 continue;
             }
             if PALSCHEMA_FOLDERS.contains(&lower.as_str()) || PALSCHEMA_FOLDERS.contains(&stem_lower.as_str()) {
@@ -691,6 +729,14 @@ pub fn build_manifest_from_files(
     let palschema_mods_dest = ue4ss_mods_dest.join("PalSchema").join("mods");
 
     for (zip_path, relative_path, route_type) in temp_routes {
+        if relative_path.is_empty() {
+            continue;
+        }
+        let file_name_opt = Path::new(&relative_path).file_name();
+        if file_name_opt.is_none() {
+            continue;
+        }
+        let filename = file_name_opt.unwrap();
         let rel_lower = relative_path.to_lowercase();
         let game_subpath = if let Some(idx) = rel_lower.find("pal/binaries/win64/ue4ss/mods/") {
             Some(&relative_path[idx..])
@@ -718,15 +764,12 @@ pub fn build_manifest_from_files(
                     palschema_mods_dest.join(&folder_name).join(&relative_path)
                 }
                 RouteType::Pak => {
-                    let filename = Path::new(&relative_path).file_name().unwrap();
                     paks_dest_dir.join(filename)
                 }
                 RouteType::LogicMods => {
-                    let filename = Path::new(&relative_path).file_name().unwrap();
                     logicmods_dest_dir.join(filename)
                 }
                 RouteType::Companion => {
-                    let filename = Path::new(&relative_path).file_name().unwrap();
                     let target_dir = if pak_destination.map(|d| d.to_lowercase() == "logicmods").unwrap_or(false) {
                         &logicmods_dest_dir
                     } else {
@@ -744,7 +787,6 @@ pub fn build_manifest_from_files(
                             } else {
                                 &paks_dest_dir
                             };
-                            let filename = Path::new(&relative_path).file_name().unwrap();
                             target_dir.join(filename)
                         }
                     }
