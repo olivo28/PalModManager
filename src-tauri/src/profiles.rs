@@ -2,6 +2,30 @@ use crate::models::{AppData, ModInfo, ModType, Profile};
 use std::fs;
 use std::path::{Path, PathBuf};
 
+/// Creates an NTFS Junction on Windows (zero-admin required) or a symlink on Unix
+pub fn create_junction_or_symlink(target: &Path, link: &Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        // junction::create creates an NTFS junction
+        junction::create(target, link).map_err(|e| format!("Failed to create junction from {:?} to {:?}: {}", target, link, e))
+    }
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(target, link).map_err(|e| format!("Failed to create symlink: {}", e))
+    }
+}
+
+/// Safely removes a junction or directory link without deleting the contents of the target folder
+pub fn remove_junction_or_symlink(link: &Path) -> Result<(), String> {
+    if !link.exists() {
+        return Ok(());
+    }
+    // On Windows, removing a junction can be done safely by removing the directory link entry itself
+    // fs::remove_dir works on directory junctions/symlinks without deleting target content.
+    fs::remove_dir(link).map_err(|e| format!("Failed to remove junction: {}", e))
+}
+
+
 pub fn sanitize_profile_id(name: &str) -> String {
     let clean: String = name
         .chars()
@@ -763,13 +787,37 @@ pub fn disable_mod_internal(
         mod_info.enabled = false;
     } else if mod_type == ModType::PalSchema {
         let mod_info = &mut data.mods[mod_index];
-        let src_path = PathBuf::from(&mod_info.game_path);
-        if src_path.exists() {
-            let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+        let src_path = PathBuf::from(&mod_info.game_path); // Could be the junction in mods/ or storage
+        let folder_name = get_mod_folder_name(mod_info);
+
+        let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&data.settings.game_path));
+        let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+        let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+
+        // 1. Remove junction from mods/ (either numbered prefix folder or standard folder)
+        if palschema_mods_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name = path.file_name().unwrap().to_string_lossy().to_string();
+                    // Match either folder_name directly or with numerical prefix (e.g. 001_folder_name)
+                    if name == folder_name || (name.len() > 4 && &name[4..] == folder_name) {
+                        let _ = remove_junction_or_symlink(&path);
+                    }
+                }
+            }
+        }
+
+        // 2. Move physical directory from Storage/ to disabled_mods/palschema
+        let storage_path = palschema_storage_dir.join(&folder_name);
+        let final_src = if storage_path.exists() { storage_path } else { src_path };
+
+        if final_src.exists() {
+            let file_name = final_src.file_name().unwrap().to_string_lossy().to_string();
             let dest_dir = disabled_base.join("palschema");
             let _ = fs::create_dir_all(&dest_dir);
             let dest = dest_dir.join(&file_name);
-            move_path(&src_path, &dest)?;
+            move_path(&final_src, &dest)?;
             mod_info.disabled_path = dest.to_string_lossy().to_string();
             mod_info.game_path = String::new();
         }
@@ -801,6 +849,26 @@ pub fn disable_mod_internal(
         mod_info.enabled = false;
     } else if mod_type == ModType::Hybrid {
         let mod_info = &mut data.mods[mod_index];
+        let src_path = PathBuf::from(&mod_info.game_path);
+        
+        // Remove secondary companion UE4SS folders from mods.txt before moving them
+        if let Some(ue4ss_mods_dir) = src_path.parent() {
+            let mods_txt = ue4ss_mods_dir.join("mods.txt");
+            if mods_txt.exists() {
+                for extra in &mod_info.extra_files {
+                    let extra_path = PathBuf::from(extra);
+                    if extra_path.exists() && extra_path.is_dir() {
+                        let extra_folder_name = extra_path.file_name().unwrap().to_string_lossy().to_string();
+                        let _ = remove_from_mods_txt(&mods_txt, &extra_folder_name);
+                        let enabled_file = extra_path.join("enabled.txt");
+                        if enabled_file.exists() {
+                            let _ = fs::remove_file(&enabled_file);
+                        }
+                    }
+                }
+            }
+        }
+
         let mut moved_extras = Vec::new();
         for extra in &mod_info.extra_files {
             let extra_path = PathBuf::from(extra);
@@ -836,7 +904,6 @@ pub fn disable_mod_internal(
             }
         }
 
-        let src_path = PathBuf::from(&mod_info.game_path);
         if src_path.exists() {
             if let Some(ue4ss_mods_dir) = src_path.parent() {
                 let mods_txt = ue4ss_mods_dir.join("mods.txt");
@@ -968,12 +1035,33 @@ pub fn enable_mod_internal(
     } else if mod_type == ModType::PalSchema {
         let mod_info = &mut data.mods[mod_index];
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
+        
+        let folder_name = get_mod_folder_name(mod_info);
+        let force_order = data.settings.force_load_order.unwrap_or(false);
+
+        let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+        let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+
         if primary_disabled.exists() {
-            let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
-            let dest = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&filename);
-            let _ = fs::create_dir_all(dest.parent().unwrap());
-            move_path(&primary_disabled, &dest)?;
-            mod_info.game_path = dest.to_string_lossy().to_string();
+            // 1. Move physical directory to Storage/
+            let storage_dest = palschema_storage_dir.join(&folder_name);
+            let _ = fs::create_dir_all(&palschema_storage_dir);
+            move_path(&primary_disabled, &storage_dest)?;
+
+            // 2. Create NTFS Junction in mods/
+            let _ = fs::create_dir_all(&palschema_mods_dir);
+            let link_name = if force_order {
+                // Find order position (default to 999 if not set)
+                let order = mod_info.mods_txt_order.unwrap_or(999);
+                format!("{:03}_{}", order, folder_name)
+            } else {
+                folder_name.clone()
+            };
+            
+            let link_path = palschema_mods_dir.join(&link_name);
+            create_junction_or_symlink(&storage_dest, &link_path)?;
+
+            mod_info.game_path = link_path.to_string_lossy().to_string();
             mod_info.disabled_path = String::new();
         }
         mod_info.enabled = true;
@@ -1008,12 +1096,14 @@ pub fn enable_mod_internal(
         let mod_info = &mut data.mods[mod_index];
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
         let mut dest_path = primary_disabled.clone();
+        let mut primary_has_scripts = false;
+
         if primary_disabled.exists() {
             let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
-            let has_scripts = primary_disabled.join("Scripts").exists()
+            primary_has_scripts = primary_disabled.join("Scripts").exists()
                 || primary_disabled.join("scripts").exists()
                 || primary_disabled.join("enabled.txt").exists();
-            let dest = if has_scripts {
+            let dest = if primary_has_scripts {
                 win64.join("ue4ss").join("Mods").join(&filename)
             } else {
                 win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&filename)
@@ -1021,29 +1111,6 @@ pub fn enable_mod_internal(
             let _ = fs::create_dir_all(dest.parent().unwrap());
             move_path(&primary_disabled, &dest)?;
             dest_path = dest;
-            
-            if has_scripts {
-                let force_order = data.settings.force_load_order.unwrap_or(false);
-                if let Some(ue4ss_mods_dir) = dest_path.parent() {
-                    let mods_txt = ue4ss_mods_dir.join("mods.txt");
-                    if mods_txt.exists() {
-                        let folder_name = get_mod_folder_name(mod_info);
-                        if force_order {
-                            let _ = update_mods_txt_load_order(&mods_txt, &folder_name, true);
-                        } else {
-                            let _ = remove_from_mods_txt(&mods_txt, &folder_name);
-                        }
-                    }
-                }
-                let enabled_file = dest_path.join("enabled.txt");
-                if force_order {
-                    if enabled_file.exists() {
-                        let _ = fs::remove_file(&enabled_file);
-                    }
-                } else {
-                    let _ = fs::write(&enabled_file, "");
-                }
-            }
         }
         
         let mut moved_back = Vec::new();
@@ -1079,6 +1146,60 @@ pub fn enable_mod_internal(
                         let _ = move_path(&sidecar, &c_dest);
                     }
                 }
+            }
+        }
+
+        let force_order = data.settings.force_load_order.unwrap_or(false);
+
+        // 1. Register and setup companion UE4SS folders in mods.txt / enabled.txt FIRST
+        if let Some(ue4ss_mods_dir) = dest_path.parent() {
+            let mods_txt = ue4ss_mods_dir.join("mods.txt");
+            if mods_txt.exists() {
+                for file_str in &moved_back {
+                    let path = PathBuf::from(file_str);
+                    if path.exists() && path.is_dir() && path.parent() == Some(ue4ss_mods_dir) {
+                        let extra_folder_name = path.file_name().unwrap().to_string_lossy().to_string();
+                        if force_order {
+                            let _ = update_mods_txt_load_order(&mods_txt, &extra_folder_name, true);
+                        } else {
+                            let _ = remove_from_mods_txt(&mods_txt, &extra_folder_name);
+                        }
+                        
+                        let enabled_file = path.join("enabled.txt");
+                        if force_order {
+                            if enabled_file.exists() {
+                                let _ = fs::remove_file(&enabled_file);
+                            }
+                        } else {
+                            let _ = fs::write(&enabled_file, "");
+                        }
+                    }
+                }
+            }
+        }
+
+        // 2. Register and setup primary folder in mods.txt / enabled.txt LAST
+        // (This ensures the primary folder is placed ABOVE/before the companion folders in mods.txt
+        // because update_mods_txt_load_order inserts new items at the insertion index, pushing previous ones down)
+        if primary_has_scripts {
+            if let Some(ue4ss_mods_dir) = dest_path.parent() {
+                let mods_txt = ue4ss_mods_dir.join("mods.txt");
+                if mods_txt.exists() {
+                    let folder_name = get_mod_folder_name(mod_info);
+                    if force_order {
+                        let _ = update_mods_txt_load_order(&mods_txt, &folder_name, true);
+                    } else {
+                        let _ = remove_from_mods_txt(&mods_txt, &folder_name);
+                    }
+                }
+            }
+            let enabled_file = dest_path.join("enabled.txt");
+            if force_order {
+                if enabled_file.exists() {
+                    let _ = fs::remove_file(&enabled_file);
+                }
+            } else {
+                let _ = fs::write(&enabled_file, "");
             }
         }
         
@@ -1144,7 +1265,7 @@ pub fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<(), 
     Ok(())
 }
 
-fn move_path(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
+pub(crate) fn move_path(src: &std::path::Path, dst: &std::path::Path) -> Result<(), String> {
     if fs::rename(src, dst).is_ok() {
         return Ok(());
     }

@@ -133,16 +133,32 @@ pub fn install_mod(
         game,
         pak_destination,
         custom_name,
-        modinfo_data,
+        modinfo_data.clone(),
     )?;
+
+    let mut final_author = nexus_author;
+    let mut final_summary = nexus_summary;
+
+    if let Some(ref modinfo) = modinfo_data {
+        if final_author.is_none() {
+            if let Some(auth) = modinfo.get("author").and_then(|a| a.as_str()) {
+                final_author = Some(auth.to_string());
+            }
+        }
+        if final_summary.is_none() {
+            if let Some(desc) = modinfo.get("description").and_then(|d| d.as_str()) {
+                final_summary = Some(desc.to_string());
+            }
+        }
+    }
 
     // 2. Execute manifest
     let mut mod_info = execute_manifest(
         &manifest,
         extracted_dir,
         game,
-        nexus_author,
-        nexus_summary,
+        final_author,
+        final_summary,
         nexus_picture_url,
         nexus_downloads,
         nexus_endorsements,

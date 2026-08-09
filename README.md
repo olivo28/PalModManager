@@ -29,6 +29,13 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **State Transition Sync**: Automatically manages turning on/off the load order setting, transitioning configuration states between `enabled.txt` and `mods.txt` dynamically based on your preferences.
 - **Robust Cleanups**: Deleting a mod removes all instances and references from `mods.txt` automatically.
 
+### 🔗 Exclusive PalSchema Load Order Manager (Unique Feature! - Windows Only)
+- **Innovative Folder Redirection**: PalSchema natively loads folders without any sorting logic, making load order impossible. PalModManager introduces a unique, zero-admin folder-redirection system.
+- **NTFS Junction Points**: Keeps the physical mod directories isolated in `PalSchema/Storage/` and creates zero-padded NTFS Junctions (e.g. `001_ModName`, `002_ModName`) inside `/mods`. Junctions do *not* require Administrator/UAC permissions.
+- **Dual Side-by-Side Panels**: Manage both UE4SS and PalSchema load orders simultaneously in a redone side-by-side flex layout inside the sidebar's **Load** tab, featuring independent scrollable panels.
+
+
+
 ### 🛠️ Dedicated Mod Packer & Builder (Build Tab)
 - **Visual Projects Hub**: Create, rename, delete, and stashing mod packaging projects as folders.
 - **Route Manifesting (`modinfo.pmm.json`)**: Package your mods with custom target routing, versioning, author tags, and Nexus IDs. Saves layout manifests into a dedicated `modinfo.pmm.json` file inside the ZIP.

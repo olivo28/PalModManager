@@ -28,6 +28,24 @@ export function openSettingsModal(): void {
   }
   if (forceLoadOrderCheckbox) {
     forceLoadOrderCheckbox.checked = !!state.currentSettings?.forceLoadOrder;
+    
+    // Clear old event listener to prevent multiple bindings if modal opens multiple times
+    const newCheckbox = forceLoadOrderCheckbox.cloneNode(true) as HTMLInputElement;
+    forceLoadOrderCheckbox.parentNode!.replaceChild(newCheckbox, forceLoadOrderCheckbox);
+    
+    newCheckbox.addEventListener('change', async () => {
+      if (newCheckbox.checked) {
+        const confirmed = await showConfirm(
+          'Enable Load Order Settings',
+          'Enabling Load Order moves PalSchema mods to a dynamic /Storage folder and creates NTFS junctions. This restructuring can cause issues with certain custom mod setups. It is highly recommended to back up your current profile/folder before proceeding.<br><br>Do you want to continue?',
+          'Yes, Enable',
+          'Cancel'
+        );
+        if (!confirmed) {
+          newCheckbox.checked = false;
+        }
+      }
+    });
   }
 
   if (state.currentSettings?.gamePath) {

@@ -198,6 +198,117 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
                     }
                 }
             }
+
+            // --- PalSchema Mods Migration on Toggle ---
+            let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+            let palschema_storage_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+
+            // Filter for installed PalSchema mods in current profile
+            let current_profile_id = data.current_profile_id.clone();
+            let (_palschema_mod_ids, enabled_mod_ids) = if let Some(current_profile) = data.profiles.iter().find(|p| p.id == current_profile_id) {
+                (current_profile.installed_mod_ids.clone(), current_profile.enabled_mod_ids.clone())
+            } else {
+                (Vec::new(), Vec::new())
+            };
+                
+            // Get list of current mods/ entries
+            let mut current_mods_links = Vec::new();
+            if palschema_mods_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let name = path.file_name().unwrap().to_string_lossy().to_string();
+                        current_mods_links.push((path, name));
+                    }
+                }
+            }
+
+            if !enabled {
+                // Moving back to Standard (Load Order Disabled)
+                // 1. Delete all junctions/symlinks under mods/
+                for (path, _) in &current_mods_links {
+                    let _ = crate::profiles::remove_junction_or_symlink(path);
+                }
+
+                // 2. Read palschema_storage_dir physically and move every folder back to mods/
+                if palschema_storage_dir.exists() {
+                    if let Ok(entries) = fs::read_dir(&palschema_storage_dir) {
+                        for entry in entries.flatten() {
+                            let src_path = entry.path();
+                            if src_path.is_dir() {
+                                let folder_name = src_path.file_name().unwrap().to_string_lossy().to_string();
+                                let dest_path = palschema_mods_dir.join(&folder_name);
+                                let _ = fs::create_dir_all(&palschema_mods_dir);
+                                let _ = crate::profiles::move_path(&src_path, &dest_path);
+                            }
+                        }
+                    }
+                    // Clean up Storage dir if empty
+                    let _ = fs::remove_dir(&palschema_storage_dir);
+                }
+
+                // 3. Reset game_path to standard mods/ folder path for all PalSchema mods in DB
+                for mod_info in &mut data.mods {
+                    if mod_info.mod_type == crate::models::ModType::PalSchema {
+                        let folder_name = crate::profiles::get_mod_folder_name(mod_info);
+                        let direct_path = palschema_mods_dir.join(&folder_name);
+                        if direct_path.exists() {
+                            mod_info.game_path = direct_path.to_string_lossy().to_string();
+                        }
+                    }
+                }
+            } else {
+                // Moving to Storage + Junctions Load Order
+                let mut idx = 0;
+                for mod_info in &mut data.mods {
+                    if mod_info.mod_type == crate::models::ModType::PalSchema || mod_info.mod_type == crate::models::ModType::Hybrid {
+                        let folder_name = crate::profiles::get_mod_folder_name(mod_info);
+                        let is_enabled = enabled_mod_ids.iter().any(|id| id.to_lowercase() == mod_info.id.to_lowercase() || id.to_lowercase() == mod_info.name.to_lowercase() || id.to_lowercase() == folder_name.to_lowercase());
+
+                        // For Hybrid mods, we only do PalSchema load ordering migration if they actually have a PalSchema component.
+                        let storage_dest = palschema_storage_dir.join(&folder_name);
+                        let has_palschema_folder = storage_dest.exists() || current_mods_links.iter().any(|(_, name)| name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name));
+
+                        if !has_palschema_folder && mod_info.mod_type == crate::models::ModType::Hybrid {
+                            continue;
+                        }
+
+                        if is_enabled {
+                            // Find any physical folder directly in mods/ matching name or numbered name, and migrate it to Storage
+                            let mut physical_src = None;
+                            for (path, name) in &current_mods_links {
+                                if (name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name)) && !junction::exists(path).unwrap_or(false) && path.is_dir() {
+                                    physical_src = Some(path.clone());
+                                }
+                            }
+
+                            if let Some(src) = physical_src {
+                                let _ = fs::create_dir_all(&palschema_storage_dir);
+                                let _ = crate::profiles::move_path(&src, &storage_dest);
+                            }
+
+                            // Delete any existing junction
+                            for (path, name) in &current_mods_links {
+                                if name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name) {
+                                    let _ = crate::profiles::remove_junction_or_symlink(path);
+                                }
+                            }
+
+                            if storage_dest.exists() {
+                                let link_name = format!("{:03}_{}", idx, folder_name);
+                                let link_path = palschema_mods_dir.join(&link_name);
+                                let _ = fs::create_dir_all(&palschema_mods_dir);
+                                let _ = crate::profiles::create_junction_or_symlink(&storage_dest, &link_path);
+                                if mod_info.mod_type == crate::models::ModType::PalSchema {
+                                    mod_info.game_path = link_path.to_string_lossy().to_string();
+                                }
+                                mod_info.mods_txt_order = Some(idx);
+                                idx += 1;
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 

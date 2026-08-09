@@ -1,15 +1,25 @@
 import { escapeHtml } from '../utils/helpers';
 
-export function showConfirm(message: string): Promise<boolean> {
+export function showConfirm(
+  titleOrMessage: string,
+  message?: string,
+  confirmText = 'Confirm',
+  cancelText = 'Cancel'
+): Promise<boolean> {
   return new Promise((resolve) => {
+    const hasTitle = !!message;
+    const displayTitle = hasTitle ? titleOrMessage : 'Confirm';
+    const displayBody = hasTitle ? message : titleOrMessage;
+
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
     overlay.innerHTML = `
-      <div class="confirm-box">
-        <p>${escapeHtml(message)}</p>
-        <div class="confirm-actions">
-          <button class="confirm-cancel">Cancel</button>
-          <button class="confirm-danger">Confirm</button>
+      <div class="confirm-box" style="min-width:320px; max-width:440px; background:var(--bg-secondary); border:1px solid var(--border); padding:20px; border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
+        <h4 style="margin:0 0 10px 0; font-size:15px; font-weight:700; color:var(--text-primary); border-bottom:1px solid var(--border); padding-bottom:8px;">${escapeHtml(displayTitle)}</h4>
+        <p style="margin:0 0 20px 0; font-size:12px; line-height:1.5; color:var(--text-muted);">${displayBody}</p>
+        <div class="confirm-actions" style="display:flex; justify-content:flex-end; gap:8px;">
+          <button class="confirm-cancel" style="padding:6px 12px; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-muted); font-size:11px; font-weight:600; cursor:pointer;">${escapeHtml(cancelText)}</button>
+          <button class="confirm-danger" style="padding:6px 12px; background:var(--accent); border:none; border-radius:4px; color:#fff; font-size:11px; font-weight:600; cursor:pointer;">${escapeHtml(confirmText)}</button>
         </div>
       </div>
     `;

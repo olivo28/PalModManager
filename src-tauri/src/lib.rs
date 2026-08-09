@@ -181,6 +181,8 @@ pub fn run() {
             db_commands::db_write_record,
             load_order_commands::get_ue4ss_load_order,
             load_order_commands::save_ue4ss_load_order,
+            load_order_commands::get_palschema_load_order,
+            load_order_commands::save_palschema_load_order,
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

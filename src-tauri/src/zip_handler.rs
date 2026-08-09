@@ -604,7 +604,10 @@ pub fn build_manifest_from_files(
         let rel_segments: Vec<&str> = rel_lower.split('/').collect();
 
         // Classify RouteType
-        let route_type = if let Some(rtype) = custom_routes_map.get(&lower) {
+        let route_type = if let Some(rtype) = custom_routes_map.get(&lower)
+            .or_else(|| custom_routes_map.get(&normalized.to_lowercase()))
+            .or_else(|| custom_routes_map.get(&rel_lower))
+        {
             match rtype {
                 RouteType::Ue4ss => has_ue4ss = true,
                 RouteType::PalSchema => has_palschema = true,
@@ -776,18 +779,33 @@ pub fn build_manifest_from_files(
         _ => ModType::Hybrid,
     };
 
-    let display_name = custom_display_name
+    let mut display_name = custom_display_name
         .or(parsed_nexus.name)
         .unwrap_or_else(|| crate::installer::clean_zip_name(filename));
 
-    let version = parsed_nexus.version.unwrap_or_else(|| "1.0".to_string());
+    let mut version = parsed_nexus.version.unwrap_or_else(|| "1.0".to_string());
+    let mut nexus_mod_id = parsed_nexus.nexus_id;
+
+    if let Some(ref modinfo) = modinfo_data {
+        if let Some(n) = modinfo.get("name").and_then(|n| n.as_str()) {
+            display_name = n.to_string();
+        }
+        if let Some(v) = modinfo.get("version").and_then(|v| v.as_str()) {
+            version = v.to_string();
+        } else if let Some(v) = modinfo.get("version").and_then(|v| v.as_f64()) {
+            version = v.to_string();
+        }
+        if let Some(id) = modinfo.get("nexusModId").and_then(|id| id.as_u64()) {
+            nexus_mod_id = Some(id as u32);
+        }
+    }
 
     Ok(InstallManifest {
         folder_name,
         display_name,
         mod_type,
         routes,
-        nexus_mod_id: parsed_nexus.nexus_id,
+        nexus_mod_id,
         nexus_file_id: parsed_nexus.nexus_file_id,
         has_pak,
         has_ue4ss,

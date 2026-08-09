@@ -8,10 +8,26 @@ export function setupDragAndDrop(): void {
   const overlay = document.getElementById('drop-overlay')!;
   if (!overlay) return;
 
+  // ─── Internal DOM drag detection ───────────────────────────────────────────
+  // When the user drags a DOM element (load order item, packer tree node, etc.)
+  // the Tauri webview fires its own drag events as if files are being dropped
+  // from the OS. We mark internal drags on document.body so the Tauri handler
+  // can skip them and avoid raising the blocking file-drop overlay.
+  document.addEventListener('dragstart', () => {
+    document.body.setAttribute('data-internal-drag', 'true');
+  }, true);
+  document.addEventListener('dragend', () => {
+    document.body.removeAttribute('data-internal-drag');
+  }, true);
+
   try {
     const webview = getCurrentWebview();
     webview.onDragDropEvent((event) => {
       const payload = event.payload;
+
+      // If a DOM element drag is active, this is an internal reorder — ignore it.
+      if (document.body.hasAttribute('data-internal-drag')) return;
+
       if (payload.type === 'enter') {
         const tab = getState().activeTab;
         if (tab !== 'editor' && tab !== 'build' && !getState().isDraggingCard) {

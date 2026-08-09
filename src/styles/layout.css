@@ -1409,8 +1409,6 @@ main {
 
 /* Center and style the load list */
 #load-list-container {
-  max-width: 680px;
-  margin: 0 auto;
   width: 100%;
   display: flex;
   flex-direction: column;
