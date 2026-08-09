@@ -512,26 +512,34 @@ pub fn check_mod_exists(
     existing_mods
         .iter()
         .find(|m| {
-            if m.mod_type != *mod_type {
-                return false;
+            if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
+                if nid1 == nid2 {
+                    return true;
+                }
             }
+
             let db_id = get_physical_identity(&m.game_path, &m.disabled_path);
             if !db_id.is_empty() && db_id == zip_norm {
                 return true;
             }
+
             if normalize_name(&m.name) == normalize_name(folder_name) {
                 return true;
             }
-            if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
-                if nid1 == nid2 {
-                    if m.mod_type == crate::models::ModType::Pak || m.mod_type == crate::models::ModType::LogicMods {
-                        let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id);
-                        if name_sim {
-                            return true;
-                        }
-                    } else {
-                        if db_id == zip_norm {
-                            return true;
+
+            // Strict matching fallback (matching type and containing names for pak/logicmods)
+            if m.mod_type == *mod_type {
+                if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
+                    if nid1 == nid2 {
+                        if m.mod_type == crate::models::ModType::Pak || m.mod_type == crate::models::ModType::LogicMods {
+                            let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id);
+                            if name_sim {
+                                return true;
+                            }
+                        } else {
+                            if db_id == zip_norm {
+                                return true;
+                            }
                         }
                     }
                 }
@@ -610,6 +618,14 @@ pub fn update_mod(
         }
     });
 
+    let snapshot = if !existing.game_path.is_empty() && Path::new(&existing.game_path).is_dir() {
+        crate::config_merge::snapshot_configs(Path::new(&existing.game_path))
+    } else if !existing.disabled_path.is_empty() && Path::new(&existing.disabled_path).is_dir() {
+        crate::config_merge::snapshot_configs(Path::new(&existing.disabled_path))
+    } else {
+        crate::config_merge::ConfigSnapshot { entries: Vec::new() }
+    };
+
     delete_path_and_sidecar(&existing.game_path);
     delete_path_and_sidecar(&existing.disabled_path);
     for extra in &existing.extra_files {
@@ -671,6 +687,15 @@ pub fn update_mod(
     existing.extra_files = new_mod_info.extra_files;
     existing.update_date = Some(now.to_string());
     existing.enabled = true;
+
+    let dest_dir = if !existing.game_path.is_empty() {
+        Path::new(&existing.game_path)
+    } else {
+        Path::new(&existing.disabled_path)
+    };
+    if dest_dir.exists() && dest_dir.is_dir() {
+        crate::config_merge::apply_config_merge(dest_dir, &snapshot);
+    }
 
     if !was_enabled {
         let profile_dir = PathBuf::from(program_path).join("profiles").join(current_profile_id);

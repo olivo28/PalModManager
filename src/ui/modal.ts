@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale, buildInstallManifest, installModWithManifest } from '../api';
+import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale, buildInstallManifest, installModWithManifest, previewConfigDiff } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -111,7 +111,7 @@ export function openSettingsModal(): void {
     if (scaleValue) {
       scaleValue.textContent = `${Math.round(initialScale * 100)}%`;
     }
-    
+
     scaleInput.addEventListener('input', () => {
       const scale = parseFloat(scaleInput.value);
       if (scaleValue) {
@@ -122,6 +122,13 @@ export function openSettingsModal(): void {
   }
 
   modal.classList.add('visible');
+
+  requestAnimationFrame(() => {
+    const modalBody = modal.querySelector('.modal-body');
+    if (modalBody) {
+      modalBody.scrollTop = 0;
+    }
+  });
 }
 
 
@@ -216,7 +223,7 @@ export async function handleSaveSettings(): Promise<void> {
     const debugConsole = debugConsoleCheckbox ? debugConsoleCheckbox.checked : false;
     const forceLoadOrderUe4ssCheckbox = document.getElementById('settings-force-load-order-ue4ss')! as HTMLInputElement;
     const forceLoadOrderPalschemaCheckbox = document.getElementById('settings-force-load-order-palschema')! as HTMLInputElement;
-    
+
     const forceLoadOrderUe4ss = forceLoadOrderUe4ssCheckbox ? forceLoadOrderUe4ssCheckbox.checked : false;
     const forceLoadOrderPalschema = forceLoadOrderPalschemaCheckbox ? forceLoadOrderPalschemaCheckbox.checked : false;
     // Master forceLoadOrder is active if either UE4SS or PalSchema features are active
@@ -310,7 +317,7 @@ let _pendingUpdateModId: string | null = null;
 function getCleanNameFromFilename(filename: string): string {
   const stem = filename.substring(0, filename.lastIndexOf('.')) || filename;
   const words = stem.split(/\s+/);
-  
+
   // Find index of the last purely numeric token (excluding years)
   let idIndex = -1;
   for (let i = words.length - 1; i >= 0; i--) {
@@ -431,7 +438,7 @@ export function showFileTreeModal(routes: any[], modName: string): void {
     if (!destPath || !gamePath) return destPath;
     const normalizedDest = destPath.replace(/\\/g, '/').toLowerCase();
     const normalizedGame = gamePath.replace(/\\/g, '/').toLowerCase();
-    
+
     if (normalizedDest.startsWith(normalizedGame)) {
       let rel = destPath.substring(gamePath.length);
       if (rel.startsWith('/') || rel.startsWith('\\')) {
@@ -569,7 +576,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
         analysis.nexusInfo = info;
         renderInstallPreview(analysis, existingMod);
       }
-    }).catch(() => {});
+    }).catch(() => { });
   }
 
   let cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
@@ -599,7 +606,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
     _pendingUpdateModId = existingMod.id;
     updateHtml = `
       <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.1);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists. (Installed: v${existingMod.version || 'unknown'}). Update it?</span>
+        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists. (Installed: ${(existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : 'unknown version'}). Update it?</span>
         <div style="display:flex;gap:8px;">
           <button class="update-banner-btn" id="update-banner-btn" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Update</button>
           <button class="update-banner-btn" id="install-new-btn" style="padding:4px 10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Install as New</button>
@@ -673,9 +680,20 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
 
        <!-- Right Column: Settings Form -->
        <div style="flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center;">
-          ${updateHtml}
-          
-          <div style="display:flex;gap:12px;">
+           ${updateHtml}
+
+           <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 8px 12px; margin-top: -4px; margin-bottom: 4px; align-items: center; justify-content: space-between; gap: 12px;">
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 14px;">⚙</span>
+                <div style="display: flex; flex-direction: column; text-align: left;">
+                   <span style="font-size: 11px; font-weight: bold; color: var(--text-primary);">Config Settings Merge</span>
+                   <span id="config-diff-summary-text" style="font-size: 9px; color: var(--text-muted);">Differences detected in config files.</span>
+                </div>
+              </div>
+              <button id="view-config-diff-btn" class="btn btn-secondary" style="font-size: 10px; padding: 4px 8px; height: auto; line-height: 1; margin: 0;">Show Details</button>
+           </div>
+           
+           <div style="display:flex;gap:12px;">
             <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Mod Display Name</label>
                <input type="text" id="mod-name-input" value="${escapeHtml(cleanName)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;" />
@@ -715,7 +733,8 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
           ${pakDestHtml}
        </div>
     </div>
-  `;  // Wire up Show Full List button
+  `;
+  // Wire up Show Full List button
   const viewAllBtn = document.getElementById('view-all-files-btn');
   if (viewAllBtn) {
     viewAllBtn.addEventListener('click', (e) => {
@@ -771,7 +790,167 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
     });
   }
 
+  if (existingMod) {
+    previewConfigDiff(analysis.zipPath, existingMod.id).then(diffs => {
+      const diffContainer = document.getElementById('config-diff-container');
+      const summaryText = document.getElementById('config-diff-summary-text');
+      const viewBtn = document.getElementById('view-config-diff-btn');
+      if (diffContainer && diffs && diffs.length > 0) {
+        diffContainer.style.display = 'flex';
+        if (summaryText) {
+          const filesCount = diffs.length;
+          summaryText.textContent = `Differences detected in ${filesCount} config file${filesCount === 1 ? '' : 's'}.`;
+        }
+        if (viewBtn) {
+          viewBtn.onclick = (e) => {
+            e.preventDefault();
+            showConfigDiffModal(diffs);
+          };
+        }
+      }
+    }).catch(err => {
+      console.error("Failed to preview config diffs:", err);
+    });
+  }
+
   confirmBtn.disabled = false;
+}
+
+export function showConfigDiffModal(diffs: any[]): void {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay visible';
+  overlay.id = 'config-diff-modal';
+
+  let html = `
+    <div class="modal" style="max-width:850px; width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
+      <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+        <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary);">⚙ Config Settings Merge Preview</h3>
+        <button class="modal-close-btn" id="config-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
+      </div>
+      <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--bg-primary);">
+  `;
+
+  const collapseByDefault = diffs.length > 1;
+
+  for (let i = 0; i < diffs.length; i++) {
+    const diff = diffs[i];
+    html += `
+      <div class="config-diff-card" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:4px;">
+        <div class="config-diff-file-header" data-index="${i}" style="cursor:pointer; font-weight:700; font-family:monospace; font-size:12px; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between; padding:2px 0; user-select:none; word-break:break-all;">
+          <span>📄 ${escapeHtml(diff.file_name)}</span>
+          <span class="toggle-icon" style="font-size:10px; color:var(--text-muted); padding-left:8px;">${collapseByDefault ? '▲' : '▼'}</span>
+        </div>
+        <div class="config-diff-file-content" id="config-diff-file-content-${i}" style="display: ${collapseByDefault ? 'none' : 'flex'}; flex-direction:column; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.03); padding-top:8px;">
+    `;
+
+    // 1. Changes to preserve (Table format)
+    if (diff.keys_user_changed && diff.keys_user_changed.length > 0) {
+      html += `
+        <div>
+          <div style="color:#ff9000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <span>🟢 Your changes to preserve</span>
+            <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,144,0,0.15); border:1px solid rgba(255,144,0,0.25);">${diff.keys_user_changed.length}</span>
+          </div>
+          <div style="overflow-x:auto; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:4px;">
+            <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:left; font-family:monospace;">
+              <thead>
+                <tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">
+                  <th style="padding:6px 8px; font-weight:bold;">Setting / Key</th>
+                  <th style="padding:6px 8px; font-weight:bold; width:150px; text-align:right;">Your Value</th>
+                  <th style="padding:6px 8px; font-weight:bold; width:150px; text-align:right;">Default Value</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${diff.keys_user_changed.map((c: any) => `
+                  <tr style="border-bottom:1px solid rgba(255,255,255,0.02); hover:background:rgba(255,255,255,0.01);">
+                    <td style="padding:6px 8px; color:var(--text-primary); word-break:break-all;" title="${escapeHtml(c.key)}">${escapeHtml(c.key)}</td>
+                    <td style="padding:6px 8px; color:#ff9000; font-weight:bold; text-align:right; word-break:break-all;">${escapeHtml(c.old_value)}</td>
+                    <td style="padding:6px 8px; opacity:0.6; text-decoration:line-through; text-align:right; word-break:break-all;">${escapeHtml(c.new_value)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    }
+
+    // 2. Added keys (Tag / Badge format)
+    if (diff.keys_added_by_author && diff.keys_added_by_author.length > 0) {
+      html += `
+        <div>
+          <div style="color:#00bcff; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <span>🔵 New settings added by author</span>
+            <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.25);">${diff.keys_added_by_author.length}</span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
+            ${diff.keys_added_by_author.map((k: string) => `
+              <span style="font-family:monospace; font-size:9px; padding:2px 6px; background:rgba(0,188,255,0.08); border:1px solid rgba(0,188,255,0.15); border-radius:4px; color:#00bcff; word-break:break-all;" title="${escapeHtml(k)}">${escapeHtml(k)}</span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    // 3. Removed keys (Tag / Badge format)
+    if (diff.keys_removed_by_author && diff.keys_removed_by_author.length > 0) {
+      html += `
+        <div>
+          <div style="color:#ff5000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
+            <span>🔴 Settings removed by author</span>
+            <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,80,0,0.15); border:1px solid rgba(255,80,0,0.25);">${diff.keys_removed_by_author.length}</span>
+          </div>
+          <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
+            ${diff.keys_removed_by_author.map((k: string) => `
+              <span style="font-family:monospace; font-size:9px; padding:2px 6px; background:rgba(255,80,0,0.08); border:1px solid rgba(255,80,0,0.15); border-radius:4px; color:#ff5000; word-break:break-all;" title="${escapeHtml(k)}">${escapeHtml(k)}</span>
+            `).join('')}
+          </div>
+        </div>
+      `;
+    }
+
+    html += `
+        </div>
+      </div>
+    `;
+  }
+
+  html += `
+      </div>
+      <div class="modal-footer" style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; background:var(--bg-secondary); border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
+        <button id="config-diff-modal-close-btn" class="btn btn-secondary">Close</button>
+      </div>
+    </div>
+  `;
+
+  overlay.innerHTML = html;
+  document.body.appendChild(overlay);
+
+  // Wire up collapsible files
+  overlay.querySelectorAll('.config-diff-file-header').forEach(header => {
+    header.addEventListener('click', () => {
+      const idx = (header as HTMLElement).dataset.index;
+      const content = overlay.querySelector(`#config-diff-file-content-${idx}`) as HTMLElement;
+      const icon = header.querySelector('.toggle-icon') as HTMLElement;
+      if (content && icon) {
+        if (content.style.display === 'none') {
+          content.style.display = 'flex';
+          icon.textContent = '▼';
+        } else {
+          content.style.display = 'none';
+          icon.textContent = '▲';
+        }
+      }
+    });
+  });
+
+  const close = () => {
+    overlay.classList.remove('visible');
+    setTimeout(() => overlay.remove(), 200);
+  };
+
+  overlay.querySelector('#config-diff-modal-close-x')!.addEventListener('click', close);
+  overlay.querySelector('#config-diff-modal-close-btn')!.addEventListener('click', close);
 }
 
 let _pendingBatchPaths: string[] = [];
@@ -833,7 +1012,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
           existingModId = checkResult.modInfo.id;
           existingModInfo = checkResult.modInfo;
         }
-      } catch {}
+      } catch { }
 
       let nameVal = getCleanNameFromFilename(filename);
       if (!analysis.nexusInfo && analysis.modinfo?.name) {
@@ -1033,12 +1212,12 @@ export async function handleConfirmInstall(): Promise<void> {
     for (let i = 0; i < _batchItems.length; i++) {
       const item = _batchItems[i];
       const installCheckbox = document.getElementById(`batch-install-${i}`) as HTMLInputElement | null;
-      
+
       if (installCheckbox && installCheckbox.checked && !item.error) {
         const nameInput = document.getElementById(`batch-name-${i}`) as HTMLInputElement | null;
         const typeSelect = document.getElementById(`batch-type-${i}`) as HTMLSelectElement | null;
         const pakDestSelect = document.getElementById(`batch-pak-dest-${i}`) as HTMLSelectElement | null;
-        
+
         const inputName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : item.name;
         const existingFolder = item.existingModInfo ? getModFolderName(item.existingModInfo) : '';
         const isUpdate = item.existingModId && (inputName.toLowerCase() === existingFolder.toLowerCase());
@@ -1201,7 +1380,7 @@ export async function handleConfirmInstall(): Promise<void> {
             resultsList.innerHTML = logs.join('');
             resultsList.scrollTop = resultsList.scrollHeight;
           }
-          
+
           // Load dependencies to update GUI state / badges!
           const { loadDependencies } = await import('./modsView');
           await loadDependencies();
@@ -1211,7 +1390,7 @@ export async function handleConfirmInstall(): Promise<void> {
           resultsList.scrollTop = resultsList.scrollHeight;
 
           retryBtn.style.display = 'none';
-          
+
           // Small timeout so the user sees the final dependency status log before mod installation proceeds
           setTimeout(() => {
             executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state, pakDestination);
@@ -1321,13 +1500,13 @@ export async function handleInstall(): Promise<void> {
 
       const analysis = await analyzeZip(zipPath);
 
-      let existingMod: { id: string; name: string } | null = null;
+      let existingMod: { id: string; name: string, version: string } | null = null;
       try {
         const checkResult = await checkModExistsCommand(zipPath);
         if (checkResult.exists && checkResult.modInfo) {
-          existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name };
+          existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name, version: checkResult.modInfo.version };
         }
-      } catch {}
+      } catch { }
 
       renderInstallPreview(analysis, existingMod);
     } else {

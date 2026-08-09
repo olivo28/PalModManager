@@ -4,10 +4,29 @@ use serde_json::Value;
 use std::path::PathBuf;
 use tauri::State;
 
+fn get_overridden_settings(data: &crate::models::AppData) -> crate::models::AppSettings {
+    let mut settings = data.settings.clone();
+    settings.force_load_order_ue4ss = Some(crate::profiles::effective_force_ue4ss(data));
+    settings.force_load_order_palschema = Some(crate::profiles::effective_force_palschema(data));
+    settings.hide_native_mods = Some(crate::profiles::effective_hide_native_mods(data));
+    settings
+}
+
+fn save_current_profile(data: &crate::models::AppData) {
+    let current_profile_id = data.current_profile_id.clone();
+    let p_dir = crate::profiles::get_profile_dir(&data.settings.program_path, &current_profile_id);
+    if let Some(profile) = data.profiles.iter().find(|p| p.id == current_profile_id) {
+        if let Ok(json) = serde_json::to_string_pretty(profile) {
+            let _ = std::fs::write(p_dir.join("profile.json"), json);
+        }
+    }
+}
+
 #[tauri::command]
 pub fn get_settings(state: State<AppState>) -> Result<Value, String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
-    serde_json::to_value(&data.settings).map_err(|e| e.to_string())
+    let settings = get_overridden_settings(&data);
+    serde_json::to_value(&settings).map_err(|e| e.to_string())
 }
 
 #[tauri::command]
@@ -25,7 +44,8 @@ pub fn set_game_path(path: String, state: State<AppState>) -> Result<Value, Stri
 
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     data.settings.game_path = path;
-    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let settings = get_overridden_settings(&data);
+    let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
@@ -40,7 +60,8 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     data.settings.force_load_order = Some(enabled);
     
-    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let settings = get_overridden_settings(&data);
+    let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
@@ -50,7 +71,10 @@ pub fn set_force_load_order(enabled: bool, state: State<AppState>) -> Result<Val
 #[tauri::command]
 pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Result<Value, String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    data.settings.force_load_order_ue4ss = Some(enabled);
+    let current_profile_id = data.current_profile_id.clone();
+    if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+        profile.force_load_order_ue4ss = Some(enabled);
+    }
     
     let game_path = data.settings.game_path.clone();
     if !game_path.is_empty() {
@@ -58,7 +82,6 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
         let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
         
         if mods_txt.exists() {
-            let current_profile_id = data.current_profile_id.clone();
             if let Some(current_profile) = data.profiles.iter().find(|p| p.id == current_profile_id).cloned() {
                 let target_mods: Vec<crate::models::ModInfo> = data.mods.iter()
                     .filter(|m| {
@@ -183,7 +206,9 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
             }
         }
     }
-    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let settings = get_overridden_settings(&data);
+    let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
+    save_current_profile(&data);
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
@@ -200,7 +225,10 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
     #[cfg(target_os = "windows")]
     {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order_palschema = Some(enabled);
+        let current_profile_id = data.current_profile_id.clone();
+        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+            profile.force_load_order_palschema = Some(enabled);
+        }
         
         let game_path = data.settings.game_path.clone();
         if !game_path.is_empty() {
@@ -294,7 +322,9 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
                 }
             }
         }
-        let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+        let settings = get_overridden_settings(&data);
+        let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
+        save_current_profile(&data);
         let data_clone = data.clone();
         drop(data);
         let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
@@ -305,8 +335,13 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
 #[tauri::command]
 pub fn set_hide_native_mods(hide: bool, state: State<AppState>) -> Result<Value, String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    data.settings.hide_native_mods = Some(hide);
-    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let current_profile_id = data.current_profile_id.clone();
+    if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+        profile.hide_native_mods = Some(hide);
+    }
+    let settings = get_overridden_settings(&data);
+    let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
+    save_current_profile(&data);
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
@@ -395,7 +430,9 @@ pub fn set_custom_data_path(path: Option<String>, state: State<AppState>) -> Res
         let src = PathBuf::from(&current_path).join(item);
         let dst = target_path.join(item);
         if src.exists() && !dst.exists() {
-            let _ = crate::profiles::copy_dir_all(&src, &dst);
+            if crate::profiles::copy_dir_all(&src, &dst).is_ok() {
+                let _ = std::fs::remove_dir_all(&src);
+            }
         }
     }
 

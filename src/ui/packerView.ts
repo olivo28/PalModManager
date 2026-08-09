@@ -95,8 +95,8 @@ async function scanAndBuildStagedFiles(): Promise<void> {
   try {
     const files = await invoke<StagedFile[]>('scan_paths_for_packing', { paths: sourcePaths });
     
-    // Apply overrides or default relative paths
     files.forEach(f => {
+      f.targetPath = f.targetPath.replace(/\\/g, '/');
       if (targetOverrides.has(f.sourcePath)) {
         f.targetPath = targetOverrides.get(f.sourcePath) || f.targetPath;
       }
@@ -661,6 +661,8 @@ function setupTreeDragAndDropHandlers(container: HTMLElement): void {
     fileNode.style.cursor = 'grab';
 
     fileNode.addEventListener('pointerdown', (e: PointerEvent) => {
+      // Ignore right-clicks and other non-left clicks
+      if (e.button !== 0) return;
       // Ignore clicks on action buttons
       if ((e.target as HTMLElement).closest('.packer-tree-actions')) return;
       e.preventDefault();
@@ -684,6 +686,7 @@ function setupTreeDragAndDropHandlers(container: HTMLElement): void {
     dirNode.style.cursor = 'grab';
 
     dirNode.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (e.button !== 0) return;
       if ((e.target as HTMLElement).closest('.packer-tree-actions')) return;
       e.preventDefault();
 

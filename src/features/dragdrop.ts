@@ -118,13 +118,13 @@ async function handleInstallFromPath(zipPath: string): Promise<void> {
     setModalStatus('Analyzing zip file...');
     const analysis = await analyzeZip(zipPath);
 
-    let existingMod: { id: string; name: string } | null = null;
+    let existingMod: { id: string; name: string; version: string } | null = null;
     try {
       const checkResult = await checkModExistsCommand(zipPath);
       if (checkResult.exists && checkResult.modInfo) {
-        existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name };
+        existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name, version: checkResult.modInfo.version };
       }
-    } catch {}
+    } catch { }
 
     updateState({ currentAnalysis: analysis });
     renderInstallPreview(analysis, existingMod);

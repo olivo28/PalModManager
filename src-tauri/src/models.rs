@@ -121,6 +121,12 @@ pub struct Profile {
     pub mod_folders: Vec<ModFolder>,
     #[serde(default)]
     pub load_order_metadata: Option<Vec<(String, bool)>>,
+    #[serde(default)]
+    pub force_load_order_ue4ss: Option<bool>,
+    #[serde(default)]
+    pub force_load_order_palschema: Option<bool>,
+    #[serde(default)]
+    pub hide_native_mods: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

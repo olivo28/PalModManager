@@ -167,7 +167,7 @@ pub async fn install_mod_command(
 
     let force_load_order = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order.unwrap_or(false)
+        data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data)
     };
 
     let mod_info = installer::install_mod(
@@ -400,7 +400,7 @@ pub async fn update_mod_command(
 
     let updated_mod = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        let force_load_order = data.settings.force_load_order.unwrap_or(false);
+        let force_load_order = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data);
         let existing = data
             .mods
             .iter_mut()
@@ -527,7 +527,7 @@ pub async fn install_mod_with_manifest(
 
     let force_load_order = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order.unwrap_or(false)
+        data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data)
     };
 
     let now_str = Utc::now().to_rfc3339();
@@ -641,5 +641,139 @@ pub async fn install_mod_with_manifest(
     let _ = crate::profiles::save_pmm_meta(&final_mod);
 
     Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ConfigDiff {
+    pub file_name: String,
+    pub keys_user_changed: Vec<crate::config_merge::ChangedKeyDetail>,
+    pub keys_added_by_author: Vec<String>,
+    pub keys_removed_by_author: Vec<String>,
+}
+
+#[tauri::command]
+pub async fn preview_config_diff(
+    zip_path: String,
+    mod_id: String,
+    state: tauri::State<'_, AppState>,
+) -> Result<Vec<ConfigDiff>, String> {
+    use crate::zip_handler;
+    use std::fs;
+    use std::path::{Path, PathBuf};
+    use uuid::Uuid;
+
+    let (game_path, _program_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (data.settings.game_path.clone(), data.settings.program_path.clone())
+    };
+
+    if game_path.is_empty() {
+        return Err("Game path is not configured".to_string());
+    }
+
+    let (mod_dir_str, mod_name) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let m = data.mods.iter().find(|m| m.id == mod_id)
+            .ok_or_else(|| "Mod not found".to_string())?;
+        let dir = if !m.game_path.is_empty() && Path::new(&m.game_path).exists() {
+            m.game_path.clone()
+        } else {
+            m.disabled_path.clone()
+        };
+        (dir, m.name.clone())
+    };
+
+    if mod_dir_str.is_empty() {
+        return Ok(Vec::new());
+    }
+    let installed_mod_dir = Path::new(&mod_dir_str);
+    if !installed_mod_dir.exists() || !installed_mod_dir.is_dir() {
+        return Ok(Vec::new());
+    }
+
+    let temp_dir = std::env::temp_dir().join(format!("palmodmanager_diff_{}", Uuid::new_v4()));
+    let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
+
+    let zip_filename = Path::new(&zip_path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+
+    let analysis = zip_handler::analyze_zip(&zip_path)?;
+
+    let mut modinfo_data = None;
+    if analysis.has_info_json {
+        let info_file_path = analysis.files.iter().find(|f: &&String| f.to_lowercase().ends_with("modinfo.pmm.json"))
+            .or_else(|| analysis.files.iter().find(|f: &&String| f.to_lowercase().ends_with("modinfo.json")))
+            .or_else(|| analysis.files.iter().find(|f: &&String| f.to_lowercase().ends_with("info.json")));
+        if let Some(target_file) = info_file_path {
+            let full_path = extracted.join(target_file);
+            if full_path.exists() {
+                if let Ok(content) = std::fs::read_to_string(full_path) {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                        modinfo_data = Some(val);
+                    }
+                }
+            }
+        }
+    }
+
+    let game = Path::new(&game_path);
+    let manifest = zip_handler::build_manifest_from_files(
+        &analysis.files,
+        &zip_filename,
+        game,
+        None,
+        Some(mod_name),
+        modinfo_data,
+    )?;
+
+    let incoming_mod_dir = if !manifest.folder_name.is_empty() {
+        fn find_folder(current: &Path, folder_name: &str) -> Option<PathBuf> {
+            if current.is_dir() {
+                if let Some(name) = current.file_name().and_then(|n| n.to_str()) {
+                    if name.to_lowercase() == folder_name.to_lowercase() {
+                        return Some(current.to_path_buf());
+                    }
+                }
+                if let Ok(entries) = fs::read_dir(current) {
+                    for entry in entries.flatten() {
+                        if let Some(found) = find_folder(&entry.path(), folder_name) {
+                            return Some(found);
+                        }
+                    }
+                }
+            }
+            None
+        }
+        find_folder(&extracted, &manifest.folder_name).unwrap_or(extracted.clone())
+    } else {
+        extracted.clone()
+    };
+
+    let incoming_snapshot = crate::config_merge::snapshot_configs(&incoming_mod_dir);
+    let mut diffs = Vec::new();
+
+    for (rel_path, new_content) in incoming_snapshot.entries {
+        let installed_file = installed_mod_dir.join(&rel_path);
+        if installed_file.exists() && installed_file.is_file() {
+            if let Ok(old_content) = fs::read_to_string(&installed_file) {
+                let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                if let Some((user_changed, added, removed)) = crate::config_merge::generate_config_diff(&old_content, &new_content, ext) {
+                    if !user_changed.is_empty() || !added.is_empty() || !removed.is_empty() {
+                        diffs.push(ConfigDiff {
+                            file_name: rel_path.to_string_lossy().to_string(),
+                            keys_user_changed: user_changed,
+                            keys_added_by_author: added,
+                            keys_removed_by_author: removed,
+                        });
+                    }
+                }
+            }
+        }
+    }
+
+    let _ = fs::remove_dir_all(&temp_dir);
+    Ok(diffs)
 }
 

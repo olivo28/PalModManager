@@ -64,6 +64,9 @@ export interface Profile {
   ue4ss_enabled: boolean;
   palschema_enabled: boolean;
   mod_folders?: ModFolder[];
+  force_load_order_ue4ss?: boolean | null;
+  force_load_order_palschema?: boolean | null;
+  hide_native_mods?: boolean | null;
 }
 
 export interface LibraryEntry {
@@ -114,5 +117,18 @@ export interface InstallManifest {
   hasUe4ss: boolean;
   hasPalschema: boolean;
   version: string;
+}
+
+export interface ChangedKeyDetail {
+  key: string;
+  old_value: string;
+  new_value: string;
+}
+
+export interface ConfigDiff {
+  file_name: string;
+  keys_user_changed: ChangedKeyDetail[];
+  keys_added_by_author: string[];
+  keys_removed_by_author: string[];
 }
 

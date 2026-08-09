@@ -61,7 +61,7 @@ pub fn install_mod_from_library(
 
     let force_load_order = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order.unwrap_or(false)
+        data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data)
     };
 
     let mod_info = crate::installer::install_mod(

@@ -752,10 +752,11 @@ export async function loadGameVersion(): Promise<void> {
 
 export async function loadProfiles(): Promise<void> {
   try {
-    const { getProfiles, getCurrentProfile } = await import('../api');
-    const [profiles, currentProfile] = await Promise.all([
+    const { getProfiles, getCurrentProfile, getSettings } = await import('../api');
+    const [profiles, currentProfile, settings] = await Promise.all([
       getProfiles(),
-      getCurrentProfile().catch(() => null)
+      getCurrentProfile().catch(() => null),
+      getSettings().catch(() => null)
     ]);
 
     const activeProfile = currentProfile || profiles[0] || null;
@@ -763,6 +764,7 @@ export async function loadProfiles(): Promise<void> {
       profiles,
       currentProfileId: activeProfile?.id || 'default',
       currentProfile: activeProfile,
+      ...(settings ? { currentSettings: settings } : {})
     });
     updateActiveProfileLabel();
     renderProfileList();
@@ -785,8 +787,10 @@ function renderProfileList(): void {
   const { profiles, currentProfileId } = getState();
   list.innerHTML = profiles.map(p => {
     const modCount = p.enabled_mod_ids ? p.enabled_mod_ids.length : 0;
-    const ue4ssBadge = p.ue4ss_enabled ? `<span class="profile-badge ue4ss">UE4SS</span>` : '';
-    const palschemaBadge = p.palschema_enabled ? `<span class="profile-badge palschema">PalSchema</span>` : '';
+    const ue4ssText = p.force_load_order_ue4ss ? 'UE4SS (FLO)' : 'UE4SS';
+    const palschemaText = p.force_load_order_palschema ? 'PalSchema (FLO)' : 'PalSchema';
+    const ue4ssBadge = p.ue4ss_enabled ? `<span class="profile-badge ue4ss">${ue4ssText}</span>` : '';
+    const palschemaBadge = p.palschema_enabled ? `<span class="profile-badge palschema">${palschemaText}</span>` : '';
     const modCountBadge = `<span class="profile-badge count">${modCount} mod${modCount === 1 ? '' : 's'}</span>`;
 
     return `
@@ -796,7 +800,7 @@ function renderProfileList(): void {
           <span class="profile-item-name">${escapeHtml(p.name)}</span>
           ${p.id === currentProfileId ? '<span class="profile-item-badge-active">ACTIVE</span>' : ''}
         </div>
-        <div style="display:flex;gap:4px;align-items:center;">
+        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
           ${ue4ssBadge}
           ${palschemaBadge}
           ${modCountBadge}
@@ -826,6 +830,7 @@ function renderProfileList(): void {
         const proceed = await confirmDiscardOrSave();
         if (!proceed) return; // User cancelled, abort switch
 
+        showToast('Switching profile... Backing up current and restoring target mods...', 'info');
         const mods = await switchProfile(id);
         
         // Clear editor original content cache
@@ -1029,6 +1034,7 @@ export async function handleProfileChange(profileId: string): Promise<void> {
     const proceed = await confirmDiscardOrSave();
     if (!proceed) return; // User cancelled, abort switch
 
+    showToast('Switching profile... Backing up current and restoring target mods...', 'info');
     const mods = await switchProfile(profileId);
     
     // Clear editor original content cache
@@ -1336,7 +1342,7 @@ async function triggerInstallFromLibrary(id: string): Promise<void> {
     const analysis = await analyzeZip(zipPath);
     const check = await checkModExistsCommand(zipPath);
 
-    const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name } : null;
+    const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } : null;
 
     renderInstallPreview(analysis, existingMod);
     showInstallModal();
@@ -1367,7 +1373,7 @@ async function handleLibraryBulkInstall(): Promise<void> {
       const { renderInstallPreview } = await import('./modal');
       const analysis = await analyzeZip(zipPaths[0]);
       const check = await checkModExistsCommand(zipPaths[0]);
-      const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name } : null;
+      const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } : null;
       renderInstallPreview(analysis, existingMod);
       showInstallModal();
     } else if (zipPaths.length > 1) {

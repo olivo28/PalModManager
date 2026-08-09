@@ -384,6 +384,12 @@ function setupEventListeners() {
         return;
       }
 
+      const configDiffOverlay = document.getElementById('config-diff-modal');
+      if (configDiffOverlay) {
+        configDiffOverlay.remove();
+        return;
+      }
+
       const detailOverlay = document.getElementById('detail-overlay');
       if (detailOverlay?.classList.contains('visible')) closeDetailPanel();
       

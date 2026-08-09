@@ -382,5 +382,22 @@ export async function setToolbarScale(scale: number): Promise<AppSettings> {
   return invoke('set_toolbar_scale', { scale });
 }
 
+export interface ChangedKeyDetail {
+  key: string;
+  old_value: string;
+  new_value: string;
+}
+
+export interface ConfigDiff {
+  file_name: string;
+  keys_user_changed: ChangedKeyDetail[];
+  keys_added_by_author: string[];
+  keys_removed_by_author: string[];
+}
+
+export async function previewConfigDiff(zipPath: string, modId: string): Promise<ConfigDiff[]> {
+  return invoke('preview_config_diff', { zipPath, modId });
+}
+
 
 

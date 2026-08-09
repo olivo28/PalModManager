@@ -9,6 +9,7 @@ pub mod nexus;
 mod state;
 mod zip_handler;
 mod logger;
+pub mod config_merge;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -126,6 +127,7 @@ pub fn run() {
             install_commands::update_mod_command,
             install_commands::build_install_manifest,
             install_commands::install_mod_with_manifest,
+            install_commands::preview_config_diff,
             config_commands::read_config,
             config_commands::save_config,
             config_commands::set_mod_config,

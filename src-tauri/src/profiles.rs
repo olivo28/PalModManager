@@ -102,6 +102,9 @@ pub fn ensure_default_profile(data: &mut AppData) {
             palschema_enabled: palschema_installed,
             mod_folders: Vec::new(),
             load_order_metadata: None,
+            force_load_order_ue4ss: None,
+            force_load_order_palschema: None,
+            hide_native_mods: None,
         });
     }
 
@@ -380,16 +383,34 @@ pub fn switch_profile(
 
     let game_path = data.settings.game_path.clone();
 
-    // 1. Backup physical files of current active profile
+    // 1. Backup physical files of current active profile + mods.txt snapshot
     let current_id = data.current_profile_id.clone();
     if !current_id.is_empty() {
         let current_dir = ensure_profile_structure(program_path, &current_id);
         backup_game_files_to_profile(&game_path, &current_dir);
+        
+        if !game_path.is_empty() {
+            let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
+            let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
+            if mods_txt.exists() {
+                let snapshot_path = current_dir.join("mods.txt.snapshot");
+                let _ = fs::copy(&mods_txt, &snapshot_path);
+            }
+        }
     }
 
-    // 2. Restore target profile physical files to game
+    // 2. Restore target profile physical files to game + mods.txt snapshot
     let target_dir = ensure_profile_structure(program_path, &target_profile.id);
     restore_profile_files_to_game(&game_path, &target_dir, target_profile, program_path);
+
+    if !game_path.is_empty() {
+        let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
+        let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
+        let snapshot_path = target_dir.join("mods.txt.snapshot");
+        if snapshot_path.exists() {
+            let _ = fs::copy(&snapshot_path, &mods_txt);
+        }
+    }
 
     // 3. Update memory state
     data.current_profile_id = target_profile.id.clone();
@@ -426,6 +447,9 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
         palschema_enabled: false,
         mod_folders: Vec::new(),
         load_order_metadata: None,
+        force_load_order_ue4ss: None,
+        force_load_order_palschema: None,
+        hide_native_mods: None,
     };
 
     let program_path = data.settings.program_path.clone();
@@ -463,6 +487,9 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
         palschema_enabled: source_profile.palschema_enabled,
         mod_folders: source_profile.mod_folders.clone(),
         load_order_metadata: source_profile.load_order_metadata.clone(),
+        force_load_order_ue4ss: source_profile.force_load_order_ue4ss,
+        force_load_order_palschema: source_profile.force_load_order_palschema,
+        hide_native_mods: source_profile.hide_native_mods,
     };
 
     let program_path = data.settings.program_path.clone();
@@ -983,6 +1010,9 @@ pub fn enable_mod_internal(
     program_path: &str,
     mod_id: &str,
 ) -> Result<(), String> {
+    let force_ue4ss_effective = effective_force_ue4ss(data);
+    let force_palschema_effective = effective_force_palschema(data);
+
     let mod_index = data
         .mods
         .iter()
@@ -1034,7 +1064,7 @@ pub fn enable_mod_internal(
         mod_info.game_path = dest_path.to_string_lossy().to_string();
         mod_info.disabled_path = String::new();
 
-        let force_order = data.settings.force_load_order.unwrap_or(false);
+        let force_order = data.settings.force_load_order.unwrap_or(false) && force_ue4ss_effective;
         if let Some(ue4ss_mods_dir) = dest_path.parent() {
             let mods_txt = ue4ss_mods_dir.join("mods.txt");
             if mods_txt.exists() {
@@ -1060,7 +1090,7 @@ pub fn enable_mod_internal(
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
         
         let folder_name = get_mod_folder_name(mod_info);
-        let force_order = data.settings.force_load_order.unwrap_or(false);
+        let force_order = data.settings.force_load_order.unwrap_or(false) && force_palschema_effective;
 
         let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
         let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
@@ -1185,7 +1215,7 @@ pub fn enable_mod_internal(
             }
         }
 
-        let force_order = data.settings.force_load_order.unwrap_or(false);
+        let force_order = data.settings.force_load_order.unwrap_or(false) && force_ue4ss_effective;
 
         // 1. Register and setup companion UE4SS folders in mods.txt / enabled.txt FIRST
         if let Some(ue4ss_mods_dir) = dest_path.parent() {
@@ -1532,5 +1562,26 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
             }
         }
     }
+}
+
+pub fn effective_force_ue4ss(data: &AppData) -> bool {
+    let profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+    profile.and_then(|p| p.force_load_order_ue4ss)
+        .or(data.settings.force_load_order_ue4ss)
+        .unwrap_or(false)
+}
+
+pub fn effective_force_palschema(data: &AppData) -> bool {
+    let profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+    profile.and_then(|p| p.force_load_order_palschema)
+        .or(data.settings.force_load_order_palschema)
+        .unwrap_or(false)
+}
+
+pub fn effective_hide_native_mods(data: &AppData) -> bool {
+    let profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+    profile.and_then(|p| p.hide_native_mods)
+        .or(data.settings.hide_native_mods)
+        .unwrap_or(false)
 }
 
