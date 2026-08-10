@@ -429,7 +429,7 @@ const PALSCHEMA_FOLDERS: &[&str] = &[
     "spawns", "translations", "paks"
 ];
 
-fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> String {
+pub fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> String {
     // Strategy 1: Scan for structural boundary markers first (like PALSCHEMA_FOLDERS, scripts, dlls, logicmods)
     // to find the true mod folder name even if it is nested under arbitrary wrapper directories.
     for file in files {

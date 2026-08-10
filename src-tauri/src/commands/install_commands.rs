@@ -306,16 +306,37 @@ pub async fn check_mod_exists_command(
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
     let analysis = zip_handler::analyze_zip(&zip_path)?;
-    let (mod_folder_name, _has_game_path, _wrapper, _subdir) = zip_handler::detect_mod_folder(&analysis.files);
-
     let filename = Path::new(&zip_path)
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
     let nexus_id = nexus::extract_nexus_id(&filename);
 
-    let folder_name = mod_folder_name.unwrap_or_else(|| {
-        installer::clean_zip_name(&filename)
+    let mut metadata_folder_name = None;
+    if analysis.has_info_json {
+        let info_file_path = analysis.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.pmm.json"))
+            .or_else(|| analysis.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.json")))
+            .or_else(|| analysis.files.iter().find(|f| f.to_lowercase().ends_with("info.json")));
+        if let Some(target_file) = info_file_path {
+            if let Some(content) = zip_handler::read_archive_file(&zip_path, target_file) {
+                if let Ok(val) = serde_json::from_str::<Value>(&content) {
+                    if let Some(name) = val.get("folderName").and_then(|v| v.as_str()) {
+                        metadata_folder_name = Some(name.to_string());
+                    } else if let Some(name) = val.get("name").and_then(|v| v.as_str()) {
+                        metadata_folder_name = Some(name.to_string());
+                    }
+                }
+            }
+        }
+    }
+
+    let folder_name = metadata_folder_name.unwrap_or_else(|| {
+        let detected = zip_handler::detect_folder_name_from_files(&analysis.files, &filename);
+        if detected.is_empty() || detected == "UnresolvedMod" {
+            installer::clean_zip_name(&filename)
+        } else {
+            detected
+        }
     });
 
     let data = state.data.lock().map_err(|e| e.to_string())?;

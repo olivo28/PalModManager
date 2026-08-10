@@ -526,24 +526,6 @@ pub fn check_mod_exists(
             if normalize_name(&m.name) == normalize_name(folder_name) {
                 return true;
             }
-
-            // Strict matching fallback (matching type and containing names for pak/logicmods)
-            if m.mod_type == *mod_type {
-                if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
-                    if nid1 == nid2 {
-                        if m.mod_type == crate::models::ModType::Pak || m.mod_type == crate::models::ModType::LogicMods {
-                            let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id);
-                            if name_sim {
-                                return true;
-                            }
-                        } else {
-                            if db_id == zip_norm {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
             false
         })
         .cloned()
