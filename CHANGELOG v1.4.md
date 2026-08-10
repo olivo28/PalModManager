@@ -7,6 +7,11 @@ All notable changes to this project will be documented in this file.
 ### Added
 - **Direct Editor Code Navigation**: Added a `Code` action button next to hotkeys in the scanner view. Clicking it immediately opens the built-in Config Editor, switches to the target mod and script, and scrolls/focuses directly to the registration line.
 - **Segregated Self-Conflicts (Internal Duplicates)**: Modified the conflict scanner to distinguish between conflicts between different mods and internal duplicates within a single mod. Self-conflicts are now grouped in a dedicated collapsible warning panel.
+- **Per-Profile Configuration Settings & Isolation**: Isolated `force_load_order_ue4ss`, `force_load_order_palschema`, and `hide_native_mods` to the profile level with fallback resolution to global settings.
+- **mods.txt Profile Snapshotting & Restoration**: Automatically backups and restores `mods.txt` state on profile switch.
+- **Enhanced Profile Manager UI & FLO Badges**: Integrated Force Load Order (FLO) indicators directly into the `UE4SS` and `PalSchema` profile badges, increased modal height and width, and added reactive switching toasts.
+- **Smart Config Merge on Mod Update**: Preserves custom settings inside config files (`.json`, `.jsonc`, `.ini`, `.cfg`, `.txt`) during updates by merging user-modified keys with the incoming update defaults.
+- **Config Settings Merge Preview Modal**: Interactive diff preview in the install/update modal that details changes in config files including: user-preserved edits (with before/after values comparison), new settings, and removed options.
 
 ### Improvements & Corrections
 - **Excluded Dynamic Variables from Hotkey Conflicts**: Prevented false hotkey warning conflicts on dynamic keybind configurations that reference variables (e.g., config lookups) instead of static keys.
@@ -15,6 +20,7 @@ All notable changes to this project will be documented in this file.
 - **Unwrap Panic Prevention in Installer**: Resolved a Tokio thread panic in the ZIP extractor when processing empty paths or entries without valid filenames.
 - **Smart Mod Name & Nexus ID Extraction Heuristics**: Re-engineered name-cleaning algorithms in the backend and frontend to scan from right-to-left. This allows correct identification of Nexus Mod IDs at the end of the filename (even if they are single digits like `1`), while ignoring prefix numbers added by users (e.g., `1 - ModName`).
 - **Companion Mod Registry Cleanup**: Ensured companion/extra UE4SS subfolders are properly removed from `mods.txt` when a primary mod is deactivated or uninstalled.
+- **Clean up Source Directories after Storage Migration**: Automatically deletes the old `profiles` and `mods-library` directories from the source storage path after a successful data migration.
 - **Expanded Backup & Restore Routines**: Added logic to target `LogicMods` in backups and preserve custom companion folder structures during deactivation/restoration.
 - **Vastly Optimized Config Searches**: Implemented a 300 match cap on search results within the configuration editor to prevent UI freezing on generic search strings.
 - **Source Zip Persistence**: Ensured source archives are copied to the library during manifest-based mod installations.
