@@ -1,4 +1,4 @@
-import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale, buildInstallManifest, installModWithManifest, previewConfigDiff } from '../api';
+import { getSettings, setGamePath, setHideNativeMods, setDebugConsole, analyzeZip, installMod, checkModExistsCommand, updateModCommand, setModVersion as setModVersionApi, fetchNexusInfoAsync, checkDependencies, installUe4ss, installPalschema, setCustomDataPath, setToolbarScale, buildInstallManifest, installModWithManifest, previewConfigDiff, setModIgnoredKeys } from '../api';
 import type { ZipAnalysis } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView, loadMods } from './modsView';
@@ -804,7 +804,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
         if (viewBtn) {
           viewBtn.onclick = (e) => {
             e.preventDefault();
-            showConfigDiffModal(diffs);
+            showConfigDiffModal(diffs, existingMod.id);
           };
         }
       }
@@ -816,10 +816,14 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod?: 
   confirmBtn.disabled = false;
 }
 
-export function showConfigDiffModal(diffs: any[]): void {
+export function showConfigDiffModal(diffs: any[], modId: string): void {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay visible';
   overlay.id = 'config-diff-modal';
+
+  const state = getState();
+  const currentMod = state.allMods.find(m => m.id === modId);
+  const currentIgnoredKeys = currentMod?.ignoredKeys || [];
 
   let html = `
     <div class="modal" style="max-width:850px; width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
@@ -855,19 +859,26 @@ export function showConfigDiffModal(diffs: any[]): void {
             <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:left; font-family:monospace;">
               <thead>
                 <tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">
+                  <th style="padding:6px 8px; font-weight:bold; width: 60px;">Preserve</th>
                   <th style="padding:6px 8px; font-weight:bold;">Setting / Key</th>
                   <th style="padding:6px 8px; font-weight:bold; width:150px; text-align:right;">Your Value</th>
                   <th style="padding:6px 8px; font-weight:bold; width:150px; text-align:right;">Default Value</th>
                 </tr>
               </thead>
               <tbody>
-                ${diff.keys_user_changed.map((c: any) => `
-                  <tr style="border-bottom:1px solid rgba(255,255,255,0.02); hover:background:rgba(255,255,255,0.01);">
-                    <td style="padding:6px 8px; color:var(--text-primary); word-break:break-all;" title="${escapeHtml(c.key)}">${escapeHtml(c.key)}</td>
-                    <td style="padding:6px 8px; color:#ff9000; font-weight:bold; text-align:right; word-break:break-all;">${escapeHtml(c.old_value)}</td>
-                    <td style="padding:6px 8px; opacity:0.6; text-decoration:line-through; text-align:right; word-break:break-all;">${escapeHtml(c.new_value)}</td>
-                  </tr>
-                `).join('')}
+                ${diff.keys_user_changed.map((c: any) => {
+        const isPreserved = !currentIgnoredKeys.includes(c.key);
+        return `
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.02); hover:background:rgba(255,255,255,0.01);">
+                      <td style="padding:6px 8px; text-align:center;">
+                        <input type="checkbox" class="preserve-key-switch" data-key="${escapeHtml(c.key)}" ${isPreserved ? 'checked' : ''} style="cursor:pointer;" />
+                      </td>
+                      <td style="padding:6px 8px; color:var(--text-primary); word-break:break-all;" title="${escapeHtml(c.key)}">${escapeHtml(c.key)}</td>
+                      <td style="padding:6px 8px; color:#ff9000; font-weight:bold; text-align:right; word-break:break-all;">${escapeHtml(c.old_value)}</td>
+                      <td style="padding:6px 8px; opacity:0.6; text-decoration:line-through; text-align:right; word-break:break-all;">${escapeHtml(c.new_value)}</td>
+                    </tr>
+                  `;
+      }).join('')}
               </tbody>
             </table>
           </div>
@@ -925,6 +936,34 @@ export function showConfigDiffModal(diffs: any[]): void {
 
   overlay.innerHTML = html;
   document.body.appendChild(overlay);
+
+  // Wire up checkboxes to update ignored keys
+  let localIgnoredKeys = [...currentIgnoredKeys];
+  overlay.querySelectorAll('.preserve-key-switch').forEach(checkbox => {
+    checkbox.addEventListener('change', (e) => {
+      const target = e.target as HTMLInputElement;
+      const key = target.dataset.key!;
+      if (target.checked) {
+        // If checked, it means they DO want to preserve it. So remove from ignoredKeys.
+        localIgnoredKeys = localIgnoredKeys.filter(k => k !== key);
+      } else {
+        // If unchecked, they do NOT want to preserve it. So add to ignoredKeys.
+        if (!localIgnoredKeys.includes(key)) {
+          localIgnoredKeys.push(key);
+        }
+      }
+
+      setModIgnoredKeys(modId, localIgnoredKeys).then(updatedMod => {
+        // Update local state copy to match
+        const modInState = state.allMods.find(m => m.id === modId);
+        if (modInState) {
+          modInState.ignoredKeys = localIgnoredKeys;
+        }
+      }).catch(err => {
+        console.error("Failed to update ignored keys:", err);
+      });
+    });
+  });
 
   // Wire up collapsible files
   overlay.querySelectorAll('.config-diff-file-header').forEach(header => {
@@ -1219,8 +1258,7 @@ export async function handleConfirmInstall(): Promise<void> {
         const pakDestSelect = document.getElementById(`batch-pak-dest-${i}`) as HTMLSelectElement | null;
 
         const inputName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : item.name;
-        const existingFolder = item.existingModInfo ? getModFolderName(item.existingModInfo) : '';
-        const isUpdate = item.existingModId && (inputName.toLowerCase() === existingFolder.toLowerCase());
+        const isUpdate = !!item.existingModId;
 
         itemsToInstall.push({
           path: item.path,
@@ -1447,12 +1485,11 @@ async function executeModInstallation(
       customName
     );
 
-    const versionInput = document.getElementById('mod-version-input') as HTMLInputElement | null;
-    if (versionInput && versionInput.value.trim()) {
-      manifest.version = versionInput.value.trim();
+    if (_pendingUpdateModId) {
+      await updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId);
+    } else {
+      await installModWithManifest(manifest, state.currentAnalysis.zipPath);
     }
-
-    await installModWithManifest(manifest, state.currentAnalysis.zipPath);
     logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] Mod installed successfully!</div>`);
 
 

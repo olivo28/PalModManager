@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
+const APP_VERSION: &str = "1.4.2";
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NexusModInfo {
     pub mod_id: u32,
@@ -276,7 +278,7 @@ query GetModFiles($modId: ID!, $gameId: ID!) {
     });
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.4.1 (Tauri App)")
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .ok()?;
@@ -285,7 +287,7 @@ query GetModFiles($modId: ID!, $gameId: ID!) {
         .post(GRAPHQL_ENDPOINT)
         .header("Content-Type", "application/json")
         .header("Application-Name", "PalModManager")
-        .header("Application-Version", "1.4.1")
+        .header("Application-Version", APP_VERSION)
         .json(&payload);
 
     let resp = req.send().await.ok()?;
@@ -375,7 +377,7 @@ query GetPalworldMod($modId: ID!) {
     });
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.4.1 (Tauri App)")
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
         .timeout(std::time::Duration::from_secs(10))
         .build()
         .unwrap_or_else(|_| reqwest::Client::new());
@@ -384,7 +386,7 @@ query GetPalworldMod($modId: ID!) {
         .post(GRAPHQL_ENDPOINT)
         .header("Content-Type", "application/json")
         .header("Application-Name", "PalModManager")
-        .header("Application-Version", "1.4.1")
+        .header("Application-Version", APP_VERSION)
         .json(&payload);
 
     let resp = req

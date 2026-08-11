@@ -196,6 +196,10 @@ export async function setModVersion(modId: string, version: string): Promise<Mod
   return invoke('set_mod_version', { modId, version });
 }
 
+export async function setModIgnoredKeys(modId: string, ignoredKeys: string[]): Promise<ModInfo> {
+  return invoke('set_mod_ignored_keys', { modId, ignoredKeys });
+}
+
 export async function checkGitHubVersion(repo: string): Promise<string> {
   return invoke('check_github_version', { repo });
 }

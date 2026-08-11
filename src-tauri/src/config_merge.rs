@@ -42,7 +42,7 @@ pub fn snapshot_configs(mod_dir: &Path) -> ConfigSnapshot {
 }
 
 /// Apply the merging function to combine snapshot files back into the newly installed folder
-pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot) {
+pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_keys: &[String]) {
     for (rel_path, old_content) in &snapshot.entries {
         let new_file = mod_dir.join(rel_path);
         if !new_file.exists() {
@@ -52,8 +52,8 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot) {
         let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
         if let Ok(new_content) = fs::read_to_string(&new_file) {
             let merged = match ext.as_str() {
-                "json" | "jsonc" => merge_json(old_content, &new_content),
-                "ini" | "cfg" | "txt" => merge_kv(old_content, &new_content),
+                "json" | "jsonc" => merge_json(old_content, &new_content, ignored_keys),
+                "ini" | "cfg" | "txt" => merge_kv(old_content, &new_content, ignored_keys),
                 _ => None,
             };
             if let Some(result) = merged {
@@ -64,16 +64,22 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot) {
 }
 
 /// Recursively merge two JSON values.
-/// For matching keys, keep old_val (user edits).
+/// For matching keys, keep old_val (user edits) unless ignored.
 /// If key only exists in new_val, keep it.
 /// If key is an object, recurse.
-fn merge_json_values(old_val: &Value, new_val: &Value) -> Value {
+fn merge_json_values(old_val: &Value, new_val: &Value, prefix: &str, ignored_keys: &[String]) -> Value {
     match (old_val, new_val) {
         (Value::Object(old_map), Value::Object(new_map)) => {
             let mut merged_map = serde_json::Map::new();
             for (key, new_sub_val) in new_map {
+                let full_key = if prefix.is_empty() { key.clone() } else { format!("{}.{}", prefix, key) };
+                if ignored_keys.contains(&full_key) {
+                    // Ignored key: discard user old value, use author new default value
+                    merged_map.insert(key.clone(), new_sub_val.clone());
+                    continue;
+                }
                 if let Some(old_sub_val) = old_map.get(key) {
-                    merged_map.insert(key.clone(), merge_json_values(old_sub_val, new_sub_val));
+                    merged_map.insert(key.clone(), merge_json_values(old_sub_val, new_sub_val, &full_key, ignored_keys));
                 } else {
                     merged_map.insert(key.clone(), new_sub_val.clone());
                 }
@@ -84,20 +90,20 @@ fn merge_json_values(old_val: &Value, new_val: &Value) -> Value {
     }
 }
 
-fn merge_json(old: &str, new: &str) -> Option<String> {
+fn merge_json(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
     let old_clean = crate::commands::scanner_commands::strip_jsonc_comments(old);
     let new_clean = crate::commands::scanner_commands::strip_jsonc_comments(new);
     
     let old_json: Value = serde_json::from_str(&old_clean).ok()?;
     let new_json: Value = serde_json::from_str(&new_clean).ok()?;
     
-    let merged_value = merge_json_values(&old_json, &new_json);
+    let merged_value = merge_json_values(&old_json, &new_json, "", ignored_keys);
     serde_json::to_string_pretty(&merged_value).ok()
 }
 
 /// Merge key-value settings flatly (INI/CFG/TXT).
-/// Preserves comments and structure of the new file, replacing values of matching keys.
-fn merge_kv(old: &str, new: &str) -> Option<String> {
+/// Preserves comments and structure of the new file, replacing values of matching keys unless ignored.
+fn merge_kv(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
     let mut old_map = std::collections::HashMap::new();
     for line in old.lines() {
         let line_trimmed = line.trim();
@@ -138,6 +144,11 @@ fn merge_kv(old: &str, new: &str) -> Option<String> {
         if let Some(delim) = delimiter {
             if let Some(pos) = line.find(delim) {
                 let k = line[..pos].trim().to_string();
+                if ignored_keys.contains(&k) {
+                    // Ignored key: keep new author default line
+                    result_lines.push(line.to_string());
+                    continue;
+                }
                 if let Some(old_val) = old_map.get(&k) {
                     let leading_ws = &line[..line.len() - line.trim_start().len()];
                     result_lines.push(format!("{}{}{} {}", leading_ws, k, delim, old_val));

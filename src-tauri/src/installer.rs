@@ -197,7 +197,7 @@ pub fn install_mod(
     Ok(mod_info)
 }
 
-fn normalize_path_separator(p: &str) -> String {
+pub(crate) fn normalize_path_separator(p: &str) -> String {
     let mut s = p.replace('/', "\\");
     while s.contains("\\\\") {
         s = s.replace("\\\\", "\\");
@@ -355,6 +355,54 @@ pub fn execute_manifest(
         }
     }
 
+    // 3. For PalSchema mods: move the extracted folder from PalSchema/mods/ → PalSchema/Storage/
+    //    and create an NTFS Junction back in PalSchema/mods/ (with numeric prefix if FLO is active)
+    if manifest.has_palschema {
+        let binaries_dir = crate::dependency_checker::get_binaries_dir(game_path);
+        let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+        let palschema_storage_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+
+        // The file was extracted to palschema_mods_dir / folder_name — move it to Storage
+        let extracted_mod_dir = palschema_mods_dir.join(&manifest.folder_name);
+        if extracted_mod_dir.exists() {
+            let storage_dest = palschema_storage_dir.join(&manifest.folder_name);
+            let _ = fs::create_dir_all(&palschema_storage_dir);
+
+            // Move extracted dir → Storage
+            move_path(&extracted_mod_dir, &storage_dest)
+                .unwrap_or_else(|e| crate::logger::log(&format!("PalSchema Storage move failed: {}", e)));
+
+            // Create junction in mods/, optionally with numeric prefix
+            let _ = fs::create_dir_all(&palschema_mods_dir);
+            let link_name = if force_load_order {
+                // Count existing numbered entries to assign the next available slot
+                let next_order = palschema_mods_dir
+                    .read_dir()
+                    .map(|rd| {
+                        rd.flatten()
+                            .filter(|e| {
+                                let n = e.file_name().to_string_lossy().to_string();
+                                n.len() > 4 && n[..3].chars().all(|c| c.is_ascii_digit()) && n.as_bytes()[3] == b'_'
+                            })
+                            .count() as u32
+                            + 1
+                    })
+                    .unwrap_or(1);
+                format!("{:03}_{}", next_order, &manifest.folder_name)
+            } else {
+                manifest.folder_name.clone()
+            };
+
+            let link_path = palschema_mods_dir.join(&link_name);
+            if let Err(e) = crate::profiles::create_junction_or_symlink(&storage_dest, &link_path) {
+                crate::logger::log(&format!("PalSchema junction creation failed: {}", e));
+            }
+
+            // Update primary_path to point at the junction (not Storage)
+            primary_path = normalize_path_separator(&link_path.to_string_lossy());
+        }
+    }
+
     let has_enabled_txt = manifest.has_ue4ss;
 
     // Separate primary path from extra files
@@ -408,6 +456,7 @@ pub fn execute_manifest(
         library_zip: None,
         ignored_version: None,
         nexus_file_id: manifest.nexus_file_id,
+        ignored_keys: None,
     })
 }
 
@@ -503,7 +552,7 @@ fn get_physical_identity(game_path: &str, disabled_path: &str) -> String {
 
 pub fn check_mod_exists(
     folder_name: &str,
-    mod_type: &crate::models::ModType,
+    _mod_type: &crate::models::ModType,
     nexus_id: Option<u32>,
     existing_mods: &[ModInfo],
 ) -> Option<ModInfo> {
@@ -514,7 +563,18 @@ pub fn check_mod_exists(
         .find(|m| {
             if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
                 if nid1 == nid2 {
-                    return true;
+                    let db_id = get_physical_identity(&m.game_path, &m.disabled_path);
+                    if m.mod_type == crate::models::ModType::Pak
+                        || m.mod_type == crate::models::ModType::LogicMods
+                    {
+                        let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id)
+                            || normalize_name(&m.name) == normalize_name(folder_name);
+                        if name_sim { return true; }
+                    } else {
+                        if db_id == zip_norm || normalize_name(&m.name) == normalize_name(folder_name) {
+                            return true;
+                        }
+                    }
                 }
             }
 
@@ -676,7 +736,8 @@ pub fn update_mod(
         Path::new(&existing.disabled_path)
     };
     if dest_dir.exists() && dest_dir.is_dir() {
-        crate::config_merge::apply_config_merge(dest_dir, &snapshot);
+        let ignored = existing.ignored_keys.clone().unwrap_or_default();
+        crate::config_merge::apply_config_merge(dest_dir, &snapshot, &ignored);
     }
 
     if !was_enabled {

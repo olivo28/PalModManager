@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.4.2] - 2026-08-10
+
+### Fixed
+- **Profile Mod Stickiness**: Fixed an issue where mods would persist and copy themselves onto newly created blank profiles when switching. Removed auto-scanned mod inheritance logic from the transition cycle so that profile switches are strictly driven by profile configuration.
+- **Nexus ID Collision & Addons**: Restored folder name and physical identity overlap checks when matching Nexus IDs. Mod organizer now correctly identifies companion packs, UIs, and addon mods (e.g. *PalPriority* and *PalPriority UI*) that share the same Nexus page ID as separate mods instead of overwriting each other.
+- **Broken Mod Updates**: Resolved the issue where updating a mod would accidentally overwrite another colliding mod due to the aforementioned Nexus ID collision bug.
+- **Nested Folder Duplication on Install**: Changed directory matching heuristic search direction from `position()` (left-to-right) to `rposition()` (right-to-left). This ensures mods packaged under nested envoltures of the same name (such as *Progressive Capture Mastery*) install clean relative paths directly instead of duplicating intermediate wrapper directories.
+- **Prioritized Hybrid Mod Folder Detection**: Restructured name detection heuristics to evaluate code boundaries (LUA scripts/DLLs) first. This ensures hybrid mods (e.g. *PalWellbeing*) correctly prioritize their UE4SS folder name over their PalSchema schema folders (vital for load order mapping in `mods.txt`).
+- **Bulk Installer Update Detection**: Fixed an issue where updating mods through the batch installer would silently fall back to a fresh install instead of overwriting the existing mod. The update check no longer required the custom folder name to exactly match the physical folder on disk.
+- **PalSchema Fresh Install with FLO**: Fixed a critical bug where installing a PalSchema mod for the first time with Force Load Order active would skip the Storage relocation and junction creation steps entirely. The mod was extracted directly into `PalSchema/mods/` without being moved to `/Storage/` or having its numbered NTFS junction created, meaning the load order system was bypassed on initial install. The installation flow now mirrors the enable flow exactly.
+- **Per-Key Config Preserve Switches**: Added per-value toggle switches in the Config Merge diff preview modal to selectively preserve or discard individual settings during mod updates, giving users granular control over which customized values are kept.
+
+---
+
+
 ## [1.4.1] - 2026-08-09
 
 ### Added
@@ -24,6 +39,11 @@ All notable changes to this project will be documented in this file.
 - **Expanded Backup & Restore Routines**: Added logic to target `LogicMods` in backups and preserve custom companion folder structures during deactivation/restoration.
 - **Vastly Optimized Config Searches**: Implemented a 300 match cap on search results within the configuration editor to prevent UI freezing on generic search strings.
 - **Source Zip Persistence**: Ensured source archives are copied to the library during manifest-based mod installations.
+- **Packer Right-Click Drag Prevention**: Restricted drag-and-drop in the Mod Packer tree view to left-click only; right-clicking on files or folders no longer triggers an unintended drag operation.
+- **Packer Virtual File/Folder Removal**: Fixed an issue where confirming the removal of a folder or file from staging had no visible effect, caused by path separator mismatches (backslash vs. forward slash) between the backend scan and the frontend tree comparison.
+- **Local Mod Existence Detection**: Improved the check that detects whether a locally-packaged mod is already installed. The command now reads `modinfo.pmm.json` (or `modinfo.json` / `info.json`) directly from the ZIP to extract the real folder name, and falls back to robust structural heuristics instead of the ZIP filename, preventing false "not installed" results for mods whose archive name includes a version suffix.
+
+---
 
 ## [1.4.0] - 2026-08-08
 
@@ -33,7 +53,7 @@ All notable changes to this project will be documented in this file.
 - **Side-by-Side Dual Load Order Panels**: Redesigned the "Load" tab to show two independent columns side-by-side with separate scrollbars, allowing you to organize UE4SS and PalSchema mods concurrently with full visual clarity.
 
 ### Redesigned Installer
-Replaced the legacy file-heuristic installer with a robust, metadata-first packaging parser. It reads the local package manifest (`modinfo.pmm.json` / `.pmm.json`) to accurately extract mod metadata (version, author, description, and Nexus Mod ID) and maps complex multi-directory routes (such as hybrid files deploying concurrently to UE4SS and PalSchema) flawlessly.
+- Replaced the legacy file-heuristic installer with a robust, metadata-first packaging parser. It reads the local package manifest (`modinfo.pmm.json` / `.pmm.json`) to accurately extract mod metadata (version, author, description, and Nexus Mod ID) and maps complex multi-directory routes (such as hybrid files deploying concurrently to UE4SS and PalSchema) flawlessly.
 
 ### Added
 - **Interactive File Preview Tree**: Added a collapsible file tree viewer in both single and batch installers to inspect ZIP contents and installation targets before deploying.
@@ -56,4 +76,4 @@ Replaced the legacy file-heuristic installer with a robust, metadata-first packa
 You can choose between the portable version or the full installer:
 
 *   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
-*   **Installer Version:** Download `PalModManager_1.4.1_x64-setup.exe` and follow the setup wizard to install the application on your system.
+*   **Installer Version:** Download `PalModManager_1.4.2_x64-setup.exe` and follow the setup wizard to install the application on your system.

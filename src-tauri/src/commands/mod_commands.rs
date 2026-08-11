@@ -411,6 +411,7 @@ fn load_from_modinfo_pmm_json(path: &Path) -> Option<models::ModInfo> {
         library_zip: None,
         ignored_version: None,
         nexus_file_id: None,
+        ignored_keys: None,
     })
 }
 
@@ -583,9 +584,12 @@ fn merge_scan_with_db(
                 result.push(dm.clone());
             } else if has_metadata {
                 // Not on disk right now (profile switch moved it), but has Nexus/library metadata
-                // Keep it as disabled to preserve all metadata (images, author, downloads, etc.)
+                // Keep it to preserve all metadata (images, author, downloads, etc.), but clear physical paths so we don't think it is installed.
                 let mut kept = dm.clone();
                 kept.enabled = false;
+                kept.game_path = String::new();
+                kept.disabled_path = String::new();
+                kept.extra_files = Vec::new();
                 result.push(kept);
             } else {
                 crate::logger::log(&format!("merge_scan_with_db: Mod '{}' no longer exists on disk and has no metadata. Purging from database.", dm.name));
@@ -710,6 +714,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                 update_date: None, library_zip: None,
                 ignored_version: None,
                 nexus_file_id: None,
+                ignored_keys: None,
             });
         }
     }
@@ -754,6 +759,7 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<models::ModInfo>) {
                     update_date: None, library_zip: None,
                     ignored_version: None,
                     nexus_file_id: None,
+                    ignored_keys: None,
                 });
             }
         }
@@ -804,6 +810,7 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<models::ModInfo>)
             library_zip: None,
             ignored_version: None,
             nexus_file_id: None,
+            ignored_keys: None,
         });
     }
 }
@@ -844,6 +851,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                     library_zip: None,
                     ignored_version: None,
                     nexus_file_id: None,
+                    ignored_keys: None,
                 });
             }
         }
@@ -887,6 +895,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<models::ModInfo>) 
                     library_zip: None,
                     ignored_version: None,
                     nexus_file_id: None,
+                    ignored_keys: None,
                 });
             }
         }
@@ -1042,6 +1051,28 @@ pub fn set_mod_version(mod_id: String, version: String, state: State<AppState>) 
     mod_info.version = version;
     let result = mod_info.clone();
     let program_path = data.settings.program_path.clone();
+    let data_clone = data.clone();
+    drop(data);
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn set_mod_ignored_keys(
+    mod_id: String,
+    ignored_keys: Vec<String>,
+    state: State<AppState>,
+) -> Result<models::ModInfo, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    let mod_info = data.mods.iter_mut().find(|m| m.id == mod_id)
+        .ok_or_else(|| "Mod not found".to_string())?;
+    mod_info.ignored_keys = Some(ignored_keys);
+    let result = mod_info.clone();
+    let program_path = data.settings.program_path.clone();
+    
+    // Save locally in the mod dir's .pmm.json sidecar if it exists
+    let _ = crate::profiles::save_pmm_meta(&result);
+
     let data_clone = data.clone();
     drop(data);
     db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;

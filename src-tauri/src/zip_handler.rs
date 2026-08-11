@@ -36,30 +36,7 @@ pub struct ZipAnalysis {
     pub files: Vec<String>,
 }
 
-/// Names that must not be used as mod folder names.
-const FORBIDDEN_MOD_NAMES: &[&str] = &[
-    "pal", "mods", "win64", "wingdk", "binaries", "content", "paks", "~mods",
-    "logicmods", "ue4ss", "palschema", "plugins", "scripts",
-    "blueprints", "translations",
-];
 
-/// Markers that identify the boundary before mod folders.
-/// Using substring matching (lower.find()) so they work at ANY depth in the path.
-/// Order matters: most specific first.
-const MODS_DIR_MARKERS: &[&str] = &[
-    "ue4ss/mods/palschema/mods/",
-    "ue4ss/mods/palschema/",
-    "palschema/mods/",
-    "ue4ss/mods/",
-    "ue4ss/mods/",
-    "binaries/win64/ue4ss/mods/",
-    "binaries/wingdk/ue4ss/mods/",
-];
-
-fn is_forbidden(name: &str) -> bool {
-    let lower = name.to_lowercase();
-    FORBIDDEN_MOD_NAMES.contains(&lower.as_str())
-}
 
 /// Core detection: find the mod root path within the ZIP using substring matching.
 /// Works for direct paths, Nexus-wrapped paths, and double-wrapped paths.
@@ -429,9 +406,33 @@ const PALSCHEMA_FOLDERS: &[&str] = &[
     "spawns", "translations", "paks"
 ];
 
+const FORBIDDEN_MOD_NAMES: &[&str] = &[
+    "pal", "mods", "win64", "wingdk", "binaries", "content", "paks", "~mods",
+    "logicmods", "ue4ss", "palschema", "plugins", "scripts", "nativemods",
+    "blueprints", "translations",
+];
+
+/// Markers that identify the boundary before mod folders.
+/// Using substring matching (lower.find()) so they work at ANY depth in the path.
+/// Order matters: most specific first.
+const MODS_DIR_MARKERS: &[&str] = &[
+    "ue4ss/mods/palschema/mods/",
+    "ue4ss/mods/palschema/",
+    "palschema/mods/",
+    "ue4ss/mods/",
+    "ue4ss/mods/",
+    "binaries/win64/ue4ss/mods/",
+    "binaries/wingdk/ue4ss/mods/",
+];
+
+fn is_forbidden(name: &str) -> bool {
+    let lower = name.to_lowercase();
+    FORBIDDEN_MOD_NAMES.contains(&lower.as_str()) || lower.is_empty()
+}
+
 pub fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> String {
-    // Strategy 1: Scan for structural boundary markers first (like PALSCHEMA_FOLDERS, scripts, dlls, logicmods)
-    // to find the true mod folder name even if it is nested under arbitrary wrapper directories.
+    // Strategy 1a: Scan strictly for UE4SS / LogicMods markers (scripts, dlls, logicmods)
+    // to ensure the UE4SS mod name is prioritized in hybrid mods (important for mods.txt).
     for file in files {
         if file.ends_with('/') {
             continue;
@@ -441,12 +442,40 @@ pub fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> St
         for (i, segment) in segments.iter().enumerate() {
             if i > 0 {
                 let lower = segment.to_lowercase();
-                let is_marker = lower == "scripts" || lower == "dlls" || lower == "logicmods"
-                    || PALSCHEMA_FOLDERS.contains(&lower.as_str());
-                if is_marker {
-                    let parent = segments[i - 1];
-                    if !is_forbidden(parent) {
-                        return parent.to_string();
+                if lower == "scripts" || lower == "dlls" || lower == "logicmods" {
+                    // Climb up candidate parents to find a non-forbidden name
+                    let mut j = i as isize - 1;
+                    while j >= 0 {
+                        let candidate = segments[j as usize];
+                        if !is_forbidden(candidate) {
+                            return candidate.to_string();
+                        }
+                        j -= 1;
+                    }
+                }
+            }
+        }
+    }
+
+    // Strategy 1b: Fallback scan for PalSchema boundary markers.
+    for file in files {
+        if file.ends_with('/') {
+            continue;
+        }
+        let normalized = file.replace('\\', "/");
+        let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
+        for (i, segment) in segments.iter().enumerate() {
+            if i > 0 {
+                let lower = segment.to_lowercase();
+                if PALSCHEMA_FOLDERS.contains(&lower.as_str()) {
+                    // Climb up candidate parents to find a non-forbidden name
+                    let mut j = i as isize - 1;
+                    while j >= 0 {
+                        let candidate = segments[j as usize];
+                        if !is_forbidden(candidate) {
+                            return candidate.to_string();
+                        }
+                        j -= 1;
                     }
                 }
             }
@@ -587,16 +616,26 @@ pub fn build_manifest_from_files(
     // First pass: classify files and build relative paths
     let mut temp_routes = Vec::new();
     for file in files {
-        if file.ends_with('/') {
-            continue;
-        }
-
         let normalized = file.replace('\\', "/");
         let lower = normalized.to_lowercase();
 
+        // Skip directory-only paths and folders (must contain a file extension to be mapped as a file)
+        if normalized.ends_with('/') || normalized.split('/').last().map(|s| !s.contains('.')).unwrap_or(true) {
+            continue;
+        }
+
+        // Handle the new Workshop route wrapping (Mods/NativeMods/UE4SS/Mods/)
+        let normalized_clean = if lower.contains("mods/nativemods/ue4ss/mods/") {
+            let idx = lower.find("mods/nativemods/ue4ss/mods/").unwrap();
+            normalized[idx + "mods/nativemods/ue4ss/mods/".len()..].to_string()
+        } else {
+            normalized.clone()
+        };
+        let lower_clean = normalized_clean.to_lowercase();
+        let segments: Vec<&str> = normalized_clean.split('/').filter(|s| !s.is_empty()).collect();
+
         // Skip inactive platform wrapper files
         if has_both_platforms {
-            let segments: Vec<&str> = lower.split('/').collect();
             let is_inactive = if is_xbox {
                 segments.iter().any(|&s| s == "(steam)" || s == "steam" || s == "win64")
             } else {
@@ -607,15 +646,13 @@ pub fn build_manifest_from_files(
             }
         }
 
-        // Determine relative path from folder_name
-        let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
-        let folder_idx = segments.iter().position(|s| s.to_lowercase() == folder_name_lower);
+        let folder_idx = segments.iter().rposition(|s| s.to_lowercase() == folder_name_lower);
 
         let mut relative_path = if let Some(idx) = folder_idx {
             segments[idx + 1..].join("/")
         } else {
             // Strip any platform wrapper if present in the first segment
-            let parts: Vec<&str> = normalized.split('/').collect();
+            let parts: Vec<&str> = normalized_clean.split('/').collect();
             if parts.len() > 1 {
                 let first_lower = parts[0].to_lowercase();
                 let is_wrapper = first_lower == "(steam)" || first_lower == "steam" || first_lower == "win64" ||
@@ -626,16 +663,32 @@ pub fn build_manifest_from_files(
                 if is_wrapper {
                     parts[1..].join("/")
                 } else {
-                    normalized.clone()
+                    normalized_clean.clone()
                 }
             } else {
-                normalized.clone()
+                normalized_clean.clone()
             }
         };
 
-        let rel_lower_check = relative_path.to_lowercase();
-        if rel_lower_check.starts_with("palschema/") {
-            relative_path = relative_path["palschema/".len()..].to_string();
+        // If this is a PalSchema folder path, we must extract relative path starting AFTER the mods/ segment to isolate the schema subdirectory
+        if lower_clean.contains("palschema/mods/") {
+            if let Some(pos) = lower_clean.find("palschema/mods/") {
+                let schema_subpath = &normalized_clean[pos + "palschema/mods/".len()..];
+                relative_path = schema_subpath.to_string();
+            }
+        } else {
+            let rel_lower_check = relative_path.to_lowercase();
+            if rel_lower_check.starts_with("ue4ss/mods/") {
+                relative_path = relative_path["ue4ss/mods/".len()..].to_string();
+            } else if rel_lower_check.starts_with("mods/") {
+                relative_path = relative_path["mods/".len()..].to_string();
+            } else if rel_lower_check.starts_with("ue4ss/") {
+                relative_path = relative_path["ue4ss/".len()..].to_string();
+            } else if rel_lower_check.starts_with("palschema/mods/") {
+                relative_path = relative_path["palschema/mods/".len()..].to_string();
+            } else if rel_lower_check.starts_with("palschema/") {
+                relative_path = relative_path["palschema/".len()..].to_string();
+            }
         }
 
         let rel_lower = relative_path.to_lowercase();
@@ -761,7 +814,7 @@ pub fn build_manifest_from_files(
                     ue4ss_mods_dest.join(&folder_name).join(final_rel)
                 }
                 RouteType::PalSchema => {
-                    palschema_mods_dest.join(&folder_name).join(&relative_path)
+                    palschema_mods_dest.join(&relative_path)
                 }
                 RouteType::Pak => {
                     paks_dest_dir.join(filename)

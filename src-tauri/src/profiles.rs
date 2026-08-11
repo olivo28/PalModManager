@@ -1534,7 +1534,12 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
                 && m.disabled_path.replace("\\", "/").contains(&format!("/profiles/{}/disabled_mods/", profile.id))
                 && Path::new(&m.disabled_path).exists();
 
-            if is_in_game || is_disabled {
+            // If the mod is physically located in another profile's disabled directory, do not auto-add it to this one.
+            let is_in_other_profile_disabled = !m.disabled_path.is_empty()
+                && !m.disabled_path.replace("\\", "/").contains(&format!("/profiles/{}/disabled_mods/", profile.id))
+                && Path::new(&m.disabled_path).exists();
+
+            if (is_in_game && !is_in_other_profile_disabled) || is_disabled {
                 let already_installed = profile.installed_mod_ids.iter().any(|id| {
                     id.to_lowercase() == m.id.to_lowercase() || id.to_lowercase() == m.name.to_lowercase()
                 });

@@ -61,7 +61,6 @@ pub fn switch_profile_command(
     let profile_mods = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
         data.mods = fresh_mods;
-        profiles::auto_add_scanned_mods_to_profile(&mut data);
         profiles::cleanup_profile_mod_lists(&mut data);
         profiles::sync_current_profile_states(&mut data);
         // Return ONLY mods that belong to the target profile

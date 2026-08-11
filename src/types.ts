@@ -35,6 +35,7 @@ export interface ModInfo {
   libraryZip: string | null;
   ignoredVersion: string | null;
   nexusFileId: number | null;
+  ignoredKeys?: string[] | null;
 }
 
 export interface AppSettings {

@@ -350,7 +350,8 @@ pub async fn check_mod_exists_command(
         _ => crate::models::ModType::Pak,
     };
 
-    let existing = installer::check_mod_exists(&folder_name, &mod_type, nexus_id, &data.mods);
+    let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+    let existing = installer::check_mod_exists(&folder_name, &mod_type, nexus_id, &profile_mods);
 
     Ok(serde_json::json!({
         "exists": existing.is_some(),

@@ -117,6 +117,7 @@ pub fn run() {
             mod_commands::open_folder_by_type,
             mod_commands::rename_mod,
             mod_commands::set_mod_version,
+            mod_commands::set_mod_ignored_keys,
             mod_commands::check_github_version,
             mod_commands::set_github_version,
             mod_commands::export_mods_json,
