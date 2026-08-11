@@ -637,9 +637,15 @@ pub fn build_manifest_from_files(
         // Skip inactive platform wrapper files
         if has_both_platforms {
             let is_inactive = if is_xbox {
-                segments.iter().any(|&s| s == "(steam)" || s == "steam" || s == "win64")
+                segments.iter().any(|&s| {
+                    let sl = s.to_lowercase();
+                    sl == "(steam)" || sl == "steam" || sl == "win64"
+                })
             } else {
-                segments.iter().any(|&s| s == "(xbox)" || s == "xbox" || s == "(gdk)" || s == "gdk" || s == "wingdk")
+                segments.iter().any(|&s| {
+                    let sl = s.to_lowercase();
+                    sl == "(xbox)" || sl == "xbox" || sl == "(gdk)" || sl == "gdk" || sl == "wingdk"
+                })
             };
             if is_inactive {
                 continue;
@@ -814,7 +820,13 @@ pub fn build_manifest_from_files(
                     ue4ss_mods_dest.join(&folder_name).join(final_rel)
                 }
                 RouteType::PalSchema => {
-                    palschema_mods_dest.join(&relative_path)
+                    let rel_path_lower = relative_path.to_lowercase();
+                    let folder_lower = folder_name.to_lowercase();
+                    if rel_path_lower.starts_with(&folder_lower) || rel_path_lower.starts_with(&format!("{}_", folder_lower)) || rel_path_lower.starts_with(&format!("{}schema", folder_lower)) {
+                        palschema_mods_dest.join(&relative_path)
+                    } else {
+                        palschema_mods_dest.join(&folder_name).join(&relative_path)
+                    }
                 }
                 RouteType::Pak => {
                     paks_dest_dir.join(filename)

@@ -163,6 +163,12 @@ I'm in the Nexus Mods discord, Palworld Modding Community and PalSchema
 
 ---
 
+## 🙏 Credits & Acknowledgements
+
+- **HalRiveria** — Community tester and dedicated bug reporter. Has consistently tracked down and reported hard-to-catch edge cases across multiple releases — including mod update regressions, Force Load Order installation bugs, batch installer failures, and more. His feedback has directly shaped the stability and polish of PalModManager. Thank you!
+
+---
+
 ## 📄 License
 
 Distributed under the MIT License. See `LICENSE` for details.
@@ -170,3 +176,4 @@ Distributed under the MIT License. See `LICENSE` for details.
 ---
 
 Developed with ❤️ by **Olivo28**
+Special thanks to **HalRiveria** for extensive testing and bug reporting.

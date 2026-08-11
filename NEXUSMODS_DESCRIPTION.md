@@ -86,5 +86,10 @@ Because this is an independent community project without a commercial Code Signi
 
 ---
 
+## 🙏 Credits & Acknowledgements
+- **HalRiveria** — Community tester and dedicated bug reporter. Has consistently tracked down and reported hard-to-catch edge cases across multiple releases — including mod update regressions, Force Load Order installation bugs, batch installer failures, and more. His feedback has directly shaped the stability and polish of PalModManager. Thank you!
+
+---
+
 ## Github
 [PalModManager](https://github.com/olivo28/PalModManager)
