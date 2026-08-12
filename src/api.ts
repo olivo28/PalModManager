@@ -403,5 +403,27 @@ export async function previewConfigDiff(zipPath: string, modId: string): Promise
   return invoke('preview_config_diff', { zipPath, modId });
 }
 
+// Workshop APIs
+export async function getWorkshopMods(): Promise<any[]> {
+  return invoke('get_workshop_mods');
+}
+
+export async function getWorkshopState(): Promise<any> {
+  return invoke('get_workshop_state');
+}
+
+export async function activateWorkshopMod(packageName: string): Promise<void> {
+  return invoke('activate_workshop_mod_cmd', { packageName });
+}
+
+export async function deactivateWorkshopMod(packageName: string): Promise<void> {
+  return invoke('deactivate_workshop_mod_cmd', { packageName });
+}
+
+export async function setWorkshopGlobalEnabled(enabled: boolean): Promise<void> {
+  return invoke('set_workshop_global_enabled', { enabled });
+}
+
+
 
 

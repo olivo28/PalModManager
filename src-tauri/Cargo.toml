@@ -30,4 +30,6 @@ rand = "0.8"
 base64 = "0.22"
 hostname = "0.4"
 junction = "1.0.0"
+pathdiff = "0.2"
+
 

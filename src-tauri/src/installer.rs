@@ -257,9 +257,9 @@ pub fn execute_manifest(
     use std::path::PathBuf;
 
     let mut component_paths = Vec::new();
-    let binaries_dir = crate::dependency_checker::get_binaries_dir(game_path);
-    let ue4ss_component = normalize_path_separator(&binaries_dir.join("ue4ss").join("Mods").join(&manifest.folder_name).to_string_lossy());
-    let palschema_component = normalize_path_separator(&binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&manifest.folder_name).to_string_lossy());
+    let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
+    let ue4ss_component = normalize_path_separator(&ue4ss_mods_dir.join(&manifest.folder_name).to_string_lossy());
+    let palschema_component = normalize_path_separator(&ue4ss_mods_dir.join("PalSchema").join("mods").join(&manifest.folder_name).to_string_lossy());
 
     let mut primary_path = String::new();
     let mut config_path = None;
@@ -331,8 +331,8 @@ pub fn execute_manifest(
 
     // 2. Write enabled.txt and mods.txt for UE4SS mods
     if manifest.has_ue4ss {
-        let binaries_dir = crate::dependency_checker::get_binaries_dir(game_path);
-        let u_mod_dir = binaries_dir.join("ue4ss").join("Mods").join(&manifest.folder_name);
+        let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
+        let u_mod_dir = ue4ss_mods_dir.join(&manifest.folder_name);
         if u_mod_dir.exists() {
             let enabled_file = u_mod_dir.join("enabled.txt");
             if force_load_order {
@@ -345,7 +345,7 @@ pub fn execute_manifest(
                 }
             }
         }
-        let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
+        let mods_txt = ue4ss_mods_dir.join("mods.txt");
         if mods_txt.exists() {
             if force_load_order {
                 let _ = crate::profiles::update_mods_txt_load_order(&mods_txt, &manifest.folder_name, true);
@@ -358,9 +358,9 @@ pub fn execute_manifest(
     // 3. For PalSchema mods: move the extracted folder from PalSchema/mods/ → PalSchema/Storage/
     //    and create an NTFS Junction back in PalSchema/mods/ (with numeric prefix if FLO is active)
     if manifest.has_palschema {
-        let binaries_dir = crate::dependency_checker::get_binaries_dir(game_path);
-        let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
-        let palschema_storage_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+        let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
+        let palschema_mods_dir = ue4ss_mods_dir.join("PalSchema").join("mods");
+        let palschema_storage_dir = ue4ss_mods_dir.join("PalSchema").join("Storage");
 
         // The file was extracted to palschema_mods_dir / folder_name — move it to Storage
         let extracted_mod_dir = palschema_mods_dir.join(&manifest.folder_name);

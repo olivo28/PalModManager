@@ -282,7 +282,7 @@
               <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;">Auto-Structure</button>
               <button id="packer-clear-btn" class="toolbar-btn-sm">Clear All</button>
             </div>
-            <div class="packer-files-container">
+            <div id="packer-files-container" class="packer-files-container">
               <table id="packer-list-table" class="packer-table">
                 <thead>
                   <tr>
@@ -598,6 +598,34 @@
         </div>
         <div class="modal-footer">
           <button id="profile-modal-close" class="btn-secondary">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- WORKSHOP MODAL -->
+    <div id="workshop-modal" class="modal-overlay">
+      <div class="modal" style="max-width: 640px;">
+        <div class="modal-header">
+          <h3>Steam Workshop Mods</h3>
+          <button class="modal-close-btn" id="workshop-modal-close-x">✕</button>
+        </div>
+        <div class="modal-body">
+          <div class="settings-group" style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); padding:10px 14px; border-radius:6px; border:1px solid var(--border);">
+            <div>
+              <span style="font-weight:bold; font-size:13px; color:var(--text-primary);">Enable Workshop Mods</span>
+              <div class="settings-hint" style="margin-top:2px; font-size:11px;">Toggles Master bGlobalEnableMod state</div>
+            </div>
+            <label class="toggle-switch">
+              <input type="checkbox" id="workshop-master-toggle" />
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+          <div id="workshop-list-container" style="display:flex; flex-direction:column; gap:8px; max-height: 380px; overflow-y:auto; padding-right:4px;">
+            <!-- Dynamically populated subscribed mods list -->
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button id="workshop-modal-close" class="btn-secondary">Close</button>
         </div>
       </div>
     </div>

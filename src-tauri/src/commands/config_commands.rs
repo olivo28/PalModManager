@@ -126,18 +126,19 @@ fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str) ->
             let relative_part = path_obj.strip_prefix(prefix)
                 .map_err(|e| format!("Failed to strip prefix: {}", e))?;
 
-            // 1. Check UE4SS base
             let base_path1 = get_mod_base_dir(mod_info);
             let folder_name1 = base_path1.file_name().unwrap_or_default().to_string_lossy().to_string();
-            if prefix == folder_name1 {
+
+            // 1. Check UE4SS base with "[UE4SS] " prefix (or legacy fallback)
+            if prefix == format!("[UE4SS] {}", folder_name1) || prefix == folder_name1 {
                 return Ok(base_path1.join(relative_part));
             }
 
-            // 2. Check PalSchema base
+            // 2. Check PalSchema base with "[PalSchema] " prefix
             if let Some(extra_str) = mod_info.extra_files.first() {
                 let base_path2 = PathBuf::from(extra_str);
                 let folder_name2 = base_path2.file_name().unwrap_or_default().to_string_lossy().to_string();
-                if prefix == folder_name2 {
+                if prefix == format!("[PalSchema] {}", folder_name2) || (prefix == folder_name2 && prefix != folder_name1) {
                     return Ok(base_path2.join(relative_part));
                 }
             }
@@ -164,7 +165,7 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
             let mut files1 = Vec::new();
             walk_dir(&base_path1, &mut files1, &base_path1).map_err(|e| e.to_string())?;
             for f in files1 {
-                files.push(format!("{}/{}", folder_name1, f));
+                files.push(format!("[UE4SS] {}/{}", folder_name1, f));
             }
         }
 
@@ -176,7 +177,7 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
                 let mut files2 = Vec::new();
                 walk_dir(&base_path2, &mut files2, &base_path2).map_err(|e| e.to_string())?;
                 for f in files2 {
-                    files.push(format!("{}/{}", folder_name2, f));
+                    files.push(format!("[PalSchema] {}/{}", folder_name2, f));
                 }
             }
         }

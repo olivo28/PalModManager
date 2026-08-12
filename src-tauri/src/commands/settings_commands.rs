@@ -35,15 +35,18 @@ pub fn set_game_path(path: String, state: State<AppState>) -> Result<Value, Stri
     if !path_buf.exists() {
         return Err("Path does not exist".to_string());
     }
-    let has_paks = path_buf.join("Pal/Content/Paks").exists();
-    let has_binaries = path_buf.join("Pal/Binaries").exists();
-    let has_logic_mods = path_buf.join("Pal/Content/Paks/LogicMods").exists();
-    if !has_paks && !has_binaries && !has_logic_mods {
-        return Err("Path does not look like a Palworld installation (missing Pal/Content/Paks and Pal/Binaries)".to_string());
-    }
+
+    let detected_root = match crate::dependency_checker::detect_game_root(&path_buf) {
+        Some(root) => root,
+        None => {
+            return Err("Path does not look like a Palworld installation (missing Pal/Content/Paks and Pal/Binaries)".to_string());
+        }
+    };
+
+    let resolved_path = detected_root.to_string_lossy().into_owned();
 
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    data.settings.game_path = path;
+    data.settings.game_path = resolved_path;
     let settings = get_overridden_settings(&data);
     let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
     let data_clone = data.clone();
@@ -78,8 +81,8 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
     
     let game_path = data.settings.game_path.clone();
     if !game_path.is_empty() {
-        let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-        let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
+        let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(Path::new(&game_path));
+        let mods_txt = ue4ss_mods_dir.join("mods.txt");
         
         if mods_txt.exists() {
             if let Some(current_profile) = data.profiles.iter().find(|p| p.id == current_profile_id).cloned() {
@@ -151,6 +154,16 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
                             lines_to_keep.insert(final_idx + offset, custom_line);
                         }
                         let _ = fs::write(&mods_txt, lines_to_keep.join("\r\n") + "\r\n");
+
+                        // Clean up enabled.txt from mods when FLO is enabled
+                        for m in &target_mods {
+                            if !m.game_path.is_empty() {
+                                let enabled_file = Path::new(&m.game_path).join("enabled.txt");
+                                if enabled_file.exists() {
+                                    let _ = fs::remove_file(&enabled_file);
+                                }
+                            }
+                        }
                     }
                 } else {
                     if let Ok(content) = fs::read_to_string(&mods_txt) {
@@ -232,9 +245,9 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
         
         let game_path = data.settings.game_path.clone();
         if !game_path.is_empty() {
-            let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-            let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
-            let palschema_storage_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+            let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(Path::new(&game_path));
+            let palschema_mods_dir = ue4ss_mods_dir.join("PalSchema").join("mods");
+            let palschema_storage_dir = ue4ss_mods_dir.join("PalSchema").join("Storage");
             let current_profile_id = data.current_profile_id.clone();
             let (_palschema_mod_ids, enabled_mod_ids) = if let Some(current_profile) = data.profiles.iter().find(|p| p.id == current_profile_id) {
                 (current_profile.installed_mod_ids.clone(), current_profile.enabled_mod_ids.clone())

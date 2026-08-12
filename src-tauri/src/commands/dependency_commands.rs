@@ -12,6 +12,7 @@ fn empty_status() -> dependency_checker::DependencyStatus {
         ue4ss_latest_tag: None,
         ue4ss_latest_date: None,
         ue4ss_needs_update: false,
+        ue4ss_install_mode: "NotFound".to_string(),
         palschema_installed: false,
         palschema_version: None,
         palschema_latest_version: None,
@@ -87,6 +88,7 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
         status.ue4ss_latest_date = Some(ue4ss_date.clone());
         // Both local and remote are DD.MM.YYYY dates. Compare as dates.
         status.ue4ss_needs_update = match &status.ue4ss_version {
+            Some(local) if local == "Workshop" => false,
             Some(local) => {
                 match (parse_dmy(local.trim()), parse_dmy(ue4ss_date.trim())) {
                     (Some(l), Some(r)) => l < r,
@@ -101,6 +103,7 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
     if let Ok(ps_version) = dependency_checker::check_palschema_latest().await {
         status.palschema_latest_version = Some(ps_version.clone());
         status.palschema_needs_update = match &status.palschema_version {
+            Some(local) if local == "Workshop" => false,
             Some(local) => {
                 let eq = compare_versions(local, &ps_version);
                 crate::logger::log(&format!("PalSchema check: local='{}', remote='{}', match={}", local, ps_version, eq));
@@ -165,6 +168,11 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
     }
 
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
+    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
+    if dep_status.ue4ss_installed {
+        crate::logger::log("install_ue4ss: UE4SS is already installed. Skipping installation.");
+        return Ok("UE4SS is already installed.".to_string());
+    }
     let ue4ss_dir = win64.join("ue4ss");
 
     let lib_dep_dir = PathBuf::from(&program_path).join("mods-library").join("dependencies");
@@ -472,13 +480,23 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
     }
 
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let palschema_dir = win64.join("ue4ss").join("Mods").join("PalSchema");
+    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
+    
+    if dep_status.palschema_installed {
+        crate::logger::log("install_palschema: PalSchema is already installed. Skipping installation.");
+        return Ok("PalSchema is already installed.".to_string());
+    }
 
-    // Check if UE4SS is installed; PalSchema requires UE4SS to operate.
-    let dwmapi = win64.join("dwmapi.dll");
-    if !dwmapi.exists() {
+    if !dep_status.ue4ss_installed {
         return Err("UE4SS is not installed. PalSchema requires UE4SS to operate.".to_string());
     }
+
+    let palschema_dir = if win64.join("dwmapi.dll").exists() {
+        win64.join("ue4ss").join("Mods").join("PalSchema")
+    } else {
+        // Workshop path fallback for local extraction if needed
+        Path::new(&game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema")
+    };
 
     let lib_dep_dir = PathBuf::from(&program_path).join("mods-library").join("dependencies");
     let cached_zip = lib_dep_dir.join("palschema.zip");
@@ -636,7 +654,13 @@ pub fn uninstall_ue4ss(state: State<'_, AppState>) -> Result<String, String> {
         (locked.settings.game_path.clone(), locked.settings.program_path.clone())
     };
     if game_path.is_empty() { return Err("Game path not set".to_string()); }
-    
+
+    // Guard: Workshop installations cannot be uninstalled from PMM
+    let game_profile = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+    if game_profile.ue4ss_install_mode == crate::dependency_checker::UE4SSInstallMode::Workshop {
+        return Err("UE4SS is managed by Steam Workshop. To uninstall, unsubscribe from the mod in Steam.".to_string());
+    }
+
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
     let dwmapi = win64.join("dwmapi.dll");
     let ue4ss_dir = win64.join("ue4ss");
@@ -678,9 +702,15 @@ pub fn uninstall_palschema(state: State<'_, AppState>) -> Result<String, String>
         (locked.settings.game_path.clone(), locked.settings.program_path.clone())
     };
     if game_path.is_empty() { return Err("Game path not set".to_string()); }
-    
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let palschema_dir = win64.join("ue4ss").join("Mods").join("PalSchema");
+
+    // Guard: Workshop installations cannot be uninstalled from PMM
+    let game_profile = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+    if game_profile.ue4ss_install_mode == crate::dependency_checker::UE4SSInstallMode::Workshop {
+        return Err("PalSchema is managed by Steam Workshop. To uninstall, unsubscribe from the mod in Steam.".to_string());
+    }
+
+    // Use the profile's resolved palschema path (handles both Standard and edge cases)
+    let palschema_dir = game_profile.ue4ss_mods_dir.join("PalSchema");
         
     if palschema_dir.exists() { let _ = fs::remove_dir_all(palschema_dir); }
     

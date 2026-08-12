@@ -52,7 +52,7 @@ export function setupDragAndDrop(): void {
         if (!paths || paths.length === 0) return;
 
         if (tab === 'build') {
-          import('../ui/packerView').then(mod => {
+          import('../ui/packer/mod').then(mod => {
             mod.addStagedPaths(paths);
           });
           return;

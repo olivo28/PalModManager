@@ -1,0 +1,253 @@
+import { getState, updateState } from '../../state';
+import { getLibrary, removeFromLibrary } from '../../api';
+import { showToast } from '../toast';
+import { escapeHtml } from '../../utils/helpers';
+
+export let _librarySearchQuery = '';
+
+export function setupLibraryHandlers(): void {
+  const searchInput = document.getElementById('library-search-input') as HTMLInputElement | null;
+  if (searchInput) {
+    searchInput.addEventListener('input', () => {
+      _librarySearchQuery = searchInput.value.trim().toLowerCase();
+      renderLibraryView();
+    });
+  }
+
+  document.getElementById('library-bulk-install-btn')?.addEventListener('click', handleLibraryBulkInstall);
+  document.getElementById('library-bulk-remove-btn')?.addEventListener('click', handleLibraryBulkRemove);
+  document.getElementById('library-bulk-clear-btn')?.addEventListener('click', () => {
+    updateState({ selectedLibraryIds: new Set() });
+    updateLibraryBulkBar();
+    renderLibraryView();
+  });
+}
+
+export async function loadLibrary(): Promise<void> {
+  try {
+    const entries = await getLibrary();
+    updateState({ libraryEntries: entries });
+    renderLibraryView();
+  } catch (e) {
+    console.error('Failed to load library:', e);
+  }
+}
+
+function parseModFilename(filename: string): { name: string; version: string | null; nexusId: number | null } {
+  const stem = filename.replace(/\.(zip|rar)$/i, '');
+  const parts = stem.split(/[ _()]/).filter(s => s);
+
+  const idIdx = parts.findIndex(p => {
+    const num = parseInt(p, 10);
+    return !isNaN(num) && num >= 100 && num <= 99999 && num !== 2026 && num !== 2025 && num !== 2024;
+  });
+
+  if (idIdx >= 0) {
+    const name = parts.slice(0, idIdx).join(' ');
+    let version: string | null = null;
+    const nexusId = parseInt(parts[idIdx], 10);
+    if (idIdx + 1 < parts.length) {
+      const next = parts[idIdx + 1];
+      if (/^[v\d]/.test(next) && !next.includes('-')) {
+        version = next;
+      }
+    }
+    return { name: name || stem, version, nexusId: isNaN(nexusId) ? null : nexusId };
+  }
+  return { name: stem, version: null, nexusId: null };
+}
+
+export function renderLibraryView(): void {
+  const container = document.getElementById('library-container');
+  if (!container) return;
+
+  let entries = getState().libraryEntries;
+  const state = getState();
+
+  const banned = ["palschema", "ue4ss", "palschema.version", "ue4ss.version"];
+  entries = entries.filter(e => {
+    const name_lower = e.zipName.toLowerCase();
+    return !banned.some(b => name_lower === b || name_lower.startsWith(b + ".") || name_lower.startsWith(b + "-") || name_lower.startsWith(b + "_"));
+  });
+
+  if (_librarySearchQuery) {
+    entries = entries.filter(e => e.zipName.toLowerCase().includes(_librarySearchQuery));
+  }
+
+  if (entries.length === 0) {
+    container.innerHTML = '<div id="library-empty">No mods in library. Mods are automatically copied here when installed.</div>';
+    return;
+  }
+
+  container.innerHTML = entries.map(e => {
+    const isSelected = state.selectedLibraryIds.has(e.modId);
+    const parsed = parseModFilename(e.zipName);
+    const cleanName = parsed.name || e.zipName;
+    const versionStr = parsed.version ? `v${parsed.version}` : '';
+
+    let imageHtml = `<div style="font-size:32px;text-align:center;color:var(--text-muted);opacity:0.8;margin:8px 0;">📦</div>`;
+    if (e.nexusPictureUrl) {
+      imageHtml = `
+        <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
+          <img src="${e.nexusPictureUrl}" style="width:100%;height:100%;object-fit:cover;" />
+        </div>
+      `;
+    } else {
+      const matchedMod = state.allMods.find(m => {
+        if (m.name.toLowerCase() === e.modId.toLowerCase()) return true;
+        if (m.nexusModId && parsed.nexusId && m.nexusModId === parsed.nexusId) return true;
+        if (m.name.toLowerCase() === cleanName.toLowerCase()) return true;
+        return false;
+      });
+      if (matchedMod && matchedMod.nexusPictureUrl) {
+        imageHtml = `
+          <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
+            <img src="${matchedMod.nexusPictureUrl}" style="width:100%;height:100%;object-fit:cover;" />
+          </div>
+        `;
+      }
+    }
+
+    return `
+      <div class="mod-card library-card ${isSelected ? 'selected' : ''}" data-id="${e.modId}" style="cursor:pointer;position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
+        <div class="card-checkbox-container" style="position:absolute;top:10px;left:10px;z-index:5;">
+          <input type="checkbox" class="library-card-checkbox" data-id="${e.modId}" ${isSelected ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;" />
+        </div>
+        <div style="padding-top:14px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
+          ${imageHtml}
+          <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:center;word-break:break-word;line-height:1.3;flex:1;min-height:36px;display:flex;align-items:center;justify-content:center;margin-top:4px;">
+            ${escapeHtml(cleanName)}
+          </div>
+          <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;margin-top:auto;">
+            <span>${versionStr}</span>
+            <span>${formatSize(e.zipSize)}</span>
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
+            <button class="library-item-install btn-action" data-id="${e.modId}" style="flex:1;padding:4px;font-size:10px;cursor:pointer;">Install</button>
+            <button class="library-item-delete btn-action btn-action-danger" data-id="${e.modId}" data-zip="${escapeHtml(e.zipName)}" style="padding:4px 8px;font-size:10px;cursor:pointer;">✕</button>
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  container.querySelectorAll('.library-item-install').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      await triggerInstallFromLibrary(id);
+    });
+  });
+
+  container.querySelectorAll('.library-item-delete').forEach(btn => {
+    btn.addEventListener('click', async (ev) => {
+      ev.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      const zip = (btn as HTMLElement).dataset.zip!;
+      if (confirm(`Are you sure you want to remove "${zip}" from your library?`)) {
+        try {
+          await removeFromLibrary(id, zip);
+          showToast('Mod version removed from library', 'success');
+          await loadLibrary();
+        } catch (err) {
+          showToast('Failed to remove: ' + err, 'error');
+        }
+      }
+    });
+  });
+
+  updateLibraryBulkBar();
+}
+
+export async function triggerInstallFromLibrary(id: string): Promise<void> {
+  try {
+    const { getLibraryZipPath, analyzeZip, checkModExistsCommand } = await import('../../api');
+    const { renderInstallPreview, showInstallModal } = await import('../modal');
+
+    const zipPath = await getLibraryZipPath(id);
+    const analysis = await analyzeZip(zipPath);
+    const check = await checkModExistsCommand(zipPath);
+
+    const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } : null;
+
+    renderInstallPreview(analysis, existingMod);
+    showInstallModal();
+  } catch (err) {
+    showToast('Failed to open install preview: ' + err, 'error');
+  }
+}
+
+export async function handleLibraryBulkInstall(): Promise<void> {
+  const state = getState();
+  const selected = Array.from(state.selectedLibraryIds);
+  if (selected.length === 0) return;
+
+  try {
+    const { getLibraryZipPath } = await import('../../api');
+    const { renderBatchInstallPreview, showInstallModal } = await import('../modal');
+
+    const zipPaths: string[] = [];
+    for (const id of selected) {
+      try {
+        const path = await getLibraryZipPath(id);
+        zipPaths.push(path);
+      } catch { }
+    }
+
+    if (zipPaths.length === 1) {
+      const { analyzeZip, checkModExistsCommand } = await import('../../api');
+      const { renderInstallPreview } = await import('../modal');
+      const analysis = await analyzeZip(zipPaths[0]);
+      const check = await checkModExistsCommand(zipPaths[0]);
+      const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } : null;
+      renderInstallPreview(analysis, existingMod);
+      showInstallModal();
+    } else if (zipPaths.length > 1) {
+      await renderBatchInstallPreview(zipPaths);
+    }
+  } catch (err) {
+    showToast('Failed to prepare batch install: ' + err, 'error');
+  }
+}
+
+export async function handleLibraryBulkRemove(): Promise<void> {
+  const state = getState();
+  const selected = Array.from(state.selectedLibraryIds);
+  if (selected.length === 0) return;
+
+  if (confirm(`Are you sure you want to delete ${selected.length} mod(s) from your library?`)) {
+    let deleted = 0;
+    for (const id of selected) {
+      try {
+        await removeFromLibrary(id);
+        deleted++;
+      } catch { }
+    }
+    showToast(`Deleted ${deleted} mods from library`, 'success');
+    updateState({ selectedLibraryIds: new Set() });
+    updateLibraryBulkBar();
+    await loadLibrary();
+  }
+}
+
+export function updateLibraryBulkBar(): void {
+  const state = getState();
+  const bar = document.getElementById('library-bulk-actions-bar');
+  const countEl = document.getElementById('library-bulk-selected-count');
+  if (!bar || !countEl) return;
+
+  const selectedCount = state.selectedLibraryIds.size;
+
+  if (selectedCount > 0) {
+    bar.style.display = 'flex';
+    countEl.textContent = selectedCount.toString();
+  } else {
+    bar.style.display = 'none';
+  }
+}
+
+function formatSize(bytes: number): string {
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+}

@@ -1,0 +1,7 @@
+- `[x]` Modularizar `scannerView.ts`
+  - `[x]` Crear `src/ui/scanner/rendering.ts` (CSS de la UI y formateador de kbd chips)
+  - `[x]` Crear `src/ui/scanner/conflicts.ts` (Escanear colisiones, renderizar listados de incompatibilidad)
+  - `[x]` Crear `src/ui/scanner/hotkeys.ts` (Buscar mapeos de teclas en Lua, editor input recorder)
+  - `[x]` Crear `src/ui/scanner/mod.ts` (Glue/Entrypoint con inicializadores y listeners del scanner)
+  - `[x]` Reemplazar `src/ui/scannerView.ts` con puente exportador
+  - `[x]` Compilar y comprobar (`pnpm build`)

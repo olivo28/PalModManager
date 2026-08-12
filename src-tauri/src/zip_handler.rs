@@ -784,7 +784,7 @@ pub fn build_manifest_from_files(
     // Second pass: build absolute dest_path
     let paks_dest_dir = game_path.join("Pal").join("Content").join("Paks").join("~mods");
     let logicmods_dest_dir = game_path.join("Pal").join("Content").join("Paks").join("LogicMods");
-    let ue4ss_mods_dest = binaries_dir.join("ue4ss").join("Mods");
+    let ue4ss_mods_dest = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
     let palschema_mods_dest = ue4ss_mods_dest.join("PalSchema").join("mods");
 
     for (zip_path, relative_path, route_type) in temp_routes {
@@ -797,11 +797,29 @@ pub fn build_manifest_from_files(
         }
         let filename = file_name_opt.unwrap();
         let rel_lower = relative_path.to_lowercase();
-        let game_subpath = if let Some(idx) = rel_lower.find("pal/binaries/win64/ue4ss/mods/") {
+        let binaries_name = binaries_dir.file_name()
+            .map(|n| n.to_string_lossy().to_lowercase())
+            .unwrap_or_else(|| "win64".to_string());
+        
+        let ue4ss_pattern = format!("pal/binaries/{}/ue4ss/mods/", binaries_name);
+        let binaries_pattern = format!("pal/binaries/{}/", binaries_name);
+
+        let game_subpath = if let Some(idx) = rel_lower.find(&ue4ss_pattern) {
+            Some(&relative_path[idx..])
+        } else if let Some(idx) = rel_lower.find("mods/nativemods/ue4ss/mods/") {
+            Some(&relative_path[idx..])
+        } else if let Some(idx) = rel_lower.find(&binaries_pattern) {
+            Some(&relative_path[idx..])
+        } else if let Some(idx) = rel_lower.find("pal/content/paks/") {
+            Some(&relative_path[idx..])
+        // Additional fallbacks in case zip has alternative architecture naming
+        } else if let Some(idx) = rel_lower.find("pal/binaries/win64/ue4ss/mods/") {
+            Some(&relative_path[idx..])
+        } else if let Some(idx) = rel_lower.find("pal/binaries/wingdk/ue4ss/mods/") {
             Some(&relative_path[idx..])
         } else if let Some(idx) = rel_lower.find("pal/binaries/win64/") {
             Some(&relative_path[idx..])
-        } else if let Some(idx) = rel_lower.find("pal/content/paks/") {
+        } else if let Some(idx) = rel_lower.find("pal/binaries/wingdk/") {
             Some(&relative_path[idx..])
         } else {
             None

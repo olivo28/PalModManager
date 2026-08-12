@@ -10,6 +10,8 @@ mod state;
 mod zip_handler;
 mod logger;
 pub mod config_merge;
+mod workshop;
+
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -23,6 +25,7 @@ use commands::packer_commands;
 use commands::scanner_commands;
 use commands::db_commands;
 use commands::load_order_commands;
+use commands::workshop_commands;
 use state::AppState;
 
 use tauri::Manager;
@@ -188,6 +191,11 @@ pub fn run() {
             load_order_commands::save_ue4ss_load_order,
             load_order_commands::get_palschema_load_order,
             load_order_commands::save_palschema_load_order,
+            workshop_commands::get_workshop_mods,
+            workshop_commands::get_workshop_state,
+            workshop_commands::activate_workshop_mod_cmd,
+            workshop_commands::deactivate_workshop_mod_cmd,
+            workshop_commands::set_workshop_global_enabled,
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

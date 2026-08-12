@@ -340,9 +340,19 @@ export function handleDetailConfig(): void {
 export async function handleDetailToggle(): Promise<void> {
   const state = getState();
   if (!state.currentDetailMod) return;
+  const isWorkshop = state.currentDetailMod.nexusSummary === 'Steam Workshop Mod';
   try {
-    if (state.currentDetailMod.enabled) { await disableMod(state.currentDetailMod.id); }
-    else { await enableMod(state.currentDetailMod.id); }
+    if (isWorkshop) {
+      const { activateWorkshopMod, deactivateWorkshopMod } = await import('../api');
+      if (state.currentDetailMod.enabled) {
+        await deactivateWorkshopMod(state.currentDetailMod.id);
+      } else {
+        await activateWorkshopMod(state.currentDetailMod.id);
+      }
+    } else {
+      if (state.currentDetailMod.enabled) { await disableMod(state.currentDetailMod.id); }
+      else { await enableMod(state.currentDetailMod.id); }
+    }
     await loadMods();
     openDetailPanel(state.currentDetailMod.id);
   } catch (e) {

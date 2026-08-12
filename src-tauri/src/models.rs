@@ -104,6 +104,18 @@ pub struct ModFolder {
     pub mod_ids: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
+pub enum DependencyMode {
+    Standard,
+    Workshop,
+    None,
+}
+
+fn default_dependency_mode() -> DependencyMode {
+    DependencyMode::None
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub id: String,
@@ -119,6 +131,8 @@ pub struct Profile {
     pub ue4ss_enabled: bool,
     #[serde(default)]
     pub palschema_enabled: bool,
+    #[serde(default = "default_dependency_mode")]
+    pub dependency_mode: DependencyMode,
     #[serde(default)]
     pub mod_folders: Vec<ModFolder>,
     #[serde(default)]
@@ -202,4 +216,52 @@ pub struct InstallManifest {
     pub has_palschema: bool,
     pub version: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(rename_all = "camelCase")]
+pub enum WorkshopInstallType {
+    UE4SSFramework,
+    UE4SSMod,
+    LuaMod,
+    PalSchemaMod,
+    Unknown(String),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkshopMod {
+    pub workshop_id: u64,
+    pub package_name: String,
+    pub mod_name: String,
+    pub version: String,
+    pub author: String,
+    pub thumbnail_path: Option<String>,
+    pub dependencies: Vec<String>,
+    pub install_type: WorkshopInstallType,
+    pub install_target: String,
+    pub is_active: bool,
+    pub is_installed: bool,
+    pub is_framework: bool,
+    pub last_install_time: Option<String>,
+    pub last_update_time: Option<String>,
+    pub has_pending_update: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkshopState {
+    pub workshop_root: String,
+    pub global_enabled: bool,
+    pub active_mod_list: Vec<String>,
+    pub mods: Vec<WorkshopMod>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct PalModSettings {
+    pub global_enabled: bool,
+    pub workshop_root: String,
+    pub config_version: String,
+    pub active_mod_list: Vec<String>,
+}
+
 

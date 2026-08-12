@@ -568,6 +568,12 @@ main {
   background: var(--bg-primary);
 }
 
+.dep-badge.workshop {
+  color: #ff9d00;
+  border-color: rgba(255, 157, 0, 0.3);
+  background: rgba(255, 157, 0, 0.15);
+}
+
 /* ===== PROFILE SELECT & BADGES ===== */
 .profile-active-indicator {
   font-size: 11px;
@@ -598,6 +604,12 @@ main {
   background: rgba(180, 0, 212, 0.15);
   color: #c040d4;
   border: 1px solid rgba(180, 0, 212, 0.3);
+}
+
+.profile-badge.workshop {
+  color: #ff9d00 !important;
+  background: rgba(255, 157, 0, 0.15) !important;
+  border: 1px solid rgba(255, 157, 0, 0.3) !important;
 }
 
 .profile-badge.count {
@@ -847,6 +859,13 @@ main {
 .context-menu-item.danger:hover {
   background: var(--danger-dim);
   color: var(--danger);
+}
+
+.context-menu-item.disabled,
+.context-menu-item[disabled] {
+  opacity: 0.45;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .context-menu-sep {

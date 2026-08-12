@@ -30,6 +30,7 @@ export interface AppState {
   availableUpdates: Map<string, string>;
   currentFolderId: string | null;
   isDraggingCard: boolean;
+  workshopState: any | null;
 }
 
 let state: AppState = {
@@ -61,6 +62,7 @@ let state: AppState = {
   availableUpdates: new Map(),
   currentFolderId: null,
   isDraggingCard: false,
+  workshopState: null,
 };
 
 

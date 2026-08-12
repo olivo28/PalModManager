@@ -12,18 +12,15 @@ use tauri::State;
 use uuid::Uuid;
 
 fn check_mod_dependencies(game_path: &str, mod_type: &str, analysis: &zip_handler::ZipAnalysis) -> Result<(), String> {
-    let binaries = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
+    let dep_status = crate::dependency_checker::check_dependencies(game_path);
     
     // Check UE4SS dependency
     let ue4ss_required = match mod_type {
         "ue4ss" | "palschema" | "hybrid" => true,
         _ => false,
     };
-    if ue4ss_required {
-        let dwmapi = binaries.join("dwmapi.dll");
-        if !dwmapi.exists() {
-            return Err("UE4SS is not installed. This mod requires UE4SS to operate. Please install UE4SS first.".to_string());
-        }
+    if ue4ss_required && !dep_status.ue4ss_installed {
+        return Err("UE4SS is not installed. This mod requires UE4SS to operate. Please install UE4SS first.".to_string());
     }
 
     // Check PalSchema dependency
@@ -33,11 +30,8 @@ fn check_mod_dependencies(game_path: &str, mod_type: &str, analysis: &zip_handle
         "hybrid" if (analysis.has_palschema_json || has_palschema_folder) => true,
         _ => false,
     };
-    if palschema_required {
-        let ps_dll = binaries.join("ue4ss").join("Mods").join("PalSchema").join("dlls").join("main.dll");
-        if !ps_dll.exists() {
-            return Err("PalSchema is not installed. This mod requires PalSchema to operate. Please install PalSchema first.".to_string());
-        }
+    if palschema_required && !dep_status.palschema_installed {
+        return Err("PalSchema is not installed. This mod requires PalSchema to operate. Please install PalSchema first.".to_string());
     }
 
     Ok(())

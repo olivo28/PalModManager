@@ -1,7 +1,7 @@
 import 'highlight.js/styles/github-dark.css';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema } from './api';
 import { getState, updateState } from './state';
-import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange } from './ui/modal';
+import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers } from './ui/editorView';
@@ -97,7 +97,15 @@ async function init() {
 }
 
 function setupEventListeners() {
-  safeEl('scan-btn')?.addEventListener('click', () => loadMods());
+  safeEl('scan-btn')?.addEventListener('click', async () => {
+    await loadMods();
+    await loadDependencies();
+  });
+  
+  window.addEventListener('focus', () => {
+    loadDependencies();
+  });
+
   safeEl('install-btn')?.addEventListener('click', handleInstall);
   safeEl('modal-cancel')?.addEventListener('click', closeInstallModal);
   safeEl('modal-confirm')?.addEventListener('click', handleConfirmInstall);
@@ -416,6 +424,16 @@ function setupEventListeners() {
 
   setupSelection();
   setupLibraryHandlers();
+
+  // Reactively check and update dependencies & mods when the manager window regains focus
+  import('@tauri-apps/api/event').then(({ listen }) => {
+    listen('tauri://focus', () => {
+      import('./ui/modsView').then(({ loadDependencies, loadMods }) => {
+        loadDependencies().catch(err => console.error("Auto-checking dependencies failed:", err));
+        loadMods().catch(err => console.error("Auto-scanning mods failed:", err));
+      });
+    });
+  }).catch(err => console.error("Failed to register focus listener:", err));
 }
 
 

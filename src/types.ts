@@ -56,6 +56,8 @@ export interface ModFolder {
   mod_ids: string[];
 }
 
+export type DependencyMode = 'standard' | 'workshop' | 'none';
+
 export interface Profile {
   id: string;
   name: string;
@@ -64,6 +66,7 @@ export interface Profile {
   enabled_mod_ids: string[];
   ue4ss_enabled: boolean;
   palschema_enabled: boolean;
+  dependency_mode?: DependencyMode;
   mod_folders?: ModFolder[];
   force_load_order_ue4ss?: boolean | null;
   force_load_order_palschema?: boolean | null;
@@ -92,6 +95,8 @@ export interface DependencyStatus {
   /** Date of the latest asset update in DD.MM.YYYY format */
   ue4ss_latest_date: string | null;
   ue4ss_needs_update: boolean;
+  /** How UE4SS was installed: "Standard", "Workshop", or "NotFound" */
+  ue4ss_install_mode: string;
   palschema_installed: boolean;
   palschema_version: string | null;
   palschema_latest_version: string | null;
