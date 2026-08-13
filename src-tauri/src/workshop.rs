@@ -351,6 +351,16 @@ pub fn deactivate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod, _for
                 }
             }
         }
+    } else {
+        // Fallback: If no manifest is present but the destination folder exists, remove it
+        let gp = crate::dependency_checker::build_game_profile(game_root);
+        let dest_dir = match workshop_mod.install_type {
+            WorkshopInstallType::PalSchemaMod => gp.palschema_mods_dir.join(&workshop_mod.package_name),
+            _ => gp.ue4ss_mods_dir.join(&workshop_mod.package_name),
+        };
+        if dest_dir.exists() {
+            let _ = fs::remove_dir_all(&dest_dir);
+        }
     }
 
     // Clean leftovers
@@ -450,4 +460,36 @@ pub fn cleanup_unsubscribed_workshop_mods(game_path: &str, mods_db: &mut Vec<cra
             mods_db.remove(idx);
         }
     }
+}
+
+pub async fn fetch_workshop_metadata(workshop_id: u64) -> Result<(String, String), String> {
+    let client = reqwest::Client::new();
+    let res = client.post("https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/")
+        .form(&[
+            ("itemcount", "1"),
+            ("publishedfileids[0]", &workshop_id.to_string())
+        ])
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let json: serde_json::Value = res.json().await.map_err(|e| e.to_string())?;
+    let details = json.pointer("/response/publishedfiledetails/0")
+        .ok_or_else(|| "No details found".to_string())?;
+
+    if details.get("result").and_then(|v| v.as_i64()) != Some(1) {
+        return Err("Failed to query workshop details".to_string());
+    }
+
+    let description = details.get("description")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    let preview_url = details.get("preview_url")
+        .and_then(|v| v.as_str())
+        .unwrap_or("")
+        .to_string();
+
+    Ok((description, preview_url))
 }

@@ -44,31 +44,62 @@ pub fn get_mods(state: State<AppState>) -> Result<Value, String> {
 }
 
 #[tauri::command]
-pub fn scan_mods(state: State<AppState>) -> Result<Value, String> {
+pub async fn scan_mods(state: State<'_, AppState>) -> Result<Value, String> {
     crate::logger::log("scan_mods: Starting full disk scan...");
     let start_scan = std::time::Instant::now();
-    let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    let game_path = data.settings.game_path.clone();
-    let program_path = data.settings.program_path.clone();
-    let current_profile_id = data.current_profile_id.clone();
-    let current_profile = data.profiles.iter().find(|p| p.id == current_profile_id);
-    let installed_ids = current_profile.map(|p| p.installed_mod_ids.clone()).unwrap_or_default();
+    
+    let (game_path, program_path, current_profile_id, installed_ids, mut mods_clone) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let installed_ids = current_profile.map(|p| p.installed_mod_ids.clone()).unwrap_or_default();
+        (
+            data.settings.game_path.clone(),
+            data.settings.program_path.clone(),
+            data.current_profile_id.clone(),
+            installed_ids,
+            data.mods.clone(),
+        )
+    };
 
     if game_path.is_empty() {
         crate::logger::log("scan_mods: game_path empty, aborting scan");
         return Ok(serde_json::json!([]));
     }
 
-    crate::workshop::cleanup_unsubscribed_workshop_mods(&game_path, &mut data.mods);
+    crate::workshop::cleanup_unsubscribed_workshop_mods(&game_path, &mut mods_clone);
 
-    let merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &data.mods.clone());
-    data.mods = merged;
-    crate::profiles::auto_add_scanned_mods_to_profile(&mut data);
-    crate::profiles::cleanup_profile_mod_lists(&mut data);
-    crate::profiles::sync_current_profile_states(&mut data);
-    let profile_mods = filter_mods_for_current_profile(&data);
-    let data_clone = data.clone();
-    drop(data);
+    let mut merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &mods_clone);
+    
+    // Asynchronously fetch missing descriptions/pictures for Workshop mods
+    for m in &mut merged {
+        if m.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod")) {
+            if m.nexus_description.is_none() || m.nexus_description.as_deref() == Some("") {
+                let workshop_id = m.nexus_summary.as_ref()
+                    .and_then(|s| s.lines().find(|l| l.contains("Workshop ID: ")))
+                    .and_then(|l| l.find("Workshop ID: ").and_then(|pos| l[pos + "Workshop ID: ".len()..].trim().parse::<u64>().ok()))
+                    .unwrap_or(0);
+                if workshop_id > 0 {
+                    if let Ok((desc, preview_url)) = crate::workshop::fetch_workshop_metadata(workshop_id).await {
+                        m.nexus_description = Some(desc);
+                        if !preview_url.is_empty() {
+                            m.nexus_picture_url = Some(preview_url);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    let (profile_mods, data_clone) = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.mods = merged;
+        crate::profiles::auto_add_scanned_mods_to_profile(&mut data);
+        crate::profiles::cleanup_profile_mod_lists(&mut data);
+        crate::profiles::sync_current_profile_states(&mut data);
+        let profile_mods = filter_mods_for_current_profile(&data);
+        let data_clone = data.clone();
+        (profile_mods, data_clone)
+    };
 
     let _ = db::save_db(&program_path, &data_clone);
     crate::logger::log(&format!("scan_mods: Full disk scan finished in total {:?}", start_scan.elapsed()));

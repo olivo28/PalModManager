@@ -131,11 +131,14 @@ export function openDetailPanel(modId: string): void {
   // Extra companion files/folders
   const extraFilesRow = document.getElementById('detail-extra-files-row')!;
   const extraFilesEl = document.getElementById('detail-extra-files')!;
+  const openExtraFolderBtn = document.getElementById('detail-open-extra-folder')!;
   if (mod.extraFiles && mod.extraFiles.length > 0) {
     extraFilesEl.innerHTML = mod.extraFiles.map(f => `<div style="margin-bottom:2px;">${f}</div>`).join('');
     extraFilesRow.style.display = '';
+    openExtraFolderBtn.style.display = '';
   } else {
     extraFilesRow.style.display = 'none';
+    openExtraFolderBtn.style.display = 'none';
   }
 
   // Duplicate detection
@@ -430,6 +433,17 @@ export async function handleDetailOpenFolder(): Promise<void> {
     await openModFolder(state.currentDetailMod.id);
   } catch (e) {
     showToast('Failed to open folder: ' + e, 'error');
+  }
+}
+
+export async function handleDetailOpenExtraFolder(): Promise<void> {
+  const state = getState();
+  if (!state.currentDetailMod) return;
+  try {
+    const { openExtraFolder } = await import('../api');
+    await openExtraFolder(state.currentDetailMod.id);
+  } catch (e) {
+    showToast('Failed to open extra folder: ' + e, 'error');
   }
 }
 

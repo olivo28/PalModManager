@@ -56,7 +56,7 @@ pub fn set_profile_mod_state(
 
         if is_workshop {
             let game_path = data.settings.game_path.clone();
-            let force_load_order_ue4ss = data.settings.force_load_order_ue4ss.unwrap_or(false);
+            let force_load_order_ue4ss = data.settings.force_load_order.unwrap_or(false) && data.settings.force_load_order_ue4ss.unwrap_or(false);
             let wmods = crate::workshop::scan_workshop_mods(&game_path);
             if let Some(target) = wmods.iter().find(|m| m.package_name == mod_id || m.package_name.to_lowercase() == mod_id.to_lowercase()) {
                 crate::logger::log(&format!("set_profile_mod_state: Applying workshop change for mod = {} -> enabled = {}", mod_id, enabled));
@@ -285,7 +285,7 @@ fn restore_profile_files_to_game(
             }
 
             let db = crate::db::load_db(program_path);
-            let force_load_order_ue4ss = db.settings.force_load_order_ue4ss.unwrap_or(false);
+            let force_load_order_ue4ss = db.settings.force_load_order.unwrap_or(false) && db.settings.force_load_order_ue4ss.unwrap_or(false);
             let restored_settings = crate::workshop::read_pal_mod_settings(game_path);
             let wmods = crate::workshop::scan_workshop_mods(game_path);
             for package_name in &restored_settings.active_mod_list {

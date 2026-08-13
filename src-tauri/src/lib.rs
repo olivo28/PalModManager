@@ -18,6 +18,7 @@ use commands::settings_commands;
 use commands::install_commands;
 use commands::config_commands;
 use commands::nexus_commands;
+use commands::launch_commands;
 use commands::library_commands;
 use commands::profile_commands;
 use commands::dependency_commands;
@@ -196,6 +197,7 @@ pub fn run() {
             workshop_commands::activate_workshop_mod_cmd,
             workshop_commands::deactivate_workshop_mod_cmd,
             workshop_commands::set_workshop_global_enabled,
+            launch_commands::launch_game,
         ])
         .setup(|app| {
             let state = app.state::<AppState>();

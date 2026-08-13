@@ -114,6 +114,32 @@
   color: var(--text-primary);
 }
 
+/* ===== PLAY TAB (SIDEBAR) ===== */
+.sidebar-play-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 44px;
+  padding: 8px 0;
+  background: transparent;
+  color: #10b981;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  position: relative;
+  margin-bottom: 8px;
+}
+
+.sidebar-play-btn:hover {
+  color: #34d399;
+  transform: scale(1.08);
+}
+
+.sidebar-play-btn:active {
+  transform: scale(0.95);
+}
+
 /* ===== MAIN ===== */
 main {
   flex: 1;

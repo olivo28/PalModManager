@@ -1,9 +1,9 @@
 import 'highlight.js/styles/github-dark.css';
-import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema } from './api';
+import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
 import { getState, updateState } from './state';
 import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
-import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
+import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailOpenExtraFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers } from './ui/editorView';
 import { navigateTo } from './ui/tabManager';
 import { renderDbView } from './ui/dbView';
@@ -241,6 +241,7 @@ function setupEventListeners() {
   safeEl('detail-set-config')?.addEventListener('click', handleDetailSetConfig);
   safeEl('detail-clear-config')?.addEventListener('click', handleDetailClearConfig);
   safeEl('detail-open-folder')?.addEventListener('click', handleDetailOpenFolder);
+  safeEl('detail-open-extra-folder')?.addEventListener('click', handleDetailOpenExtraFolder);
   safeEl('detail-rename-btn')?.addEventListener('click', handleDetailRename);
   safeEl('editor-save-btn')?.addEventListener('click', handleEditorSave);
   safeEl('editor-format-btn')?.addEventListener('click', handleEditorFormat);
@@ -256,6 +257,16 @@ function setupEventListeners() {
     if (modal) {
       modal.classList.add('visible');
       modal.focus();
+    }
+  });
+  safeEl('launch-game-btn')?.addEventListener('click', async () => {
+    const { showConfirm } = await import('./ui/confirm');
+    const confirmed = await showConfirm('Palworld will be launched. Do you want to proceed?');
+    if (!confirmed) return;
+    try {
+      await launchGame();
+    } catch (e) {
+      showToast('Failed to launch game: ' + e, 'error');
     }
   });
   safeEl('new-folder-btn')?.addEventListener('click', async () => {

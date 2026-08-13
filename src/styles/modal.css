@@ -285,12 +285,11 @@
 .confirm-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 1100;
   display: flex;
   align-items: center;
   justify-content: center;
-  backdrop-filter: blur(2px);
   animation: fadeIn 0.2s ease;
 }
 

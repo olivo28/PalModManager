@@ -160,6 +160,10 @@ export async function openExtraFolder(modId: string): Promise<void> {
   return invoke('open_extra_folder', { modId });
 }
 
+export async function launchGame(): Promise<void> {
+  return invoke('launch_game');
+}
+
 export async function checkForUpdates(): Promise<UpdateCheckResult[]> {
   return invoke('check_for_updates');
 }

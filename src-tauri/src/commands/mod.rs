@@ -11,4 +11,5 @@ pub mod scanner_commands;
 pub mod db_commands;
 pub mod load_order_commands;
 pub mod workshop_commands;
+pub mod launch_commands;
 

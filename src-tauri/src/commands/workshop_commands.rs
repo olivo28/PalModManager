@@ -39,7 +39,10 @@ pub fn get_workshop_state(state: State<'_, AppState>) -> Result<WorkshopState, S
 pub fn activate_workshop_mod_cmd(package_name: String, state: State<'_, AppState>) -> Result<(), String> {
     let (game_path, force_load_order_ue4ss) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.settings.force_load_order_ue4ss.unwrap_or(false))
+        (
+            data.settings.game_path.clone(),
+            data.settings.force_load_order.unwrap_or(false) && data.settings.force_load_order_ue4ss.unwrap_or(false)
+        )
     };
     if game_path.is_empty() {
         return Err("Game path not set".to_string());
@@ -56,7 +59,10 @@ pub fn activate_workshop_mod_cmd(package_name: String, state: State<'_, AppState
 pub fn deactivate_workshop_mod_cmd(package_name: String, state: State<'_, AppState>) -> Result<(), String> {
     let (game_path, force_load_order_ue4ss) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.settings.force_load_order_ue4ss.unwrap_or(false))
+        (
+            data.settings.game_path.clone(),
+            data.settings.force_load_order.unwrap_or(false) && data.settings.force_load_order_ue4ss.unwrap_or(false)
+        )
     };
     if game_path.is_empty() {
         return Err("Game path not set".to_string());

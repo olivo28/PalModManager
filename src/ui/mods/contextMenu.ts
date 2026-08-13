@@ -95,6 +95,22 @@ export function runContextAction(action: string, modId: string): void {
     case 'visit-github':
       openUrl(`https://github.com/${mod.githubRepo}`);
       break;
+    case 'visit-steam-app': {
+      const matchId = mod.nexusSummary?.match(/ID:\s*(\d+)/);
+      const workshopId = matchId ? matchId[1] : '';
+      if (workshopId) {
+        openUrl(`steam://url/CommunityFilePage/${workshopId}`);
+      }
+      break;
+    }
+    case 'visit-steam-web': {
+      const matchId = mod.nexusSummary?.match(/ID:\s*(\d+)/);
+      const workshopId = matchId ? matchId[1] : '';
+      if (workshopId) {
+        openUrl(`https://steamcommunity.com/sharedfiles/filedetails/?id=${workshopId}`);
+      }
+      break;
+    }
     case 'remove':
       showConfirm(`Remove "${mod.name}" permanently?`).then(confirmed => {
         if (!confirmed) return;
@@ -189,7 +205,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     </div>
   `;
 
-  const isWorkshop = mod.nexusSummary === 'Steam Workshop Mod';
+  const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
 
   if (mod.nexusModId || mod.githubRepo) {
     html += `<div class="context-menu-sep"></div>`;
@@ -204,6 +220,22 @@ export function showContextMenu(modId: string, x: number, y: number): void {
         <span class="ctx-icon">G</span>
         Visit on GitHub
       </button>`;
+    }
+  }
+
+  if (isWorkshop) {
+    const matchId = mod.nexusSummary?.match(/ID:\s*(\d+)/);
+    const workshopId = matchId ? matchId[1] : '';
+    if (workshopId) {
+      html += `<div class="context-menu-sep"></div>
+        <button type="button" class="context-menu-item" data-action="visit-steam-app">
+          <span class="ctx-icon">♨️</span>
+          Open in Steam (App)
+        </button>
+        <button type="button" class="context-menu-item" data-action="visit-steam-web">
+          <span class="ctx-icon">🌐</span>
+          Open in Steam (Web)
+        </button>`;
     }
   }
 
