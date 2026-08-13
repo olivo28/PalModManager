@@ -197,6 +197,7 @@ pub fn run() {
             workshop_commands::activate_workshop_mod_cmd,
             workshop_commands::deactivate_workshop_mod_cmd,
             workshop_commands::set_workshop_global_enabled,
+            workshop_commands::prepare_workshop_update_zip,
             launch_commands::launch_game,
         ])
         .setup(|app| {

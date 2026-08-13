@@ -89,3 +89,29 @@ pub fn set_workshop_global_enabled(enabled: bool, state: State<'_, AppState>) ->
     settings.global_enabled = enabled;
     crate::workshop::write_pal_mod_settings(&game_path, &settings)
 }
+
+#[tauri::command]
+pub fn prepare_workshop_update_zip(package_name: String, state: State<'_, AppState>) -> Result<String, String> {
+    let game_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.game_path.clone()
+    };
+    if game_path.is_empty() {
+        return Err("Game path not set".to_string());
+    }
+
+    let wmods = crate::workshop::scan_workshop_mods(&game_path);
+    let target = wmods.iter().find(|m| m.package_name == package_name)
+        .ok_or_else(|| format!("Workshop mod {} not found", package_name))?;
+
+    let settings = crate::workshop::read_pal_mod_settings(&game_path);
+    let src_dir = std::path::Path::new(&settings.workshop_root).join(target.workshop_id.to_string());
+    if !src_dir.exists() {
+        return Err(format!("Workshop folder for ID {} does not exist", target.workshop_id));
+    }
+
+    let temp_zip_path = std::env::temp_dir().join(format!("pmm_workshop_update_{}.zip", target.workshop_id));
+    crate::workshop::zip_dir(&src_dir, &temp_zip_path)?;
+
+    Ok(temp_zip_path.to_string_lossy().to_string())
+}

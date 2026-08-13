@@ -428,6 +428,10 @@ export async function setWorkshopGlobalEnabled(enabled: boolean): Promise<void> 
   return invoke('set_workshop_global_enabled', { enabled });
 }
 
+export async function prepareWorkshopUpdateZip(packageName: string): Promise<string> {
+  return invoke('prepare_workshop_update_zip', { packageName });
+}
+
 
 
 

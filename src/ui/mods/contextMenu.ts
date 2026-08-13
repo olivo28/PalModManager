@@ -52,6 +52,28 @@ export function runContextAction(action: string, modId: string): void {
         }
       })();
       break;
+    case 'update-workshop-mod':
+      (async () => {
+        try {
+          showToast('Preparing workshop update files...', 'info');
+          const { prepareWorkshopUpdateZip, analyzeZip, checkModExistsCommand } = await import('../../api');
+          const { renderInstallPreview, showInstallModal } = await import('../modal');
+
+          const zipPath = await prepareWorkshopUpdateZip(mod.id);
+          const analysis = await analyzeZip(zipPath);
+          const check = await checkModExistsCommand(zipPath);
+
+          const existingMod = check.exists && check.modInfo 
+            ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } 
+            : null;
+
+          renderInstallPreview(analysis, existingMod);
+          showInstallModal();
+        } catch (e) {
+          showToast('Failed to prepare update: ' + e, 'error');
+        }
+      })();
+      break;
     case 'ignore-update':
       (async () => {
         try {
@@ -134,21 +156,35 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   const overlay = getContextOverlay();
   const menu = document.getElementById('context-menu')!;
 
-  let html = `
-    <button type="button" class="context-menu-item" data-action="check-updates">
-      <span class="ctx-icon">&#8634;</span>
-      Check for updates
-    </button>
-  `;
-  const hasUpdate = getState().availableUpdates?.has(modId);
-  if (hasUpdate) {
-    const updateVer = getState().availableUpdates.get(modId)!;
+  const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
+  let html = '';
+  if (!isWorkshop) {
     html += `
-      <button type="button" class="context-menu-item" data-action="ignore-update">
-        <span class="ctx-icon">✕</span>
-        Ignore update (v${escapeHtml(updateVer)})
+      <button type="button" class="context-menu-item" data-action="check-updates">
+        <span class="ctx-icon">&#8634;</span>
+        Check for updates
       </button>
     `;
+  }
+
+  const hasUpdate = getState().availableUpdates?.has(modId);
+  if (hasUpdate) {
+    if (isWorkshop) {
+      html += `
+        <button type="button" class="context-menu-item" data-action="update-workshop-mod" style="font-weight: bold; color: #ff9d00;">
+          <span class="ctx-icon">⚡</span>
+          Update Mod
+        </button>
+      `;
+    } else {
+      const updateVer = getState().availableUpdates.get(modId)!;
+      html += `
+        <button type="button" class="context-menu-item" data-action="ignore-update">
+          <span class="ctx-icon">✕</span>
+          Ignore update (v${escapeHtml(updateVer)})
+        </button>
+      `;
+    }
   }
   html += `
     <div class="context-menu-sep"></div>
@@ -204,8 +240,6 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       </div>
     </div>
   `;
-
-  const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
 
   if (mod.nexusModId || mod.githubRepo) {
     html += `<div class="context-menu-sep"></div>`;

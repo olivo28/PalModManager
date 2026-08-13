@@ -5,7 +5,7 @@ import { computeAvailableUpdates } from './card';
 import { populateAdvancedFilters } from './renderer';
 import { populateEditorModSelect } from '../editorView';
 import { loadProfiles } from './profiles';
-import { loadDependencies } from './dependencies';
+import { showToast } from '../toast';
 
 export async function loadMods(): Promise<void> {
   const container = document.getElementById('mods-container');
@@ -30,8 +30,21 @@ export async function loadMods(): Promise<void> {
 
   // 2. Background sync scan disk mods
   try {
+    const oldMods = getState().allMods || [];
     const freshMods = await scanMods();
     const updatesMap = computeAvailableUpdates(freshMods);
+
+    // Alert user if Steam Workshop updates were found
+    const newlyUpdated = freshMods.filter(m => {
+      const isWorkshop = !!(m.nexusSummary && m.nexusSummary.startsWith('Steam Workshop Mod'));
+      if (!isWorkshop) return false;
+      const old = oldMods.find(o => o.id === m.id);
+      return m.hasPendingUpdate && (!old || !old.hasPendingUpdate || old.version !== m.version);
+    });
+    for (const mod of newlyUpdated) {
+      showToast(`Workshop mod "${mod.name}" was updated by Steam! Right-click to Update Mod.`, 'info');
+    }
+
     updateState({ allMods: freshMods, availableUpdates: updatesMap });
     renderModsView();
     populateAdvancedFilters();

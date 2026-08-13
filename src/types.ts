@@ -36,6 +36,7 @@ export interface ModInfo {
   ignoredVersion: string | null;
   nexusFileId: number | null;
   ignoredKeys?: string[] | null;
+  hasPendingUpdate?: boolean | null;
 }
 
 export interface AppSettings {

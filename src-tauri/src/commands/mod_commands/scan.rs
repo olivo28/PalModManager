@@ -435,6 +435,22 @@ pub fn scan_mods_internal(
         }
 
         let display_name = format!("{} (Workshop)", wmod.mod_name);
+        let installed_version = if wmod.is_installed {
+            let manifest_dir = game.join("Mods").join("ManagedMods").join(&wmod.package_name);
+            let installed_info_path = manifest_dir.join("Info.json");
+            let mut inst_ver = "unknown".to_string();
+            if installed_info_path.exists() {
+                if let Ok(inst_info_str) = fs::read_to_string(&installed_info_path) {
+                    if let Ok(inst_info) = serde_json::from_str::<crate::workshop::WorkshopInfoJson>(&inst_info_str) {
+                        inst_ver = inst_info.version;
+                    }
+                }
+            }
+            inst_ver
+        } else {
+            "unknown".to_string()
+        };
+
         fs_mods.push(ModInfo {
             id: wmod.package_name.clone(),
             name: display_name,
@@ -449,7 +465,7 @@ pub fn scan_mods_internal(
             nexus_picture_url: wmod.thumbnail_path.clone(),
             nexus_endorsements: None,
             nexus_downloads: None,
-            version: wmod.version.clone(),
+            version: installed_version,
             install_date: String::new(),
             source_zip: String::new(),
             config_path: None,
@@ -462,7 +478,7 @@ pub fn scan_mods_internal(
             mods_txt_order: None,
             extra_files: Vec::new(),
             nexus_description: None,
-            nexus_version_cached: None,
+            nexus_version_cached: Some(wmod.version.clone()),
             nexus_cached_at: None,
             nexus_category: None,
             nexus_tags: Vec::new(),
@@ -474,6 +490,7 @@ pub fn scan_mods_internal(
             ignored_version: None,
             nexus_file_id: None,
             ignored_keys: None,
+            has_pending_update: Some(wmod.has_pending_update),
         });
     }
 
@@ -585,6 +602,7 @@ fn merge_scan_with_db(
             merged.enabled = fs_mod.enabled;
             if fs_mod.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod")) {
                 merged.nexus_summary = fs_mod.nexus_summary.clone();
+                merged.has_pending_update = fs_mod.has_pending_update;
             }
             result.push(merged);
         } else {

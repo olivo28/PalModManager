@@ -18,6 +18,10 @@ export function isVersionNewer(local: string, remote: string): boolean {
 export function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
   const updatesMap = new Map<string, string>();
   for (const m of mods) {
+    if (m.hasPendingUpdate && m.nexusVersionCached) {
+      updatesMap.set(m.id, m.nexusVersionCached);
+      continue;
+    }
     if (m.nexusVersionCached && m.version) {
       const normNexus = m.nexusVersionCached.replace(/^v/i, '').trim().toLowerCase();
       const normLocal = m.version.replace(/^v/i, '').trim().toLowerCase();
@@ -32,6 +36,7 @@ export function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
 
 export function buildModCardHtml(mod: ModInfo, state: any): string {
   const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
+  const updateVer = state.availableUpdates?.get(mod.id);
 
   if (state.viewLayout === 'list') {
     const isSelected = state.selectedModIds.has(mod.id);
@@ -54,6 +59,7 @@ export function buildModCardHtml(mod: ModInfo, state: any): string {
         <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
         <span class="mod-card-name" style="font-weight:600;">${escapeHtml(mod.name)}</span>
         ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">WORKSHOP</span>` : ''}
+        ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">UPDATE AVAILABLE (v${escapeHtml(updateVer)})</span>` : ''}
       </div>
       <div class="cell status-cell">
       </div>
@@ -101,7 +107,6 @@ export function buildModCardHtml(mod: ModInfo, state: any): string {
     ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(imageSrc)}" alt="" loading="lazy" /></div>`
     : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
 
-  const updateVer = state.availableUpdates?.get(mod.id);
   const updateBadge = updateVer
     ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}">&#9650; Update (v${escapeHtml(updateVer)})</span>`
     : '';

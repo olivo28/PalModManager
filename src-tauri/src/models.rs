@@ -67,6 +67,8 @@ pub struct ModInfo {
     pub nexus_file_id: Option<u32>,
     #[serde(default)]
     pub ignored_keys: Option<Vec<String>>,
+    #[serde(default)]
+    pub has_pending_update: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

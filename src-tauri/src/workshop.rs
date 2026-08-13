@@ -145,6 +145,17 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                         }
                     }
 
+                    let installed_info_path = manifest_dir.join("Info.json");
+                    let mut installed_version: Option<String> = None;
+                    if installed_info_path.exists() {
+                        if let Ok(inst_info_str) = fs::read_to_string(&installed_info_path) {
+                            if let Ok(inst_info) = serde_json::from_str::<WorkshopInfoJson>(&inst_info_str) {
+                                installed_version = Some(inst_info.version);
+                            }
+                        }
+                    }
+                    let has_pending_update = is_installed && installed_version.is_some() && installed_version.as_ref() != Some(&info.version);
+
                     let rule = info.install_rule.first();
                     let (install_type, install_target) = match rule {
                         Some(r) => {
@@ -190,7 +201,7 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                         is_framework,
                         last_install_time: last_install,
                         last_update_time: last_update,
-                        has_pending_update: false,
+                        has_pending_update,
                     });
                 }
             }
@@ -492,4 +503,30 @@ pub async fn fetch_workshop_metadata(workshop_id: u64) -> Result<(String, String
         .to_string();
 
     Ok((description, preview_url))
+}
+
+pub fn zip_dir(src_dir: &Path, dst_file: &Path) -> Result<(), String> {
+    use std::io::{Read, Write};
+    let file = std::fs::File::create(dst_file).map_err(|e| e.to_string())?;
+    let mut zip = zip::ZipWriter::new(file);
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated)
+        .unix_permissions(0o755);
+
+    let walk = walkdir::WalkDir::new(src_dir);
+    for entry in walk.into_iter().filter_map(|e| e.ok()) {
+        let path = entry.path();
+        let name = path.strip_prefix(Path::new(src_dir)).map_err(|e| e.to_string())?;
+        if path.is_file() {
+            zip.start_file(name.to_string_lossy().replace('\\', "/"), options).map_err(|e| e.to_string())?;
+            let mut f = std::fs::File::open(path).map_err(|e| e.to_string())?;
+            let mut buffer = Vec::new();
+            f.read_to_end(&mut buffer).map_err(|e| e.to_string())?;
+            zip.write_all(&buffer).map_err(|e| e.to_string())?;
+        } else if !name.as_os_str().is_empty() {
+            zip.add_directory(name.to_string_lossy().replace('\\', "/"), options).map_err(|e| e.to_string())?;
+        }
+    }
+    zip.finish().map_err(|e| e.to_string())?;
+    Ok(())
 }
