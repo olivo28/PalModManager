@@ -84,7 +84,6 @@ export function setupCardDragToFolder(container: HTMLElement): void {
       pointerDownY = e.clientY;
       pendingModId = modId;
       pendingEl = card;
-      container.setPointerCapture(e.pointerId);
     });
   });
 
@@ -99,6 +98,7 @@ export function setupCardDragToFolder(container: HTMLElement): void {
       if (dist < DRAG_THRESHOLD) return;
 
       dragActive = true;
+      try { container.setPointerCapture(e.pointerId); } catch { }
       draggingModId = pendingModId;
       document.body.setAttribute('data-card-dragging', 'true');
 
@@ -150,13 +150,18 @@ export function setupCardDragToFolder(container: HTMLElement): void {
 
   container.addEventListener('pointerup', async (e: PointerEvent) => {
     if (!pendingModId) return;
-    e.preventDefault();
+
+    const wasDragging = dragActive;
+    if (wasDragging) {
+      e.preventDefault();
+      try { container.releasePointerCapture(e.pointerId); } catch { }
+    }
 
     const capturedModId = draggingModId;
     const capturedEl = pendingEl;
     cleanup();
 
-    if (!capturedModId || !dragActive) {
+    if (!capturedModId || !wasDragging) {
       if (capturedEl) capturedEl.style.opacity = '';
       return;
     }

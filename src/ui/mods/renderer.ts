@@ -162,39 +162,20 @@ export function renderModsView(): void {
     </div>
     `;
 
-    if (state.currentFolderId) {
-      const activeFolder = folders.find(f => f.id === state.currentFolderId);
-      const modsInFolder = folderModsMap.get(state.currentFolderId) || [];
-
-      html += `
-      <div class="folder-breadcrumb" id="mod-root-drop-zone" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-        <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">← Back to Root</button>
-        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Root / ${escapeHtml(activeFolder ? activeFolder.name : 'Unknown Folder')}</span>
-      </div>
-      `;
-
-      if (modsInFolder.length === 0) {
-        html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">No mods in this folder. Double-click "Back to Root" or drag mods to ungroup them.</div>`;
-      } else {
-        html += headerHtml;
-        html += modsInFolder.map(m => buildModCardHtml(m, state)).join('');
-      }
+    if (state.searchQuery) {
+      html += headerHtml;
+      html += filtered.map(m => buildModCardHtml(m, state, false)).join('');
     } else {
-      if (state.searchQuery) {
-        html += headerHtml;
-        html += filtered.map(m => buildModCardHtml(m, state)).join('');
-      } else {
-        const renderFolderCards = folders.map(f => {
-          const modsInFolder = folderModsMap.get(f.id) || [];
-          return buildFolderCardHtml(f, modsInFolder, state);
-        }).join('');
+      const renderFolderCards = folders.map(f => {
+        const modsInFolder = folderModsMap.get(f.id) || [];
+        return buildFolderCardHtml(f, modsInFolder, state);
+      }).join('');
 
-        if (renderFolderCards || ungroupedMods.length > 0) {
-          html += headerHtml;
-        }
-        html += renderFolderCards;
-        html += ungroupedMods.map(m => buildModCardHtml(m, state)).join('');
+      if (renderFolderCards || ungroupedMods.length > 0) {
+        html += headerHtml;
       }
+      html += renderFolderCards;
+      html += ungroupedMods.map(m => buildModCardHtml(m, state, false)).join('');
     }
   } else {
     if (state.currentFolderId) {

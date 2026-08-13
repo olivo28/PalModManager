@@ -29,6 +29,8 @@ export interface AppState {
   selectedLibraryIds: Set<string>;
   availableUpdates: Map<string, string>;
   currentFolderId: string | null;
+  expandedFolderIds: Set<string>;
+  collapsedFolderIds: Set<string>;
   isDraggingCard: boolean;
   workshopState: any | null;
 }
@@ -61,6 +63,8 @@ let state: AppState = {
   selectedLibraryIds: new Set(),
   availableUpdates: new Map(),
   currentFolderId: null,
+  expandedFolderIds: new Set(),
+  collapsedFolderIds: new Set(),
   isDraggingCard: false,
   workshopState: null,
 };

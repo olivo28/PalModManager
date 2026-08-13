@@ -247,6 +247,8 @@ pub struct WorkshopMod {
     pub last_install_time: Option<String>,
     pub last_update_time: Option<String>,
     pub has_pending_update: bool,
+    #[serde(default)]
+    pub installed_version: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]

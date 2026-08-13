@@ -66,7 +66,7 @@ export function computeAvailableUpdates(mods: ModInfo[], libraryEntries?: any[])
   return updatesMap;
 }
 
-export function buildModCardHtml(mod: ModInfo, state: any): string {
+export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = false, folderId: string = ''): string {
   const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
   const updateVer = state.availableUpdates?.get(mod.id);
 
@@ -81,9 +81,14 @@ export function buildModCardHtml(mod: ModInfo, state: any): string {
       ? `<span style="font-size: 10px; color: var(--text-muted); opacity: 0.6; font-weight: bold; text-transform: uppercase;">Workshop</span>`
       : `<button class="card-remove-btn" data-id="${mod.id}" title="Remove mod">✕</button>`;
 
+    const childClass = isChild ? 'folder-child-row' : '';
+    const childIndent = isChild ? `<span class="tree-connector">↳</span>` : '';
+    const folderAttr = isChild ? `data-folder-id="${folderId}"` : '';
+
     return `
-    <div class="mod-card list-row-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}">
+    <div class="mod-card list-row-card ${childClass} ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}" ${folderAttr}>
       <div class="cell name-cell">
+        ${childIndent}
         <label class="toggle-switch">
           <input type="checkbox" class="card-toggle-input" data-id="${mod.id}" ${mod.enabled ? 'checked' : ''} />
           <span class="toggle-slider"></span>
@@ -186,10 +191,15 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
   const isSelected = state.selectedModIds.has(folder.id);
 
   if (state.viewLayout === 'list') {
-    return `
-    <div class="mod-card folder-card list-row-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder">
+    const isCollapsed = state.collapsedFolderIds ? state.collapsedFolderIds.has(folder.id) : false;
+    const isExpanded = !isCollapsed;
+    const chevron = `<span class="folder-chevron" data-folder-id="${folder.id}">${isExpanded ? '▼' : '▶'}</span>`;
+
+    let rowsHtml = `
+    <div class="mod-card folder-card list-row-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" data-is-expanded="${isExpanded}">
       <div class="cell name-cell">
-        <span style="margin-right: 8px;">📁</span>
+        ${chevron}
+        <span style="margin-right: 4px;">📁</span>
         <span class="mod-card-name">${escapeHtml(folder.name)}</span>
       </div>
       <div class="cell status-cell">
@@ -215,6 +225,20 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
         <button class="mod-folder-btn delete-btn delete" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="Delete folder">✕</button>
       </div>
     </div>`;
+
+    if (modsInFolder.length > 0) {
+      rowsHtml += modsInFolder.map(m => {
+        const rowHtml = buildModCardHtml(m, state, true, folder.id);
+        if (isCollapsed) {
+          return rowHtml.replace('folder-child-row', 'folder-child-row is-collapsed');
+        }
+        return rowHtml;
+      }).join('');
+    } else {
+      rowsHtml += `<div class="folder-child-empty folder-child-row ${isCollapsed ? 'is-collapsed' : ''}" data-folder-id="${folder.id}" style="margin-left: 24px; padding: 8px 16px; font-size: 11px; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--border);">No mods in this folder. Drag mods here to group them.</div>`;
+    }
+
+    return rowsHtml;
   }
 
   return `

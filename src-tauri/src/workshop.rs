@@ -202,6 +202,7 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                         last_install_time: last_install,
                         last_update_time: last_update,
                         has_pending_update,
+                        installed_version,
                     });
                 }
             }
@@ -462,6 +463,7 @@ pub fn cleanup_unsubscribed_workshop_mods(game_path: &str, mods_db: &mut Vec<cra
                 last_install_time: None,
                 last_update_time: None,
                 has_pending_update: false,
+                installed_version: Some(m.version.clone()),
             };
 
             let _ = deactivate_workshop_mod(game_path, &wmod, false);

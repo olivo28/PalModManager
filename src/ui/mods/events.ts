@@ -10,14 +10,49 @@ import { escapeHtml } from '../../utils/helpers';
 
 export function attachCardEvents(container: HTMLElement): void {
   container.querySelectorAll('.mod-card').forEach((card) => {
-    card.addEventListener('dblclick', (e) => {
-      if ((e.target as HTMLElement).closest('.toggle-switch')) return;
-      if ((e.target as HTMLElement).closest('.mod-folder-btn')) return;
+    // Single click for folder accordion in list view
+    card.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('.toggle-switch, .folder-toggle-input, .card-toggle-input, .mod-folder-btn, button, input, a')) return;
       const type = (card as HTMLElement).dataset.type;
       const id = (card as HTMLElement).dataset.id!;
+      const state = getState();
+
+      if (type === 'folder' && state.viewLayout === 'list') {
+        const collapsed = new Set(state.collapsedFolderIds || []);
+        const isCurrentlyCollapsed = collapsed.has(id);
+        const willExpand = isCurrentlyCollapsed; // if it was collapsed, now it expands
+
+        if (willExpand) {
+          collapsed.delete(id);
+        } else {
+          collapsed.add(id);
+        }
+        updateState({ collapsedFolderIds: collapsed });
+
+        card.classList.toggle('expanded', willExpand);
+        card.classList.toggle('collapsed', !willExpand);
+        const chevron = card.querySelector('.folder-chevron');
+        if (chevron) chevron.textContent = willExpand ? '▼' : '▶';
+
+        const childRows = container.querySelectorAll(`[data-folder-id="${id}"]`);
+        childRows.forEach((r) => {
+          r.classList.toggle('is-collapsed', !willExpand);
+        });
+      }
+    });
+
+    // Double click for opening details (or grid folder navigation)
+    card.addEventListener('dblclick', (e) => {
+      if ((e.target as HTMLElement).closest('.toggle-switch, .folder-toggle-input, .card-toggle-input, .mod-folder-btn, button, input, a')) return;
+      const type = (card as HTMLElement).dataset.type;
+      const id = (card as HTMLElement).dataset.id!;
+      const state = getState();
+
       if (type === 'folder') {
-        updateState({ currentFolderId: id });
-        renderModsView();
+        if (state.viewLayout === 'grid') {
+          updateState({ currentFolderId: id });
+          renderModsView();
+        }
       } else {
         openDetailPanel(id);
       }

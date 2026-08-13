@@ -26,6 +26,8 @@ export async function loadProfiles(): Promise<void> {
     });
     updateActiveProfileLabel();
     renderProfileList();
+    const { updateLoadTabVisibility } = await import('../loadView');
+    updateLoadTabVisibility();
   } catch (e) {
     console.error('Failed to load profiles:', e);
   }

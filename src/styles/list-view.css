@@ -150,6 +150,64 @@
   color: var(--danger) !important;
 }
 
+/* Folder row specific styles in list view */
+#mods-container.list-view .mod-card.folder-card.list-row-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  font-weight: 700 !important;
+}
+
+#mods-container.list-view .mod-card.folder-card.list-row-card:hover {
+  background: rgba(0, 188, 255, 0.06) !important;
+  border-color: rgba(0, 188, 255, 0.25) !important;
+}
+
+#mods-container.list-view .folder-chevron {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: 16px !important;
+  height: 16px !important;
+  font-size: 10px !important;
+  color: var(--text-muted) !important;
+  transition: transform 0.15s ease, color 0.15s ease !important;
+  user-select: none !important;
+  cursor: pointer !important;
+}
+
+#mods-container.list-view .mod-card.folder-card.list-row-card:hover .folder-chevron {
+  color: var(--accent) !important;
+}
+
+/* Indented Child Rows in list view */
+#mods-container.list-view .mod-card.list-row-card.folder-child-row {
+  margin-left: 20px !important;
+  border-left: 2px solid var(--accent) !important;
+  background: rgba(0, 188, 255, 0.02) !important;
+  border-radius: 0 6px 6px 0 !important;
+}
+
+#mods-container.list-view .mod-card.list-row-card.folder-child-row:hover {
+  background: rgba(0, 188, 255, 0.06) !important;
+  border-left-color: var(--accent) !important;
+}
+
+.tree-connector {
+  color: var(--accent) !important;
+  opacity: 0.65 !important;
+  font-family: monospace !important;
+  font-size: 13px !important;
+  user-select: none !important;
+  margin-right: 2px !important;
+}
+
+/* Collapsed hidden state for child rows and empty messages */
+#mods-container.list-view .mod-card.list-row-card.folder-child-row.is-collapsed,
+#mods-container.list-view .folder-child-empty.is-collapsed,
+#mods-container.list-view .folder-child-row.is-collapsed {
+  display: none !important;
+}
+
 /* Hide elements from standard card layout in list mode if any slip through */
 #mods-container.list-view .mod-card-image-wrap,
 #mods-container.list-view .mod-card-body,

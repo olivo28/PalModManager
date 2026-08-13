@@ -120,36 +120,36 @@
             </div>
             <span class="quick-filter-sep"></span>
             <div id="status-filter-bar">
-              <button class="status-filter-btn active" data-status="all">All</button>
-              <button class="status-filter-btn" data-status="enabled">On</button>
-              <button class="status-filter-btn" data-status="disabled">Off</button>
+              <button class="status-filter-btn active" data-status="all" title="Show All Mods">All</button>
+              <button class="status-filter-btn" data-status="enabled" title="Show Enabled Mods Only">On</button>
+              <button class="status-filter-btn" data-status="disabled" title="Show Disabled Mods Only">Off</button>
             </div>
           </div>
           <div id="search-wrap">
-            <input type="text" id="search-input" placeholder="Search mods..." />
+            <input type="text" id="search-input" placeholder="Search mods..." title="Filter mods by name or author" />
           </div>
           <div id="sort-bar">
-            <button class="sort-btn active" data-sort="name">N <span class="arrow">▲</span></button>
-            <button class="sort-btn" data-sort="type">T <span class="arrow">▲</span></button>
-            <button class="sort-btn" data-sort="date">D <span class="arrow">▼</span></button>
-            <button class="sort-btn" data-sort="status">S <span class="arrow">▲</span></button>
+            <button class="sort-btn active" data-sort="name" title="Sort by Name (A-Z / Z-A)">N <span class="arrow">▲</span></button>
+            <button class="sort-btn" data-sort="type" title="Sort by Mod Type (UE4SS, PalSchema, Pak, LogicMods)">T <span class="arrow">▲</span></button>
+            <button class="sort-btn" data-sort="date" title="Sort by Installation Date">D <span class="arrow">▼</span></button>
+            <button class="sort-btn" data-sort="status" title="Sort by Status (Enabled / Disabled)">S <span class="arrow">▲</span></button>
           </div>
           <div id="layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
-            <button id="layout-grid-btn" class="layout-btn active" title="Grid View">⊞</button>
-            <button id="layout-list-btn" class="layout-btn" title="List View">☰</button>
+            <button id="layout-grid-btn" class="layout-btn active" title="Grid View (Cards)">⊞</button>
+            <button id="layout-list-btn" class="layout-btn" title="List View (Details Table)">☰</button>
           </div>
           <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile:
             Default</span>
-          <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles">Profiles</button>
+          <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles (create, switch, duplicate)">Profiles</button>
           <button id="new-folder-btn" class="toolbar-btn-sm" title="Create virtual group folder">New Folder</button>
           <div id="toolbar-actions">
-            <button id="scan-btn" class="toolbar-btn" title="Rescan mods">↻</button>
-            <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip">+</button>
+            <button id="scan-btn" class="toolbar-btn" title="Rescan mod directories and game files">↻</button>
+            <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip archive">+</button>
             <button id="check-updates-btn" class="toolbar-btn" title="Check for mod updates">↑</button>
             <button id="open-all-updates-btn" class="toolbar-btn" title="Open all Nexus update pages in browser" style="display:none;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">🌐 Open Updates</button>
             <span class="quick-filter-sep"></span>
-            <button id="disable-all-btn" class="toolbar-btn-sm">All Off</button>
-            <button id="enable-all-btn" class="toolbar-btn-sm">All On</button>
+            <button id="disable-all-btn" class="toolbar-btn-sm" title="Disable all active mods in current profile">All Off</button>
+            <button id="enable-all-btn" class="toolbar-btn-sm" title="Enable all mods in current profile">All On</button>
             <span class="quick-filter-sep"></span>
             <button id="export-json-btn" class="toolbar-btn-sm" title="Export all mod data as JSON">Export JSON</button>
             <button id="backup-btn" class="toolbar-btn-sm" title="Backup all mods to a ZIP archive">Backup</button>

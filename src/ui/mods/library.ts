@@ -589,13 +589,44 @@ function compareVersions(a: string, b: string): number {
         const badgeText = m.isFramework ? 'FRAMEWORK' : 'WORKSHOP';
         const badgeStyle = `font-size: 8px; font-weight: bold; background: ${m.isFramework ? 'rgba(0,188,255,0.1)' : 'rgba(255, 157, 0, 0.1)'}; color: ${m.isFramework ? '#00bcff' : '#ff9d00'}; border: 1px solid ${m.isFramework ? 'rgba(0,188,255,0.2)' : 'rgba(255, 157, 0, 0.2)'}; padding: 1px 4px; border-radius: 3px;`;
 
+        const hasUpdate = m.hasPendingUpdate || (m.isInstalled && m.installedVersion && m.installedVersion !== m.version);
+        const updateBadge = hasUpdate
+          ? `<span style="font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.2); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 1px 5px; border-radius: 3px; margin-left: 4px;">▲ UPDATE AVAILABLE (v${escapeHtml(m.version)})</span>`
+          : '';
+
+        let versionTextHtml = '';
+        if (m.isInstalled) {
+          if (hasUpdate) {
+            versionTextHtml = `
+              <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:2px;">
+                <div>Installed: <b style="color:var(--text-primary);">v${escapeHtml(m.installedVersion || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
+                <div style="font-size:9px; color:var(--text-muted);">by ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
+              </div>`;
+          } else {
+            versionTextHtml = `
+              <div style="font-size:10px; color:var(--text-muted); text-align:center;">
+                Version ${escapeHtml(m.version)} by ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(Installed ✓)</span>
+              </div>`;
+          }
+        } else {
+          versionTextHtml = `
+            <div style="font-size:10px; color:var(--text-muted); text-align:center;">
+              Version ${escapeHtml(m.version)} by ${escapeHtml(m.author)} (ID: ${m.workshopId})
+            </div>`;
+        }
+
         const toggleBtnText = m.isActive ? 'Deactivate' : 'Activate';
         const toggleBtnClass = m.isActive ? 'btn-action btn-action-danger' : 'btn-primary btn-sm';
 
+        const updateBtn = (hasUpdate && m.isActive)
+          ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);" title="Update installed files to Workshop v${escapeHtml(m.version)}">▲ Update to v${escapeHtml(m.version)}</button>`
+          : '';
+
         return `
           <div class="mod-card library-card workshop-card" data-package="${escapeHtml(m.packageName)}" style="position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
-            <div style="position:absolute;top:10px;right:10px;z-index:5;display:flex;align-items:center;">
+            <div style="position:absolute;top:10px;right:10px;z-index:5;display:flex;align-items:center;gap:4px;">
               <span style="${badgeStyle}">${badgeText}</span>
+              ${updateBadge}
               ${newBadge}
             </div>
             <div style="padding-top:14px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
@@ -605,10 +636,9 @@ function compareVersions(a: string, b: string): number {
               <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:center;word-break:break-word;line-height:1.3;flex:1;min-height:36px;display:flex;align-items:center;justify-content:center;margin-top:4px;">
                 ${escapeHtml(m.modName)}
               </div>
-              <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-                Version ${escapeHtml(m.version)} by ${escapeHtml(m.author)} (ID: ${m.workshopId})
-              </div>
+              ${versionTextHtml}
               ${depWarning}
+              ${updateBtn ? `<div style="display:flex;flex-direction:column;margin-top:2px;">${updateBtn}</div>` : ''}
               <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
                 <button class="workshop-item-toggle-btn ${toggleBtnClass}" data-package="${escapeHtml(m.packageName)}" data-active="${m.isActive}" ${m.isFramework ? 'disabled style="opacity:0.5;"' : ''} style="flex:1;padding:6px;font-size:10px;cursor:pointer;">
                   ${toggleBtnText}
@@ -621,6 +651,26 @@ function compareVersions(a: string, b: string): number {
           </div>
         `;
       }).join('');
+
+      container.querySelectorAll('.workshop-item-update-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const target = e.currentTarget as HTMLButtonElement;
+          const pkgName = target.dataset.package!;
+          target.disabled = true;
+          showToast(`Updating Workshop mod "${pkgName}" to latest version...`, 'info');
+          try {
+            await activateWorkshopMod(pkgName);
+            showToast('Mod updated successfully to latest Workshop version!', 'success');
+          } catch (err) {
+            showToast('Failed to update mod: ' + err, 'error');
+          } finally {
+            target.disabled = false;
+            await renderLibraryView();
+            const { loadMods } = await import('../modsView');
+            await loadMods();
+          }
+        });
+      });
 
       container.querySelectorAll('.workshop-item-toggle-btn').forEach(btn => {
         btn.addEventListener('click', async (e) => {

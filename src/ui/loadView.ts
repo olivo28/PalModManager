@@ -339,13 +339,26 @@ function setupPointerDrag(
 }
 
 /**
- * Toggle the visibility of the "Load" tab button in the sidebar based on settings
+ * Toggle the visibility of the "Load" tab button in the sidebar based on profile & settings
  */
 export function updateLoadTabVisibility(): void {
   const state = getState();
-  const forceLoadOrder = !!state.currentSettings?.forceLoadOrder;
+  const activeProfile = state.profiles.find(p => p.id === state.currentProfileId) || state.currentProfile;
+  const globalFlo = !!state.currentSettings?.forceLoadOrder;
+
+  const floUe4ss = activeProfile?.force_load_order_ue4ss ?? state.currentSettings?.forceLoadOrderUe4ss ?? false;
+  const floPalSchema = activeProfile?.force_load_order_palschema ?? state.currentSettings?.forceLoadOrderPalschema ?? false;
+
+  const isFloActive = globalFlo && (floUe4ss || floPalSchema);
+
   const loadTabBtn = document.getElementById('sidebar-tab-load');
   if (loadTabBtn) {
-    loadTabBtn.style.display = forceLoadOrder ? 'flex' : 'none';
+    loadTabBtn.style.display = isFloActive ? 'flex' : 'none';
+  }
+
+  // If the user was on the 'load' tab and it is now hidden, fallback to 'mods'
+  if (!isFloActive && state.activeTab === 'load') {
+    const modsTabBtn = document.querySelector('.sidebar-tab[data-tab="mods"]') as HTMLElement | null;
+    modsTabBtn?.click();
   }
 }
