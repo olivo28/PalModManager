@@ -179,9 +179,9 @@ pub fn disable_mod_internal(
         let src_path = PathBuf::from(&mod_info.game_path);
         let folder_name = get_mod_folder_name(mod_info);
 
-        let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&data.settings.game_path));
-        let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
-        let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+        let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
+        let palschema_mods_dir = gp.palschema_mods_dir.clone();
+        let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
 
         if palschema_mods_dir.exists() {
             if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
@@ -396,13 +396,13 @@ pub fn enable_mod_internal(
         return Ok(());
     }
 
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&data.settings.game_path));
     let game_paks = PathBuf::from(&data.settings.game_path).join("Pal").join("Content").join("Paks");
 
     if mod_type == ModType::Ue4ss {
         let mod_info = &mut data.mods[mod_index];
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
-        let dest_dir = win64.join("ue4ss").join("Mods");
+        let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
+        let dest_dir = gp.ue4ss_mods_dir.clone();
 
         if primary_disabled.exists() {
             let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
@@ -440,26 +440,29 @@ pub fn enable_mod_internal(
         let folder_name = get_mod_folder_name(mod_info);
         let force_order = data.settings.force_load_order.unwrap_or(false) && force_palschema_effective;
 
-        let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
-        let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+        let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
+        let palschema_mods_dir = gp.palschema_mods_dir.clone();
+        let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
 
         if primary_disabled.exists() {
-            let storage_dest = palschema_storage_dir.join(&folder_name);
-            let _ = fs::create_dir_all(&palschema_storage_dir);
-            move_path(&primary_disabled, &storage_dest)?;
-
             let _ = fs::create_dir_all(&palschema_mods_dir);
-            let link_name = if force_order {
-                let order = mod_info.mods_txt_order.unwrap_or(999);
-                format!("{:03}_{}", order, folder_name)
-            } else {
-                folder_name.clone()
-            };
-            
-            let link_path = palschema_mods_dir.join(&link_name);
-            create_junction_or_symlink(&storage_dest, &link_path)?;
+            if force_order {
+                let storage_dest = palschema_storage_dir.join(&folder_name);
+                let _ = fs::create_dir_all(&palschema_storage_dir);
+                move_path(&primary_disabled, &storage_dest)?;
 
-            mod_info.game_path = link_path.to_string_lossy().to_string();
+                let order = mod_info.mods_txt_order.unwrap_or(999);
+                let link_name = format!("{:03}_{}", order, folder_name);
+                let link_path = palschema_mods_dir.join(&link_name);
+                create_junction_or_symlink(&storage_dest, &link_path)?;
+
+                mod_info.game_path = link_path.to_string_lossy().to_string();
+            } else {
+                let dest = palschema_mods_dir.join(&folder_name);
+                move_path(&primary_disabled, &dest)?;
+
+                mod_info.game_path = dest.to_string_lossy().to_string();
+            }
             mod_info.disabled_path = String::new();
         }
         mod_info.enabled = true;
@@ -496,15 +499,19 @@ pub fn enable_mod_internal(
         let mut dest_path = primary_disabled.clone();
         let mut primary_has_scripts = false;
 
+        let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
+        let ue4ss_mods_dir = gp.ue4ss_mods_dir.clone();
+        let palschema_mods_dir = gp.palschema_mods_dir.clone();
+
         if primary_disabled.exists() {
             let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
             primary_has_scripts = primary_disabled.join("Scripts").exists()
                 || primary_disabled.join("scripts").exists()
                 || primary_disabled.join("enabled.txt").exists();
             let dest = if primary_has_scripts {
-                win64.join("ue4ss").join("Mods").join(&filename)
+                ue4ss_mods_dir.join(&filename)
             } else {
-                win64.join("ue4ss").join("Mods").join("PalSchema").join("mods").join(&filename)
+                palschema_mods_dir.join(&filename)
             };
             let _ = fs::create_dir_all(dest.parent().unwrap());
             move_path(&primary_disabled, &dest)?;
@@ -527,11 +534,11 @@ pub fn enable_mod_internal(
                     let _ = fs::create_dir_all(&dest_dir);
                     dest_dir.join(&filename)
                 } else if is_palschema {
-                    let dest_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+                    let dest_dir = palschema_mods_dir.clone();
                     let _ = fs::create_dir_all(&dest_dir);
                     dest_dir.join(&filename)
                 } else {
-                    let dest_dir = win64.join("ue4ss").join("Mods");
+                    let dest_dir = ue4ss_mods_dir.clone();
                     let _ = fs::create_dir_all(&dest_dir);
                     dest_dir.join(&filename)
                 };

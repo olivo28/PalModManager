@@ -44,7 +44,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
 
     let analysis = zip_handler::analyze_zip(&zip_path)?;
 
-    let nexus_id = zip_handler::extract_nexus_id_from_path(&zip_path)
+    let mut nexus_id = zip_handler::extract_nexus_id_from_path(&zip_path)
         .or_else(|| {
             let filename = Path::new(&zip_path)
                 .file_name()
@@ -79,6 +79,18 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
             if let Some(content) = zip_handler::read_archive_file(&zip_path, target_file) {
                 if let Ok(val) = serde_json::from_str::<Value>(&content) {
                     modinfo_data = Some(val);
+                }
+            }
+        }
+    }
+
+    if nexus_id.is_none() {
+        if let Some(ref info) = modinfo_data {
+            if let Some(id) = info.get("nexusModId").and_then(|id| id.as_u64()).or_else(|| info.get("nexus_mod_id").and_then(|id| id.as_u64())) {
+                nexus_id = Some(id as u32);
+            } else if let Some(id_str) = info.get("nexusModId").and_then(|id| id.as_str()).or_else(|| info.get("nexus_mod_id").and_then(|id| id.as_str())) {
+                if let Ok(id) = id_str.parse::<u32>() {
+                    nexus_id = Some(id);
                 }
             }
         }
@@ -159,9 +171,12 @@ pub async fn install_mod_command(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
-    let force_load_order = {
+    let (force_load_order_ue4ss, force_load_order_palschema) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data)
+        (
+            data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data),
+            data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data)
+        )
     };
 
     let mod_info = installer::install_mod(
@@ -181,7 +196,8 @@ pub async fn install_mod_command(
         custom_type,
         nexus_info.as_ref().and_then(|i| if i.category.is_empty() { None } else { Some(i.category.clone()) }),
         nexus_info.as_ref().map(|i| i.tags.clone()).unwrap_or_default(),
-        force_load_order,
+        force_load_order_ue4ss,
+        force_load_order_palschema,
     )?;
 
     let _ = fs::remove_dir_all(&temp_dir);
@@ -416,14 +432,15 @@ pub async fn update_mod_command(
 
     let updated_mod = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        let force_load_order = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data);
+        let force_load_order_ue4ss = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data);
+        let force_load_order_palschema = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data);
         let existing = data
             .mods
             .iter_mut()
             .find(|m| m.id == mod_id)
             .ok_or_else(|| "Mod not found".to_string())?;
 
-        installer::update_mod(existing, &game_path, &program_path, &current_profile_id, &extracted, &analysis, &zip_filename, &now, force_load_order)?;
+        installer::update_mod(existing, &game_path, &program_path, &current_profile_id, &extracted, &analysis, &zip_filename, &now, force_load_order_ue4ss, force_load_order_palschema)?;
         existing.clone()
     };
 
@@ -541,9 +558,12 @@ pub async fn install_mod_with_manifest(
     let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
     let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
 
-    let force_load_order = {
+    let (force_load_order_ue4ss, force_load_order_palschema) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data)
+        (
+            data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data),
+            data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data)
+        )
     };
 
     let now_str = Utc::now().to_rfc3339();
@@ -557,7 +577,8 @@ pub async fn install_mod_with_manifest(
         nexus_info.as_ref().map(|i| i.downloads),
         nexus_info.as_ref().map(|i| i.endorsements),
         &now_str,
-        force_load_order,
+        force_load_order_ue4ss,
+        force_load_order_palschema,
     )?;
 
     final_mod.source_zip = Path::new(&zip_path).file_name().unwrap().to_string_lossy().to_string();

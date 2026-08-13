@@ -149,24 +149,31 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                     let (install_type, install_target) = match rule {
                         Some(r) => {
                             let t = r.targets.first().cloned().unwrap_or_else(|| ".".to_string());
-                            let it = match (r.rule_type.as_str(), t.as_str()) {
-                                ("UE4SS", ".") => WorkshopInstallType::UE4SSFramework,
-                                ("UE4SS", "./UE4SS/Mods") => WorkshopInstallType::UE4SSMod,
-                                ("Lua", ".") => WorkshopInstallType::LuaMod,
-                                ("PalSchema", "./PalSchema/") => WorkshopInstallType::PalSchemaMod,
-                                (other, _) => WorkshopInstallType::Unknown(other.to_string()),
+                            let it = match r.rule_type.as_str() {
+                                "UE4SS" => {
+                                    if t.contains("Mods") {
+                                        WorkshopInstallType::UE4SSMod
+                                    } else {
+                                        WorkshopInstallType::UE4SSFramework
+                                    }
+                                }
+                                "Lua" => WorkshopInstallType::LuaMod,
+                                "PalSchema" => WorkshopInstallType::PalSchemaMod,
+                                other => WorkshopInstallType::Unknown(other.to_string()),
                             };
                             (it, t)
                         }
                         None => (WorkshopInstallType::Unknown("None".to_string()), ".".to_string()),
                     };
 
-                    let thumb = path.join("thumbnail.png");
-                    let thumbnail_path = if thumb.exists() {
-                        Some(thumb.to_string_lossy().to_string())
-                    } else {
-                        None
-                    };
+                    let mut thumbnail_path = None;
+                    for name in &["thumbnail.png", "thumbnail.jpg", "thumbnail.jpeg", "preview.png", "preview.jpg", "preview.jpeg"] {
+                        let thumb = path.join(name);
+                        if thumb.exists() {
+                            thumbnail_path = Some(thumb.to_string_lossy().to_string());
+                            break;
+                        }
+                    }
 
                     mods.push(WorkshopMod {
                         workshop_id,
@@ -219,7 +226,7 @@ fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>, files: &mut Vec<St
     Ok(())
 }
 
-pub fn activate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod) -> Result<(), String> {
+pub fn activate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod, force_load_order_ue4ss: bool) -> Result<(), String> {
     let settings = read_pal_mod_settings(game_path);
     if settings.workshop_root.is_empty() {
         return Err("Workshop root directory not configured".to_string());
@@ -232,35 +239,45 @@ pub fn activate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod) -> Res
     let mut installed_files = Vec::new();
     let mut installed_dirs = Vec::new();
     let game_root = Path::new(game_path);
+    let gp = crate::dependency_checker::build_game_profile(game_root);
 
     // Perform copy depending on type
     match workshop_mod.install_type {
         WorkshopInstallType::UE4SSMod => {
             let src_mod_dir = src_dir.join("UE4SS").join("Mods");
-            let dest_mod_dir = game_root.join("Mods").join("NativeMods").join("UE4SS").join("Mods");
+            let dest_mod_dir = gp.ue4ss_mods_dir.clone();
             if src_mod_dir.exists() {
-                let _ = copy_dir_all(&src_mod_dir, &dest_mod_dir, &mut installed_files, &mut installed_dirs, game_root);
+                copy_dir_all(&src_mod_dir, &dest_mod_dir, &mut installed_files, &mut installed_dirs, game_root)
+                    .map_err(|e| format!("Failed to copy UE4SSMod: {}", e))?;
             }
         }
         WorkshopInstallType::PalSchemaMod => {
             let src_schema_dir = src_dir.join("PalSchema");
-            let dest_schema_dir = game_root.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema").join("mods").join(&workshop_mod.package_name);
+            let dest_schema_dir = gp.palschema_mods_dir.join(&workshop_mod.package_name);
             if src_schema_dir.exists() {
-                let _ = copy_dir_all(&src_schema_dir, &dest_schema_dir, &mut installed_files, &mut installed_dirs, game_root);
+                copy_dir_all(&src_schema_dir, &dest_schema_dir, &mut installed_files, &mut installed_dirs, game_root)
+                    .map_err(|e| format!("Failed to copy PalSchemaMod: {}", e))?;
             }
         }
         WorkshopInstallType::LuaMod => {
-            let dest_mod_dir = game_root.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join(&workshop_mod.package_name);
-            let _ = copy_dir_all(&src_dir, &dest_mod_dir, &mut installed_files, &mut installed_dirs, game_root);
+            let dest_mod_dir = gp.ue4ss_mods_dir.join(&workshop_mod.package_name);
+            copy_dir_all(&src_dir, &dest_mod_dir, &mut installed_files, &mut installed_dirs, game_root)
+                .map_err(|e| format!("Failed to copy LuaMod: {}", e))?;
             
-            // Add entry to mods.txt
-            let mods_txt = game_root.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("mods.txt");
-            if mods_txt.exists() {
-                if let Ok(content) = fs::read_to_string(&mods_txt) {
-                    if !content.contains(&workshop_mod.package_name) {
-                        let new_content = format!("{}{} : 1\r\n", content, workshop_mod.package_name);
-                        let _ = fs::write(&mods_txt, new_content);
-                    }
+            if force_load_order_ue4ss {
+                let mods_txt = gp.mods_txt_path.clone();
+                if mods_txt.exists() {
+                    let _ = crate::profiles::update_mods_txt_load_order(&mods_txt, &workshop_mod.package_name, true);
+                }
+                let enabled_txt = dest_mod_dir.join("enabled.txt");
+                if enabled_txt.exists() {
+                    let _ = fs::remove_file(&enabled_txt);
+                }
+            } else {
+                let _ = fs::write(dest_mod_dir.join("enabled.txt"), "");
+                let mods_txt = gp.mods_txt_path.clone();
+                if mods_txt.exists() {
+                    let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &workshop_mod.package_name);
                 }
             }
         }
@@ -308,7 +325,7 @@ pub fn activate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod) -> Res
     Ok(())
 }
 
-pub fn deactivate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod) -> Result<(), String> {
+pub fn deactivate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod, _force_load_order_ue4ss: bool) -> Result<(), String> {
     let game_root = Path::new(game_path);
     let managed_dir = game_root.join("Mods").join("ManagedMods").join(&workshop_mod.package_name);
     let manifest_file = managed_dir.join("InstallManifest.json");
@@ -343,15 +360,10 @@ pub fn deactivate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod) -> R
 
     // Remove from mods.txt if LuaMod
     if workshop_mod.install_type == WorkshopInstallType::LuaMod {
-        let mods_txt = game_root.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("mods.txt");
+        let gp = crate::dependency_checker::build_game_profile(game_root);
+        let mods_txt = gp.mods_txt_path.clone();
         if mods_txt.exists() {
-            if let Ok(content) = fs::read_to_string(&mods_txt) {
-                let lines: Vec<String> = content.lines()
-                    .filter(|l| !l.trim().starts_with(&workshop_mod.package_name))
-                    .map(|l| l.to_string())
-                    .collect();
-                let _ = fs::write(&mods_txt, lines.join("\r\n") + "\r\n");
-            }
+            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &workshop_mod.package_name);
         }
     }
 
@@ -363,4 +375,79 @@ pub fn deactivate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod) -> R
     }
 
     Ok(())
+}
+
+pub fn cleanup_unsubscribed_workshop_mods(game_path: &str, mods_db: &mut Vec<crate::models::ModInfo>) {
+    let settings = read_pal_mod_settings(game_path);
+    if settings.workshop_root.is_empty() {
+        return;
+    }
+    let workshop_dir = Path::new(&settings.workshop_root);
+    if !workshop_dir.exists() {
+        return;
+    }
+
+    let mut to_deactivate = Vec::new();
+    for m in mods_db.iter() {
+        if let Some(ref ns) = m.nexus_summary {
+            if ns.starts_with("Steam Workshop Mod") {
+                if let Some(id_line) = ns.lines().find(|l| l.contains("Workshop ID: ")) {
+                    if let Some(pos) = id_line.find("Workshop ID: ") {
+                        if let Ok(id) = id_line[pos + "Workshop ID: ".len()..].trim().parse::<u64>() {
+                            let mod_folder = workshop_dir.join(id.to_string());
+                            if !mod_folder.exists() {
+                                to_deactivate.push(m.clone());
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    for m in to_deactivate {
+        crate::logger::log(&format!("cleanup_unsubscribed_workshop_mods: Mod {} is unsubscribed. Deactivating and cleaning up.", m.name));
+        if let Some(ref ns) = m.nexus_summary {
+            let lines: Vec<&str> = ns.lines().collect();
+            let workshop_id = lines.iter().find(|l| l.contains("Workshop ID: "))
+                .and_then(|l| l.find("Workshop ID: ").and_then(|pos| l[pos + "Workshop ID: ".len()..].trim().parse::<u64>().ok()))
+                .unwrap_or(0);
+            let author = lines.iter().find(|l| l.contains("Author: "))
+                .and_then(|l| l.find("Author: ").map(|pos| l[pos + "Author: ".len()..].trim().to_string()))
+                .unwrap_or_default();
+            let install_str = lines.iter().find(|l| l.contains("Install Type: "))
+                .and_then(|l| l.find("Install Type: ").map(|pos| l[pos + "Install Type: ".len()..].trim().to_string()))
+                .unwrap_or_default();
+            let install_type = match install_str.as_str() {
+                "UE4SSMod" => WorkshopInstallType::UE4SSMod,
+                "PalSchemaMod" => WorkshopInstallType::PalSchemaMod,
+                "LuaMod" => WorkshopInstallType::LuaMod,
+                _ => WorkshopInstallType::Unknown(install_str),
+            };
+
+            let wmod = WorkshopMod {
+                workshop_id,
+                package_name: m.id.clone(),
+                mod_name: m.name.clone(),
+                version: m.version.clone(),
+                author,
+                thumbnail_path: None,
+                dependencies: Vec::new(),
+                install_type,
+                install_target: ".".to_string(),
+                is_active: false,
+                is_installed: true,
+                is_framework: false,
+                last_install_time: None,
+                last_update_time: None,
+                has_pending_update: false,
+            };
+
+            let _ = deactivate_workshop_mod(game_path, &wmod, false);
+        }
+
+        if let Some(idx) = mods_db.iter().position(|x| x.id == m.id) {
+            mods_db.remove(idx);
+        }
+    }
 }

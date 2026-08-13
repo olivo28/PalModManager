@@ -1,5 +1,6 @@
 import { disableMod, enableMod, removeMod, refreshNexusCache, setModConfig, setNexusModId, openModFolder, readConfig, renameMod, setModVersion, checkGitHubVersion, setGithubVersion, openUrl, changePakDestination, ignoreModVersion } from '../api';
 import { getState, updateState } from '../state';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { openConfigEditor } from './editorView';
 import { loadMods, renderModsView } from './modsView';
 import { showToast } from './toast';
@@ -94,7 +95,15 @@ export function openDetailPanel(modId: string): void {
   }
 
   if (mod.nexusPictureUrl) {
-    imgEl.src = mod.nexusPictureUrl;
+    let resolvedSrc = mod.nexusPictureUrl;
+    if (!resolvedSrc.startsWith('http://') && !resolvedSrc.startsWith('https://')) {
+      try {
+        resolvedSrc = convertFileSrc(resolvedSrc);
+      } catch (e) {
+        console.error('Failed to convert file src:', e);
+      }
+    }
+    imgEl.src = resolvedSrc;
     imgContainer.style.display = 'block';
   } else {
     imgContainer.style.display = 'none';

@@ -28,7 +28,7 @@ use commands::load_order_commands;
 use commands::workshop_commands;
 use state::AppState;
 
-use tauri::Manager;
+use tauri::{Manager, Emitter};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -211,6 +211,57 @@ pub fn run() {
                     let _ = window.maximize();
                 }
             }
+
+            // Spawn background thread to watch the Steam Workshop mods folder for changes
+            let handle = app.handle().clone();
+            std::thread::spawn(move || {
+                let mut last_mods_hash = String::new();
+                loop {
+                    std::thread::sleep(std::time::Duration::from_secs(3));
+                    let state = handle.state::<AppState>();
+                    let game_path = {
+                        match state.data.lock() {
+                            Ok(data) => data.settings.game_path.clone(),
+                            Err(_) => continue,
+                        }
+                    };
+                    if game_path.is_empty() {
+                        continue;
+                    }
+
+                    let settings = crate::workshop::read_pal_mod_settings(&game_path);
+                    if settings.workshop_root.is_empty() {
+                        continue;
+                    }
+
+                    let path = std::path::Path::new(&settings.workshop_root);
+                    if !path.exists() {
+                        continue;
+                    }
+
+                    let mut current_hash = String::new();
+                    if let Ok(entries) = std::fs::read_dir(path) {
+                        let mut entries_vec = Vec::new();
+                        for entry in entries.flatten() {
+                            if let Ok(meta) = entry.metadata() {
+                                if let Ok(mtime) = meta.modified() {
+                                    entries_vec.push(format!("{}:{:?}", entry.file_name().to_string_lossy(), mtime));
+                                }
+                            }
+                        }
+                        entries_vec.sort();
+                        current_hash = entries_vec.join("|");
+                    }
+
+                    if !current_hash.is_empty() && current_hash != last_mods_hash {
+                        if !last_mods_hash.is_empty() {
+                            let _ = handle.emit("workshop-directory-changed", ());
+                        }
+                        last_mods_hash = current_hash;
+                    }
+                }
+            });
+
             Ok(())
         })
         .on_window_event(|window, event| {

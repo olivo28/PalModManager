@@ -37,9 +37,9 @@ pub fn get_workshop_state(state: State<'_, AppState>) -> Result<WorkshopState, S
 
 #[tauri::command]
 pub fn activate_workshop_mod_cmd(package_name: String, state: State<'_, AppState>) -> Result<(), String> {
-    let game_path = {
+    let (game_path, force_load_order_ue4ss) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.game_path.clone()
+        (data.settings.game_path.clone(), data.settings.force_load_order_ue4ss.unwrap_or(false))
     };
     if game_path.is_empty() {
         return Err("Game path not set".to_string());
@@ -49,14 +49,14 @@ pub fn activate_workshop_mod_cmd(package_name: String, state: State<'_, AppState
     let target = wmods.iter().find(|m| m.package_name == package_name)
         .ok_or_else(|| format!("Workshop mod {} not found", package_name))?;
 
-    crate::workshop::activate_workshop_mod(&game_path, target)
+    crate::workshop::activate_workshop_mod(&game_path, target, force_load_order_ue4ss)
 }
 
 #[tauri::command]
 pub fn deactivate_workshop_mod_cmd(package_name: String, state: State<'_, AppState>) -> Result<(), String> {
-    let game_path = {
+    let (game_path, force_load_order_ue4ss) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.game_path.clone()
+        (data.settings.game_path.clone(), data.settings.force_load_order_ue4ss.unwrap_or(false))
     };
     if game_path.is_empty() {
         return Err("Game path not set".to_string());
@@ -66,7 +66,7 @@ pub fn deactivate_workshop_mod_cmd(package_name: String, state: State<'_, AppSta
     let target = wmods.iter().find(|m| m.package_name == package_name)
         .ok_or_else(|| format!("Workshop mod {} not found", package_name))?;
 
-    crate::workshop::deactivate_workshop_mod(&game_path, target)
+    crate::workshop::deactivate_workshop_mod(&game_path, target, force_load_order_ue4ss)
 }
 
 #[tauri::command]

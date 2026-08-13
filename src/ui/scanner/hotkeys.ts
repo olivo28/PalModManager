@@ -77,28 +77,28 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
   const query = hotkeyFilter.toLowerCase().trim();
   const filtered = lastHotkeysResult.filter(hk => {
     return hk.modName.toLowerCase().includes(query) ||
-           hk.currentKeys.toLowerCase().includes(query) ||
-           hk.scriptName.toLowerCase().includes(query);
+           hk.keys.toLowerCase().includes(query) ||
+           hk.filePath.toLowerCase().includes(query);
   });
 
   const listRows = filtered.map((hk, idx) => {
     const isEditing = `${hk.absoluteFilePath}::${hk.lineNumber}` === editingHotkeyKey;
     const actionButtons = isEditing ? `
-      <button class="scanner-action-btn success hk-save-btn" data-idx="${idx}" style="padding:4px 8px; font-size:10px;">Save</button>
-      <button class="scanner-action-btn hk-cancel-btn" style="padding:4px 8px; font-size:10px;">Cancel</button>
+      <button class="btn-primary btn-sm hk-save-btn" data-idx="${idx}">Save</button>
+      <button class="btn-secondary btn-sm hk-cancel-btn">Cancel</button>
     ` : `
-      <button class="hk-edit-btn scanner-action-btn" data-key="${escapeHtml(hk.absoluteFilePath)}::${hk.lineNumber}" style="padding:4px 8px; font-size:10px;">Change</button>
-      <button class="hk-code-btn scanner-action-btn" data-mod-id="${escapeHtml(hk.modId)}" data-file-path="${escapeHtml(hk.scriptName)}" data-line="${hk.lineNumber}" style="padding:4px 8px; font-size:10px;">View Code</button>
+      <button class="hk-edit-btn btn-secondary btn-sm" data-key="${escapeHtml(hk.absoluteFilePath)}::${hk.lineNumber}">Change</button>
+      <button class="hk-code-btn btn-secondary btn-sm" data-mod-id="${escapeHtml(hk.modId)}" data-file-path="${escapeHtml(hk.filePath)}" data-line="${hk.lineNumber}">View Code</button>
     `;
 
     const keysDisplay = isEditing ? `
-      <input type="text" id="hk-input-${idx}" class="hotkey-edit-input" value="${escapeHtml(hk.currentKeys)}" placeholder="Press keys..." style="padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--accent); color:var(--text-primary); font-size:11px; font-family:monospace; border-radius:4px; outline:none; width:100%; box-sizing:border-box;" />
-    ` : formatKeyboardBadge(hk.currentKeys);
+      <input type="text" id="hk-input-${idx}" class="hotkey-edit-input" value="${escapeHtml(hk.keys)}" placeholder="Press keys..." style="padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--accent); color:var(--text-primary); font-size:11px; font-family:monospace; border-radius:4px; outline:none; width:100%; box-sizing:border-box;" />
+    ` : formatKeyboardBadge(hk.keys);
 
     return `
       <tr>
         <td style="font-weight:700; color:var(--text-primary); font-size:12px;">${escapeHtml(hk.modName)}</td>
-        <td style="font-family:monospace; font-size:11px; color:var(--text-muted);">${escapeHtml(hk.scriptName)}:L${hk.lineNumber}</td>
+        <td style="font-family:monospace; font-size:11px; color:var(--text-muted);">${escapeHtml(hk.filePath)}:L${hk.lineNumber}</td>
         <td>${keysDisplay}</td>
         <td style="width: 140px; text-align: right;">
           <div style="display:flex; gap:4px; justify-content:flex-end;">

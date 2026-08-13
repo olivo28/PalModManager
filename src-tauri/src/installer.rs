@@ -127,7 +127,8 @@ pub fn install_mod(
     _custom_type: Option<String>,
     nexus_category: Option<String>,
     nexus_tags: Vec<String>,
-    force_load_order: bool,
+    force_load_order_ue4ss: bool,
+    force_load_order_palschema: bool,
 ) -> Result<ModInfo, String> {
     let game = Path::new(game_path);
     let now = Utc::now().to_rfc3339();
@@ -186,7 +187,8 @@ pub fn install_mod(
         nexus_downloads,
         nexus_endorsements,
         &now,
-        force_load_order,
+        force_load_order_ue4ss,
+        force_load_order_palschema,
     )?;
 
     // Set other info
@@ -250,7 +252,8 @@ pub fn execute_manifest(
     nexus_downloads: Option<u32>,
     nexus_endorsements: Option<u32>,
     now: &str,
-    force_load_order: bool,
+    force_load_order_ue4ss: bool,
+    force_load_order_palschema: bool,
 ) -> Result<ModInfo, String> {
     use crate::models::{ModInfo, RouteType, ModType};
     use std::fs;
@@ -335,7 +338,7 @@ pub fn execute_manifest(
         let u_mod_dir = ue4ss_mods_dir.join(&manifest.folder_name);
         if u_mod_dir.exists() {
             let enabled_file = u_mod_dir.join("enabled.txt");
-            if force_load_order {
+            if force_load_order_ue4ss {
                 if enabled_file.exists() {
                     let _ = fs::remove_file(&enabled_file);
                 }
@@ -347,7 +350,7 @@ pub fn execute_manifest(
         }
         let mods_txt = ue4ss_mods_dir.join("mods.txt");
         if mods_txt.exists() {
-            if force_load_order {
+            if force_load_order_ue4ss {
                 let _ = crate::profiles::update_mods_txt_load_order(&mods_txt, &manifest.folder_name, true);
             } else {
                 let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &manifest.folder_name);
@@ -360,21 +363,18 @@ pub fn execute_manifest(
     if manifest.has_palschema {
         let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
         let palschema_mods_dir = ue4ss_mods_dir.join("PalSchema").join("mods");
-        let palschema_storage_dir = ue4ss_mods_dir.join("PalSchema").join("Storage");
-
-        // The file was extracted to palschema_mods_dir / folder_name — move it to Storage
         let extracted_mod_dir = palschema_mods_dir.join(&manifest.folder_name);
-        if extracted_mod_dir.exists() {
-            let storage_dest = palschema_storage_dir.join(&manifest.folder_name);
-            let _ = fs::create_dir_all(&palschema_storage_dir);
 
-            // Move extracted dir → Storage
-            move_path(&extracted_mod_dir, &storage_dest)
-                .unwrap_or_else(|e| crate::logger::log(&format!("PalSchema Storage move failed: {}", e)));
+        if force_load_order_palschema {
+            let palschema_storage_dir = ue4ss_mods_dir.join("PalSchema").join("Storage");
+            if extracted_mod_dir.exists() {
+                let storage_dest = palschema_storage_dir.join(&manifest.folder_name);
+                let _ = fs::create_dir_all(&palschema_storage_dir);
 
-            // Create junction in mods/, optionally with numeric prefix
-            let _ = fs::create_dir_all(&palschema_mods_dir);
-            let link_name = if force_load_order {
+                // Move extracted dir → Storage
+                move_path(&extracted_mod_dir, &storage_dest)
+                    .unwrap_or_else(|e| crate::logger::log(&format!("PalSchema Storage move failed: {}", e)));
+
                 // Count existing numbered entries to assign the next available slot
                 let next_order = palschema_mods_dir
                     .read_dir()
@@ -388,18 +388,20 @@ pub fn execute_manifest(
                             + 1
                     })
                     .unwrap_or(1);
-                format!("{:03}_{}", next_order, &manifest.folder_name)
-            } else {
-                manifest.folder_name.clone()
-            };
+                let link_name = format!("{:03}_{}", next_order, &manifest.folder_name);
+                let link_path = palschema_mods_dir.join(&link_name);
+                if let Err(e) = crate::profiles::create_junction_or_symlink(&storage_dest, &link_path) {
+                    crate::logger::log(&format!("PalSchema junction creation failed: {}", e));
+                }
 
-            let link_path = palschema_mods_dir.join(&link_name);
-            if let Err(e) = crate::profiles::create_junction_or_symlink(&storage_dest, &link_path) {
-                crate::logger::log(&format!("PalSchema junction creation failed: {}", e));
+                // Update primary_path to point at the junction (not Storage)
+                primary_path = normalize_path_separator(&link_path.to_string_lossy());
             }
-
-            // Update primary_path to point at the junction (not Storage)
-            primary_path = normalize_path_separator(&link_path.to_string_lossy());
+        } else {
+            // Normal installation without symlinks / Storage
+            if extracted_mod_dir.exists() {
+                primary_path = normalize_path_separator(&extracted_mod_dir.to_string_lossy());
+            }
         }
     }
 
@@ -617,7 +619,8 @@ pub fn update_mod(
     analysis: &ZipAnalysis,
     zip_filename: &str,
     now: &str,
-    force_load_order: bool,
+    force_load_order_ue4ss: bool,
+    force_load_order_palschema: bool,
 ) -> Result<(), String> {
     use crate::models::ModType;
 
@@ -713,7 +716,8 @@ pub fn update_mod(
         existing.nexus_downloads,
         existing.nexus_endorsements,
         now,
-        force_load_order,
+        force_load_order_ue4ss,
+        force_load_order_palschema,
     )?;
 
     existing.name = new_mod_info.name;

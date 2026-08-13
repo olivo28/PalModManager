@@ -1,5 +1,6 @@
 import type { ModInfo } from '../../types';
 import { escapeHtml } from '../../utils/helpers';
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 export function isVersionNewer(local: string, remote: string): boolean {
   const localParts = local.split('.').map(p => parseInt(p.replace(/[^0-9]/g, ''), 10) || 0);
@@ -30,7 +31,7 @@ export function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
 }
 
 export function buildModCardHtml(mod: ModInfo, state: any): string {
-  const isWorkshop = mod.nexusSummary === 'Steam Workshop Mod';
+  const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
 
   if (state.viewLayout === 'list') {
     const isSelected = state.selectedModIds.has(mod.id);
@@ -82,8 +83,22 @@ export function buildModCardHtml(mod: ModInfo, state: any): string {
     : '';
   const catHtml = mod.nexusCategory ? `<span class="mod-card-category">${escapeHtml(mod.nexusCategory)}</span>` : '';
   const author = mod.nexusAuthor ? `<span class="mod-card-author">by ${escapeHtml(mod.nexusAuthor)}</span>` : '';
-  const imageHtml = mod.nexusPictureUrl
-    ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(mod.nexusPictureUrl)}" alt="" loading="lazy" /></div>`
+  let imageSrc = '';
+  if (mod.nexusPictureUrl) {
+    if (mod.nexusPictureUrl.startsWith('http://') || mod.nexusPictureUrl.startsWith('https://')) {
+      imageSrc = mod.nexusPictureUrl;
+    } else {
+      try {
+        imageSrc = convertFileSrc(mod.nexusPictureUrl);
+      } catch (e) {
+        console.error('Failed to convert file src:', e);
+        imageSrc = '';
+      }
+    }
+  }
+
+  const imageHtml = imageSrc
+    ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(imageSrc)}" alt="" loading="lazy" /></div>`
     : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
 
   const updateVer = state.availableUpdates?.get(mod.id);

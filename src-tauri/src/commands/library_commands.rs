@@ -59,16 +59,20 @@ pub fn install_mod_from_library(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_default();
 
-    let force_load_order = {
+    let (force_load_order_ue4ss, force_load_order_palschema) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data)
+        (
+            data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data),
+            data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data)
+        )
     };
 
     let mod_info = crate::installer::install_mod(
         &game_path, &extracted, &analysis, &zip_filename,
         None, None, None, None, None, None, None, None,
         None, None, None, Vec::new(),
-        force_load_order,
+        force_load_order_ue4ss,
+        force_load_order_palschema,
     )?;
 
     let _ = std::fs::remove_dir_all(&temp_dir);

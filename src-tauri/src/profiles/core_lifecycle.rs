@@ -51,18 +51,19 @@ pub fn set_profile_mod_state(
     if profile_id == data.current_profile_id {
         let mod_info = data.mods.iter().find(|m| m.id == mod_id).cloned();
         let is_workshop = mod_info.as_ref().map(|m| {
-            m.nexus_summary.as_deref() == Some("Steam Workshop Mod")
+            m.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod"))
         }).unwrap_or(false);
 
         if is_workshop {
             let game_path = data.settings.game_path.clone();
+            let force_load_order_ue4ss = data.settings.force_load_order_ue4ss.unwrap_or(false);
             let wmods = crate::workshop::scan_workshop_mods(&game_path);
             if let Some(target) = wmods.iter().find(|m| m.package_name == mod_id || m.package_name.to_lowercase() == mod_id.to_lowercase()) {
                 crate::logger::log(&format!("set_profile_mod_state: Applying workshop change for mod = {} -> enabled = {}", mod_id, enabled));
                 if enabled {
-                    let _ = crate::workshop::activate_workshop_mod(&game_path, target);
+                    let _ = crate::workshop::activate_workshop_mod(&game_path, target, force_load_order_ue4ss);
                 } else {
-                    let _ = crate::workshop::deactivate_workshop_mod(&game_path, target);
+                    let _ = crate::workshop::deactivate_workshop_mod(&game_path, target, force_load_order_ue4ss);
                 }
             }
         } else {
@@ -170,7 +171,13 @@ fn game_path_to_workshop_dir(game_path: &str) -> PathBuf {
     Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS")
 }
 
-fn restore_profile_files_to_game(game_path: &str, profile_dir: &Path, target_profile: &Profile, program_path: &str) {
+fn restore_profile_files_to_game(
+    game_path: &str,
+    profile_dir: &Path,
+    target_profile: &Profile,
+    program_path: &str,
+    force_load_order_palschema: bool,
+) {
     if game_path.is_empty() { return; }
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
     let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(Path::new(game_path));
@@ -182,17 +189,32 @@ fn restore_profile_files_to_game(game_path: &str, profile_dir: &Path, target_pro
 
     if dwmapi_game.exists() { let _ = fs::remove_file(&dwmapi_game); }
 
+    // Safely remove any junctions in PalSchema mods folder to avoid dangling links blocking deletions
+    if palschema_game.exists() {
+        if let Ok(entries) = fs::read_dir(&palschema_game) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                let _ = crate::profiles::remove_junction_or_symlink(&path);
+            }
+        }
+    }
+
     let is_workshop = !win64.join("dwmapi.dll").exists() && game_path_to_workshop_dir(game_path).exists();
 
     let mods_root = Path::new(game_path).join("Mods");
     let settings_ini = mods_root.join("PalModSettings.ini");
     let managed_mods = mods_root.join("ManagedMods");
-
-    if settings_ini.exists() {
-        let _ = fs::remove_file(&settings_ini);
-    }
-    if managed_mods.exists() {
-        let _ = fs::remove_dir_all(&managed_mods);
+    if mods_root.exists() {
+        if let Ok(entries) = fs::read_dir(&mods_root) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if path.is_dir() {
+                    let _ = fs::remove_dir_all(&path);
+                } else {
+                    let _ = fs::remove_file(&path);
+                }
+            }
+        }
     }
 
     let settings_backup = profile_dir.join("PalModSettings.ini");
@@ -262,12 +284,14 @@ fn restore_profile_files_to_game(game_path: &str, profile_dir: &Path, target_pro
                 }
             }
 
+            let db = crate::db::load_db(program_path);
+            let force_load_order_ue4ss = db.settings.force_load_order_ue4ss.unwrap_or(false);
             let restored_settings = crate::workshop::read_pal_mod_settings(game_path);
             let wmods = crate::workshop::scan_workshop_mods(game_path);
             for package_name in &restored_settings.active_mod_list {
                 if let Some(wmod) = wmods.iter().find(|m| &m.package_name == package_name) {
                     if !wmod.is_installed {
-                        let _ = crate::workshop::activate_workshop_mod(game_path, wmod);
+                        let _ = crate::workshop::activate_workshop_mod(game_path, wmod, force_load_order_ue4ss);
                     }
                 }
             }
@@ -314,6 +338,37 @@ fn restore_profile_files_to_game(game_path: &str, profile_dir: &Path, target_pro
     if logic_backup.exists() {
         let _ = copy_dir_all(&logic_backup, &logic_game);
     }
+
+    // If PalSchema FLO is disabled, clean up any junctions restored from the backup and move folders out of Storage
+    if !force_load_order_palschema {
+        let palschema_mods = ue4ss_mods_dir.join("PalSchema").join("mods");
+        let palschema_storage = ue4ss_mods_dir.join("PalSchema").join("Storage");
+
+        if palschema_mods.exists() {
+            // 1. Remove any junctions/symlinks
+            if let Ok(entries) = fs::read_dir(&palschema_mods) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let _ = crate::profiles::remove_junction_or_symlink(&path);
+                }
+            }
+        }
+
+        // 2. Move actual directories from Storage back to mods/
+        if palschema_storage.exists() {
+            if let Ok(entries) = fs::read_dir(&palschema_storage) {
+                for entry in entries.flatten() {
+                    let src = entry.path();
+                    if src.is_dir() {
+                        let name = src.file_name().unwrap();
+                        let dst = palschema_mods.join(name);
+                        let _ = crate::profiles::move_path(&src, &dst);
+                    }
+                }
+            }
+            let _ = fs::remove_dir(&palschema_storage);
+        }
+    }
 }
 
 pub fn switch_profile(
@@ -343,7 +398,10 @@ pub fn switch_profile(
     }
 
     let target_dir = ensure_profile_structure(program_path, &target_profile.id);
-    restore_profile_files_to_game(&game_path, &target_dir, target_profile, program_path);
+    let force_palschema = data.settings.force_load_order.unwrap_or(false) && target_profile.force_load_order_palschema
+        .or(data.settings.force_load_order_palschema)
+        .unwrap_or(false);
+    restore_profile_files_to_game(&game_path, &target_dir, target_profile, program_path, force_palschema);
 
     if !game_path.is_empty() {
         let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(Path::new(&game_path));
@@ -533,7 +591,10 @@ pub fn clear_profile(data: &mut AppData, profile_id: &str) -> Result<(), String>
         if paks_game.exists() { let _ = fs::remove_dir_all(&paks_game); }
         if logic_game.exists() { let _ = fs::remove_dir_all(&logic_game); }
 
-        restore_profile_files_to_game(&game_path, &p_dir, profile, &program_path);
+        let force_palschema = data.settings.force_load_order.unwrap_or(false) && profile.force_load_order_palschema
+            .or(data.settings.force_load_order_palschema)
+            .unwrap_or(false);
+        restore_profile_files_to_game(&game_path, &p_dir, profile, &program_path, force_palschema);
     }
 
     Ok(())

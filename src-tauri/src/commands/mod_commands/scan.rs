@@ -109,7 +109,7 @@ fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
     None
 }
 
-fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>) {
+fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::collections::HashSet<String>) {
     if !dir.exists() { return; }
 
     let mods_txt_path = dir.join("mods.txt");
@@ -136,6 +136,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>) {
         for entry in entries.filter_map(|e| e.ok()) {
             if !entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) { continue; }
             let mod_name = entry.file_name().to_string_lossy().to_string();
+            if ignored_names.contains(&mod_name.to_lowercase()) { continue; }
             let mod_path = entry.path();
             if ["ConsoleUnlocker", "LuaPlugin", "PalSchema"].contains(&mod_name.as_str()) { continue; }
 
@@ -186,12 +187,13 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>) {
     }
 }
 
-fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>) {
+fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::collections::HashSet<String>) {
     if !dir.exists() { return; }
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.filter_map(|e| e.ok()) {
             if !entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) { continue; }
             let mod_name = entry.file_name().to_string_lossy().to_string();
+            if ignored_names.contains(&mod_name.to_lowercase()) { continue; }
             let mod_path = entry.path();
 
             if let Some(m) = load_pmm_meta(&mod_path) {
@@ -380,15 +382,20 @@ pub fn scan_mods_internal(
     let game = PathBuf::from(game_path);
     let mut fs_mods: Vec<ModInfo> = vec![];
 
+    let wmods = crate::workshop::scan_workshop_mods(game_path);
+    let workshop_package_names: std::collections::HashSet<String> = wmods.iter()
+        .map(|m| m.package_name.to_lowercase())
+        .collect();
+
     let gp = crate::dependency_checker::build_game_profile(&game);
     let ue4ss_mods_dir = gp.ue4ss_mods_dir.clone();
     if ue4ss_mods_dir.exists() {
-        scan_ue4ss_mods(&ue4ss_mods_dir, &mut fs_mods);
+        scan_ue4ss_mods(&ue4ss_mods_dir, &mut fs_mods, &workshop_package_names);
     }
 
     let palschema_dir = gp.palschema_mods_dir.clone();
     if palschema_dir.exists() {
-        scan_palschema_mods(&palschema_dir, &mut fs_mods);
+        scan_palschema_mods(&palschema_dir, &mut fs_mods, &workshop_package_names);
     }
 
     let pak_mods_dir = game.join("Pal").join("Content").join("Paks").join("~mods");
@@ -409,7 +416,6 @@ pub fn scan_mods_internal(
         scan_disabled_mods(&disabled_base, &mut fs_mods);
     }
 
-    let wmods = crate::workshop::scan_workshop_mods(game_path);
     for wmod in wmods.iter().filter(|m| !m.is_framework) {
         let game_mod_path = if wmod.install_type == WorkshopInstallType::PalSchemaMod {
             gp.palschema_mods_dir.join(&wmod.package_name)
@@ -417,6 +423,17 @@ pub fn scan_mods_internal(
             gp.ue4ss_mods_dir.join(&wmod.package_name)
         };
         
+        let mut details = format!(
+            "Steam Workshop Mod\n\n• Workshop ID: {}\n• Author: {}\n• Package Name: {}\n• Install Type: {:?}",
+            wmod.workshop_id,
+            wmod.author,
+            wmod.package_name,
+            wmod.install_type
+        );
+        if !wmod.dependencies.is_empty() {
+            details.push_str(&format!("\n• Dependencies: {}", wmod.dependencies.join(", ")));
+        }
+
         let display_name = format!("{} (Workshop)", wmod.mod_name);
         fs_mods.push(ModInfo {
             id: wmod.package_name.clone(),
@@ -426,9 +443,9 @@ pub fn scan_mods_internal(
                 _ => ModType::Ue4ss,
             },
             nexus_mod_id: None,
-            nexus_url: None,
+            nexus_url: Some(format!("https://steamcommunity.com/sharedfiles/filedetails/?id={}", wmod.workshop_id)),
             nexus_author: Some(wmod.author.clone()),
-            nexus_summary: Some("Steam Workshop Mod".to_string()),
+            nexus_summary: Some(details),
             nexus_picture_url: wmod.thumbnail_path.clone(),
             nexus_endorsements: None,
             nexus_downloads: None,
@@ -460,7 +477,7 @@ pub fn scan_mods_internal(
         });
     }
 
-    merge_scan_with_db(current_profile_id, installed_ids, db_mods, &fs_mods)
+    merge_scan_with_db(current_profile_id, installed_ids, db_mods, &fs_mods, &workshop_package_names)
 }
 
 fn merge_scan_with_db(
@@ -468,6 +485,7 @@ fn merge_scan_with_db(
     installed_ids: &[String],
     db_mods: &[ModInfo],
     fs_mods: &[ModInfo],
+    workshop_package_names: &std::collections::HashSet<String>,
 ) -> Vec<ModInfo> {
     let mut consolidated_db: Vec<ModInfo> = Vec::new();
     for db_mod in db_mods {
@@ -565,7 +583,7 @@ fn merge_scan_with_db(
                 merged.extra_files = fs_mod.extra_files.clone();
             }
             merged.enabled = fs_mod.enabled;
-            if fs_mod.nexus_summary.as_deref() == Some("Steam Workshop Mod") {
+            if fs_mod.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod")) {
                 merged.nexus_summary = fs_mod.nexus_summary.clone();
             }
             result.push(merged);
@@ -585,12 +603,14 @@ fn merge_scan_with_db(
                 && !normalized_disabled.contains(&format!("/profiles/{}/", current_profile_id));
 
             if !is_installed_in_current || is_disabled_in_other_profile {
-                let is_workshop = dm.nexus_summary.as_deref() == Some("Steam Workshop Mod");
+                let is_workshop = dm.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod"));
                 if is_workshop {
-                    let mut cleaned = dm.clone();
-                    cleaned.game_path = String::new();
-                    cleaned.enabled = false;
-                    result.push(cleaned);
+                    if workshop_package_names.contains(&dm.id.to_lowercase()) {
+                        let mut cleaned = dm.clone();
+                        cleaned.game_path = String::new();
+                        cleaned.enabled = false;
+                        result.push(cleaned);
+                    }
                 } else {
                     result.push(dm.clone());
                 }

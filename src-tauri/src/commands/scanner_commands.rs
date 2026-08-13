@@ -102,8 +102,11 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
             palschema_scanned += 1;
             let mut target_palschema_path = mod_path.to_path_buf();
             if m.mod_type == ModType::Hybrid {
-                if let Some(parent) = mod_path.parent() {
-                    target_palschema_path = parent.join("PalSchema").join("mods").join(mod_path.file_name().unwrap());
+                for extra in &m.extra_files {
+                    if extra.contains("PalSchema") {
+                        target_palschema_path = PathBuf::from(extra);
+                        break;
+                    }
                 }
             }
             if target_palschema_path.exists() {
@@ -113,7 +116,35 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
 
         if is_ue4ss {
             ue4ss_scanned += 1;
-            scan_ue4ss_mod(mod_path, &conflict_info, &mut hook_map, &mut warnings);
+            
+            let mut paths_to_scan = Vec::new();
+            if !m.game_path.is_empty() {
+                paths_to_scan.push(PathBuf::from(&m.game_path));
+            }
+            for extra in &m.extra_files {
+                if !extra.is_empty() {
+                    paths_to_scan.push(PathBuf::from(extra));
+                }
+            }
+
+            for base_path in paths_to_scan {
+                if !base_path.exists() {
+                    continue;
+                }
+                let scripts_path = if base_path.join("Scripts").exists() {
+                    Some(base_path.join("Scripts"))
+                } else if base_path.join("scripts").exists() {
+                    Some(base_path.join("scripts"))
+                } else if base_path.file_name().map(|n| n.to_string_lossy().to_lowercase()) == Some("scripts".to_string()) && base_path.is_dir() {
+                    Some(base_path.clone())
+                } else {
+                    None
+                };
+
+                if let Some(ref s_path) = scripts_path {
+                    scan_ue4ss_mod(&base_path, s_path, &conflict_info, &mut hook_map, &mut warnings);
+                }
+            }
         }
     }
 
@@ -320,15 +351,11 @@ fn extract_palschema_rows(
 
 fn scan_ue4ss_mod(
     mod_path: &Path,
+    scripts_path: &Path,
     conflict_info: &ConflictingMod,
     hook_map: &mut HashMap<String, (String, Vec<ConflictingMod>)>,
     _warnings: &mut Vec<String>,
 ) {
-    let scripts_path = mod_path.join("Scripts");
-    if !scripts_path.exists() {
-        return;
-    }
-
     let mut files_to_scan = Vec::new();
     collect_files_with_extensions(&scripts_path, &["lua"], &mut files_to_scan);
 
@@ -643,52 +670,72 @@ pub fn scan_mod_hotkeys(state: State<'_, AppState>) -> Result<Vec<ModHotkey>, St
     let mut hotkeys = Vec::new();
 
     for m in &profile_mods {
-        if !m.enabled || m.game_path.is_empty() {
+        if !m.enabled {
             continue;
         }
         if m.nexus_author.as_deref() == Some("UE4SS Native Mod") {
             continue;
         }
-        if m.mod_type != ModType::Ue4ss && m.mod_type != ModType::Hybrid {
+        if m.mod_type != ModType::Ue4ss && m.mod_type != ModType::Hybrid && m.mod_type != ModType::PalSchema {
             continue;
         }
 
-        let mod_path = Path::new(&m.game_path);
-        if !mod_path.exists() {
-            continue;
+        let mut paths_to_scan = Vec::new();
+        if !m.game_path.is_empty() {
+            paths_to_scan.push(PathBuf::from(&m.game_path));
+        }
+        for extra in &m.extra_files {
+            if !extra.is_empty() {
+                paths_to_scan.push(PathBuf::from(extra));
+            }
         }
 
-        let scripts_path = mod_path.join("Scripts");
-        if !scripts_path.exists() {
-            continue;
-        }
+        for base_path in paths_to_scan {
+            if !base_path.exists() {
+                continue;
+            }
 
-        let mut files_to_scan = Vec::new();
-        collect_files_with_extensions(&scripts_path, &["lua"], &mut files_to_scan);
+            let scripts_path = if base_path.join("Scripts").exists() {
+                Some(base_path.join("Scripts"))
+            } else if base_path.join("scripts").exists() {
+                Some(base_path.join("scripts"))
+            } else if base_path.file_name().map(|n| n.to_string_lossy().to_lowercase()) == Some("scripts".to_string()) && base_path.is_dir() {
+                Some(base_path.clone())
+            } else {
+                None
+            };
 
-        for file_path in files_to_scan {
-            if let Ok(content) = fs::read_to_string(&file_path) {
-                let lines: Vec<&str> = content.lines().collect();
-                for (idx, line) in lines.iter().enumerate() {
-                    let trimmed = line.trim();
-                    if trimmed.starts_with("--") {
-                        continue;
-                    }
-                    if trimmed.contains("RegisterKeyBind") {
-                        if let Some(keys) = extract_keys_from_line(line) {
-                            let rel_path = match file_path.strip_prefix(mod_path) {
-                                Ok(rel) => rel.to_string_lossy().to_string(),
-                                Err(_) => file_path.to_string_lossy().to_string(),
-                            };
-                            hotkeys.push(ModHotkey {
-                                mod_id: m.id.clone(),
-                                mod_name: m.name.clone(),
-                                file_path: rel_path,
-                                absolute_file_path: file_path.to_string_lossy().to_string(),
-                                line_number: idx + 1,
-                                keys,
-                                raw_line: line.to_string(),
-                            });
+            let Some(scripts_path) = scripts_path else {
+                continue;
+            };
+
+            let mut files_to_scan = Vec::new();
+            collect_files_with_extensions(&scripts_path, &["lua"], &mut files_to_scan);
+
+            for file_path in files_to_scan {
+                if let Ok(content) = fs::read_to_string(&file_path) {
+                    let lines: Vec<&str> = content.lines().collect();
+                    for (idx, line) in lines.iter().enumerate() {
+                        let trimmed = line.trim();
+                        if trimmed.starts_with("--") {
+                            continue;
+                        }
+                        if trimmed.contains("RegisterKeyBind") {
+                            if let Some(keys) = extract_keys_from_line(line) {
+                                let rel_path = match file_path.strip_prefix(&base_path) {
+                                    Ok(rel) => rel.to_string_lossy().to_string(),
+                                    Err(_) => file_path.to_string_lossy().to_string(),
+                                };
+                                hotkeys.push(ModHotkey {
+                                    mod_id: m.id.clone(),
+                                    mod_name: m.name.clone(),
+                                    file_path: rel_path,
+                                    absolute_file_path: file_path.to_string_lossy().to_string(),
+                                    line_number: idx + 1,
+                                    keys,
+                                    raw_line: line.to_string(),
+                                });
+                            }
                         }
                     }
                 }

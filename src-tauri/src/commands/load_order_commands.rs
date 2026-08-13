@@ -26,8 +26,8 @@ pub fn get_ue4ss_load_order(state: State<AppState>) -> Result<Vec<ModInfo>, Stri
         .collect();
 
     // 2. Try to read mods.txt to get order weights and enabled state
-    let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
+    let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+    let mods_txt = gp.mods_txt_path;
     
     let mut order_map = std::collections::HashMap::new();
     let mut enabled_map = std::collections::HashMap::new();
@@ -97,9 +97,9 @@ pub fn save_ue4ss_load_order(ordered_items: Vec<(String, bool)>, state: State<Ap
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let game_path = data.settings.game_path.clone();
     
-    let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let ue4ss_mods_dir = binaries_dir.join("ue4ss").join("Mods");
-    let mods_txt = ue4ss_mods_dir.join("mods.txt");
+    let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+    let ue4ss_mods_dir = gp.ue4ss_mods_dir;
+    let mods_txt = gp.mods_txt_path;
     if !mods_txt.exists() {
         return Err("mods.txt not found".to_string());
     }
@@ -309,15 +309,12 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
     let game_path = data.settings.game_path.clone();
     let force_order = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data);
 
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
-    let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+    let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+    let palschema_mods_dir = gp.palschema_mods_dir.clone();
+    let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
 
     if !palschema_mods_dir.exists() {
         let _ = fs::create_dir_all(&palschema_mods_dir);
-    }
-    if !palschema_storage_dir.exists() {
-        let _ = fs::create_dir_all(&palschema_storage_dir);
     }
 
     // Get current list of links in PalSchema/mods/
@@ -345,7 +342,7 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
             folder_name_opt = Some(folder_name.clone());
             mod_name_opt = Some(m.name.clone());
 
-            // Remove any existing junction matching this mod (numbered prefix or clean)
+            // Remove any existing links/folders matching this mod (numbered prefix or clean)
             for (path, name) in &current_mods_links {
                 if name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name) {
                     let _ = crate::profiles::remove_junction_or_symlink(path);
@@ -353,29 +350,35 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
             }
 
             if *enabled {
-                // Determine target link name
-                let link_name = if force_order {
-                    format!("{:03}_{}", idx, folder_name)
-                } else {
-                    folder_name.clone()
-                };
-
                 let target_storage = palschema_storage_dir.join(&folder_name);
-                let link_path = palschema_mods_dir.join(&link_name);
-                
-                // If it's enabled but doesn't exist in Storage, try migrating from mods/ (or default disabled)
-                if !target_storage.exists() {
-                    // Check if it's currently sitting directly in mods/ (unmigrated)
-                    let direct_mods_path = palschema_mods_dir.join(&folder_name);
-                    if direct_mods_path.exists() && !junction::exists(&direct_mods_path).unwrap_or(false) {
-                        let _ = fs::rename(&direct_mods_path, &target_storage);
-                    }
-                }
 
-                if target_storage.exists() {
-                    let _ = crate::profiles::create_junction_or_symlink(&target_storage, &link_path);
+                if force_order {
+                    let _ = fs::create_dir_all(&palschema_storage_dir);
+                    let link_name = format!("{:03}_{}", idx, folder_name);
+                    let link_path = palschema_mods_dir.join(&link_name);
+                    
+                    // If it's enabled but doesn't exist in Storage, try migrating from mods/
+                    if !target_storage.exists() {
+                        let direct_mods_path = palschema_mods_dir.join(&folder_name);
+                        if direct_mods_path.exists() && !junction::exists(&direct_mods_path).unwrap_or(false) {
+                            let _ = fs::rename(&direct_mods_path, &target_storage);
+                        }
+                    }
+
+                    if target_storage.exists() {
+                        let _ = crate::profiles::create_junction_or_symlink(&target_storage, &link_path);
+                        if m.mod_type == ModType::PalSchema {
+                            m.game_path = link_path.to_string_lossy().to_string();
+                            m.disabled_path = String::new();
+                        }
+                    }
+                } else {
+                    let direct_mods_path = palschema_mods_dir.join(&folder_name);
+                    if target_storage.exists() {
+                        let _ = crate::profiles::move_path(&target_storage, &direct_mods_path);
+                    }
                     if m.mod_type == ModType::PalSchema {
-                        m.game_path = link_path.to_string_lossy().to_string();
+                        m.game_path = direct_mods_path.to_string_lossy().to_string();
                         m.disabled_path = String::new();
                     }
                 }
@@ -383,13 +386,16 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
                 // If disabled, we move it back to disabled folder in profile
                 let profile_dir = crate::profiles::get_profile_dir(&program_path, &current_profile_id);
                 let disabled_base = profile_dir.join("disabled_mods");
-                let storage_path = palschema_storage_dir.join(&folder_name);
                 
-                if storage_path.exists() {
+                let storage_path = palschema_storage_dir.join(&folder_name);
+                let direct_mods_path = palschema_mods_dir.join(&folder_name);
+                let final_src = if storage_path.exists() { storage_path } else { direct_mods_path };
+                
+                if final_src.exists() {
                     let dest_dir = disabled_base.join("palschema");
                     let _ = fs::create_dir_all(&dest_dir);
                     let dest = dest_dir.join(&folder_name);
-                    if fs::rename(&storage_path, &dest).is_ok() {
+                    if crate::profiles::move_path(&final_src, &dest).is_ok() {
                         if m.mod_type == ModType::PalSchema {
                             m.disabled_path = dest.to_string_lossy().to_string();
                             m.game_path = String::new();

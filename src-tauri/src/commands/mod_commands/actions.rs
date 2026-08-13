@@ -59,6 +59,8 @@ pub fn scan_mods(state: State<AppState>) -> Result<Value, String> {
         return Ok(serde_json::json!([]));
     }
 
+    crate::workshop::cleanup_unsubscribed_workshop_mods(&game_path, &mut data.mods);
+
     let merged = scan_mods_internal(&game_path, &program_path, &current_profile_id, &installed_ids, &data.mods.clone());
     data.mods = merged;
     crate::profiles::auto_add_scanned_mods_to_profile(&mut data);

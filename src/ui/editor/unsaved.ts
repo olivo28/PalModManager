@@ -32,8 +32,10 @@ export async function confirmDiscardOrSave(): Promise<boolean> {
 }
 
 function generateLineDiff(original: string, current: string): string {
-  const origLines = original.split('\n');
-  const currLines = current.split('\n');
+  const normOriginal = original.replace(/\r\n/g, '\n');
+  const normCurrent = current.replace(/\r\n/g, '\n');
+  const origLines = normOriginal.split('\n');
+  const currLines = normCurrent.split('\n');
 
   interface DiffItem {
     type: 'added' | 'deleted' | 'unchanged';

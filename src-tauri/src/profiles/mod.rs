@@ -33,6 +33,9 @@ pub use core_lifecycle::{
 use crate::models::AppData;
 
 pub fn effective_force_ue4ss(data: &AppData) -> bool {
+    if !data.settings.force_load_order.unwrap_or(false) {
+        return false;
+    }
     let profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
     profile.and_then(|p| p.force_load_order_ue4ss)
         .or(data.settings.force_load_order_ue4ss)
@@ -40,6 +43,9 @@ pub fn effective_force_ue4ss(data: &AppData) -> bool {
 }
 
 pub fn effective_force_palschema(data: &AppData) -> bool {
+    if !data.settings.force_load_order.unwrap_or(false) {
+        return false;
+    }
     let profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
     profile.and_then(|p| p.force_load_order_palschema)
         .or(data.settings.force_load_order_palschema)

@@ -17,12 +17,15 @@ pub fn create_junction_or_symlink(target: &Path, link: &Path) -> Result<(), Stri
 
 /// Safely removes a junction or directory link without deleting the contents of the target folder
 pub fn remove_junction_or_symlink(link: &Path) -> Result<(), String> {
-    if !link.exists() {
-        return Ok(());
+    if let Ok(meta) = fs::symlink_metadata(link) {
+        if meta.is_dir() {
+            fs::remove_dir(link).map_err(|e| format!("Failed to remove directory link: {}", e))
+        } else {
+            fs::remove_file(link).map_err(|e| format!("Failed to remove file link: {}", e))
+        }
+    } else {
+        Ok(())
     }
-    // On Windows, removing a junction can be done safely by removing the directory link entry itself
-    // fs::remove_dir works on directory junctions/symlinks without deleting target content.
-    fs::remove_dir(link).map_err(|e| format!("Failed to remove junction: {}", e))
 }
 
 pub fn sanitize_profile_id(name: &str) -> String {
@@ -80,7 +83,8 @@ pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), String> {
         if is_symlink || is_junction {
             // Re-create the symlink or junction pointing to the same target instead of copying the content
             if let Ok(target) = fs::read_link(&path) {
-                if path.is_dir() {
+                let is_dir_link = fs::symlink_metadata(&path).map(|m| m.is_dir()).unwrap_or(false);
+                if is_dir_link {
                     let _ = create_junction_or_symlink(&target, &dest_path);
                 } else {
                     #[cfg(windows)]
