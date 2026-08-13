@@ -304,10 +304,27 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     </div>
   `;
 
+  const infoBannerHtml = `
+    <!-- Info notice banner -->
+    <div class="scanner-info-banner" style="margin-bottom: 20px; padding: 14px 18px; background: rgba(0, 188, 255, 0.06); border: 1px solid rgba(0, 188, 255, 0.2); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.5;">
+      <div style="font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; font-size: 13px;">
+        <span style="font-size: 14px;">ℹ</span>
+        <span>Understanding Mod Overlaps & Compatibility</span>
+      </div>
+      <div style="color: var(--text-secondary);">
+        <strong style="color: var(--text-primary);">UE4SS Hook Overlaps:</strong> Multiple mods can hook the exact same engine function simultaneously (callbacks will execute sequentially in order of mod loading). This is generally safe and compatible unless a mod explicitly blocks execution, alters return values incompatibly, or cancels event propagation.
+      </div>
+      <div style="color: var(--text-secondary);">
+        <strong style="color: var(--text-primary);">PalSchema Row Overlaps:</strong> If mods modify different keys/fields within the same row, they can function together. However, if they modify the exact same field key, only the mod loaded last (lowest in the list/load order) will take effect, overwriting the earlier ones.
+      </div>
+    </div>
+  `;
+
   container.innerHTML = `
     ${subTabHeader()}
     <div style="flex:1; display:flex; flex-direction:column; padding: 20px 24px; overflow-y:auto; box-sizing:border-box;">
       ${statCards}
+      ${infoBannerHtml}
       ${contentHtml}
       ${internalConflictsHtml}
       ${summariesHtml}

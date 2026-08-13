@@ -117,14 +117,61 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile: &P
         DependencyMode::None => {}
     }
 
-    if profile.dependency_mode == DependencyMode::Standard {
-        let palschema_game = ue4ss_mods_dir.join("PalSchema").join("mods");
-        let palschema_backup = profile_dir.join("palschema");
-        if palschema_backup.exists() {
-            let _ = fs::remove_dir_all(&palschema_backup);
+    // Backup user UE4SS mods from ue4ss_mods_dir
+    let ue4ss_mods_backup = profile_dir.join("ue4ss_mods");
+    if ue4ss_mods_backup.exists() {
+        let _ = fs::remove_dir_all(&ue4ss_mods_backup);
+    }
+    if ue4ss_mods_dir.exists() {
+        let _ = fs::create_dir_all(&ue4ss_mods_backup);
+        if let Ok(entries) = fs::read_dir(&ue4ss_mods_dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let lower = name.to_lowercase();
+                if lower == "palschema" || lower == "shared" || lower == "bpmodloadermod" || lower == "linetracemod" || lower == "mods.txt" || lower == "ue4ss_signatures" {
+                    continue;
+                }
+                let dst = ue4ss_mods_backup.join(&name);
+                if entry.path().is_dir() {
+                    let _ = copy_dir_all(&entry.path(), &dst);
+                } else {
+                    let _ = fs::copy(&entry.path(), &dst);
+                }
+            }
+        }
+    }
+
+    // Backup PalSchema mods (from mods/ and Storage/)
+    let palschema_game = ue4ss_mods_dir.join("PalSchema").join("mods");
+    let palschema_storage = ue4ss_mods_dir.join("PalSchema").join("Storage");
+    let palschema_backup = profile_dir.join("palschema");
+    if palschema_backup.exists() {
+        let _ = fs::remove_dir_all(&palschema_backup);
+    }
+    if palschema_game.exists() || palschema_storage.exists() {
+        let _ = fs::create_dir_all(&palschema_backup);
+        if palschema_storage.exists() {
+            if let Ok(entries) = fs::read_dir(&palschema_storage) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name();
+                    let dst = palschema_backup.join(&name);
+                    if entry.path().is_dir() {
+                        let _ = copy_dir_all(&entry.path(), &dst);
+                    }
+                }
+            }
         }
         if palschema_game.exists() {
-            let _ = copy_dir_all(&palschema_game, &palschema_backup);
+            if let Ok(entries) = fs::read_dir(&palschema_game) {
+                for entry in entries.flatten() {
+                    let path = entry.path();
+                    let name = entry.file_name();
+                    let dst = palschema_backup.join(&name);
+                    if !dst.exists() && path.is_dir() {
+                        let _ = copy_dir_all(&path, &dst);
+                    }
+                }
+            }
         }
     }
 
@@ -184,17 +231,47 @@ fn restore_profile_files_to_game(
     let ue4ss_game = if win64.join("dwmapi.dll").exists() { win64.join("ue4ss") } else { game_path_to_workshop_dir(game_path) };
     let dwmapi_game = win64.join("dwmapi.dll");
     let palschema_game = ue4ss_mods_dir.join("PalSchema").join("mods");
+    let palschema_storage = ue4ss_mods_dir.join("PalSchema").join("Storage");
     let paks_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("~mods");
     let logic_game = PathBuf::from(game_path).join("Pal").join("Content").join("Paks").join("LogicMods");
 
     if dwmapi_game.exists() { let _ = fs::remove_file(&dwmapi_game); }
 
-    // Safely remove any junctions in PalSchema mods folder to avoid dangling links blocking deletions
+    // Safely clean PalSchema mods folder and Storage
     if palschema_game.exists() {
         if let Ok(entries) = fs::read_dir(&palschema_game) {
             for entry in entries.flatten() {
                 let path = entry.path();
                 let _ = crate::profiles::remove_junction_or_symlink(&path);
+                if path.exists() {
+                    if path.is_dir() {
+                        let _ = fs::remove_dir_all(&path);
+                    } else {
+                        let _ = fs::remove_file(&path);
+                    }
+                }
+            }
+        }
+    }
+    if palschema_storage.exists() {
+        let _ = fs::remove_dir_all(&palschema_storage);
+    }
+
+    // Clean up user UE4SS mods from ue4ss_mods_dir
+    if ue4ss_mods_dir.exists() {
+        if let Ok(entries) = fs::read_dir(&ue4ss_mods_dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_string();
+                let lower = name.to_lowercase();
+                if lower == "palschema" || lower == "shared" || lower == "bpmodloadermod" || lower == "linetracemod" || lower == "mods.txt" || lower == "ue4ss_signatures" {
+                    continue;
+                }
+                let path = entry.path();
+                if path.is_dir() {
+                    let _ = fs::remove_dir_all(&path);
+                } else {
+                    let _ = fs::remove_file(&path);
+                }
             }
         }
     }
@@ -312,19 +389,36 @@ fn restore_profile_files_to_game(
         DependencyMode::None => {}
     }
 
-    if target_profile.palschema_enabled {
-        if target_profile.dependency_mode == DependencyMode::Workshop {
-            let root_backup = profile_dir.join("ue4ss_workshop_root");
-            if !root_backup.exists() {
-                let palschema_backup = profile_dir.join("palschema");
-                if palschema_backup.exists() {
-                    let _ = copy_dir_all(&palschema_backup, &palschema_game);
+    // Restore user UE4SS mods
+    let ue4ss_mods_backup = profile_dir.join("ue4ss_mods");
+    if ue4ss_mods_backup.exists() {
+        let _ = fs::create_dir_all(&ue4ss_mods_dir);
+        if let Ok(entries) = fs::read_dir(&ue4ss_mods_backup) {
+            for entry in entries.flatten() {
+                let src = entry.path();
+                let dst = ue4ss_mods_dir.join(src.file_name().unwrap());
+                if src.is_dir() {
+                    let _ = copy_dir_all(&src, &dst);
+                } else {
+                    let _ = fs::copy(&src, &dst);
                 }
             }
-        } else if target_profile.dependency_mode == DependencyMode::Standard {
-            let palschema_backup = profile_dir.join("palschema");
-            if palschema_backup.exists() {
-                let _ = copy_dir_all(&palschema_backup, &palschema_game);
+        }
+    }
+
+    // Restore PalSchema mods
+    let palschema_backup = profile_dir.join("palschema");
+    if palschema_backup.exists() {
+        let _ = fs::create_dir_all(&palschema_game);
+        if let Ok(entries) = fs::read_dir(&palschema_backup) {
+            for entry in entries.flatten() {
+                let src = entry.path();
+                let dst = palschema_game.join(src.file_name().unwrap());
+                if src.is_dir() {
+                    let _ = copy_dir_all(&src, &dst);
+                } else {
+                    let _ = fs::copy(&src, &dst);
+                }
             }
         }
     }

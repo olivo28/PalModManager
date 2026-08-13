@@ -422,7 +422,7 @@ pub fn scan_mods_internal(
         scan_disabled_mods(&disabled_base, &mut fs_mods);
     }
 
-    for wmod in wmods.iter().filter(|m| !m.is_framework) {
+    for wmod in wmods.iter().filter(|m| !m.is_framework && (m.is_installed || m.is_active)) {
         let game_mod_path = if wmod.install_type == WorkshopInstallType::PalSchemaMod {
             gp.palschema_mods_dir.join(&wmod.package_name)
         } else {

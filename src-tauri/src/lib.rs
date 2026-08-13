@@ -276,9 +276,33 @@ pub fn run() {
             let mut watch_paths = Vec::new();
             if !game_dir.is_empty() {
                 let gp = std::path::Path::new(&game_dir);
-                watch_paths.push(gp.join("Pal").join("Binaries").join("Win64").join("Mods"));
+                let win64_mods = gp.join("Pal").join("Binaries").join("Win64").join("Mods");
+                if win64_mods.exists() {
+                    watch_paths.push(win64_mods);
+                } else {
+                    watch_paths.push(gp.join("Pal").join("Binaries").join("Win64"));
+                }
                 watch_paths.push(gp.join("Pal").join("Content").join("Paks"));
                 watch_paths.push(gp.join("Pal").join("Binaries").join("Win64").join("PalSchema"));
+                watch_paths.push(gp.join("Mods").join("NativeMods"));
+
+                // Native Steam Workshop content directory (steamapps/workshop/content/1623730)
+                let ws_settings = crate::workshop::read_pal_mod_settings(&game_dir);
+                if !ws_settings.workshop_root.is_empty() {
+                    let ws_path = std::path::PathBuf::from(&ws_settings.workshop_root);
+                    if ws_path.exists() {
+                        watch_paths.push(ws_path);
+                    }
+                } else {
+                    let default_ws = gp
+                        .parent().and_then(|p| p.parent()).and_then(|p| p.parent())
+                        .map(|p| p.join("workshop").join("content").join("1623730"));
+                    if let Some(ws_path) = default_ws {
+                        if ws_path.exists() {
+                            watch_paths.push(ws_path);
+                        }
+                    }
+                }
             }
             if !prog_path.is_empty() {
                 let p = std::path::Path::new(&prog_path);

@@ -67,9 +67,10 @@
           <span class="sidebar-tab-icon">✎</span>
           <span class="sidebar-tab-label">Edit</span>
         </button>
-        <button class="sidebar-tab" data-tab="library" title="Mod Library">
+        <button class="sidebar-tab" data-tab="library" title="Mod Library" style="position:relative;">
           <span class="sidebar-tab-icon">📦</span>
           <span class="sidebar-tab-label">Library</span>
+          <span id="sidebar-library-badge" style="display:none;position:absolute;top:6px;right:6px;width:8px;height:8px;background:#00bcff;border-radius:50%;box-shadow:0 0 6px #00bcff;"></span>
         </button>
         <button class="sidebar-tab" data-tab="build" title="Mod Packer">
           <span class="sidebar-tab-icon">🛠</span>
@@ -90,7 +91,7 @@
           <span class="sidebar-tab-icon">▶</span>
           <span class="sidebar-tab-label">Play</span>
         </button>
-        <div id="sidebar-version" class="sidebar-version">V1.4.2</div>
+        <div id="sidebar-version" class="sidebar-version">V1.5.0</div>
         <button id="settings-btn" class="sidebar-btn" title="Settings">⚙</button>
       </div>
     </nav>
@@ -191,7 +192,10 @@
 
           <div class="library-sub-tabs" style="display:flex;gap:4px;background:rgba(0,0,0,0.2);padding:2px;border-radius:6px;border:1px solid var(--border);margin-left:8px;">
             <button class="library-sub-tab active" data-tab="local" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;transition:all 0.2s;">Local Library</button>
-            <button class="library-sub-tab" data-tab="workshop" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;transition:all 0.2s;">Steam Workshop</button>
+            <button class="library-sub-tab" data-tab="workshop" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
+              <span>Steam Workshop</span>
+              <span id="workshop-subtab-badge" style="display:none;font-size:8px;background:#00bcff;color:#fff;padding:1px 5px;border-radius:10px;font-weight:bold;">NEW</span>
+            </button>
           </div>
 
           <div id="library-workshop-master-wrap" style="display:none; align-items:center; gap:8px; margin-left:12px;">

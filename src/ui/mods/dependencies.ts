@@ -54,16 +54,26 @@ export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
   }
 
   if (!isInstalled || needsUpdate) {
-    const action = isInstalled ? 'Updating' : 'Installing';
-    const sourceInfo = type === 'ue4ss' ? 'UE4SS from GitHub (Okaetsu/UE4SS-Palworld)' : 'PalSchema from GitHub (Okaetsu/PalSchema)';
-    showToast(`${action} ${sourceInfo}...`, 'info');
-    const promise = type === 'ue4ss' ? installUe4ss() : installPalschema();
-    promise.then(async (msg) => {
-      showToast(msg, 'success');
-      await loadProfiles();
-      await loadDependencies();
-      await loadMods();
-    }).catch(e => showToast('Failed: ' + e, 'error'));
+    const action = isInstalled ? 'Update' : 'Install';
+    const depName = type === 'ue4ss' ? 'UE4SS (Unreal Engine 4/5 Scripting System)' : 'PalSchema';
+    const sourceInfo = type === 'ue4ss' ? 'Okaetsu/UE4SS-Palworld' : 'Okaetsu/PalSchema';
+
+    showConfirm(
+      `Do you want to ${action.toLowerCase()} ${depName} from GitHub (${sourceInfo})?`,
+      `${action} Dependency`
+    ).then((confirmed) => {
+      if (!confirmed) return;
+
+      const actionGerund = isInstalled ? 'Updating' : 'Installing';
+      showToast(`${actionGerund} ${depName} from GitHub (${sourceInfo})...`, 'info');
+      const promise = type === 'ue4ss' ? installUe4ss() : installPalschema();
+      promise.then(async (msg) => {
+        showToast(msg, 'success');
+        await loadProfiles();
+        await loadDependencies();
+        await loadMods();
+      }).catch(e => showToast('Failed: ' + e, 'error'));
+    });
   }
 }
 

@@ -48,6 +48,7 @@ pub fn get_profile_dir(program_path: &str, profile_id: &str) -> PathBuf {
 pub fn ensure_profile_structure(program_path: &str, profile_id: &str) -> PathBuf {
     let p_dir = get_profile_dir(program_path, profile_id);
     let _ = fs::create_dir_all(p_dir.join("ue4ss"));
+    let _ = fs::create_dir_all(p_dir.join("ue4ss_mods"));
     let _ = fs::create_dir_all(p_dir.join("ue4ss_workshop_mods"));
     let _ = fs::create_dir_all(p_dir.join("palschema"));
     let _ = fs::create_dir_all(p_dir.join("paks"));

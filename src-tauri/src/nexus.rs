@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-const APP_VERSION: &str = "1.4.2";
+const APP_VERSION: &str = "1.5.0";
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NexusModInfo {

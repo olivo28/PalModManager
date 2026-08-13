@@ -8,6 +8,87 @@ import { listen } from '@tauri-apps/api/event';
 export let _librarySearchQuery = '';
 export let _activeLibrarySubTab: 'local' | 'workshop' = 'local';
 
+const WORKSHOP_TIMESTAMPS_KEY = 'pmm_workshop_mod_timestamps';
+const NEW_MOD_DURATION_MS = 10 * 60 * 1000; // 10 minutes
+
+export function syncWorkshopModTimestamps(allWorkshopMods: Array<{ packageName: string; modName: string }>): {
+  newModCount: number;
+  newModNames: string[];
+} {
+  try {
+    const raw = localStorage.getItem(WORKSHOP_TIMESTAMPS_KEY);
+    const now = Date.now();
+
+    if (!raw) {
+      const initMap: Record<string, number> = {};
+      for (const m of allWorkshopMods) {
+        initMap[m.packageName] = 0;
+      }
+      localStorage.setItem(WORKSHOP_TIMESTAMPS_KEY, JSON.stringify(initMap));
+      return { newModCount: 0, newModNames: [] };
+    }
+
+    const map: Record<string, number> = JSON.parse(raw);
+    const newModNames: string[] = [];
+    let updated = false;
+
+    for (const m of allWorkshopMods) {
+      if (map[m.packageName] === undefined) {
+        map[m.packageName] = now;
+        newModNames.push(m.modName);
+        updated = true;
+      }
+    }
+
+    if (updated) {
+      localStorage.setItem(WORKSHOP_TIMESTAMPS_KEY, JSON.stringify(map));
+    }
+
+    let newCount = 0;
+    for (const m of allWorkshopMods) {
+      const addedAt = map[m.packageName];
+      if (addedAt && (now - addedAt) < NEW_MOD_DURATION_MS) {
+        newCount++;
+      }
+    }
+
+    return { newModCount: newCount, newModNames };
+  } catch {
+    return { newModCount: 0, newModNames: [] };
+  }
+}
+
+export function isWorkshopModNew(packageName: string): boolean {
+  try {
+    const raw = localStorage.getItem(WORKSHOP_TIMESTAMPS_KEY);
+    if (!raw) return false;
+    const map: Record<string, number> = JSON.parse(raw);
+    const addedAt = map[packageName];
+    if (!addedAt) return false;
+    return (Date.now() - addedAt) < NEW_MOD_DURATION_MS;
+  } catch {
+    return false;
+  }
+}
+
+export function updateWorkshopBadges(newCount: number): void {
+  const subtabBadge = document.getElementById('workshop-subtab-badge');
+  const sidebarBadge = document.getElementById('sidebar-library-badge');
+
+  if (subtabBadge) {
+    if (newCount > 0) {
+      subtabBadge.textContent = `+${newCount} NEW`;
+      subtabBadge.style.display = 'inline-block';
+    } else {
+      subtabBadge.style.display = 'none';
+    }
+  }
+
+  if (sidebarBadge) {
+    sidebarBadge.style.display = newCount > 0 ? 'block' : 'none';
+  }
+}
+
 export function setupLibraryHandlers(): void {
   const searchInput = document.getElementById('library-search-input') as HTMLInputElement | null;
   if (searchInput) {
@@ -20,6 +101,14 @@ export function setupLibraryHandlers(): void {
   // Listen for background Steam Workshop folder changes
   listen('workshop-directory-changed', async () => {
     console.log('[INFO] Workshop directory change detected, auto-refreshing Library...');
+    try {
+      const wState = await getWorkshopState();
+      const sync = syncWorkshopModTimestamps(wState.mods);
+      updateWorkshopBadges(sync.newModCount);
+      if (sync.newModNames.length > 0) {
+        showToast(`Steam Workshop: New mod subscribed — "${sync.newModNames[0]}"`, 'success');
+      }
+    } catch {}
     if (_activeLibrarySubTab === 'workshop') {
       renderLibraryView();
     }
@@ -73,6 +162,13 @@ export async function loadLibrary(): Promise<void> {
     const entries = await getLibrary();
     updateState({ libraryEntries: entries });
     renderLibraryView();
+
+    // Check workshop mods timestamps for badges (10 minute window)
+    try {
+      const wState = await getWorkshopState();
+      const sync = syncWorkshopModTimestamps(wState.mods);
+      updateWorkshopBadges(sync.newModCount);
+    } catch {}
 
     // Recompute available updates on active mods list so local library updates show on mod cards
     const currentMods = getState().allMods;
@@ -485,6 +581,11 @@ function compareVersions(a: string, b: string): number {
         const isDepMissing = m.dependencies.some((dep: string) => !wState.activeModList.includes(dep));
         const depWarning = isDepMissing ? `<div style="color:#ff4a4a; font-size:10px; margin-top:2px; text-align:center;">Missing dependencies: ${escapeHtml(m.dependencies.join(', '))}</div>` : '';
 
+        const isNew = isWorkshopModNew(m.packageName);
+        const newBadge = isNew
+          ? `<span style="font-size: 8px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,188,255,0.6); margin-left: 4px; letter-spacing: 0.5px;">✨ NEW</span>`
+          : '';
+
         const badgeText = m.isFramework ? 'FRAMEWORK' : 'WORKSHOP';
         const badgeStyle = `font-size: 8px; font-weight: bold; background: ${m.isFramework ? 'rgba(0,188,255,0.1)' : 'rgba(255, 157, 0, 0.1)'}; color: ${m.isFramework ? '#00bcff' : '#ff9d00'}; border: 1px solid ${m.isFramework ? 'rgba(0,188,255,0.2)' : 'rgba(255, 157, 0, 0.2)'}; padding: 1px 4px; border-radius: 3px;`;
 
@@ -493,8 +594,9 @@ function compareVersions(a: string, b: string): number {
 
         return `
           <div class="mod-card library-card workshop-card" data-package="${escapeHtml(m.packageName)}" style="position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
-            <div style="position:absolute;top:10px;right:10px;z-index:5;">
+            <div style="position:absolute;top:10px;right:10px;z-index:5;display:flex;align-items:center;">
               <span style="${badgeStyle}">${badgeText}</span>
+              ${newBadge}
             </div>
             <div style="padding-top:14px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
               <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
