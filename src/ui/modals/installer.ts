@@ -332,11 +332,11 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   if (existingMod) {
     _pendingUpdateModId = existingMod.id;
     updateHtml = `
-      <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.1);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists. (Installed: ${(existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : 'unknown version'}). Update it?</span>
-        <div style="display:flex;gap:8px;">
-          <button class="update-banner-btn" id="update-banner-btn" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Update</button>
-          <button class="update-banner-btn" id="install-new-btn" style="padding:4px 10px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:11px;font-weight:600;cursor:pointer;">Install as New</button>
+      <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
+        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists (Installed: ${(existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : 'unknown version'}).</span>
+        <div style="display:flex;gap:4px;background:var(--bg-primary);padding:2px;border-radius:5px;border:1px solid var(--border);">
+          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">Update</button>
+          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 10px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">Install as New</button>
         </div>
       </div>
     `;
@@ -498,23 +498,60 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     });
   });
 
-  // Wire up update/install-new buttons
-  const updateBannerBtn = document.getElementById('update-banner-btn');
-  const installNewBtn = document.getElementById('install-new-btn');
-  if (updateBannerBtn) {
-    updateBannerBtn.addEventListener('click', () => {
-      _pendingUpdateModId = existingMod!.id;
+  // Wire up update/install-new mode toggle buttons
+  const updateModeBtn = document.getElementById('update-mode-btn') as HTMLButtonElement | null;
+  const installNewModeBtn = document.getElementById('install-new-mode-btn') as HTMLButtonElement | null;
+  const folderInput = document.getElementById('mod-folder-name-input') as HTMLInputElement | null;
+
+  function setInstallMode(isUpdate: boolean) {
+    if (!existingMod) return;
+    if (isUpdate) {
+      _pendingUpdateModId = existingMod.id;
       confirmBtn.textContent = 'Update';
-      const banner = document.getElementById('update-banner');
-      if (banner) banner.style.display = 'none';
-    });
-  }
-  if (installNewBtn) {
-    installNewBtn.addEventListener('click', () => {
+      if (updateModeBtn) {
+        updateModeBtn.style.background = '#00bcff';
+        updateModeBtn.style.color = '#fff';
+      }
+      if (installNewModeBtn) {
+        installNewModeBtn.style.background = 'transparent';
+        installNewModeBtn.style.color = 'var(--text-secondary)';
+      }
+      if (folderInput) {
+        folderInput.value = manifest.folderName;
+        folderInput.disabled = true;
+        folderInput.style.cursor = 'not-allowed';
+      }
+    } else {
       _pendingUpdateModId = null;
       confirmBtn.textContent = 'Install';
-      const banner = document.getElementById('update-banner');
-      if (banner) banner.style.display = 'none';
+      if (updateModeBtn) {
+        updateModeBtn.style.background = 'transparent';
+        updateModeBtn.style.color = 'var(--text-secondary)';
+      }
+      if (installNewModeBtn) {
+        installNewModeBtn.style.background = '#00bcff';
+        installNewModeBtn.style.color = '#fff';
+      }
+      if (folderInput) {
+        folderInput.disabled = false;
+        folderInput.style.cursor = 'text';
+        if (folderInput.value === manifest.folderName) {
+          folderInput.value = `${manifest.folderName}_New`;
+        }
+      }
+    }
+  }
+
+  if (updateModeBtn) {
+    updateModeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setInstallMode(true);
+    });
+  }
+  if (installNewModeBtn) {
+    installNewModeBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      setInstallMode(false);
     });
   }
 
@@ -1017,8 +1054,9 @@ export async function handleInstallConfirm(): Promise<void> {
     cancelBtn.textContent = 'Close';
     confirmBtn.style.display = 'none';
 
-    const { loadMods } = await import('../modsView');
-    loadMods();
+    const { loadMods, loadLibrary } = await import('../modsView');
+    await loadMods();
+    await loadLibrary();
     return;
   }
 
@@ -1179,8 +1217,9 @@ async function executeModInstallation(
     statusEl.textContent = _pendingUpdateModId ? 'Updated successfully!' : 'Installed successfully!';
     setTimeout(async () => {
       closeInstallModal();
-      const { loadMods } = await import('../modsView');
-      loadMods();
+      const { loadMods, loadLibrary } = await import('../modsView');
+      await loadMods();
+      await loadLibrary();
     }, 1500);
   } catch (e) {
     logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Installation failed: ${escapeHtml(String(e))}</div>`);

@@ -73,6 +73,16 @@ export async function loadLibrary(): Promise<void> {
     const entries = await getLibrary();
     updateState({ libraryEntries: entries });
     renderLibraryView();
+
+    // Recompute available updates on active mods list so local library updates show on mod cards
+    const currentMods = getState().allMods;
+    if (currentMods && currentMods.length > 0) {
+      const { computeAvailableUpdates } = await import('./card');
+      const { renderModsView } = await import('./renderer');
+      const updatesMap = computeAvailableUpdates(currentMods, entries);
+      updateState({ availableUpdates: updatesMap });
+      renderModsView();
+    }
   } catch (e) {
     console.error('Failed to load library:', e);
   }
@@ -131,71 +141,286 @@ export async function renderLibraryView(): Promise<void> {
       return;
     }
 
-    container.innerHTML = entries.map(e => {
-      const isSelected = state.selectedLibraryIds.has(e.modId);
+    // Group entries by modId
+    const groupsMap = new Map<string, {
+      modId: string;
+      name: string;
+      author: string;
+      description: string;
+      modType: string;
+      nexusPictureUrl?: string | null;
+      nexusModId?: number | null;
+      isInstalled: boolean;
+      installedVersion: string | null;
+      versions: {
+        zipName: string;
+        zipSize: number;
+        version: string;
+        installedAt: string;
+      }[];
+    }>();
+
+    for (const e of entries) {
       const parsed = parseModFilename(e.zipName);
-      const cleanName = parsed.name || e.zipName;
-      const versionStr = parsed.version ? `v${parsed.version}` : '';
+      const cleanName = e.nexusName || parsed.name || e.modId || e.zipName;
+      const ver = e.version || (parsed.version ? `${parsed.version}` : (e.nexusVersion ? `${e.nexusVersion}` : '1.0'));
+
+      const groupKey = e.modId;
+      let group = groupsMap.get(groupKey);
+      if (!group) {
+        group = {
+          modId: e.modId,
+          name: cleanName,
+          author: e.author || e.nexusAuthor || '',
+          description: e.description || e.nexusSummary || '',
+          modType: (e.modType || '').toUpperCase(),
+          nexusPictureUrl: e.nexusPictureUrl,
+          nexusModId: e.nexusModId,
+          isInstalled: !!e.isInstalled,
+          installedVersion: e.installedVersion || null,
+          versions: [],
+        };
+        groupsMap.set(groupKey, group);
+      }
+
+      if (!group.nexusPictureUrl && e.nexusPictureUrl) group.nexusPictureUrl = e.nexusPictureUrl;
+      if (!group.author && (e.author || e.nexusAuthor)) group.author = e.author || e.nexusAuthor || '';
+      if (!group.description && (e.description || e.nexusSummary)) group.description = e.description || e.nexusSummary || '';
+      if (!group.modType && e.modType) group.modType = e.modType.toUpperCase();
+      if (e.isInstalled) {
+        group.isInstalled = true;
+        if (e.installedVersion) group.installedVersion = e.installedVersion;
+      }
+
+      if (!group.versions.some(v => v.zipName === e.zipName)) {
+        group.versions.push({
+          zipName: e.zipName,
+          zipSize: e.zipSize,
+          version: ver,
+          installedAt: e.installedAt,
+        });
+      }
+    }
+
+    const groups = Array.from(groupsMap.values());
+    for (const g of groups) {
+      g.versions.sort((a, b) => {
+        const cleanA = a.version.replace(/^[^\d]*/, '').split('.').map(n => parseInt(n, 10) || 0);
+        const cleanB = b.version.replace(/^[^\d]*/, '').split('.').map(n => parseInt(n, 10) || 0);
+        for (let i = 0; i < Math.max(cleanA.length, cleanB.length); i++) {
+          const numA = cleanA[i] || 0;
+          const numB = cleanB[i] || 0;
+          if (numA !== numB) return numB - numA;
+        }
+        return b.version.localeCompare(a.version);
+      });
+    }
+
+function compareVersions(a: string, b: string): number {
+  const parseParts = (v: string) => v.replace(/^[^\d]*/, '').split(/[\.-]/).map(n => parseInt(n, 10) || 0);
+  const partsA = parseParts(a);
+  const partsB = parseParts(b);
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = partsA[i] || 0;
+    const numB = partsB[i] || 0;
+    if (numA !== numB) return numA - numB;
+  }
+  return a.localeCompare(b);
+}
+
+    container.innerHTML = groups.map(group => {
+      const isSelected = state.selectedLibraryIds.has(group.modId);
+      const latestVerObj = group.versions[0];
+      const latestVersion = latestVerObj ? latestVerObj.version : '1.0';
+      const cleanName = group.name;
+      const author = group.author;
+      const description = group.description;
+      const modType = group.modType;
+
+      let statusBadgeHtml = '';
+      let installBtnText = 'Install';
+      let isUpdateAvailable = false;
+
+      if (group.isInstalled) {
+        const cmp = group.installedVersion ? compareVersions(latestVersion, group.installedVersion) : 0;
+        if (cmp > 0) {
+          isUpdateAvailable = true;
+          statusBadgeHtml = `<span class="library-status-badge badge-warning" title="Installed: v${escapeHtml(group.installedVersion || '')}">Installed (v${escapeHtml(group.installedVersion || '')})</span>`;
+          installBtnText = `Update to v${escapeHtml(latestVersion)}`;
+        } else if (cmp === 0) {
+          statusBadgeHtml = `<span class="library-status-badge badge-success" title="Currently installed in game">Installed${group.installedVersion && group.installedVersion !== 'unknown' ? ' (v' + escapeHtml(group.installedVersion) + ')' : ''}</span>`;
+          installBtnText = 'Reinstall';
+        } else {
+          statusBadgeHtml = `<span class="library-status-badge badge-success" title="Currently installed in game">Installed (v${escapeHtml(group.installedVersion || '')})</span>`;
+          installBtnText = `Rollback to v${escapeHtml(latestVersion)}`;
+        }
+      } else {
+        statusBadgeHtml = `<span class="library-status-badge badge-muted">Not Installed</span>`;
+        installBtnText = group.versions.length > 1 ? `Install v${escapeHtml(latestVersion)}` : 'Install';
+      }
 
       let imageHtml = `<div style="font-size:32px;text-align:center;color:var(--text-muted);opacity:0.8;margin:8px 0;">📦</div>`;
-      if (e.nexusPictureUrl) {
-        let resolvedSrc = e.nexusPictureUrl;
+      let resolvedSrc = group.nexusPictureUrl;
+      if (resolvedSrc) {
         if (!resolvedSrc.startsWith('http://') && !resolvedSrc.startsWith('https://')) {
           try { resolvedSrc = convertFileSrc(resolvedSrc); } catch (err) { console.error(err); }
         }
         imageHtml = `
-          <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
+          <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
             <img src="${resolvedSrc}" style="width:100%;height:100%;object-fit:cover;" />
+            ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
           </div>
         `;
       } else {
         const matchedMod = state.allMods.find(m => {
-          if (m.name.toLowerCase() === e.modId.toLowerCase()) return true;
-          if (m.nexusModId && parsed.nexusId && m.nexusModId === parsed.nexusId) return true;
+          if (m.name.toLowerCase() === group.modId.toLowerCase()) return true;
+          if (m.nexusModId && group.nexusModId && m.nexusModId === group.nexusModId) return true;
           if (m.name.toLowerCase() === cleanName.toLowerCase()) return true;
           return false;
         });
         if (matchedMod && matchedMod.nexusPictureUrl) {
-          let resolvedSrc = matchedMod.nexusPictureUrl;
-          if (!resolvedSrc.startsWith('http://') && !resolvedSrc.startsWith('https://')) {
-            try { resolvedSrc = convertFileSrc(resolvedSrc); } catch (err) { console.error(err); }
+          let src = matchedMod.nexusPictureUrl;
+          if (!src.startsWith('http://') && !src.startsWith('https://')) {
+            try { src = convertFileSrc(src); } catch (err) { console.error(err); }
           }
           imageHtml = `
-            <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
-              <img src="${resolvedSrc}" style="width:100%;height:100%;object-fit:cover;" />
+            <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
+              <img src="${src}" style="width:100%;height:100%;object-fit:cover;" />
+              ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
+            </div>
+          `;
+        } else {
+          imageHtml = `
+            <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
+              <div style="font-size:28px;opacity:0.6;">📦</div>
+              ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             </div>
           `;
         }
       }
 
+      const versionControlsHtml = group.versions.length > 1 ? `
+        <div style="display:flex;align-items:center;gap:6px;width:100%;margin-top:auto;border-top:1px solid var(--border);padding-top:6px;">
+          <select class="library-version-select form-select" data-id="${group.modId}" style="flex:1;padding:4px 6px;font-size:11px;font-weight:600;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;">
+            ${group.versions.map((v, idx) => `
+              <option value="${escapeHtml(v.zipName)}" data-version="${escapeHtml(v.version)}" data-size="${formatSize(v.zipSize)}">
+                v${escapeHtml(v.version)} ${idx === 0 ? '(Latest)' : ''}
+              </option>
+            `).join('')}
+          </select>
+          <span class="library-card-size" style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${formatSize(latestVerObj.zipSize)}</span>
+        </div>
+      ` : `
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;margin-top:auto;">
+          <span style="font-weight:600;color:var(--text-primary);">v${escapeHtml(latestVersion)}</span>
+          <span class="library-card-size">${formatSize(latestVerObj.zipSize)}</span>
+        </div>
+      `;
+
       return `
-        <div class="mod-card library-card ${isSelected ? 'selected' : ''}" data-id="${e.modId}" style="cursor:pointer;position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
-          <div class="card-checkbox-container" style="position:absolute;top:10px;left:10px;z-index:5;">
-            <input type="checkbox" class="library-card-checkbox" data-id="${e.modId}" ${isSelected ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;" />
+        <div class="mod-card library-card ${isSelected ? 'selected' : ''}" data-id="${group.modId}" data-is-installed="${group.isInstalled}" data-installed-version="${escapeHtml(group.installedVersion || '')}" style="cursor:pointer;position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
+          <div class="library-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
+            <div class="card-checkbox-container" style="display:flex;align-items:center;">
+              <input type="checkbox" class="library-card-checkbox" data-id="${group.modId}" ${isSelected ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;" />
+            </div>
+            ${statusBadgeHtml}
           </div>
-          <div style="padding-top:14px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
+          
+          <div style="display:flex;flex-direction:column;gap:6px;height:100%;justify-content:space-between;">
             ${imageHtml}
-            <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:center;word-break:break-word;line-height:1.3;flex:1;min-height:36px;display:flex;align-items:center;justify-content:center;margin-top:4px;">
-              ${escapeHtml(cleanName)}
+            <div>
+              <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:left;word-break:break-word;line-height:1.3;margin-top:2px;">
+                ${escapeHtml(cleanName)}
+              </div>
+              ${author ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;text-align:left;">by ${escapeHtml(author)}</div>` : ''}
+              ${description ? `<div style="font-size:10px;color:var(--text-secondary);opacity:0.8;line-height:1.3;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word;" title="${escapeHtml(description)}">${escapeHtml(description)}</div>` : ''}
             </div>
-            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;margin-top:auto;">
-              <span>${versionStr}</span>
-              <span>${formatSize(e.zipSize)}</span>
-            </div>
+
+            ${versionControlsHtml}
+
             <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
-              <button class="library-item-install btn-action" data-id="${e.modId}" style="flex:1;padding:4px;font-size:10px;cursor:pointer;">Install</button>
-              <button class="library-item-delete btn-action btn-action-danger" data-id="${e.modId}" data-zip="${escapeHtml(e.zipName)}" style="padding:4px 8px;font-size:10px;cursor:pointer;">✕</button>
+              <button class="library-item-install btn-action ${isUpdateAvailable ? 'btn-action-primary' : ''}" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" style="flex:1;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;">${installBtnText}</button>
+              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" title="Remove selected archive from library" style="padding:5px 8px;font-size:11px;cursor:pointer;">✕</button>
             </div>
           </div>
         </div>
       `;
     }).join('');
 
+    container.querySelectorAll('.library-version-select').forEach(sel => {
+      sel.addEventListener('click', (ev) => ev.stopPropagation());
+      sel.addEventListener('change', (ev) => {
+        ev.stopPropagation();
+        const select = ev.target as HTMLSelectElement;
+        const card = select.closest('.library-card') as HTMLElement;
+        if (!card) return;
+        const selectedZip = select.value;
+        const selectedOption = select.selectedOptions[0];
+        const selectedVer = selectedOption?.dataset.version || '';
+        const selectedSize = selectedOption?.dataset.size || '';
+
+        const installBtn = card.querySelector('.library-item-install') as HTMLButtonElement | null;
+        const deleteBtn = card.querySelector('.library-item-delete') as HTMLButtonElement | null;
+        const statusBadge = card.querySelector('.library-status-badge') as HTMLElement | null;
+        const sizeSpan = card.querySelector('.library-card-size') as HTMLElement | null;
+        const installedVer = card.dataset.installedVersion || '';
+        const isInstalled = card.dataset.isInstalled === 'true';
+
+        if (installBtn) {
+          installBtn.dataset.zip = selectedZip;
+          if (isInstalled) {
+            const cmp = installedVer ? compareVersions(selectedVer, installedVer) : 0;
+            if (cmp === 0) {
+              installBtn.textContent = 'Reinstall';
+              installBtn.classList.remove('btn-action-primary');
+            } else if (cmp > 0) {
+              installBtn.textContent = `Update to v${selectedVer}`;
+              installBtn.classList.add('btn-action-primary');
+            } else {
+              installBtn.textContent = `Rollback to v${selectedVer}`;
+              installBtn.classList.remove('btn-action-primary');
+            }
+          } else {
+            installBtn.textContent = `Install v${selectedVer}`;
+            installBtn.classList.remove('btn-action-primary');
+          }
+        }
+
+        if (deleteBtn) {
+          deleteBtn.dataset.zip = selectedZip;
+        }
+
+        if (sizeSpan) {
+          sizeSpan.textContent = selectedSize;
+        }
+
+        if (statusBadge) {
+          if (isInstalled) {
+            const cmp = installedVer ? compareVersions(selectedVer, installedVer) : 0;
+            if (cmp === 0) {
+              statusBadge.className = 'library-status-badge badge-success';
+              statusBadge.textContent = `Installed (v${installedVer})`;
+            } else if (cmp > 0) {
+              statusBadge.className = 'library-status-badge badge-warning';
+              statusBadge.textContent = `Installed (v${installedVer})`;
+            } else {
+              statusBadge.className = 'library-status-badge badge-success';
+              statusBadge.textContent = `Installed (v${installedVer})`;
+            }
+          } else {
+            statusBadge.className = 'library-status-badge badge-muted';
+            statusBadge.textContent = 'Not Installed';
+          }
+        }
+      });
+    });
+
     container.querySelectorAll('.library-item-install').forEach(btn => {
       btn.addEventListener('click', async (ev) => {
         ev.stopPropagation();
         const id = (btn as HTMLElement).dataset.id!;
-        await triggerInstallFromLibrary(id);
+        const zip = (btn as HTMLElement).dataset.zip;
+        await triggerInstallFromLibrary(id, zip);
       });
     });
 
@@ -204,7 +429,7 @@ export async function renderLibraryView(): Promise<void> {
         ev.stopPropagation();
         const id = (btn as HTMLElement).dataset.id!;
         const zip = (btn as HTMLElement).dataset.zip!;
-        if (confirm(`Are you sure you want to remove "${zip}" from your library?`)) {
+        if (confirm(`Are you sure you want to remove version "${zip}" from your library?\n\n(Other versions of this mod in your library will NOT be deleted)`)) {
           try {
             await removeFromLibrary(id, zip);
             showToast('Mod version removed from library', 'success');
@@ -340,12 +565,12 @@ export async function renderLibraryView(): Promise<void> {
   }
 }
 
-export async function triggerInstallFromLibrary(id: string): Promise<void> {
+export async function triggerInstallFromLibrary(id: string, zipName?: string): Promise<void> {
   try {
     const { getLibraryZipPath, analyzeZip, checkModExistsCommand } = await import('../../api');
     const { renderInstallPreview, showInstallModal } = await import('../modal');
 
-    const zipPath = await getLibraryZipPath(id);
+    const zipPath = await getLibraryZipPath(id, zipName);
     const analysis = await analyzeZip(zipPath);
     const check = await checkModExistsCommand(zipPath);
 

@@ -436,6 +436,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
                     ignored_version: None,
                     nexus_file_id: None,
                     ignored_keys: None,
+                    has_pending_update: None,
                 });
             }
         }

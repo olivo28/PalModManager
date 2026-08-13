@@ -85,6 +85,12 @@ export interface LibraryEntry {
   nexusSummary?: string | null;
   nexusModId?: number | null;
   nexusVersion?: string | null;
+  author?: string | null;
+  description?: string | null;
+  version?: string | null;
+  modType?: string | null;
+  isInstalled?: boolean;
+  installedVersion?: string | null;
 }
 
 

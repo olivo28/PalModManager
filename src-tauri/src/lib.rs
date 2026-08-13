@@ -11,6 +11,7 @@ mod zip_handler;
 mod logger;
 pub mod config_merge;
 mod workshop;
+mod watcher;
 
 
 use commands::mod_commands;
@@ -200,7 +201,7 @@ pub fn run() {
             workshop_commands::prepare_workshop_update_zip,
             launch_commands::launch_game,
         ])
-        .setup(|app| {
+        .setup(move |app| {
             let state = app.state::<AppState>();
             let settings = {
                 let data = state.data.lock().unwrap();
@@ -264,6 +265,27 @@ pub fn run() {
                     }
                 }
             });
+
+            // Start reactive filesystem watcher on all active mod directories
+            let (game_dir, prog_path) = {
+                let state = app.state::<AppState>();
+                let lock_res = state.data.lock();
+                lock_res.map(|d| (d.settings.game_path.clone(), d.settings.program_path.clone())).unwrap_or_default()
+            };
+
+            let mut watch_paths = Vec::new();
+            if !game_dir.is_empty() {
+                let gp = std::path::Path::new(&game_dir);
+                watch_paths.push(gp.join("Pal").join("Binaries").join("Win64").join("Mods"));
+                watch_paths.push(gp.join("Pal").join("Content").join("Paks"));
+                watch_paths.push(gp.join("Pal").join("Binaries").join("Win64").join("PalSchema"));
+            }
+            if !prog_path.is_empty() {
+                let p = std::path::Path::new(&prog_path);
+                watch_paths.push(p.join("mods-library"));
+            }
+
+            watcher::start_fs_watcher(app.handle().clone(), watch_paths);
 
             Ok(())
         })

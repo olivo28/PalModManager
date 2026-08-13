@@ -459,6 +459,7 @@ pub fn execute_manifest(
         ignored_version: None,
         nexus_file_id: manifest.nexus_file_id,
         ignored_keys: None,
+        has_pending_update: None,
     })
 }
 

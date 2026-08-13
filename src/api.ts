@@ -344,8 +344,8 @@ export async function fetchNexusInfoAsync(modId: number): Promise<any> {
   return invoke('fetch_nexus_info_async', { modId });
 }
 
-export async function getLibraryZipPath(modId: string): Promise<string> {
-  return invoke('get_library_zip_path', { modId });
+export async function getLibraryZipPath(modId: string, zipName?: string): Promise<string> {
+  return invoke('get_library_zip_path', { modId, zipName: zipName || null });
 }
 
 export async function copyToLibraryCommand(zipPath: string, modName?: string): Promise<LibraryEntry> {

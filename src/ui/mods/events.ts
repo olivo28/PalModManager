@@ -78,6 +78,61 @@ export function attachCardEvents(container: HTMLElement): void {
     });
   });
 
+  container.querySelectorAll('.mod-card-update-badge').forEach((badge) => {
+    badge.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const card = (e.currentTarget as HTMLElement).closest('.mod-card') as HTMLElement | null;
+      if (!card) return;
+      const modId = card.dataset.id!;
+      const isWorkshop = card.dataset.isWorkshop === 'true';
+      const mod = getState().allMods.find(m => m.id === modId);
+      if (!mod) return;
+
+      try {
+        if (isWorkshop) {
+          showToast('Preparing workshop update files...', 'info');
+          const { prepareWorkshopUpdateZip, analyzeZip, checkModExistsCommand } = await import('../../api');
+          const { renderInstallPreview, showInstallModal } = await import('../modal');
+          const zipPath = await prepareWorkshopUpdateZip(mod.id);
+          const analysis = await analyzeZip(zipPath);
+          const check = await checkModExistsCommand(zipPath);
+          const existingMod = check.exists && check.modInfo 
+            ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } 
+            : null;
+          renderInstallPreview(analysis, existingMod);
+          showInstallModal();
+        } else {
+          const updateVer = getState().availableUpdates?.get(modId);
+          const libEntries = getState().libraryEntries || [];
+          const normModName = mod.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normModId = mod.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const matchingLib = libEntries.find(entry => {
+            const normLibId = (entry.modId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normLibName = (entry.nexusName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isMatch = normLibId === normModName || normLibId === normModId || (normLibName !== '' && normLibName === normModName) || (entry.nexusModId && mod.nexusModId && entry.nexusModId === mod.nexusModId);
+            if (!isMatch) return false;
+            if (updateVer) {
+              const eVer = (entry.version || '').replace(/^v/i, '').trim();
+              return eVer === updateVer.replace(/^v/i, '').trim();
+            }
+            return true;
+          });
+
+          if (matchingLib) {
+            const { triggerInstallFromLibrary } = await import('./library');
+            await triggerInstallFromLibrary(matchingLib.modId, matchingLib.zipName);
+          } else {
+            const { openDetailPanel } = await import('../detailPanel');
+            openDetailPanel(modId);
+            showToast(`Update v${updateVer} is available`, 'info');
+          }
+        }
+      } catch (err) {
+        showToast('Failed to start update: ' + err, 'error');
+      }
+    });
+  });
+
   container.querySelectorAll('.card-remove-btn').forEach((btn) => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();

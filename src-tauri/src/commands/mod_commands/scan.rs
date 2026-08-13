@@ -72,6 +72,7 @@ fn load_from_modinfo_pmm_json(path: &Path) -> Option<ModInfo> {
         ignored_version: None,
         nexus_file_id: None,
         ignored_keys: None,
+        has_pending_update: None,
     })
 }
 
@@ -182,6 +183,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
                 ignored_version: None,
                 nexus_file_id: None,
                 ignored_keys: None,
+                has_pending_update: None,
             });
         }
     }
@@ -227,6 +229,7 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
                     ignored_version: None,
                     nexus_file_id: None,
                     ignored_keys: None,
+                    has_pending_update: None,
                 });
             }
         }
@@ -278,6 +281,7 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<ModInfo>) {
             ignored_version: None,
             nexus_file_id: None,
             ignored_keys: None,
+            has_pending_update: None,
         });
     }
 }
@@ -319,6 +323,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     ignored_version: None,
                     nexus_file_id: None,
                     ignored_keys: None,
+                    has_pending_update: None,
                 });
             }
         }
@@ -363,6 +368,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     ignored_version: None,
                     nexus_file_id: None,
                     ignored_keys: None,
+                    has_pending_update: None,
                 });
             }
         }

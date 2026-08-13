@@ -15,7 +15,7 @@ export function isVersionNewer(local: string, remote: string): boolean {
   return false;
 }
 
-export function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
+export function computeAvailableUpdates(mods: ModInfo[], libraryEntries?: any[]): Map<string, string> {
   const updatesMap = new Map<string, string>();
   for (const m of mods) {
     if (m.hasPendingUpdate && m.nexusVersionCached) {
@@ -28,6 +28,38 @@ export function computeAvailableUpdates(mods: ModInfo[]): Map<string, string> {
       const normIgnored = m.ignoredVersion ? m.ignoredVersion.replace(/^v/i, '').trim().toLowerCase() : '';
       if (normNexus !== '' && normNexus !== 'unknown' && normLocal !== 'unknown' && isVersionNewer(normLocal, normNexus) && normNexus !== normIgnored) {
         updatesMap.set(m.id, m.nexusVersionCached);
+        continue;
+      }
+    }
+
+    // Check if a newer version exists in local Library!
+    if (libraryEntries && m.version) {
+      const normLocal = m.version.replace(/^v/i, '').trim().toLowerCase();
+      const normModName = m.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+      const normModId = m.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+      const matchingLibEntries = libraryEntries.filter(e => {
+        const normLibId = (e.modId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const normLibName = (e.nexusName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        return normLibId === normModName || normLibId === normModId || (normLibName !== '' && (normLibName === normModName || normLibName === normModId)) || (e.nexusModId && m.nexusModId && e.nexusModId === m.nexusModId);
+      });
+
+      let highestLibVer: string | null = null;
+      for (const libEntry of matchingLibEntries) {
+        const rawVer = libEntry.version || '';
+        const libVer = rawVer.replace(/^v/i, '').trim().toLowerCase();
+        if (libVer && libVer !== 'unknown' && normLocal !== 'unknown' && isVersionNewer(normLocal, libVer)) {
+          if (!highestLibVer || isVersionNewer(highestLibVer, libVer)) {
+            highestLibVer = rawVer.replace(/^v/i, '').trim();
+          }
+        }
+      }
+
+      if (highestLibVer) {
+        const normIgnored = m.ignoredVersion ? m.ignoredVersion.replace(/^v/i, '').trim().toLowerCase() : '';
+        if (highestLibVer.toLowerCase() !== normIgnored) {
+          updatesMap.set(m.id, highestLibVer);
+        }
       }
     }
   }

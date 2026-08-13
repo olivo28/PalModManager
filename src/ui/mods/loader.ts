@@ -15,7 +15,7 @@ export async function loadMods(): Promise<void> {
   try {
     const cachedMods = await getMods();
     if (cachedMods && cachedMods.length > 0) {
-      const updatesMap = computeAvailableUpdates(cachedMods);
+      const updatesMap = computeAvailableUpdates(cachedMods, getState().libraryEntries);
       updateState({ allMods: cachedMods, availableUpdates: updatesMap });
       renderModsView();
       populateAdvancedFilters();
@@ -32,7 +32,7 @@ export async function loadMods(): Promise<void> {
   try {
     const oldMods = getState().allMods || [];
     const freshMods = await scanMods();
-    const updatesMap = computeAvailableUpdates(freshMods);
+    const updatesMap = computeAvailableUpdates(freshMods, getState().libraryEntries);
 
     // Alert user if Steam Workshop updates were found
     const newlyUpdated = freshMods.filter(m => {

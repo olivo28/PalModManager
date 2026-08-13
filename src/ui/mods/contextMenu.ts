@@ -22,6 +22,7 @@ export function runContextAction(action: string, modId: string): void {
         try {
           showToast(`Checking updates for "${mod.name}"...`, 'info');
           const { refreshNexusCache } = await import('../../api');
+          const { isVersionNewer } = await import('./card');
           const updated = await refreshNexusCache(modId);
           const idx = getState().allMods.findIndex(m => m.id === modId);
           if (idx >= 0) {
@@ -30,17 +31,40 @@ export function runContextAction(action: string, modId: string): void {
             updateState({ allMods: newMods });
           }
           const nexusVer = updated.nexusVersionCached;
-          const localVer = updated.version;
+          const localVer = updated.version || '0.0';
           const normNexus = (nexusVer || '').replace(/^v/i, '').trim().toLowerCase();
-          const normLocal = (localVer || '').replace(/^v/i, '').trim().toLowerCase();
-          const isNewUpdate = nexusVer && normNexus !== normLocal && normNexus !== 'unknown' && !normLocal.startsWith(normNexus);
+          const normLocal = localVer.replace(/^v/i, '').trim().toLowerCase();
+          const isNexusUpdate = nexusVer && normNexus !== normLocal && normNexus !== 'unknown' && isVersionNewer(normLocal, normNexus);
 
+          // Also check local library
+          const libEntries = getState().libraryEntries || [];
+          const normModName = mod.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normModId = mod.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const matchingLibEntries = libEntries.filter(e => {
+            const normLibId = (e.modId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normLibName = (e.nexusName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return normLibId === normModName || normLibId === normModId || (normLibName !== '' && (normLibName === normModName || normLibName === normModId)) || (e.nexusModId && mod.nexusModId && e.nexusModId === mod.nexusModId);
+          });
+
+          let highestLibVer: string | null = null;
+          for (const libEntry of matchingLibEntries) {
+            const rawVer = libEntry.version || '';
+            const libVer = rawVer.replace(/^v/i, '').trim().toLowerCase();
+            if (libVer && libVer !== 'unknown' && normLocal !== 'unknown' && isVersionNewer(normLocal, libVer)) {
+              if (!highestLibVer || isVersionNewer(highestLibVer, libVer)) {
+                highestLibVer = rawVer.replace(/^v/i, '').trim();
+              }
+            }
+          }
+
+          const targetUpdateVer = highestLibVer || (isNexusUpdate ? nexusVer : null);
           const newMap = new Map(getState().availableUpdates);
-          if (isNewUpdate) {
-            newMap.set(modId, nexusVer!);
+
+          if (targetUpdateVer) {
+            newMap.set(modId, targetUpdateVer);
             updateState({ availableUpdates: newMap });
             renderModsView();
-            showToast(`Update available: v${nexusVer} (current: v${localVer})`, 'info');
+            showToast(`Update available: v${targetUpdateVer} (current: v${localVer})`, 'info');
           } else {
             newMap.delete(modId);
             updateState({ availableUpdates: newMap });
@@ -49,6 +73,39 @@ export function runContextAction(action: string, modId: string): void {
           }
         } catch (e) {
           showToast('Failed to check updates: ' + e, 'error');
+        }
+      })();
+      break;
+    case 'update-local-mod':
+      (async () => {
+        try {
+          const updateVer = getState().availableUpdates.get(modId);
+          const libEntries = getState().libraryEntries || [];
+          const normModName = mod.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normModId = mod.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+
+          const matchingLib = libEntries.find(e => {
+            const normLibId = (e.modId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const normLibName = (e.nexusName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const isMatch = normLibId === normModName || normLibId === normModId || (normLibName !== '' && (normLibName === normModName || normLibName === normModId)) || (e.nexusModId && mod.nexusModId && e.nexusModId === mod.nexusModId);
+            if (!isMatch) return false;
+            if (updateVer) {
+              const eVer = (e.version || '').replace(/^v/i, '').trim();
+              return eVer === updateVer.replace(/^v/i, '').trim();
+            }
+            return true;
+          });
+
+          if (matchingLib) {
+            const { triggerInstallFromLibrary } = await import('./library');
+            await triggerInstallFromLibrary(matchingLib.modId, matchingLib.zipName);
+          } else {
+            const { openDetailPanel } = await import('../detailPanel');
+            openDetailPanel(modId);
+            showToast(`Update v${updateVer} is available on Nexus Mods`, 'info');
+          }
+        } catch (e) {
+          showToast('Failed to start update: ' + e, 'error');
         }
       })();
       break;
@@ -179,6 +236,10 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     } else {
       const updateVer = getState().availableUpdates.get(modId)!;
       html += `
+        <button type="button" class="context-menu-item" data-action="update-local-mod" style="font-weight: bold; color: #00bcff;">
+          <span class="ctx-icon">⚡</span>
+          Update Mod (v${escapeHtml(updateVer)})
+        </button>
         <button type="button" class="context-menu-item" data-action="ignore-update">
           <span class="ctx-icon">✕</span>
           Ignore update (v${escapeHtml(updateVer)})

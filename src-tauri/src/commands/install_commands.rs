@@ -259,6 +259,10 @@ pub async fn install_mod_command(
                 let _ = fs::write(lib_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
             }
         }
+
+        let lib_zip_dest = library::get_library_path(&program_path, &lib_folder_name).join(&zip_filename);
+        let pmm_dest = std::path::PathBuf::from(format!("{}.pmm.json", lib_zip_dest.to_string_lossy()));
+        let _ = fs::write(&pmm_dest, serde_json::to_string_pretty(&final_mod).unwrap_or_default());
     }
 
 
@@ -641,6 +645,10 @@ pub async fn install_mod_with_manifest(
                 let _ = std::fs::write(lib_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
             }
         }
+
+        let lib_zip_dest = library::get_library_path(&program_path, &lib_folder_name).join(&final_mod.source_zip);
+        let pmm_dest = std::path::PathBuf::from(format!("{}.pmm.json", lib_zip_dest.to_string_lossy()));
+        let _ = std::fs::write(&pmm_dest, serde_json::to_string_pretty(&final_mod).unwrap_or_default());
     }
 
     // Save to DB and profiles

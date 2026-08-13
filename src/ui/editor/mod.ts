@@ -4,6 +4,7 @@ export { _originalContent, _lastFilePerMod, clearOriginalContent, syncHighlight,
 export { findMatches, findCurrentMatch, resetFindMatches, openFind, closeFind, updateFindMatches, scrollToMatch, findNext, findPrev, setupEditorFindHandlers } from './search';
 export { hasUnsavedChanges, confirmDiscardOrSave } from './unsaved';
 export { setupEditorKeybindings, handleEditorModChange, switchTab, openFileAtLine } from './keybindings';
+export { setupEditorFsWatcher } from './watcher';
 
 // Originally openConfigEditor was defined in editorView.ts:
 import { updateState } from '../../state';

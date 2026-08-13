@@ -22,27 +22,27 @@ struct SteamInstallManifest {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct WorkshopInfoJson {
+pub struct WorkshopInfoJson {
     #[serde(rename = "ModName")]
-    mod_name: String,
+    pub mod_name: String,
     #[serde(rename = "PackageName")]
-    package_name: String,
+    pub package_name: String,
     #[serde(rename = "Version")]
-    version: String,
+    pub version: String,
     #[serde(rename = "Author")]
-    author: String,
+    pub author: String,
     #[serde(rename = "Dependencies")]
-    dependencies: Option<Vec<String>>,
+    pub dependencies: Option<Vec<String>>,
     #[serde(rename = "InstallRule")]
-    install_rule: Vec<InstallRuleJson>,
+    pub install_rule: Vec<InstallRuleJson>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-struct InstallRuleJson {
+pub struct InstallRuleJson {
     #[serde(rename = "Type")]
-    rule_type: String,
+    pub rule_type: String,
     #[serde(rename = "Targets")]
-    targets: Vec<String>,
+    pub targets: Vec<String>,
 }
 
 pub fn read_pal_mod_settings(game_path: &str) -> PalModSettings {

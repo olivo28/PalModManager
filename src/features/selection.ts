@@ -24,12 +24,38 @@ export function setupSelection(): void {
     if (target.classList.contains('library-card-checkbox') || target.classList.contains('card-checkbox')) {
       const card = target.closest('.mod-card') as HTMLElement | null;
       if (card) {
+        const id = card.dataset.id!;
         if (isLibrary) {
-          handleLibraryCardClick(card, e);
+          const selectedIds = new Set(getState().selectedLibraryIds);
+          if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+          } else {
+            selectedIds.add(id);
+          }
+          updateState({ selectedLibraryIds: selectedIds });
+          const libCards = document.querySelectorAll('.library-card');
+          libCards.forEach((cardEl) => {
+            const cId = (cardEl as HTMLElement).dataset.id!;
+            const isSel = selectedIds.has(cId);
+            cardEl.classList.toggle('selected', isSel);
+            const chk = cardEl.querySelector('.library-card-checkbox') as HTMLInputElement | null;
+            if (chk) chk.checked = isSel;
+          });
+          import('../ui/modsView').then(({ updateLibraryBulkBar }) => {
+            updateLibraryBulkBar();
+          });
         } else {
-          handleCardClick(card, e);
+          const selectedIds = new Set(getState().selectedModIds);
+          if (selectedIds.has(id)) {
+            selectedIds.delete(id);
+          } else {
+            selectedIds.add(id);
+          }
+          updateSelection(selectedIds);
         }
       }
+      e.stopPropagation();
+      e.preventDefault();
       return;
     }
 
@@ -170,8 +196,12 @@ function handleLibraryCardClick(card: HTMLElement, e: MouseEvent): void {
       selectedIds.add(id);
     }
   } else {
-    selectedIds.clear();
-    selectedIds.add(id);
+    if (selectedIds.has(id) && selectedIds.size === 1) {
+      selectedIds.clear();
+    } else {
+      selectedIds.clear();
+      selectedIds.add(id);
+    }
   }
 
   updateState({ selectedLibraryIds: selectedIds });
@@ -215,9 +245,14 @@ function handleCardClick(card: HTMLElement, e: MouseEvent): void {
       lastSelectedId = id;
     }
   } else {
-    selectedIds.clear();
-    selectedIds.add(id);
-    lastSelectedId = id;
+    if (selectedIds.has(id) && selectedIds.size === 1) {
+      selectedIds.clear();
+      lastSelectedId = null;
+    } else {
+      selectedIds.clear();
+      selectedIds.add(id);
+      lastSelectedId = id;
+    }
   }
 
   updateSelection(selectedIds);
