@@ -18,6 +18,10 @@ fn empty_status() -> dependency_checker::DependencyStatus {
         palschema_latest_version: None,
         palschema_needs_update: false,
         game_platform: "Unknown".to_string(),
+        has_dll_conflict: false,
+        conflicting_dlls: Vec::new(),
+        ue4ss_updated_from: None,
+        palschema_updated_from: None,
     }
 }
 
@@ -27,14 +31,123 @@ fn parse_dmy(s: &str) -> Option<chrono::NaiveDate> {
 
 #[tauri::command]
 pub fn check_dependencies(state: State<AppState>) -> Result<dependency_checker::DependencyStatus, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if game_path.is_empty() {
+        return Ok(empty_status());
+    }
+    let mut status = dependency_checker::check_dependencies(&game_path);
+
+    if !program_path.is_empty() {
+        let cache_dir = PathBuf::from(&program_path);
+        let ue4ss_cache_file = cache_dir.join(".ue4ss_last_ver");
+        let palschema_cache_file = cache_dir.join(".palschema_last_ver");
+
+        if let Some(ref cur_ue4ss) = status.ue4ss_version {
+            if ue4ss_cache_file.exists() {
+                if let Ok(prev) = fs::read_to_string(&ue4ss_cache_file) {
+                    let prev_clean = prev.trim();
+                    if !prev_clean.is_empty() && prev_clean != cur_ue4ss && prev_clean != "unknown" {
+                        status.ue4ss_updated_from = Some(prev_clean.to_string());
+                    }
+                }
+            }
+            let _ = fs::write(&ue4ss_cache_file, cur_ue4ss);
+        }
+
+        if let Some(ref cur_schema) = status.palschema_version {
+            if palschema_cache_file.exists() {
+                if let Ok(prev) = fs::read_to_string(&palschema_cache_file) {
+                    let prev_clean = prev.trim();
+                    if !prev_clean.is_empty() && prev_clean != cur_schema && prev_clean != "unknown" {
+                        status.palschema_updated_from = Some(prev_clean.to_string());
+                    }
+                }
+            }
+            let _ = fs::write(&palschema_cache_file, cur_schema);
+        }
+    }
+
+    Ok(status)
+}
+
+#[tauri::command]
+pub fn clean_conflict_dlls(state: State<AppState>) -> Result<Vec<String>, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if game_path.is_empty() {
+        return Err("Game path is not set".to_string());
+    }
+
+    let profile = dependency_checker::build_game_profile(Path::new(&game_path));
+    let quarantine_dir = PathBuf::from(&program_path).join("dll_quarantine");
+    let _ = fs::create_dir_all(&quarantine_dir);
+
+    let mut removed = Vec::new();
+    for dll in &["dwmapi.dll", "xinput1_3.dll"] {
+        let src = profile.binaries_dir.join(dll);
+        if src.exists() {
+            let dst = quarantine_dir.join(dll);
+            let _ = fs::copy(&src, &dst);
+            let _ = fs::remove_file(&src);
+            removed.push(dll.to_string());
+            crate::logger::log(&format!("clean_conflict_dlls: Moved {:?} to quarantine {:?}", src, dst));
+        }
+    }
+    Ok(removed)
+}
+
+#[tauri::command]
+pub fn reset_workshop_cache(state: State<AppState>) -> Result<(), String> {
     let game_path = {
         let locked = state.data.lock().map_err(|e| e.to_string())?;
         locked.settings.game_path.clone()
     };
     if game_path.is_empty() {
-        return Ok(empty_status());
+        return Err("Game path is not set".to_string());
     }
-    Ok(dependency_checker::check_dependencies(&game_path))
+
+    let managed_ue4ss = PathBuf::from(&game_path)
+        .join("Mods")
+        .join("ManagedMods")
+        .join("UE4SSExperimentalPW");
+
+    if managed_ue4ss.exists() {
+        fs::remove_dir_all(&managed_ue4ss).map_err(|e| format!("Failed to delete workshop cache folder: {}", e))?;
+        crate::logger::log(&format!("reset_workshop_cache: Deleted {:?}", managed_ue4ss));
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_safety_backup_info_command(state: State<AppState>) -> Result<crate::safety_backup::SafetyBackupInfo, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    crate::safety_backup::get_safety_backup_info(&program_path, &game_path)
+}
+
+#[tauri::command]
+pub fn trigger_safety_backup_command(state: State<AppState>) -> Result<bool, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    crate::safety_backup::create_initial_safety_backup(&game_path, &program_path, true)
+}
+
+#[tauri::command]
+pub fn restore_safety_backup_command(state: State<AppState>) -> Result<(), String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    crate::safety_backup::restore_initial_safety_backup(&game_path, &program_path)
 }
 
 #[tauri::command]
@@ -437,6 +550,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
                     nexus_file_id: None,
                     ignored_keys: None,
                     has_pending_update: None,
+                    origin_load_method: Some("mods_txt".to_string()),
                 });
             }
         }

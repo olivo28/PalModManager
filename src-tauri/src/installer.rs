@@ -460,6 +460,7 @@ pub fn execute_manifest(
         nexus_file_id: manifest.nexus_file_id,
         ignored_keys: None,
         has_pending_update: None,
+        origin_load_method: if manifest.mod_type == ModType::Ue4ss { Some("enabled_txt".to_string()) } else { None },
     })
 }
 
@@ -555,38 +556,38 @@ fn get_physical_identity(game_path: &str, disabled_path: &str) -> String {
 
 pub fn check_mod_exists(
     folder_name: &str,
-    _mod_type: &crate::models::ModType,
+    mod_type: &crate::models::ModType,
     nexus_id: Option<u32>,
     existing_mods: &[ModInfo],
 ) -> Option<ModInfo> {
     let zip_norm = folder_name.replace(' ', "").replace('-', "").replace('_', "").to_lowercase();
+    let norm_incoming_name = normalize_name(folder_name);
     
     existing_mods
         .iter()
         .find(|m| {
+            let is_type_compatible = m.mod_type == *mod_type
+                || m.mod_type == crate::models::ModType::Hybrid
+                || *mod_type == crate::models::ModType::Hybrid;
+
             if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
                 if nid1 == nid2 {
                     let db_id = get_physical_identity(&m.game_path, &m.disabled_path);
-                    if m.mod_type == crate::models::ModType::Pak
-                        || m.mod_type == crate::models::ModType::LogicMods
-                    {
-                        let name_sim = db_id.contains(&zip_norm) || zip_norm.contains(&db_id)
-                            || normalize_name(&m.name) == normalize_name(folder_name);
-                        if name_sim { return true; }
-                    } else {
-                        if db_id == zip_norm || normalize_name(&m.name) == normalize_name(folder_name) {
-                            return true;
-                        }
+                    let norm_existing_name = normalize_name(&m.name);
+                    let name_match = (!db_id.is_empty() && db_id == zip_norm) || norm_existing_name == norm_incoming_name;
+                    
+                    if name_match && is_type_compatible {
+                        return true;
                     }
                 }
             }
 
             let db_id = get_physical_identity(&m.game_path, &m.disabled_path);
-            if !db_id.is_empty() && db_id == zip_norm {
+            if !db_id.is_empty() && db_id == zip_norm && is_type_compatible {
                 return true;
             }
 
-            if normalize_name(&m.name) == normalize_name(folder_name) {
+            if normalize_name(&m.name) == norm_incoming_name && is_type_compatible {
                 return true;
             }
             false
@@ -657,7 +658,7 @@ pub fn update_mod(
     } else {
         None
     }.or_else(|| {
-        if existing.game_path.contains("LogicMods") || existing.disabled_path.contains("LogicMods") {
+        if existing.game_path.to_lowercase().contains("logicmods") || existing.disabled_path.to_lowercase().contains("logicmods") {
             Some("LogicMods".to_string())
         } else {
             None
@@ -672,12 +673,9 @@ pub fn update_mod(
         crate::config_merge::ConfigSnapshot { entries: Vec::new() }
     };
 
-    delete_path_and_sidecar(&existing.game_path);
-    delete_path_and_sidecar(&existing.disabled_path);
-    for extra in &existing.extra_files {
-        delete_path_and_sidecar(extra);
-    }
-
+    let old_game_path = existing.game_path.clone();
+    let old_disabled_path = existing.disabled_path.clone();
+    let old_extras = existing.extra_files.clone();
     let was_enabled = existing.enabled;
 
     let game = Path::new(game_path);
@@ -721,6 +719,19 @@ pub fn update_mod(
         force_load_order_palschema,
     )?;
 
+    // Clean up old paths that differ from newly installed paths
+    if !old_game_path.is_empty() && old_game_path != new_mod_info.game_path {
+        delete_path_and_sidecar(&old_game_path);
+    }
+    if !old_disabled_path.is_empty() && old_disabled_path != new_mod_info.disabled_path {
+        delete_path_and_sidecar(&old_disabled_path);
+    }
+    for extra in &old_extras {
+        if !new_mod_info.extra_files.contains(extra) && extra != &new_mod_info.game_path {
+            delete_path_and_sidecar(extra);
+        }
+    }
+
     existing.name = new_mod_info.name;
     existing.mod_type = new_mod_info.mod_type;
     existing.version = new_mod_info.version;
@@ -734,6 +745,9 @@ pub fn update_mod(
     existing.extra_files = new_mod_info.extra_files;
     existing.update_date = Some(now.to_string());
     existing.enabled = true;
+    if existing.origin_load_method.is_none() {
+        existing.origin_load_method = new_mod_info.origin_load_method;
+    }
 
     let dest_dir = if !existing.game_path.is_empty() {
         Path::new(&existing.game_path)
@@ -752,6 +766,15 @@ pub fn update_mod(
         if existing.mod_type == ModType::Ue4ss {
             let src_path = PathBuf::from(&existing.game_path);
             if src_path.exists() {
+                if let Some(parent) = src_path.parent() {
+                    let mods_txt = parent.join("mods.txt");
+                    if mods_txt.exists() {
+                        let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &existing.name);
+                        if let Some(f_name) = src_path.file_name() {
+                            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &f_name.to_string_lossy());
+                        }
+                    }
+                }
                 let enabled_file = src_path.join("enabled.txt");
                 if enabled_file.exists() {
                     let _ = fs::remove_file(&enabled_file);
@@ -765,10 +788,42 @@ pub fn update_mod(
             existing.enabled = false;
         } else if existing.mod_type == ModType::PalSchema {
             let src_path = PathBuf::from(&existing.game_path);
-            if src_path.exists() {
-                let file_name = src_path.file_name().unwrap().to_string_lossy().to_string();
-                let dest = disabled_base.join("palschema").join(&file_name);
-                move_path(&src_path, &dest)?;
+            let folder_name = crate::profiles::get_mod_folder_name(existing);
+            let gp = crate::dependency_checker::build_game_profile(Path::new(game_path));
+            let palschema_mods_dir = gp.palschema_mods_dir.clone();
+            let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
+
+            if palschema_mods_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let name = path.file_name().unwrap().to_string_lossy().to_string();
+                        let clean_name = if name.len() > 4 && name[..3].chars().all(|c| c.is_ascii_digit()) && name.as_bytes()[3] == b'_' {
+                            &name[4..]
+                        } else {
+                            &name
+                        };
+                        if clean_name.to_lowercase() == folder_name.to_lowercase() {
+                            let _ = crate::profiles::remove_junction_or_symlink(&path);
+                        }
+                    }
+                }
+            }
+
+            let storage_path = palschema_storage_dir.join(&folder_name);
+            let final_src = if storage_path.exists() {
+                storage_path
+            } else if src_path.exists() {
+                src_path
+            } else {
+                palschema_mods_dir.join(&folder_name)
+            };
+
+            if final_src.exists() {
+                let dest_dir = disabled_base.join("palschema");
+                let _ = fs::create_dir_all(&dest_dir);
+                let dest = dest_dir.join(&folder_name);
+                move_path(&final_src, &dest)?;
                 existing.disabled_path = dest.to_string_lossy().to_string();
                 existing.game_path = String::new();
             }
@@ -835,6 +890,15 @@ pub fn update_mod(
 
             let src_path = PathBuf::from(&existing.game_path);
             if src_path.exists() {
+                if let Some(parent) = src_path.parent() {
+                    let mods_txt = parent.join("mods.txt");
+                    if mods_txt.exists() {
+                        let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &existing.name);
+                        if let Some(f_name) = src_path.file_name() {
+                            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &f_name.to_string_lossy());
+                        }
+                    }
+                }
                 let enabled_file = src_path.join("enabled.txt");
                 if enabled_file.exists() {
                     let _ = fs::remove_file(&enabled_file);

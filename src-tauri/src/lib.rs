@@ -12,6 +12,7 @@ mod logger;
 pub mod config_merge;
 mod workshop;
 mod watcher;
+pub mod safety_backup;
 
 
 use commands::mod_commands;
@@ -55,6 +56,12 @@ pub fn run() {
     logger::log(&format!("Loading default database from {}", default_program_path.display()));
     let start_db = std::time::Instant::now();
     let mut data = db::load_db(&default_program_path.to_string_lossy());
+    
+    // Auto-create initial snapshot if game path is configured
+    if !data.settings.game_path.is_empty() {
+        let _ = safety_backup::create_initial_safety_backup(&data.settings.game_path, &default_program_path.to_string_lossy(), false);
+    }
+
     logger::log(&format!("Default database loaded successfully in {:?}", start_db.elapsed()));
 
     if let Some(ref custom_path) = data.settings.custom_data_path {
@@ -165,6 +172,11 @@ pub fn run() {
             profile_commands::add_mod_to_folder_command,
             profile_commands::toggle_folder_mods_command,
             dependency_commands::check_dependencies,
+            dependency_commands::clean_conflict_dlls,
+            dependency_commands::reset_workshop_cache,
+            dependency_commands::get_safety_backup_info_command,
+            dependency_commands::trigger_safety_backup_command,
+            dependency_commands::restore_safety_backup_command,
             dependency_commands::check_ue4ss_latest,
             dependency_commands::check_palschema_latest,
             dependency_commands::check_dependencies_full,

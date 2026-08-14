@@ -73,6 +73,7 @@ fn load_from_modinfo_pmm_json(path: &Path) -> Option<ModInfo> {
         nexus_file_id: None,
         ignored_keys: None,
         has_pending_update: None,
+        origin_load_method: None,
     })
 }
 
@@ -115,9 +116,10 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
 
     let mods_txt_path = dir.join("mods.txt");
     let mut mods_txt_states: std::collections::HashMap<String, bool> = std::collections::HashMap::new();
+    let mut mods_txt_positions: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
     if mods_txt_path.exists() {
         if let Ok(content) = fs::read_to_string(&mods_txt_path) {
-            for line in content.lines() {
+            for (line_idx, line) in content.lines().enumerate() {
                 let line_clean = line.trim();
                 if line_clean.starts_with(';') || line_clean.starts_with("//") {
                     continue;
@@ -125,9 +127,12 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
                 if let Some(pos) = line_clean.find(':') {
                     let name = line_clean[..pos].trim().to_lowercase();
                     let val = line_clean[pos+1..].trim();
-                    mods_txt_states.insert(name, val == "1");
+                    mods_txt_states.insert(name.clone(), val == "1");
+                    mods_txt_positions.insert(name, line_idx as u32);
                 } else if !line_clean.is_empty() {
-                    mods_txt_states.insert(line_clean.to_lowercase(), true);
+                    let name = line_clean.to_lowercase();
+                    mods_txt_states.insert(name.clone(), true);
+                    mods_txt_positions.insert(name, line_idx as u32);
                 }
             }
         }
@@ -143,14 +148,31 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
 
             let is_native_mod = ["BPModLoaderMod", "CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod", "Keybinds", "LineTraceMod", "SplitScreenMod", "BPML_GenericFunctions", "shared", "adapters"].contains(&mod_name.as_str());
 
-            let is_enabled = if let Some(&state) = mods_txt_states.get(&mod_name.to_lowercase()) {
+            let name_lower = mod_name.to_lowercase();
+            let is_in_mods_txt = mods_txt_states.contains_key(&name_lower);
+            let is_enabled = if let Some(&state) = mods_txt_states.get(&name_lower) {
                 state
             } else {
                 mod_path.join("enabled.txt").exists() || is_native_mod
             };
 
+            let order_pos = mods_txt_positions.get(&name_lower).copied();
+            let origin_load = if is_in_mods_txt {
+                Some("mods_txt".to_string())
+            } else if mod_path.join("enabled.txt").exists() {
+                Some("enabled_txt".to_string())
+            } else {
+                None
+            };
+
             if let Some(mut m) = load_pmm_meta(&mod_path) {
                 m.enabled = is_enabled;
+                if m.mods_txt_order.is_none() && order_pos.is_some() {
+                    m.mods_txt_order = order_pos;
+                }
+                if m.origin_load_method.is_none() && origin_load.is_some() {
+                    m.origin_load_method = origin_load;
+                }
                 results.push(m);
                 continue;
             }
@@ -174,7 +196,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
                 disabled_path: String::new(),
                 pak_destination: None,
                 has_enabled_txt: mod_path.join("enabled.txt").exists(),
-                mods_txt_order: None,
+                mods_txt_order: order_pos,
                 extra_files: Vec::new(),
                 nexus_description: None, nexus_version_cached: None, nexus_cached_at: None,
                 nexus_category: None, nexus_tags: Vec::new(),
@@ -184,6 +206,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
                 nexus_file_id: None,
                 ignored_keys: None,
                 has_pending_update: None,
+                origin_load_method: origin_load,
             });
         }
     }
@@ -191,16 +214,45 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
 
 fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::collections::HashSet<String>) {
     if !dir.exists() { return; }
+    let storage_dir = dir.parent().map(|p| p.join("Storage"));
+
     if let Ok(entries) = fs::read_dir(dir) {
         for entry in entries.filter_map(|e| e.ok()) {
             if !entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) { continue; }
-            let mod_name = entry.file_name().to_string_lossy().to_string();
-            if ignored_names.contains(&mod_name.to_lowercase()) { continue; }
+            let raw_name = entry.file_name().to_string_lossy().to_string();
+            let clean_name = if raw_name.len() > 4 && raw_name[..3].chars().all(|c| c.is_ascii_digit()) && raw_name.as_bytes()[3] == b'_' {
+                raw_name[4..].to_string()
+            } else {
+                raw_name.clone()
+            };
+
+            if ignored_names.contains(&clean_name.to_lowercase()) || ignored_names.contains(&raw_name.to_lowercase()) {
+                continue;
+            }
             let mod_path = entry.path();
 
-            if let Some(m) = load_pmm_meta(&mod_path) {
+            if let Some(mut m) = load_pmm_meta(&mod_path) {
+                if m.name.len() > 4 && m.name[..3].chars().all(|c| c.is_ascii_digit()) && m.name.as_bytes()[3] == b'_' {
+                    m.name = m.name[4..].to_string();
+                }
                 results.push(m);
                 continue;
+            }
+
+            // Check if storage folder has .pmm.json
+            if let Some(ref s_dir) = storage_dir {
+                let storage_mod_dir = s_dir.join(&clean_name);
+                if storage_mod_dir.exists() {
+                    if let Some(mut m) = load_pmm_meta(&storage_mod_dir) {
+                        m.game_path = mod_path.to_string_lossy().to_string();
+                        m.enabled = true;
+                        if m.name.len() > 4 && m.name[..3].chars().all(|c| c.is_ascii_digit()) && m.name.as_bytes()[3] == b'_' {
+                            m.name = m.name[4..].to_string();
+                        }
+                        results.push(m);
+                        continue;
+                    }
+                }
             }
 
             let has_json = WalkDir::new(&mod_path).max_depth(2).into_iter().filter_map(|e| e.ok()).any(|e| {
@@ -210,8 +262,8 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
             if has_json {
                 let install_date = file_install_date(&mod_path);
                 results.push(ModInfo {
-                    id: mod_name.clone(),
-                    name: mod_name.clone(),
+                    id: clean_name.clone(),
+                    name: clean_name.clone(),
                     mod_type: ModType::PalSchema,
                     nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
@@ -230,6 +282,7 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
                     nexus_file_id: None,
                     ignored_keys: None,
                     has_pending_update: None,
+                    origin_load_method: None,
                 });
             }
         }
@@ -282,12 +335,17 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<ModInfo>) {
             nexus_file_id: None,
             ignored_keys: None,
             has_pending_update: None,
+            origin_load_method: None,
         });
     }
 }
 
 fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
-    let type_dirs = [("ue4ss", ModType::Ue4ss), ("palschema", ModType::PalSchema)];
+    let type_dirs = [
+        ("ue4ss", ModType::Ue4ss),
+        ("palschema", ModType::PalSchema),
+        ("hybrid", ModType::Hybrid),
+    ];
     for (type_str, mod_type) in &type_dirs {
         let dir = disabled_base.join(type_str);
         if !dir.exists() { continue; }
@@ -295,6 +353,9 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
             for entry in rd.filter_map(|e| e.ok()) {
                 if !entry.file_type().map_or(false, |ft| ft.is_dir()) { continue; }
                 let mod_name = entry.file_name().to_string_lossy().to_string();
+                if type_str == &"hybrid" && ["logicmods", "palschema", "pak", "ue4ss", "extras"].contains(&mod_name.to_lowercase().as_str()) {
+                    continue;
+                }
                 let mod_path = entry.path();
 
                 if let Some(m) = load_pmm_meta(&mod_path) {
@@ -324,6 +385,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     nexus_file_id: None,
                     ignored_keys: None,
                     has_pending_update: None,
+                    origin_load_method: None,
                 });
             }
         }
@@ -369,6 +431,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     nexus_file_id: None,
                     ignored_keys: None,
                     has_pending_update: None,
+                    origin_load_method: None,
                 });
             }
         }
@@ -497,6 +560,7 @@ pub fn scan_mods_internal(
             nexus_file_id: None,
             ignored_keys: None,
             has_pending_update: Some(wmod.has_pending_update),
+            origin_load_method: None,
         });
     }
 
@@ -676,7 +740,14 @@ fn merge_scan_with_db(
                     merged.extra_files.push(extra.clone());
                 }
             }
-            merged.enabled = existing.enabled || m.enabled;
+            let is_strictly_disabled = (!merged.disabled_path.is_empty() && merged.game_path.is_empty())
+                || (!m.disabled_path.is_empty() && m.game_path.is_empty())
+                || (!existing.disabled_path.is_empty() && existing.game_path.is_empty());
+            merged.enabled = if is_strictly_disabled {
+                false
+            } else {
+                existing.enabled || m.enabled
+            };
             if merged.config_path.is_none() && m.config_path.is_some() {
                 merged.config_path = m.config_path.clone();
             }

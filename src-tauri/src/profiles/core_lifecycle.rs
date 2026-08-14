@@ -118,6 +118,10 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile: &P
                         }
                     }
                 }
+                let mods_txt = ws_mods_dir.join("mods.txt");
+                if mods_txt.exists() {
+                    let _ = fs::copy(&mods_txt, ws_mods_backup.join("mods.txt"));
+                }
             }
 
             // Backup PalSchema from workshop
@@ -198,6 +202,10 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile: &P
                             let _ = fs::copy(&entry.path(), &dst);
                         }
                     }
+                }
+                let mods_txt = std_ue4ss_mods_dir.join("mods.txt");
+                if mods_txt.exists() {
+                    let _ = fs::copy(&mods_txt, ue4ss_mods_backup.join("mods.txt"));
                 }
             }
 
@@ -538,6 +546,14 @@ pub fn switch_profile(
         let snapshot_path = target_dir.join("mods.txt.snapshot");
         if snapshot_path.exists() {
             let _ = fs::copy(&snapshot_path, &mods_txt);
+        } else {
+            let ws_backup = target_dir.join("ue4ss_workshop_mods").join("mods.txt");
+            let std_backup = target_dir.join("ue4ss_mods").join("mods.txt");
+            if ws_backup.exists() {
+                let _ = fs::copy(&ws_backup, &mods_txt);
+            } else if std_backup.exists() {
+                let _ = fs::copy(&std_backup, &mods_txt);
+            }
         }
     }
 
@@ -630,16 +646,29 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
     }
 
     if src_dir.exists() {
-        for folder in &["ue4ss", "ue4ss_workshop_root", "ue4ss_workshop_mods", "palschema", "paks", "logicmods"] {
+        for folder in &[
+            "ue4ss",
+            "ue4ss_mods",
+            "ue4ss_workshop_root",
+            "ue4ss_workshop_mods",
+            "palschema",
+            "paks",
+            "logicmods",
+            "disabled_mods",
+            "ManagedMods",
+        ] {
             let src_folder = src_dir.join(folder);
             let dst_folder = dst_dir.join(folder);
             if src_folder.exists() {
                 let _ = copy_dir_all(&src_folder, &dst_folder);
             }
         }
-        let dwmapi_src = src_dir.join("dwmapi.dll");
-        if dwmapi_src.exists() {
-            let _ = fs::copy(&dwmapi_src, dst_dir.join("dwmapi.dll"));
+        for file in &["dwmapi.dll", "mods.txt.snapshot", "PalModSettings.ini"] {
+            let src_file = src_dir.join(file);
+            let dst_file = dst_dir.join(file);
+            if src_file.exists() {
+                let _ = fs::copy(&src_file, &dst_file);
+            }
         }
     }
 
@@ -692,15 +721,27 @@ pub fn clear_profile(data: &mut AppData, profile_id: &str) -> Result<(), String>
 
     let p_dir = get_profile_dir(&program_path, profile_id);
     if p_dir.exists() {
-        for folder in &["ue4ss", "palschema", "paks", "logicmods", "disabled_mods"] {
+        for folder in &[
+            "ue4ss",
+            "ue4ss_mods",
+            "ue4ss_workshop_root",
+            "ue4ss_workshop_mods",
+            "palschema",
+            "paks",
+            "logicmods",
+            "disabled_mods",
+            "ManagedMods",
+        ] {
             let sub = p_dir.join(folder);
             if sub.exists() {
                 let _ = fs::remove_dir_all(&sub);
             }
         }
-        let dwmapi = p_dir.join("dwmapi.dll");
-        if dwmapi.exists() {
-            let _ = fs::remove_file(&dwmapi);
+        for file in &["dwmapi.dll", "mods.txt.snapshot", "PalModSettings.ini"] {
+            let f = p_dir.join(file);
+            if f.exists() {
+                let _ = fs::remove_file(&f);
+            }
         }
         
         if let Ok(json) = serde_json::to_string_pretty(profile) {

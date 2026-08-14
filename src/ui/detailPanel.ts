@@ -354,6 +354,9 @@ export async function handleDetailToggle(): Promise<void> {
   if (!state.currentDetailMod) return;
   const isWorkshop = state.currentDetailMod.nexusSummary === 'Steam Workshop Mod';
   try {
+    const { suppressWatcherRefresh } = await import('./editor/watcher');
+    suppressWatcherRefresh(1200);
+
     if (isWorkshop) {
       const { activateWorkshopMod, deactivateWorkshopMod } = await import('../api');
       if (state.currentDetailMod.enabled) {

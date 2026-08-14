@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 > Hey everyone! First off, sorry for the quiet stretch these past few days — I wasn't sitting still, but most of the work was happening behind the scenes. Had to do a lot of research and testing to figure out how to implement Steam Workshop the right way, and along the way it became clear the codebase needed a proper cleanup too (a lot of it had grown into one big monolithic file, which wasn't great). So between those two things, visible updates were slow. On the bright side, the foundation is now a lot cleaner and more solid. Also — **Altermatic support is being planned next**, already reached out to the developer to make sure it gets done right. :)
 >
 > ⚠️ **For users updating to v1.5:** It is recommended to do a **Profile Clear** before using this version. Sorry about this — several internal changes were made to how profiles handle Workshop mods, and an old profile state could cause unexpected behavior. You can do this from the profile menu inside PMM.
+>
+> 🧪 **A heads up:** all internal testing was done with a relatively small number of mods. If you're running a large setup, you may encounter edge cases I haven't hit yet — if anything feels off, please report it in the Discord so I can get it sorted.
+
+## [1.5.1] - 2026-08-14
+
+### Added
+- **Dependency Update Confirmation**: Added interactive confirmation prompts when newer versions of UE4SS or PalSchema are detected on GitHub, preventing silent background overwrites.
+- **Disabled Hybrid Mods Scanning**: Added scanning support for `disabled_mods/hybrid/` to preserve disabled hybrid mods across manager restarts.
+
+### Changed
+- **Full Profile Cloning**: Cloning a profile now replicates all data including disabled mods, settings, and snapshots.
+- **Atomic Mod Updating**: Mod updates now stage new files and validate installation before removing previous versions to prevent data loss.
+
+### Fixed
+- **PalSchema FLO Synchronization**: Fixed NTFS junction and `Storage/` directory handling when enabling or disabling PalSchema mods under Force Load Order (FLO).
+- **Mod Name Prefix Cleanup**: Automatically strips internal numeric prefixes (`001_`) from folder names to prevent duplicate entries and scan collisions.
+- **Profile Load Order Isolation**: Fixed circular overwrites when switching profiles by strictly backing up and restoring `mods.txt.snapshot` per profile.
+- **Update-While-Disabled Routing**: Updating a disabled mod now correctly routes files back to `disabled_mods/` and clears lingering `mods.txt` entries.
+
+---
 
 ## [1.5.0] - 2026-08-13
 
@@ -52,4 +72,4 @@ Need help, want to report a bug, or suggest a new feature? Join our official Dis
 You can choose between the portable version or the full installer:
 
 *   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
-*   **Installer Version:** Download `PalModManager_1.5.0_x64-setup.exe` and follow the setup wizard to install the application on your system.
+*   **Installer Version:** Download `PalModManager_1.5.1_x64-setup.exe` and follow the setup wizard to install the application on your system.

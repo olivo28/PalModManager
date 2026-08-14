@@ -6,6 +6,11 @@ import { showToast } from '../toast';
 
 let isSettingUpWatcher = false;
 let debounceTimeout: any = null;
+let watcherSuppressedUntil = 0;
+
+export function suppressWatcherRefresh(durationMs: number = 1000): void {
+  watcherSuppressedUntil = Date.now() + durationMs;
+}
 
 export async function setupEditorFsWatcher(): Promise<void> {
   if (isSettingUpWatcher) return;
@@ -13,6 +18,10 @@ export async function setupEditorFsWatcher(): Promise<void> {
 
   try {
     await listen<{ paths: string[] }>('fs:file-changed', async (event) => {
+      if (Date.now() < watcherSuppressedUntil) {
+        return;
+      }
+
       const state = getState();
       const changedPaths = event.payload.paths || [];
       if (changedPaths.length === 0) return;
@@ -53,6 +62,7 @@ export async function setupEditorFsWatcher(): Promise<void> {
       // 2. Debounce refresh for mods view
       clearTimeout(debounceTimeout);
       debounceTimeout = setTimeout(async () => {
+        if (Date.now() < watcherSuppressedUntil) return;
         const currentState = getState();
         if (currentState.activeTab === 'mods') {
           const { loadMods } = await import('../modsView');

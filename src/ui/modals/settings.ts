@@ -118,6 +118,8 @@ export function openSettingsModal(): void {
     openPalschemaBtn.style.display = !!state.dependencies?.palschema_installed ? '' : 'none';
   }
 
+  refreshSafetyBackupStatus();
+
   modal.classList.add('visible');
 
   requestAnimationFrame(() => {
@@ -126,6 +128,27 @@ export function openSettingsModal(): void {
       modalBody.scrollTop = 0;
     }
   });
+}
+
+export async function refreshSafetyBackupStatus(): Promise<void> {
+  const statusElem = document.getElementById('safety-backup-status-text');
+  if (!statusElem) return;
+
+  try {
+    const { getSafetyBackupInfo } = await import('../../api');
+    const info = await getSafetyBackupInfo();
+    if (info.exists && info.timestamp) {
+      const dateStr = new Date(info.timestamp).toLocaleString();
+      const sizeKb = info.zipSizeBytes ? Math.round(info.zipSizeBytes / 1024) : 0;
+      statusElem.innerHTML = `✅ <strong>Initial Snapshot:</strong> ${dateStr} (${sizeKb} KB)<br>• ${info.ue4ssModsCount} UE4SS mods, ${info.palschemaModsCount} PalSchema mods tracked`;
+      statusElem.style.color = 'var(--text-secondary)';
+    } else {
+      statusElem.textContent = 'ℹ️ No pre-PMM backup created yet for this game installation.';
+      statusElem.style.color = 'var(--text-muted)';
+    }
+  } catch (e) {
+    statusElem.textContent = 'Status: Ready';
+  }
 }
 
 export function closeSettingsModal(): void {

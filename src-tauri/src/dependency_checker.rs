@@ -18,6 +18,14 @@ pub struct DependencyStatus {
     pub palschema_latest_version: Option<String>,
     pub palschema_needs_update: bool,
     pub game_platform: String,
+    #[serde(default)]
+    pub has_dll_conflict: bool,
+    #[serde(default)]
+    pub conflicting_dlls: Vec<String>,
+    #[serde(default)]
+    pub ue4ss_updated_from: Option<String>,
+    #[serde(default)]
+    pub palschema_updated_from: Option<String>,
 }
 
 fn get_file_date(path: &str) -> Option<String> {
@@ -228,6 +236,18 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         UE4SSInstallMode::NotFound => "NotFound".to_string(),
     };
 
+    let (has_dll_conflict, conflicting_dlls) = if profile.ue4ss_install_mode == UE4SSInstallMode::Workshop {
+        let candidate_dlls = ["dwmapi.dll", "xinput1_3.dll"];
+        let found: Vec<String> = candidate_dlls.iter()
+            .filter(|&&dll| profile.binaries_dir.join(dll).exists())
+            .map(|&s| s.to_string())
+            .collect();
+        let conflict = !found.is_empty();
+        (conflict, found)
+    } else {
+        (false, Vec::new())
+    };
+
     DependencyStatus {
         ue4ss_installed,
         ue4ss_version,
@@ -240,6 +260,10 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         palschema_latest_version: None,
         palschema_needs_update: false,
         game_platform: profile.platform,
+        has_dll_conflict,
+        conflicting_dlls,
+        ue4ss_updated_from: None,
+        palschema_updated_from: None,
     }
 }
 

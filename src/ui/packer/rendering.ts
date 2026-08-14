@@ -1,4 +1,4 @@
-import { stagedFiles, sourcePaths, targetOverrides, backupPaths, viewMode, virtualFolders, setVirtualFolders, setSourcePaths, renderWorkspace, escapeHtml } from './mod';
+import { stagedFiles, sourcePaths, targetOverrides, backupPaths, viewMode, virtualFolders, setVirtualFolders, setSourcePaths, escapeHtml } from './mod';
 import { toggleSkipFile } from './staging';
 import { showPrompt, showConfirm } from '../confirm';
 

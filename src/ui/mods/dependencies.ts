@@ -5,13 +5,66 @@ import { showConfirm } from '../confirm';
 import { loadMods } from './loader';
 import { loadProfiles } from './profiles';
 
+import { renderConflictBanner, removeConflictBanner } from '../conflictBanner';
+
 export async function loadDependencies(): Promise<void> {
   try {
     const deps = await checkDependencies();
+    
+    if (deps.has_dll_conflict && deps.conflicting_dlls && deps.conflicting_dlls.length > 0) {
+      renderConflictBanner(deps.conflicting_dlls);
+    } else {
+      removeConflictBanner();
+    }
+
+    if (deps.ue4ss_updated_from && deps.ue4ss_version) {
+      showToast(`🔄 UE4SS updated: ${deps.ue4ss_updated_from} → ${deps.ue4ss_version}`, 'success');
+    }
+    if (deps.palschema_updated_from && deps.palschema_version) {
+      showToast(`🔄 PalSchema updated: ${deps.palschema_updated_from} → ${deps.palschema_version}`, 'success');
+    }
+
     import('../../api').then(({ checkDependenciesFull }) => {
       checkDependenciesFull().then(fullDeps => {
         updateState({ dependencies: fullDeps });
         renderDependencyBadges(fullDeps);
+        if (fullDeps.has_dll_conflict && fullDeps.conflicting_dlls && fullDeps.conflicting_dlls.length > 0) {
+          renderConflictBanner(fullDeps.conflicting_dlls);
+        }
+
+        // Check if UE4SS needs update and ask user
+        if (fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop') {
+          const latestTarget = fullDeps.ue4ss_latest_date || fullDeps.ue4ss_latest_tag || 'latest';
+          if (sessionStorage.getItem('dismissed_ue4ss_update') !== latestTarget) {
+            showConfirm(
+              `A new version of UE4SS is available (${fullDeps.ue4ss_version || 'installed'} → ${latestTarget}). Would you like to update now?`,
+              'Update Available: UE4SS'
+            ).then((confirmed) => {
+              if (confirmed) {
+                handleDepBadgeClick('ue4ss');
+              } else {
+                sessionStorage.setItem('dismissed_ue4ss_update', latestTarget);
+              }
+            });
+          }
+        }
+
+        // Check if PalSchema needs update and ask user
+        if (fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_version !== 'Workshop') {
+          const latestVer = fullDeps.palschema_latest_version || 'latest';
+          if (sessionStorage.getItem('dismissed_palschema_update') !== latestVer) {
+            showConfirm(
+              `A new version of PalSchema is available (v${fullDeps.palschema_version || 'installed'} → v${latestVer}). Would you like to update now?`,
+              'Update Available: PalSchema'
+            ).then((confirmed) => {
+              if (confirmed) {
+                handleDepBadgeClick('palschema');
+              } else {
+                sessionStorage.setItem('dismissed_palschema_update', latestVer);
+              }
+            });
+          }
+        }
       }).catch(() => { });
     });
     updateState({ dependencies: deps });
@@ -77,7 +130,7 @@ export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
   }
 }
 
-export function renderDependencyBadges(deps: import('../types').DependencyStatus): void {
+export function renderDependencyBadges(deps: import('../../types').DependencyStatus): void {
   const platformEl = document.getElementById('game-platform-badge');
   if (platformEl) {
     if (deps.game_platform && deps.game_platform !== 'Unknown') {

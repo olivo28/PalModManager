@@ -78,6 +78,9 @@ export function attachCardEvents(container: HTMLElement): void {
       }
 
       try {
+        const { suppressWatcherRefresh } = await import('../editor/watcher');
+        suppressWatcherRefresh(1200);
+
         const { setModProfileState } = await import('../../api');
         if (isWorkshop) {
           const { activateWorkshopMod, deactivateWorkshopMod } = await import('../../api');

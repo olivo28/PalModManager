@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus, InstallManifest } from './types';
+import type { ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus, InstallManifest, SafetyBackupInfo, FileRoute, RouteType } from './types';
+export type { InstallManifest, FileRoute, RouteType, ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus, SafetyBackupInfo };
 
 export interface ZipAnalysis {
   zipPath: string;
@@ -428,9 +429,51 @@ export async function setWorkshopGlobalEnabled(enabled: boolean): Promise<void> 
   return invoke('set_workshop_global_enabled', { enabled });
 }
 
+export async function cleanConflictDlls(): Promise<string[]> {
+  return invoke('clean_conflict_dlls');
+}
+
+export async function resetWorkshopCache(): Promise<void> {
+  return invoke('reset_workshop_cache');
+}
+
+export async function getSafetyBackupInfo(): Promise<SafetyBackupInfo> {
+  return invoke('get_safety_backup_info_command');
+}
+
+export async function triggerSafetyBackup(): Promise<boolean> {
+  return invoke('trigger_safety_backup_command');
+}
+
+export async function restoreSafetyBackup(): Promise<void> {
+  return invoke('restore_safety_backup_command');
+}
+
 export async function prepareWorkshopUpdateZip(packageName: string): Promise<string> {
   return invoke('prepare_workshop_update_zip', { packageName });
 }
+
+export async function scanConflicts(): Promise<any> {
+  return invoke('scan_conflicts');
+}
+
+export async function getUe4ssLoadOrder(): Promise<any[]> {
+  return invoke('get_ue4ss_load_order');
+}
+
+export async function saveUe4ssLoadOrder(order: any[]): Promise<void> {
+  return invoke('save_ue4ss_load_order', { order });
+}
+
+export async function getPalschemaLoadOrder(): Promise<any[]> {
+  return invoke('get_palschema_load_order');
+}
+
+export async function savePalschemaLoadOrder(order: any[]): Promise<void> {
+  return invoke('save_palschema_load_order', { order });
+}
+
+
 
 
 

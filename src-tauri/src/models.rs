@@ -69,6 +69,8 @@ pub struct ModInfo {
     pub ignored_keys: Option<Vec<String>>,
     #[serde(default)]
     pub has_pending_update: Option<bool>,
+    #[serde(default)]
+    pub origin_load_method: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

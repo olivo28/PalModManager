@@ -560,7 +560,7 @@ function compareVersions(a: string, b: string): number {
 
       let mods = wState.mods;
       if (_librarySearchQuery) {
-        mods = mods.filter(m => m.modName.toLowerCase().includes(_librarySearchQuery) || m.author.toLowerCase().includes(_librarySearchQuery));
+        mods = mods.filter((m: any) => m.modName.toLowerCase().includes(_librarySearchQuery) || m.author.toLowerCase().includes(_librarySearchQuery));
       }
 
       if (mods.length === 0) {
@@ -568,7 +568,7 @@ function compareVersions(a: string, b: string): number {
         return;
       }
 
-      container.innerHTML = mods.map(m => {
+      container.innerHTML = mods.map((m: any) => {
         let typeClass = 'ue4ss';
         let typeLabel = 'U';
         if (m.installType === 'palSchemaMod') {

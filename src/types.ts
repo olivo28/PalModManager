@@ -37,6 +37,7 @@ export interface ModInfo {
   nexusFileId: number | null;
   ignoredKeys?: string[] | null;
   hasPendingUpdate?: boolean | null;
+  originLoadMethod?: string | null;
 }
 
 export interface AppSettings {
@@ -109,6 +110,20 @@ export interface DependencyStatus {
   palschema_latest_version: string | null;
   palschema_needs_update: boolean;
   game_platform: string;
+  has_dll_conflict?: boolean;
+  conflicting_dlls?: string[];
+  ue4ss_updated_from?: string | null;
+  palschema_updated_from?: string | null;
+}
+
+export interface SafetyBackupInfo {
+  exists: boolean;
+  timestamp: string | null;
+  pmmVersion: string | null;
+  zipSizeBytes: number | null;
+  totalEntries: number;
+  ue4ssModsCount: number;
+  palschemaModsCount: number;
 }
 
 export type RouteType = 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'companion' | 'passthrough';

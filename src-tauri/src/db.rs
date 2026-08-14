@@ -135,6 +135,7 @@ const MOD_INFO_MAPPING: &[(&str, &str)] = &[
     ("nexus_cached_at", "nexusCachedAt"),
     ("nexus_category", "nexusCategory"),
     ("nexus_tags", "nexusTags"),
+    ("origin_load_method", "originLoadMethod"),
 ];
 
 const SETTINGS_MAPPING: &[(&str, &str)] = &[

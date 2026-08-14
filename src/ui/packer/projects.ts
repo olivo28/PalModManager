@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
-import { stagedFiles, sourcePaths, targetOverrides, virtualFolders, backupPaths, format, activeProjectName, savedProjects, setStagedFiles, setSourcePaths, setVirtualFolders, setBackupPaths, setActiveProject, setSavedProjects, renderWorkspace, escapeHtml } from './mod';
+import { stagedFiles, sourcePaths, targetOverrides, virtualFolders, backupPaths, activeProjectName, savedProjects, setStagedFiles, setSourcePaths, setVirtualFolders, setBackupPaths, setActiveProject, setSavedProjects, renderWorkspace, escapeHtml } from './mod';
 import { scanAndBuildStagedFiles } from './staging';
 import { clearMetadataForm } from './rendering';
 

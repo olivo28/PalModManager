@@ -10,23 +10,33 @@ use crate::profiles::effective_force_ue4ss;
 pub fn get_mod_folder_name(mod_info: &ModInfo) -> String {
     if !mod_info.game_path.is_empty() {
         if let Some(name) = Path::new(&mod_info.game_path).file_name() {
-            let name_str = name.to_string_lossy().to_string();
+            let mut name_str = name.to_string_lossy().to_string();
             if let Some(stripped) = name_str.strip_suffix(".disabled") {
-                return stripped.to_string();
+                name_str = stripped.to_string();
+            }
+            if name_str.len() > 4 && name_str[..3].chars().all(|c| c.is_ascii_digit()) && name_str.as_bytes()[3] == b'_' {
+                name_str = name_str[4..].to_string();
             }
             return name_str;
         }
     }
     if !mod_info.disabled_path.is_empty() {
         if let Some(name) = Path::new(&mod_info.disabled_path).file_name() {
-            let name_str = name.to_string_lossy().to_string();
+            let mut name_str = name.to_string_lossy().to_string();
             if let Some(stripped) = name_str.strip_suffix(".disabled") {
-                return stripped.to_string();
+                name_str = stripped.to_string();
+            }
+            if name_str.len() > 4 && name_str[..3].chars().all(|c| c.is_ascii_digit()) && name_str.as_bytes()[3] == b'_' {
+                name_str = name_str[4..].to_string();
             }
             return name_str;
         }
     }
-    mod_info.name.clone()
+    let mut clean_name = mod_info.name.clone();
+    if clean_name.len() > 4 && clean_name[..3].chars().all(|c| c.is_ascii_digit()) && clean_name.as_bytes()[3] == b'_' {
+        clean_name = clean_name[4..].to_string();
+    }
+    clean_name
 }
 
 pub fn update_mods_txt_load_order(mods_txt: &Path, mod_name: &str, enabled: bool) -> Result<(), String> {
@@ -176,8 +186,8 @@ pub fn disable_mod_internal(
         mod_info.enabled = false;
     } else if mod_type == ModType::PalSchema {
         let mod_info = &mut data.mods[mod_index];
-        let src_path = PathBuf::from(&mod_info.game_path);
         let folder_name = get_mod_folder_name(mod_info);
+        let src_path = PathBuf::from(&mod_info.game_path);
 
         let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
         let palschema_mods_dir = gp.palschema_mods_dir.clone();
@@ -188,7 +198,12 @@ pub fn disable_mod_internal(
                 for entry in entries.flatten() {
                     let path = entry.path();
                     let name = path.file_name().unwrap().to_string_lossy().to_string();
-                    if name == folder_name || (name.len() > 4 && &name[4..] == folder_name) {
+                    let clean_name = if name.len() > 4 && name[..3].chars().all(|c| c.is_ascii_digit()) && name.as_bytes()[3] == b'_' {
+                        &name[4..]
+                    } else {
+                        &name
+                    };
+                    if clean_name.to_lowercase() == folder_name.to_lowercase() {
                         let _ = remove_junction_or_symlink(&path);
                     }
                 }
@@ -196,13 +211,18 @@ pub fn disable_mod_internal(
         }
 
         let storage_path = palschema_storage_dir.join(&folder_name);
-        let final_src = if storage_path.exists() { storage_path } else { src_path };
+        let final_src = if storage_path.exists() {
+            storage_path
+        } else if src_path.exists() {
+            src_path
+        } else {
+            palschema_mods_dir.join(&folder_name)
+        };
 
         if final_src.exists() {
-            let file_name = final_src.file_name().unwrap().to_string_lossy().to_string();
             let dest_dir = disabled_base.join("palschema");
             let _ = fs::create_dir_all(&dest_dir);
-            let dest = dest_dir.join(&file_name);
+            let dest = dest_dir.join(&folder_name);
             move_path(&final_src, &dest)?;
             mod_info.disabled_path = dest.to_string_lossy().to_string();
             mod_info.game_path = String::new();
@@ -411,10 +431,11 @@ pub fn enable_mod_internal(
             move_path(&primary_disabled, &dest)?;
 
             let force_order = data.settings.force_load_order.unwrap_or(false) && force_ue4ss_effective;
+            let origin_mods_txt = mod_info.origin_load_method.as_deref() == Some("mods_txt");
             let mods_txt = dest_dir.join("mods.txt");
             if mods_txt.exists() {
                 let folder_name = get_mod_folder_name(mod_info);
-                if force_order {
+                if force_order || origin_mods_txt {
                     let _ = update_mods_txt_load_order(&mods_txt, &folder_name, true);
                 } else {
                     let _ = remove_from_mods_txt(&mods_txt, &folder_name);
@@ -423,6 +444,13 @@ pub fn enable_mod_internal(
             let enabled_file = dest.join("enabled.txt");
             if force_order {
                 if enabled_file.exists() {
+                    let _ = fs::remove_file(&enabled_file);
+                }
+            } else if origin_mods_txt {
+                // If it originated from mods.txt, don't force enabled.txt unless it had one
+                if mod_info.has_enabled_txt {
+                    let _ = fs::write(&enabled_file, "");
+                } else if enabled_file.exists() {
                     let _ = fs::remove_file(&enabled_file);
                 }
             } else {
@@ -451,9 +479,23 @@ pub fn enable_mod_internal(
                 let _ = fs::create_dir_all(&palschema_storage_dir);
                 move_path(&primary_disabled, &storage_dest)?;
 
-                let order = mod_info.mods_txt_order.unwrap_or(999);
-                let link_name = format!("{:03}_{}", order, folder_name);
+                // Calculate next available numeric prefix
+                let next_order = palschema_mods_dir
+                    .read_dir()
+                    .map(|rd| {
+                        rd.flatten()
+                            .filter(|e| {
+                                let n = e.file_name().to_string_lossy().to_string();
+                                n.len() > 4 && n[..3].chars().all(|c| c.is_ascii_digit()) && n.as_bytes()[3] == b'_'
+                            })
+                            .count() as u32
+                            + 1
+                    })
+                    .unwrap_or(1);
+
+                let link_name = format!("{:03}_{}", next_order, folder_name);
                 let link_path = palschema_mods_dir.join(&link_name);
+                let _ = remove_junction_or_symlink(&link_path);
                 create_junction_or_symlink(&storage_dest, &link_path)?;
 
                 mod_info.game_path = link_path.to_string_lossy().to_string();
@@ -507,7 +549,10 @@ pub fn enable_mod_internal(
             let filename = primary_disabled.file_name().unwrap().to_string_lossy().to_string();
             primary_has_scripts = primary_disabled.join("Scripts").exists()
                 || primary_disabled.join("scripts").exists()
-                || primary_disabled.join("enabled.txt").exists();
+                || primary_disabled.join("enabled.txt").exists()
+                || primary_disabled.join("main.lua").exists()
+                || primary_disabled.join(format!("{}.dll", filename)).exists()
+                || primary_disabled.extension().map_or(false, |e| e == "lua");
             let dest = if primary_has_scripts {
                 ue4ss_mods_dir.join(&filename)
             } else {

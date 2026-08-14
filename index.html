@@ -571,6 +571,19 @@
           </div>
           <div class="settings-divider"></div>
           <div class="settings-group">
+            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;">🛡️ Safety Backup & Troubleshooting</div>
+            <div class="settings-hint" style="margin-bottom:10px;">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
+            <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: 8px; font-family: monospace; font-size: 11px;">Checking backup status...</div>
+            <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; gap:8px;">
+                <button id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:6px 8px; border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs">🔄 Restore Pre-PMM Setup</button>
+                <button id="safety-backup-now-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Create a fresh snapshot of current game mod files">📸 Backup Now</button>
+              </div>
+              <button id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates">🧹 Reset Workshop UE4SS Cache</button>
+            </div>
+          </div>
+          <div class="settings-divider"></div>
+          <div class="settings-group">
             <label>Quick Access Folders</label>
             <div class="settings-hint font-size-11">Open game or app data folders directly in system file explorer</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
