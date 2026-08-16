@@ -49,7 +49,7 @@ pub fn check_dependencies(state: State<AppState>) -> Result<dependency_checker::
             if ue4ss_cache_file.exists() {
                 if let Ok(prev) = fs::read_to_string(&ue4ss_cache_file) {
                     let prev_clean = prev.trim();
-                    if !prev_clean.is_empty() && prev_clean != cur_ue4ss && prev_clean != "unknown" {
+                    if !prev_clean.is_empty() && prev_clean != cur_ue4ss && prev_clean != "unknown" && prev_clean != "Workshop" && cur_ue4ss != "Workshop" {
                         status.ue4ss_updated_from = Some(prev_clean.to_string());
                     }
                 }
@@ -61,7 +61,7 @@ pub fn check_dependencies(state: State<AppState>) -> Result<dependency_checker::
             if palschema_cache_file.exists() {
                 if let Ok(prev) = fs::read_to_string(&palschema_cache_file) {
                     let prev_clean = prev.trim();
-                    if !prev_clean.is_empty() && prev_clean != cur_schema && prev_clean != "unknown" {
+                    if !prev_clean.is_empty() && prev_clean != cur_schema && prev_clean != "unknown" && prev_clean != "Workshop" && cur_schema != "Workshop" {
                         status.palschema_updated_from = Some(prev_clean.to_string());
                     }
                 }
@@ -282,8 +282,8 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
 
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
     let dep_status = crate::dependency_checker::check_dependencies(&game_path);
-    if dep_status.ue4ss_installed {
-        crate::logger::log("install_ue4ss: UE4SS is already installed. Skipping installation.");
+    if dep_status.ue4ss_installed && !force_download {
+        crate::logger::log("install_ue4ss: UE4SS is already installed and force_download is false. Skipping installation.");
         return Ok("UE4SS is already installed.".to_string());
     }
     let ue4ss_dir = win64.join("ue4ss");
@@ -597,8 +597,8 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
     let dep_status = crate::dependency_checker::check_dependencies(&game_path);
     
-    if dep_status.palschema_installed {
-        crate::logger::log("install_palschema: PalSchema is already installed. Skipping installation.");
+    if dep_status.palschema_installed && !force_download {
+        crate::logger::log("install_palschema: PalSchema is already installed and force_download is false. Skipping installation.");
         return Ok("PalSchema is already installed.".to_string());
     }
 

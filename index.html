@@ -55,44 +55,44 @@
     <nav id="sidebar">
       <div class="sidebar-logo">PMM</div>
       <div class="sidebar-tabs">
-        <button class="sidebar-tab active" data-tab="mods" title="Mods">
+        <button class="sidebar-tab active" data-tab="mods" title="Mods" data-i18n-title="sidebar.tab_mods_title">
           <span class="sidebar-tab-icon">⊞</span>
-          <span class="sidebar-tab-label">Mods</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_mods">Mods</span>
         </button>
-        <button id="sidebar-tab-load" class="sidebar-tab" data-tab="load" title="Load Order" style="display:none">
+        <button id="sidebar-tab-load" class="sidebar-tab" data-tab="load" title="Load Order" data-i18n-title="sidebar.tab_load_title" style="display:none">
           <span class="sidebar-tab-icon">⇅</span>
-          <span class="sidebar-tab-label">Load</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_load">Load</span>
         </button>
-        <button class="sidebar-tab" data-tab="editor" title="Editor">
+        <button class="sidebar-tab" data-tab="editor" title="Editor" data-i18n-title="sidebar.tab_editor_title">
           <span class="sidebar-tab-icon">✎</span>
-          <span class="sidebar-tab-label">Edit</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_editor">Edit</span>
         </button>
-        <button class="sidebar-tab" data-tab="library" title="Mod Library" style="position:relative;">
+        <button class="sidebar-tab" data-tab="library" title="Mod Library" data-i18n-title="sidebar.tab_library_title" style="position:relative;">
           <span class="sidebar-tab-icon">📦</span>
-          <span class="sidebar-tab-label">Library</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_library">Library</span>
           <span id="sidebar-library-badge" style="display:none;position:absolute;top:6px;right:6px;width:8px;height:8px;background:#00bcff;border-radius:50%;box-shadow:0 0 6px #00bcff;"></span>
         </button>
-        <button class="sidebar-tab" data-tab="build" title="Mod Packer">
+        <button class="sidebar-tab" data-tab="build" title="Mod Packer" data-i18n-title="sidebar.tab_build_title">
           <span class="sidebar-tab-icon">🛠</span>
-          <span class="sidebar-tab-label">Build</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_build">Build</span>
         </button>
-        <button class="sidebar-tab" data-tab="scanner" title="Conflict Scanner">
+        <button class="sidebar-tab" data-tab="scanner" title="Conflict Scanner" data-i18n-title="sidebar.tab_scanner_title">
           <span class="sidebar-tab-icon">🛡</span>
-          <span class="sidebar-tab-label">Scan</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_scanner">Scan</span>
         </button>
-        <button class="sidebar-tab" data-tab="db" title="DB Inspector">
+        <button class="sidebar-tab" data-tab="db" title="DB Inspector" data-i18n-title="sidebar.tab_db_title">
           <span class="sidebar-tab-icon">🗄</span>
-          <span class="sidebar-tab-label">DB</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_db">DB</span>
         </button>
       </div>
 
       <div class="sidebar-footer">
-        <button id="launch-game-btn" class="sidebar-play-btn" title="Launch Palworld">
+        <button id="launch-game-btn" class="sidebar-play-btn" title="Launch Palworld" data-i18n-title="sidebar.launch_game_title">
           <span class="sidebar-tab-icon">▶</span>
-          <span class="sidebar-tab-label">Play</span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.launch_game">Play</span>
         </button>
         <div id="sidebar-version" class="sidebar-version">V1.5.0</div>
-        <button id="settings-btn" class="sidebar-btn" title="Settings">⚙</button>
+        <button id="settings-btn" class="sidebar-btn" title="Settings" data-i18n-title="sidebar.settings_title">⚙</button>
       </div>
     </nav>
 
@@ -105,77 +105,78 @@
           <span id="ue4ss-badge" class="dep-badge" style="display:none"></span>
           <span id="palschema-badge" class="dep-badge" style="display:none"></span>
           <div id="quick-filter-bar">
-            <button class="quick-filter-btn active" data-filter="ue4ss">UE4SS</button>
-            <button class="quick-filter-btn active" data-filter="palschema">PalSchema</button>
-            <button class="quick-filter-btn active" data-filter="pak">Pak</button>
-            <button class="quick-filter-btn active" data-filter="logicmods">LogicMods</button>
-            <button class="quick-filter-btn active" data-filter="hybrid">Hybrid</button>
+            <button class="quick-filter-btn active" data-filter="ue4ss" data-i18n="mods.quick_filter_ue4ss">UE4SS</button>
+            <button class="quick-filter-btn active" data-filter="palschema" data-i18n="mods.quick_filter_palschema">PalSchema</button>
+            <button class="quick-filter-btn active" data-filter="pak" data-i18n="mods.quick_filter_pak">Pak</button>
+            <button class="quick-filter-btn active" data-filter="logicmods" data-i18n="mods.quick_filter_logicmods">LogicMods</button>
+            <button class="quick-filter-btn active" data-filter="hybrid" data-i18n="mods.quick_filter_hybrid">Hybrid</button>
             <span class="quick-filter-sep"></span>
-            <button id="advanced-filter-btn" class="quick-filter-btn advanced" title="Advanced filters">▼</button>
+            <button id="advanced-filter-btn" class="quick-filter-btn advanced" title="Advanced filters" data-i18n-title="mods.filter_advanced_title">▼</button>
             <div id="advanced-filter-dropdown" class="filter-dropdown" style="display:none;">
-              <div class="filter-dropdown-header">Tags</div>
+              <div class="filter-dropdown-header" data-i18n="mods.filter_tags_header">Tags</div>
               <div id="filter-tags-list"></div>
-              <div class="filter-dropdown-header" style="margin-top:8px">Categories</div>
+              <div class="filter-dropdown-header" style="margin-top:8px" data-i18n="mods.filter_categories_header">Categories</div>
               <div id="filter-cats-list"></div>
             </div>
             <span class="quick-filter-sep"></span>
             <div id="status-filter-bar">
-              <button class="status-filter-btn active" data-status="all" title="Show All Mods">All</button>
-              <button class="status-filter-btn" data-status="enabled" title="Show Enabled Mods Only">On</button>
-              <button class="status-filter-btn" data-status="disabled" title="Show Disabled Mods Only">Off</button>
+              <button class="status-filter-btn active" data-status="all" title="Show All Mods" data-i18n-title="mods.status_all_title" data-i18n="common.all">All</button>
+              <button class="status-filter-btn" data-status="enabled" title="Show Enabled Mods Only" data-i18n-title="mods.status_on_title" data-i18n="common.on">On</button>
+              <button class="status-filter-btn" data-status="disabled" title="Show Disabled Mods Only" data-i18n-title="mods.status_off_title" data-i18n="common.off">Off</button>
             </div>
           </div>
           <div id="search-wrap">
-            <input type="text" id="search-input" placeholder="Search mods..." title="Filter mods by name or author" />
+            <input type="text" id="search-input" placeholder="Search mods..." title="Filter mods by name or author" data-i18n-placeholder="mods.search_placeholder" data-i18n-title="mods.search_title" />
           </div>
           <div id="sort-bar">
-            <button class="sort-btn active" data-sort="name" title="Sort by Name (A-Z / Z-A)">N <span class="arrow">▲</span></button>
-            <button class="sort-btn" data-sort="type" title="Sort by Mod Type (UE4SS, PalSchema, Pak, LogicMods)">T <span class="arrow">▲</span></button>
-            <button class="sort-btn" data-sort="date" title="Sort by Installation Date">D <span class="arrow">▼</span></button>
-            <button class="sort-btn" data-sort="status" title="Sort by Status (Enabled / Disabled)">S <span class="arrow">▲</span></button>
+            <button class="sort-btn active" data-sort="name" title="Sort by Name (A-Z / Z-A)" data-i18n-title="mods.sort_name_title">N <span class="arrow">▲</span></button>
+            <button class="sort-btn" data-sort="type" title="Sort by Mod Type (UE4SS, PalSchema, Pak, LogicMods)" data-i18n-title="mods.sort_type_title">T <span class="arrow">▲</span></button>
+            <button class="sort-btn" data-sort="date" title="Sort by Installation Date" data-i18n-title="mods.sort_date_title">D <span class="arrow">▼</span></button>
+            <button class="sort-btn" data-sort="status" title="Sort by Status (Enabled / Disabled)" data-i18n-title="mods.sort_status_title">S <span class="arrow">▲</span></button>
           </div>
           <div id="layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
-            <button id="layout-grid-btn" class="layout-btn active" title="Grid View (Cards)">⊞</button>
-            <button id="layout-list-btn" class="layout-btn" title="List View (Details Table)">☰</button>
+            <button id="layout-grid-btn" class="layout-btn active" title="Grid View (Cards)" data-i18n-title="mods.layout_grid_title">⊞</button>
+            <button id="layout-list-btn" class="layout-btn" title="List View (Details Table)" data-i18n-title="mods.layout_list_title">☰</button>
           </div>
           <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile:
             Default</span>
-          <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles (create, switch, duplicate)">Profiles</button>
-          <button id="new-folder-btn" class="toolbar-btn-sm" title="Create virtual group folder">New Folder</button>
+          <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles (create, switch, duplicate)" data-i18n-title="mods.btn_profiles_title" data-i18n="mods.btn_profiles">Profiles</button>
+          <button id="new-folder-btn" class="toolbar-btn-sm" title="Create virtual group folder" data-i18n-title="mods.btn_new_folder_title" data-i18n="mods.btn_new_folder">New Folder</button>
           <div id="toolbar-actions">
-            <button id="scan-btn" class="toolbar-btn" title="Rescan mod directories and game files">↻</button>
-            <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip archive">+</button>
-            <button id="check-updates-btn" class="toolbar-btn" title="Check for mod updates">↑</button>
-            <button id="open-all-updates-btn" class="toolbar-btn" title="Open all Nexus update pages in browser" style="display:none;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);">🌐 Open Updates</button>
+            <button id="scan-btn" class="toolbar-btn" title="Rescan mod directories and game files" data-i18n-title="mods.btn_scan_title">↻</button>
+            <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip archive" data-i18n-title="mods.btn_install_title">+</button>
+            <button id="check-updates-btn" class="toolbar-btn" title="Check for mod updates" data-i18n-title="mods.btn_check_updates_title">↑</button>
+            <button id="open-all-updates-btn" class="toolbar-btn" title="Open all Nexus update pages in browser" data-i18n-title="mods.btn_open_all_updates_title" style="display:none;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);" data-i18n="mods.btn_open_all_updates">🌐 Open Updates</button>
             <span class="quick-filter-sep"></span>
-            <button id="disable-all-btn" class="toolbar-btn-sm" title="Disable all active mods in current profile">All Off</button>
-            <button id="enable-all-btn" class="toolbar-btn-sm" title="Enable all mods in current profile">All On</button>
+            <button id="disable-all-btn" class="toolbar-btn-sm" title="Disable all active mods in current profile" data-i18n-title="mods.btn_disable_all_title" data-i18n="mods.btn_disable_all">All Off</button>
+            <button id="enable-all-btn" class="toolbar-btn-sm" title="Enable all mods in current profile" data-i18n-title="mods.btn_enable_all_title" data-i18n="mods.btn_enable_all">All On</button>
             <span class="quick-filter-sep"></span>
-            <button id="export-json-btn" class="toolbar-btn-sm" title="Export all mod data as JSON">Export JSON</button>
-            <button id="backup-btn" class="toolbar-btn-sm" title="Backup all mods to a ZIP archive">Backup</button>
+            <button id="export-json-btn" class="toolbar-btn-sm" title="Export all mod data as JSON" data-i18n-title="mods.btn_export_json_title" data-i18n="mods.btn_export_json">Export JSON</button>
+            <button id="backup-btn" class="toolbar-btn-sm" title="Backup all mods to a ZIP archive" data-i18n-title="mods.btn_backup_title" data-i18n="mods.btn_backup">Backup</button>
             <button id="restore-backup-btn" class="toolbar-btn-sm"
-              title="Restore all mods from a PMM Backup ZIP">Restore Backup</button>
+              title="Restore all mods from a PMM Backup ZIP" data-i18n-title="mods.btn_restore_backup_title" data-i18n="mods.btn_restore_backup">Restore Backup</button>
           </div>
         </div>
         <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none">
           <div class="bulk-actions-info"><span id="bulk-selected-count">0</span> mods selected</div>
           <div class="bulk-actions-buttons">
-            <button id="bulk-enable-btn" class="bulk-btn primary">Enable All</button>
-            <button id="bulk-disable-btn" class="bulk-btn">Disable All</button>
-            <button id="bulk-remove-btn" class="bulk-btn danger">Remove Selected</button>
-            <button id="bulk-clear-btn" class="bulk-btn">Cancel</button>
+            <button id="bulk-enable-btn" class="bulk-btn primary" data-i18n="mods.bulk_enable">Enable All</button>
+            <button id="bulk-disable-btn" class="bulk-btn" data-i18n="mods.bulk_disable">Disable All</button>
+            <button id="bulk-remove-btn" class="bulk-btn danger" data-i18n="mods.bulk_remove">Remove Selected</button>
+            <button id="bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
           </div>
         </div>
         <div id="mods-container">
-          <div id="empty-state">No mods found. Install a mod or configure your game path in Settings.</div>
+          <div id="empty-state" data-i18n="mods.empty_state">No mods found. Install a mod or configure your game path in Settings.</div>
         </div>
       </div>
       
       <!-- LOAD TAB -->
+      <!-- LOAD TAB -->
       <div id="load-view" class="tab-content" style="display:none; flex-direction:column; height: 100%; overflow: hidden;">
         <div id="load-toolbar" style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0;">
-          <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Mods Load Order</span>
-          <div class="settings-hint" style="margin-left:8px; font-size:11px; color:var(--text-muted);">
+          <span style="font-size:13px;font-weight:700;color:var(--text-primary)" data-i18n="load.title">Mods Load Order</span>
+          <div class="settings-hint" style="margin-left:8px; font-size:11px; color:var(--text-muted);" data-i18n="load.hint">
             Drag and drop mods in their respective columns to reorder. Toggles enable or disable them.
           </div>
         </div>
@@ -188,18 +189,18 @@
       <div id="library-view" class="tab-content" style="display:none">
         <div id="library-toolbar"
           style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
-          <span style="font-size:13px;font-weight:700;color:var(--text-primary)">Mod Library</span>
+          <span style="font-size:13px;font-weight:700;color:var(--text-primary)" data-i18n="library.title">Mod Library</span>
 
           <div class="library-sub-tabs" style="display:flex;gap:4px;background:rgba(0,0,0,0.2);padding:2px;border-radius:6px;border:1px solid var(--border);margin-left:8px;">
-            <button class="library-sub-tab active" data-tab="local" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;transition:all 0.2s;">Local Library</button>
+            <button class="library-sub-tab active" data-tab="local" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;transition:all 0.2s;" data-i18n="library.tab_local">Local Library</button>
             <button class="library-sub-tab" data-tab="workshop" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
-              <span>Steam Workshop</span>
+              <span data-i18n="library.tab_workshop">Steam Workshop</span>
               <span id="workshop-subtab-badge" style="display:none;font-size:8px;background:#00bcff;color:#fff;padding:1px 5px;border-radius:10px;font-weight:bold;">NEW</span>
             </button>
           </div>
 
           <div id="library-workshop-master-wrap" style="display:none; align-items:center; gap:8px; margin-left:12px;">
-            <span style="font-size:11px;color:var(--text-muted);font-weight:600;">Enable Workshop:</span>
+            <span style="font-size:11px;color:var(--text-muted);font-weight:600;" data-i18n="library.workshop_enable_label">Enable Workshop:</span>
             <label class="toggle-switch">
               <input type="checkbox" id="library-workshop-master-toggle" />
               <span class="toggle-slider"></span>
@@ -208,21 +209,22 @@
 
           <div id="library-search-wrap" style="position:relative;width:240px;margin-left:auto;">
             <input type="text" id="library-search-input" placeholder="Search library..."
+              data-i18n-placeholder="library.search_placeholder"
               style="width:100%;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;" />
           </div>
-          <button id="library-refresh-btn" class="toolbar-btn-sm">Refresh</button>
+          <button id="library-refresh-btn" class="toolbar-btn-sm" data-i18n="common.refresh">Refresh</button>
         </div>
         <div id="library-bulk-actions-bar" class="bulk-actions-bar" style="display:none;margin:12px 16px 0 16px;">
           <div class="bulk-actions-info"><span id="library-bulk-selected-count">0</span> mods selected</div>
           <div class="bulk-actions-buttons">
-            <button id="library-bulk-install-btn" class="bulk-btn primary">Install Selected</button>
-            <button id="library-bulk-remove-btn" class="bulk-btn danger">Remove Selected</button>
-            <button id="library-bulk-clear-btn" class="bulk-btn">Cancel</button>
+            <button id="library-bulk-install-btn" class="bulk-btn primary" data-i18n="library.btn_install_selected">Install Selected</button>
+            <button id="library-bulk-remove-btn" class="bulk-btn danger" data-i18n="library.btn_remove_selected">Remove Selected</button>
+            <button id="library-bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
           </div>
         </div>
         <div id="library-container"
           style="flex:1;padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:16px;align-content:start;">
-          <div id="library-empty">No mods in library. Mods are automatically copied here when installed.</div>
+          <div id="library-empty" data-i18n="library.empty_local">No mods in library. Mods are automatically copied here when installed.</div>
         </div>
       </div>
 
@@ -231,29 +233,29 @@
       <div id="editor-view" class="tab-content">
         <div id="editor-toolbar">
           <select id="editor-mod-select" style="display:none">
-            <option value="">Select a mod...</option>
+            <option value="" data-i18n="editor.select_mod_placeholder">Select a mod...</option>
           </select>
           <span id="editor-current-mod-name"
             style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 8px;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></span>
           <span class="editor-sep"></span>
-          <button id="editor-format-btn" class="btn-editor" title="Format JSON">Format</button>
-          <button id="editor-preview-btn" class="btn-editor" title="Toggle preview"
+          <button id="editor-format-btn" class="btn-editor" title="Format JSON" data-i18n-title="editor.btn_format_title" data-i18n="common.format">Format</button>
+          <button id="editor-preview-btn" class="btn-editor" title="Toggle preview" data-i18n-title="editor.btn_preview_title" data-i18n="common.preview"
             style="display:none">Preview</button>
-          <button id="editor-save-btn" class="btn-editor primary">Save</button>
+          <button id="editor-save-btn" class="btn-editor primary" data-i18n="common.save">Save</button>
           <div style="flex:1"></div>
           <span id="editor-status"></span>
         </div>
         <div id="editor-body">
           <!-- Left: mod tree panel -->
           <div id="editor-mod-panel">
-            <div class="editor-mod-panel-header">Explorer</div>
+            <div class="editor-mod-panel-header" data-i18n="editor.panel_explorer">Explorer</div>
             <div id="editor-mod-tree">
               <!-- Populated by renderEditorModTree() -->
             </div>
           </div>
           <!-- Middle: file tree -->
           <div id="editor-file-tree">
-            <div class="editor-file-empty">Select a mod to view files</div>
+            <div class="editor-file-empty" data-i18n="editor.file_empty">Select a mod to view files</div>
           </div>
           <div id="editor-content-area">
             <div id="editor-file-path"></div>
@@ -264,11 +266,11 @@
               <div id="editor-preview" style="display:none"></div>
             </div>
             <div id="editor-find-bar" style="display:none">
-              <input id="editor-find-input" type="text" placeholder="Find..." />
+              <input id="editor-find-input" type="text" placeholder="Find..." data-i18n-placeholder="editor.find_placeholder" />
               <span id="editor-find-count"></span>
-              <button id="editor-find-prev" class="btn-find" title="Previous match">&uarr;</button>
-              <button id="editor-find-next" class="btn-find" title="Next match">&darr;</button>
-              <button id="editor-find-close" class="btn-find" title="Close (Esc)">&times;</button>
+              <button id="editor-find-prev" class="btn-find" title="Previous match" data-i18n-title="editor.find_prev_title">&uarr;</button>
+              <button id="editor-find-next" class="btn-find" title="Next match" data-i18n-title="editor.find_next_title">&darr;</button>
+              <button id="editor-find-close" class="btn-find" title="Close (Esc)" data-i18n-title="editor.find_close_title">&times;</button>
             </div>
           </div>
         </div>
@@ -279,8 +281,8 @@
         <!-- View 1: Projects Hub (Grid/Dashboard) -->
         <div id="packer-projects-hub" style="display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
           <div class="packer-toolbar">
-            <span class="packer-toolbar-title">Mod Packer Workspace</span>
-            <button id="packer-hub-new-btn" class="toolbar-btn toolbar-btn-primary" style="font-size: 12px; padding: 6px 12px; line-height: 1;">+ Create New Project</button>
+            <span class="packer-toolbar-title" data-i18n="packer.hub_title">Mod Packer Workspace</span>
+            <button id="packer-hub-new-btn" class="toolbar-btn toolbar-btn-primary" style="font-size: 12px; padding: 6px 12px; line-height: 1;" data-i18n="packer.btn_new_project">+ Create New Project</button>
           </div>
           <div id="packer-projects-grid" class="packer-projects-grid" style="flex: 1; padding: 24px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; align-content: start;">
             <!-- Project folder cards populated dynamically -->
@@ -291,25 +293,25 @@
         <div id="packer-workspace-view" style="display: none; flex-direction: row; width: 100%; height: 100%; overflow: hidden;">
           <div class="packer-left">
             <div class="packer-toolbar">
-              <button id="packer-workspace-back-btn" class="toolbar-btn-sm" style="margin-right: 8px;">← Projects</button>
-              <span id="packer-workspace-title" class="packer-toolbar-title">Staged Files</span>
+              <button id="packer-workspace-back-btn" class="toolbar-btn-sm" style="margin-right: 8px;" data-i18n="packer.btn_back_projects">← Projects</button>
+              <span id="packer-workspace-title" class="packer-toolbar-title" data-i18n="packer.workspace_title">Staged Files</span>
               <div id="packer-layout-toggle-bar" style="display:flex;align-items:center;gap:4px;margin-right:8px;">
-                <button id="packer-view-list-btn" class="layout-btn active" title="List View">☰</button>
-                <button id="packer-view-tree-btn" class="layout-btn" title="Tree View">⊞</button>
+                <button id="packer-view-list-btn" class="layout-btn active" title="List View" data-i18n-title="packer.view_list_title">☰</button>
+                <button id="packer-view-tree-btn" class="layout-btn" title="Tree View" data-i18n-title="packer.view_tree_title">⊞</button>
               </div>
-              <button id="packer-add-files-btn" class="toolbar-btn-sm">+ Add Files</button>
-              <button id="packer-add-folder-btn" class="toolbar-btn-sm">📁 Add Folder</button>
-              <button id="packer-new-virtual-folder-btn" class="toolbar-btn-sm" style="display:none;">➕ New Folder</button>
-              <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;">Auto-Structure</button>
-              <button id="packer-clear-btn" class="toolbar-btn-sm">Clear All</button>
+              <button id="packer-add-files-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_files">+ Add Files</button>
+              <button id="packer-add-folder-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_folder">📁 Add Folder</button>
+              <button id="packer-new-virtual-folder-btn" class="toolbar-btn-sm" style="display:none;" data-i18n="packer.btn_new_virtual_folder">➕ New Folder</button>
+              <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;" data-i18n="packer.btn_auto_struct">Auto-Structure</button>
+              <button id="packer-clear-btn" class="toolbar-btn-sm" data-i18n="packer.btn_clear_all">Clear All</button>
             </div>
             <div id="packer-files-container" class="packer-files-container">
               <table id="packer-list-table" class="packer-table">
                 <thead>
                   <tr>
-                    <th>Source File</th>
-                    <th>Size</th>
-                    <th>Archive Target Path</th>
+                    <th data-i18n="packer.col_source_file">Source File</th>
+                    <th data-i18n="packer.col_size">Size</th>
+                    <th data-i18n="packer.col_target_path">Archive Target Path</th>
                     <th style="width: 40px;"></th>
                   </tr>
                 </thead>
@@ -322,55 +324,55 @@
               </div>
               <div id="packer-empty-state" class="packer-empty-state">
                 <span class="packer-empty-icon">🛠</span>
-                <strong>Workspace is Empty</strong>
-                <span>Drag & drop files or folders here, or use the "Add Files" button to begin staging.</span>
+                <strong data-i18n="packer.empty_state_title">Workspace is Empty</strong>
+                <span data-i18n="packer.empty_state_desc">Drag & drop files or folders here, or use the "Add Files" button to begin staging.</span>
               </div>
             </div>
             <div id="packer-drag-overlay" class="packer-drop-overlay">
-              <div class="packer-drop-overlay-content">📥 Drop files here to stage</div>
+              <div class="packer-drop-overlay-content" data-i18n="packer.drop_overlay">📥 Drop files here to stage</div>
             </div>
           </div>
           <div class="packer-right">
             <div class="packer-form-header" style="display:flex;align-items:center;justify-content:space-between;">
-              <span>Project Save Options</span>
-              <button id="packer-workspace-delete-btn" class="btn-tiny" style="background:var(--danger-dim);color:var(--danger);border:none;padding: 2px 6px;" title="Delete Project">Delete</button>
+              <span data-i18n="packer.save_options_title">Project Save Options</span>
+              <button id="packer-workspace-delete-btn" class="btn-tiny" style="background:var(--danger-dim);color:var(--danger);border:none;padding: 2px 6px;" title="Delete Project" data-i18n-title="packer.btn_delete_project_title" data-i18n="common.delete">Delete</button>
             </div>
             <div class="packer-form-group" style="margin-bottom: 12px; display: flex; flex-direction: row; gap: 6px;">
-              <input type="text" id="packer-project-name" class="packer-form-input" style="flex: 1; padding: 4px 8px; font-size: 11px; height:28px;" placeholder="Project Name..." />
-              <button id="packer-project-save-btn" class="toolbar-btn-sm" style="padding: 4px 10px; height:28px;">Save</button>
+              <input type="text" id="packer-project-name" class="packer-form-input" style="flex: 1; padding: 4px 8px; font-size: 11px; height:28px;" placeholder="Project Name..." data-i18n-placeholder="packer.project_name_placeholder" />
+              <button id="packer-project-save-btn" class="toolbar-btn-sm" style="padding: 4px 10px; height:28px;" data-i18n="common.save">Save</button>
             </div>
 
-            <div class="packer-form-header">Mod Metadata</div>
+            <div class="packer-form-header" data-i18n="packer.metadata_title">Mod Metadata</div>
             <div class="packer-form-group">
-              <label for="packer-meta-name">Mod Name</label>
-              <input type="text" id="packer-meta-name" class="packer-form-input" placeholder="e.g. MyAmazingMod" />
+              <label for="packer-meta-name" data-i18n="packer.label_mod_name">Mod Name</label>
+              <input type="text" id="packer-meta-name" class="packer-form-input" placeholder="e.g. MyAmazingMod" data-i18n-placeholder="packer.placeholder_mod_name" />
             </div>
             <div class="packer-form-group">
-              <label for="packer-meta-version">Version</label>
-              <input type="text" id="packer-meta-version" class="packer-form-input" placeholder="e.g. 1.0.0" value="1.0.0" />
+              <label for="packer-meta-version" data-i18n="packer.label_version">Version</label>
+              <input type="text" id="packer-meta-version" class="packer-form-input" placeholder="e.g. 1.0.0" value="1.0.0" data-i18n-placeholder="packer.placeholder_version" />
             </div>
             <div class="packer-form-group">
-              <label for="packer-meta-author">Author</label>
-              <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName" />
+              <label for="packer-meta-author" data-i18n="packer.label_author">Author</label>
+              <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName" data-i18n-placeholder="packer.placeholder_author" />
             </div>
             <div class="packer-form-group">
-              <label for="packer-meta-nexus-id">Nexus ID</label>
-              <input type="number" id="packer-meta-nexus-id" class="packer-form-input" placeholder="e.g. 1234 (Optional)" min="1" step="1" />
+              <label for="packer-meta-nexus-id" data-i18n="packer.label_nexus_id">Nexus ID</label>
+              <input type="number" id="packer-meta-nexus-id" class="packer-form-input" placeholder="e.g. 1234 (Optional)" min="1" step="1" data-i18n-placeholder="packer.placeholder_nexus_id" />
             </div>
             <div class="packer-form-group">
-              <label for="packer-meta-type">Mod Type</label>
+              <label for="packer-meta-type" data-i18n="packer.label_mod_type">Mod Type</label>
               <select id="packer-meta-type" class="packer-form-select">
-                <option value="">Select type...</option>
-                <option value="ue4ss">UE4SS Mod</option>
-                <option value="palschema">PalSchema Mod</option>
-                <option value="pak">Pak Mod (~mods)</option>
-                <option value="logicmods">LogicMods (~mods/LogicMods)</option>
-                <option value="hybrid">Hybrid Mod</option>
+                <option value="" data-i18n="packer.select_type_placeholder">Select type...</option>
+                <option value="ue4ss" data-i18n="packer.type_opt_ue4ss">UE4SS Mod</option>
+                <option value="palschema" data-i18n="packer.type_opt_palschema">PalSchema Mod</option>
+                <option value="pak" data-i18n="packer.type_opt_pak">Pak Mod (~mods)</option>
+                <option value="logicmods" data-i18n="packer.type_opt_logicmods">LogicMods (~mods/LogicMods)</option>
+                <option value="hybrid" data-i18n="packer.type_opt_hybrid">Hybrid Mod</option>
               </select>
             </div>
             <div class="packer-form-group">
-              <label for="packer-meta-desc">Description</label>
-              <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..."></textarea>
+              <label for="packer-meta-desc" data-i18n="packer.label_description">Description</label>
+              <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..." data-i18n-placeholder="packer.placeholder_desc"></textarea>
             </div>
             <div class="packer-format-row">
               <select id="packer-format-select" class="packer-select-format">
@@ -378,7 +380,7 @@
                 <option value="7z">.7z</option>
                 <option value="rar">.rar</option>
               </select>
-              <button id="packer-build-btn" class="packer-btn-build" disabled>
+              <button id="packer-build-btn" class="packer-btn-build" disabled data-i18n="packer.btn_build">
                 📦 Package Mod
               </button>
             </div>
@@ -403,24 +405,24 @@
   <div id="detail-overlay" class="detail-overlay">
     <div id="detail-panel" data-id="">
       <div id="detail-header">
-        <h3 id="detail-name-header">Mod Details</h3>
-        <button id="detail-rename-btn" class="btn-tiny" title="Rename mod">Rename</button>
+        <h3 id="detail-name-header" data-i18n="detail.title">Mod Details</h3>
+        <button id="detail-rename-btn" class="btn-tiny" title="Rename mod" data-i18n-title="detail.btn_rename_title" data-i18n="common.rename">Rename</button>
         <div style="flex:1"></div>
         <button id="detail-close" class="detail-close-btn">✕</button>
       </div>
       <div id="detail-body">
         <div id="detail-tabs">
-          <button class="detail-tab active" data-tab="info">Info</button>
-          <button class="detail-tab" data-tab="tech">Technical</button>
+          <button class="detail-tab active" data-tab="info" data-i18n="detail.tab_info">Info</button>
+          <button class="detail-tab" data-tab="tech" data-i18n="detail.tab_technical">Technical</button>
         </div>
         <div id="detail-info-tab" class="detail-tab-content">
           <div id="detail-image-container">
             <img id="detail-image" src="" alt="" />
           </div>
           <div class="detail-row" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-            <span class="detail-label">Folder:</span>
+            <span class="detail-label" data-i18n="detail.folder_label">Folder:</span>
             <select id="detail-folder-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; flex: 1;">
-              <option value="">(None / Ungrouped)</option>
+              <option value="" data-i18n="detail.folder_none">(None / Ungrouped)</option>
             </select>
           </div>
           <div id="detail-description" class="detail-description"></div>
@@ -429,13 +431,13 @@
         </div>
         <div id="detail-tech-tab" class="detail-tab-content" style="display:none">
           <div class="detail-row-group">
-            <div class="detail-row"><span class="detail-label">Type</span> <span id="detail-type"
+            <div class="detail-row"><span class="detail-label" data-i18n="detail.type_label">Type</span> <span id="detail-type"
                 class="mod-type-badge"></span></div>
-            <div class="detail-row"><span class="detail-label">Version</span> <span id="detail-version"></span></div>
-            <div class="detail-row"><span class="detail-label">Status</span> <span id="detail-status"
+            <div class="detail-row"><span class="detail-label" data-i18n="detail.version_label">Version</span> <span id="detail-version"></span></div>
+            <div class="detail-row"><span class="detail-label" data-i18n="detail.status_label">Status</span> <span id="detail-status"
                 class="detail-status"></span></div>
             <div class="detail-row" id="detail-pak-destination-row" style="display:none;">
-              <span class="detail-label">Pak Target</span>
+              <span class="detail-label" data-i18n="detail.pak_target_label">Pak Target</span>
               <select id="detail-pak-destination-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 2px 6px; font-size: 12px; outline: none; margin-left: 8px;">
                 <option value="~mods">~mods</option>
                 <option value="LogicMods">LogicMods</option>
@@ -443,32 +445,32 @@
             </div>
           </div>
           <div class="detail-row-group">
-            <div class="detail-row"><span class="detail-label">Installed</span> <span id="detail-install-date"></span>
+            <div class="detail-row"><span class="detail-label" data-i18n="detail.installed_label">Installed</span> <span id="detail-install-date"></span>
             </div>
-            <div class="detail-row"><span class="detail-label">Source</span> <span id="detail-source-zip"></span></div>
-            <div class="detail-row"><span class="detail-label">Root</span> <span id="detail-root-folder"></span></div>
+            <div class="detail-row"><span class="detail-label" data-i18n="detail.source_label">Source</span> <span id="detail-source-zip"></span></div>
+            <div class="detail-row"><span class="detail-label" data-i18n="detail.root_label">Root</span> <span id="detail-root-folder"></span></div>
             <div class="detail-row" id="detail-extra-files-row" style="display:none;">
-              <span class="detail-label">Extras</span> <span id="detail-extra-files"
+              <span class="detail-label" data-i18n="detail.extras_label">Extras</span> <span id="detail-extra-files"
                 style="word-break:break-all;font-size:11px;"></span>
             </div>
             <div class="detail-row" id="detail-duplicate-row" style="display:none;">
-              <span class="detail-label" style="color:var(--danger);">Duplicate</span> <span
+              <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span> <span
                 id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
             </div>
             <div class="detail-row">
-              <span class="detail-label">Config</span> <span id="detail-config-path"></span>
-              <button id="detail-set-config" class="btn-tiny">Set</button>
-              <button id="detail-clear-config" class="btn-tiny">Clear</button>
+              <span class="detail-label" data-i18n="detail.config_label">Config</span> <span id="detail-config-path"></span>
+              <button id="detail-set-config" class="btn-tiny" data-i18n="detail.btn_set_config">Set</button>
+              <button id="detail-clear-config" class="btn-tiny" data-i18n="detail.btn_clear_config">Clear</button>
             </div>
           </div>
         </div>
         <div class="detail-actions">
-          <button id="detail-toggle" class="btn-action">Disable</button>
-          <button id="detail-open-folder" class="btn-action">Open folder</button>
-          <button id="detail-open-extra-folder" class="btn-action" style="display: none;">Open extra folder</button>
-          <button id="detail-config" class="btn-action">Edit config</button>
-          <button id="detail-refresh" class="btn-action">Refresh</button>
-          <button id="detail-remove" class="btn-action btn-action-danger">Remove</button>
+          <button id="detail-toggle" class="btn-action" data-i18n="common.disabled">Disable</button>
+          <button id="detail-open-folder" class="btn-action" data-i18n="detail.btn_open_folder">Open folder</button>
+          <button id="detail-open-extra-folder" class="btn-action" style="display: none;" data-i18n="detail.btn_open_extra_folder">Open extra folder</button>
+          <button id="detail-config" class="btn-action" data-i18n="detail.btn_edit_config">Edit config</button>
+          <button id="detail-refresh" class="btn-action" data-i18n="common.refresh">Refresh</button>
+          <button id="detail-remove" class="btn-action btn-action-danger" data-i18n="common.remove">Remove</button>
         </div>
       </div>
     </div>
@@ -477,7 +479,7 @@
     <div id="drop-overlay">
       <div id="drop-zone">
         <div class="drop-icon">⊞</div>
-        <div class="drop-text">Drop .zip/.rar/.7z to install</div>
+        <div class="drop-text" data-i18n="mods.drop_overlay_text">Drop .zip/.rar/.7z to install</div>
       </div>
     </div>
 
@@ -485,7 +487,7 @@
     <div id="install-modal" class="modal-overlay">
       <div class="modal" style="width: 750px; max-width: 90vw;">
         <div class="modal-header">
-          <h3 id="install-modal-title">Install Mod</h3>
+          <h3 id="install-modal-title" data-i18n="installer.modal_title_install">Install Mod</h3>
           <button class="modal-close-btn"
             onclick="document.getElementById('install-modal').classList.remove('visible')">✕</button>
         </div>
@@ -494,10 +496,10 @@
           <div id="modal-status" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;"></div>
         </div>
         <div class="modal-footer" style="padding:16px 20px;">
-          <button id="modal-cancel" class="btn-secondary">Cancel</button>
+          <button id="modal-cancel" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
           <button id="modal-install-deps-retry" class="btn-primary"
-            style="display:none;background:#e0af68;color:#000;">Install Deps & Retry</button>
-          <button id="modal-confirm" class="btn-primary" disabled>Install</button>
+            style="display:none;background:#e0af68;color:#000;" data-i18n="installer.btn_retry_deps">Install Deps & Retry</button>
+          <button id="modal-confirm" class="btn-primary" disabled data-i18n="common.install">Install</button>
         </div>
       </div>
     </div>
@@ -507,17 +509,17 @@
     <div id="settings-modal" class="modal-overlay">
       <div class="modal">
         <div class="modal-header">
-          <h3>Settings</h3>
+          <h3 data-i18n="settings.title">Settings</h3>
           <button class="modal-close-btn"
             onclick="document.getElementById('settings-modal').classList.remove('visible')">✕</button>
         </div>
         <div class="modal-body">
           <div class="settings-group">
-            <label>Game Path</label>
-            <div class="settings-hint">Path to your Palworld installation directory</div>
+            <label data-i18n="settings.game_path_label">Game Path</label>
+            <div class="settings-hint" data-i18n="settings.game_path_hint">Path to your Palworld installation directory</div>
             <div class="settings-path-row">
-              <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" readonly />
-              <button id="settings-browse-btn" class="btn-secondary">Browse</button>
+              <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" data-i18n-placeholder="settings.game_path_placeholder" readonly />
+              <button id="settings-browse-btn" class="btn-secondary" data-i18n="common.browse">Browse</button>
             </div>
             <div id="settings-path-status" class="settings-path-status"></div>
           </div>
@@ -526,24 +528,24 @@
           <div class="settings-group">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
               <input type="checkbox" id="settings-hide-native-mods" />
-              <span>Hide UE4SS native mods</span>
+              <span data-i18n="settings.hide_native_label">Hide UE4SS native mods</span>
             </label>
-            <div class="settings-hint" style="margin-left:22px;">Hide pre-installed mods that come with UE4SS
+            <div class="settings-hint" style="margin-left:22px;" data-i18n="settings.hide_native_hint">Hide pre-installed mods that come with UE4SS
               (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
           </div>
           <div class="settings-group">
-            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;">Force Load Order (Experimental)</div>
-            <div class="settings-hint" style="margin-bottom:10px;">Select which load order system components you want to enforce:</div>
+            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;" data-i18n="settings.flo_title">Force Load Order (Experimental)</div>
+            <div class="settings-hint" style="margin-bottom:10px;" data-i18n="settings.flo_hint">Select which load order system components you want to enforce:</div>
             
             <div style="display:flex; flex-direction:column; gap:8px;">
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                 <input type="checkbox" id="settings-force-load-order-ue4ss" />
-                <span>Enforce UE4SS Load Order (via mods.txt)</span>
+                <span data-i18n="settings.flo_ue4ss_label">Enforce UE4SS Load Order (via mods.txt)</span>
               </label>
               
               <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
                 <input type="checkbox" id="settings-force-load-order-palschema" />
-                <span>Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
+                <span data-i18n="settings.flo_palschema_label">Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
               </label>
             </div>
           </div>
@@ -551,68 +553,79 @@
           <div class="settings-group">
             <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
               <input type="checkbox" id="settings-debug-console" />
-              <span>Enable Debug Console</span>
+              <span data-i18n="settings.debug_console_label">Enable Debug Console</span>
             </label>
-            <div class="settings-hint" style="margin-left:22px;">Show terminal output window in real-time for live
+            <div class="settings-hint" style="margin-left:22px;" data-i18n="settings.debug_console_hint">Show terminal output window in real-time for live
               debugging logs.</div>
           </div>
           <div class="settings-divider"></div>
           <div class="settings-group">
-            <label>Data Storage Location</label>
-            <div class="settings-hint">Choose where your database and profile backups are stored. Mod files will be migrated automatically.</div>
+            <label data-i18n="settings.data_location_label">Data Storage Location</label>
+            <div class="settings-hint" data-i18n="settings.data_location_hint">Choose where your database and profile backups are stored. Mod files will be migrated automatically.</div>
             <div class="settings-path-row" style="margin-top: 6px;">
               <select id="settings-data-path-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
-                <option value="default">Default (AppData)</option>
-                <option value="portable">Portable (Executable Folder)</option>
-                <option value="custom">Custom Folder...</option>
+                <option value="default" data-i18n="settings.opt_storage_default">Default (AppData)</option>
+                <option value="portable" data-i18n="settings.opt_storage_portable">Portable (Executable Folder)</option>
+                <option value="custom" data-i18n="settings.opt_storage_custom">Custom Folder...</option>
               </select>
             </div>
             <div id="settings-custom-data-path-display" class="settings-hint" style="margin-top: 6px; font-family: monospace; display: none; word-break: break-all;"></div>
           </div>
           <div class="settings-divider"></div>
           <div class="settings-group">
-            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;">🛡️ Safety Backup & Troubleshooting</div>
-            <div class="settings-hint" style="margin-bottom:10px;">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
-            <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: 8px; font-family: monospace; font-size: 11px;">Checking backup status...</div>
+            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;" data-i18n="settings.safety_title">🛡️ Safety Backup & Troubleshooting</div>
+            <div class="settings-hint" style="margin-bottom:10px;" data-i18n="settings.safety_hint">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
+            <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: 8px; font-family: monospace; font-size: 11px;" data-i18n="settings.safety_checking">Checking backup status...</div>
             <div style="display:flex; flex-direction:column; gap:8px;">
               <div style="display:flex; gap:8px;">
-                <button id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:6px 8px; border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs">🔄 Restore Pre-PMM Setup</button>
-                <button id="safety-backup-now-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Create a fresh snapshot of current game mod files">📸 Backup Now</button>
+                <button id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:6px 8px; border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
+                <button id="safety-backup-now-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
               </div>
-              <button id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates">🧹 Reset Workshop UE4SS Cache</button>
+              <button id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
             </div>
           </div>
           <div class="settings-divider"></div>
           <div class="settings-group">
-            <label>Quick Access Folders</label>
-            <div class="settings-hint font-size-11">Open game or app data folders directly in system file explorer</div>
+            <label data-i18n="settings.quick_access_label">Quick Access Folders</label>
+            <div class="settings-hint font-size-11" data-i18n="settings.quick_access_hint">Open game or app data folders directly in system file explorer</div>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-              <button id="open-folder-paks" class="btn-secondary" style="font-size:11px;padding:6px 8px;">📂 Paks (~mods)</button>
-              <button id="open-folder-ue4ss" class="btn-secondary" style="font-size:11px;padding:6px 8px;">📂 UE4SS Mods</button>
-              <button id="open-folder-palschema" class="btn-secondary" style="font-size:11px;padding:6px 8px;">📂 PalSchema Mods</button>
-              <button id="open-folder-appdata" class="btn-secondary" style="font-size:11px;padding:6px 8px;">📂 App Storage</button>
-              <button id="open-folder-profile" class="btn-secondary" style="font-size:11px;padding:6px 8px;grid-column: span 2;">📂 Active Profile Folder</button>
+              <button id="open-folder-paks" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_paks">📂 Paks (~mods)</button>
+              <button id="open-folder-ue4ss" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_ue4ss">📂 UE4SS Mods</button>
+              <button id="open-folder-palschema" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_palschema">📂 PalSchema Mods</button>
+              <button id="open-folder-appdata" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_appdata">📂 App Storage</button>
+              <button id="open-folder-profile" class="btn-secondary" style="font-size:11px;padding:6px 8px;grid-column: span 2;" data-i18n="settings.folder_profile">📂 Active Profile Folder</button>
             </div>
           </div>
           <div class="settings-group">
-            <label>Toolbar Scale</label>
-            <div class="settings-hint">Adjust the size of the top toolbar icons and buttons</div>
+            <label data-i18n="settings.toolbar_scale_label">Toolbar Scale</label>
+            <div class="settings-hint" data-i18n="settings.toolbar_scale_hint">Adjust the size of the top toolbar icons and buttons</div>
             <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
               <input type="range" id="settings-toolbar-scale" min="0.8" max="1.8" step="0.05" style="flex:1;" />
               <span id="settings-toolbar-scale-value" style="font-size:12px;font-weight:bold;width:40px;text-align:right;">100%</span>
             </div>
           </div>
           <div class="settings-divider"></div>
+          <div class="settings-group">
+            <label data-i18n="settings.language_label">Language</label>
+            <div class="settings-hint" data-i18n="settings.language_hint">Select your preferred application interface language</div>
+            <div class="settings-path-row" style="margin-top: 6px;">
+              <select id="settings-language-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                <option value="en">English (US)</option>
+                <option value="es">Español</option>
+              </select>
+            </div>
+          </div>
+          <div class="settings-divider"></div>
 
           <div class="settings-group">
-            <label>Theme</label>
-            <div class="settings-hint">Switch between dark and light appearance</div>
-            <button id="theme-toggle-btn" class="btn-secondary" style="width:100%">Switch to Light Theme</button>
+            <label data-i18n="settings.theme_label">Theme</label>
+            <div class="settings-hint" data-i18n="settings.theme_hint">Switch between dark and light appearance</div>
+            <button id="theme-toggle-btn" class="btn-secondary" style="width:100%" data-i18n="settings.btn_theme_light">Switch to Light Theme</button>
           </div>
         </div>
         <div class="modal-footer">
-          <button id="settings-cancel" class="btn-secondary">Cancel</button>
-          <button id="settings-save" class="btn-primary">Save</button>
+          <button id="settings-cancel" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
+          <button id="settings-save" class="btn-primary" data-i18n="common.save">Save</button>
         </div>
       </div>
     </div>
@@ -621,18 +634,18 @@
     <div id="profile-modal" class="modal-overlay">
       <div class="modal" style="max-width:560px">
         <div class="modal-header">
-          <h3>Manage Profiles</h3>
+          <h3 data-i18n="profiles.title">Manage Profiles</h3>
           <button class="modal-close-btn" id="profile-modal-close-x">✕</button>
         </div>
         <div class="modal-body">
           <div id="profile-list"></div>
           <div class="profile-add-row">
-            <input type="text" id="profile-new-name" placeholder="New profile name..." />
-            <button id="profile-create-btn" class="btn-primary">Create</button>
+            <input type="text" id="profile-new-name" placeholder="New profile name..." data-i18n-placeholder="profiles.new_placeholder" />
+            <button id="profile-create-btn" class="btn-primary" data-i18n="profiles.btn_create">Create</button>
           </div>
         </div>
         <div class="modal-footer">
-          <button id="profile-modal-close" class="btn-secondary">Close</button>
+          <button id="profile-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>
@@ -641,14 +654,14 @@
     <div id="workshop-modal" class="modal-overlay">
       <div class="modal" style="max-width: 640px;">
         <div class="modal-header">
-          <h3>Steam Workshop Mods</h3>
+          <h3 data-i18n="workshop.title">Steam Workshop Mods</h3>
           <button class="modal-close-btn" id="workshop-modal-close-x">✕</button>
         </div>
         <div class="modal-body">
           <div class="settings-group" style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); padding:10px 14px; border-radius:6px; border:1px solid var(--border);">
             <div>
-              <span style="font-weight:bold; font-size:13px; color:var(--text-primary);">Enable Workshop Mods</span>
-              <div class="settings-hint" style="margin-top:2px; font-size:11px;">Toggles Master bGlobalEnableMod state</div>
+              <span style="font-weight:bold; font-size:13px; color:var(--text-primary);" data-i18n="workshop.enable_master_label">Enable Workshop Mods</span>
+              <div class="settings-hint" style="margin-top:2px; font-size:11px;" data-i18n="workshop.enable_master_hint">Toggles Master bGlobalEnableMod state</div>
             </div>
             <label class="toggle-switch">
               <input type="checkbox" id="workshop-master-toggle" />
@@ -660,7 +673,7 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button id="workshop-modal-close" class="btn-secondary">Close</button>
+          <button id="workshop-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>
@@ -668,14 +681,6 @@
     <!-- CONTEXT MENU -->
     <div id="context-overlay" class="context-overlay">
       <div id="context-menu" class="context-menu" tabindex="-1"></div>
-    </div>
-
-    <!-- DRAG & DROP OVERLAY -->
-    <div id="drop-overlay">
-      <div id="drop-zone">
-        <div class="drop-icon">📥</div>
-        <div class="drop-text">Drop your mod (.zip, .rar, .7z) here to install</div>
-      </div>
     </div>
 
     <div id="drag-select-box" class="drag-select-box"></div>

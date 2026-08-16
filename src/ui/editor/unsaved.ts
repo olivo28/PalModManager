@@ -1,4 +1,5 @@
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 import { handleEditorSave, _originalContent, clearOriginalContent } from './viewer';
 
 export function hasUnsavedChanges(): boolean {
@@ -109,7 +110,7 @@ function generateLineDiff(original: string, current: string): string {
       if (inCollapse) {
         htmlLines.push(`
           <div class="diff-line-collapsed" style="color:var(--text-muted);font-family:monospace;padding:6px 12px;background:rgba(0,0,0,0.15);border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);font-size:10px;text-align:center;user-select:none;">
-            --- Colapsadas ${collapsedCount} líneas sin cambios ---
+            --- ${escapeHtml(t('editor.diff_collapsed_lines', { count: collapsedCount }))} ---
           </div>
         `);
         inCollapse = false;
@@ -133,7 +134,7 @@ function generateLineDiff(original: string, current: string): string {
   if (inCollapse) {
     htmlLines.push(`
       <div class="diff-line-collapsed" style="color:var(--text-muted);font-family:monospace;padding:6px 12px;background:rgba(0,0,0,0.15);border-top:1px dashed var(--border);border-bottom:1px dashed var(--border);font-size:10px;text-align:center;user-select:none;">
-        --- Colapsadas ${collapsedCount} líneas sin cambios ---
+        --- ${escapeHtml(t('editor.diff_collapsed_lines', { count: collapsedCount }))} ---
       </div>
     `);
   }
@@ -162,19 +163,19 @@ function showUnsavedChangesModal(original: string, current: string): Promise<'sa
     overlay.innerHTML = `
       <div class="modal" style="width: 750px; max-width: 90vw;">
         <div class="modal-header">
-          <h3>Unsaved Changes</h3>
+          <h3>${escapeHtml(t('editor.unsaved_title'))}</h3>
           <button class="modal-close-btn" id="unsaved-close-x">✕</button>
         </div>
         <div class="modal-body" style="gap:12px;padding:20px;">
           <div style="font-size:13px;color:var(--text-muted);">
-            You have unsaved changes in this file. Review the changes below:
+            ${escapeHtml(t('editor.unsaved_desc'))}
           </div>
           ${diffHtml}
         </div>
         <div class="modal-footer" style="padding:16px 20px;">
-          <button id="unsaved-discard" class="btn-secondary" style="background:#a80000;color:white;border-color:#a80000;cursor:pointer;">Discard Changes</button>
-          <button id="unsaved-cancel" class="btn-secondary" style="cursor:pointer;">Cancel</button>
-          <button id="unsaved-save" class="btn-primary" style="cursor:pointer;">Save & Continue</button>
+          <button id="unsaved-discard" class="btn-secondary" style="background:#a80000;color:white;border-color:#a80000;cursor:pointer;">${escapeHtml(t('editor.unsaved_discard'))}</button>
+          <button id="unsaved-cancel" class="btn-secondary" style="cursor:pointer;">${escapeHtml(t('common.cancel'))}</button>
+          <button id="unsaved-save" class="btn-primary" style="cursor:pointer;">${escapeHtml(t('editor.unsaved_save_continue'))}</button>
         </div>
       </div>
     `;

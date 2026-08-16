@@ -1,6 +1,7 @@
 import { listModFiles } from '../../api';
 import { getState, updateState } from '../../state';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData } from './viewer';
 
 export function renderEditorModTree(): void {
@@ -46,7 +47,7 @@ export function renderEditorModTree(): void {
     renderSection('Hybrid', hybridMods, 'hybrid');
 
   if (editableMods.length === 0) {
-    tree.innerHTML = '<div style="padding:12px;font-size:11px;color:var(--text-muted)">No editable mods</div>';
+    tree.innerHTML = `<div style="padding:12px;font-size:11px;color:var(--text-muted)">${escapeHtml(t('editor.no_editable_mods'))}</div>`;
     return;
   }
 

@@ -1,4 +1,5 @@
 import 'highlight.js/styles/github-dark.css';
+import { initI18n, t } from './utils/i18n';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
 import { getState, updateState } from './state';
 import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal } from './ui/modal';
@@ -33,7 +34,7 @@ function updateThemeToggleBtn(): void {
   const btn = document.getElementById('theme-toggle-btn') as HTMLButtonElement | null;
   if (!btn) return;
   const current = document.documentElement.dataset.theme || 'dark';
-  btn.textContent = current === 'dark' ? 'Switch to Light Theme' : 'Switch to Dark Theme';
+  btn.textContent = current === 'dark' ? t('settings.btn_theme_light') : t('settings.btn_theme_dark');
 }
 
 function safeEl(id: string): HTMLElement | null {
@@ -47,6 +48,7 @@ function showApp(): void {
   if (app) app.style.display = 'flex';
 }
 
+initI18n();
 showApp();
 
 async function init() {
@@ -103,8 +105,18 @@ function setupEventListeners() {
     await loadDependencies();
   });
   
+  let lastFocusCheck = 0;
   window.addEventListener('focus', () => {
-    loadDependencies();
+    const now = Date.now();
+    if (now - lastFocusCheck > 30000) {
+      lastFocusCheck = now;
+      import('./api').then(({ checkDependencies }) => {
+        checkDependencies().then(deps => {
+          import('./state').then(({ updateState }) => updateState({ dependencies: deps }));
+          import('./ui/modsView').then(({ renderDependencyBadges }) => renderDependencyBadges(deps));
+        }).catch(() => {});
+      });
+    }
   });
 
   safeEl('install-btn')?.addEventListener('click', handleInstall);
@@ -159,9 +171,9 @@ function setupEventListeners() {
       });
       if (!path) return;
       const saved = await exportModsJson(typeof path === 'string' ? path : path as string);
-      showToast(`Exported to ${saved}`, 'success');
+      showToast(t('toasts.export_success', { path: saved }), 'success');
     } catch (e) {
-      showToast('Export failed: ' + e, 'error');
+      showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   });
   safeEl('backup-btn')?.addEventListener('click', async () => {
@@ -170,15 +182,15 @@ function setupEventListeners() {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: 'Select Backup Destination Folder',
+        title: t('mods.dialog_backup_folder_title'),
       });
       if (!selected) return;
       const targetDir = typeof selected === 'string' ? selected : selected as string;
-      showToast('Creating backup zip archive...', 'info');
+      showToast(t('toasts.backup_creating'), 'info');
       const savedPath = await createBackup(targetDir);
-      showToast(`Backup created successfully at: ${savedPath}`, 'success');
+      showToast(t('toasts.backup_created', { path: savedPath }), 'success');
     } catch (e) {
-      showToast('Backup failed: ' + e, 'error');
+      showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   });
   safeEl('restore-backup-btn')?.addEventListener('click', async () => {
@@ -187,7 +199,7 @@ function setupEventListeners() {
       const selected = await open({
         multiple: false,
         filters: [{ name: 'PMM Backup Zip', extensions: ['zip'] }],
-        title: 'Select PMM Backup ZIP Archive',
+        title: t('mods.dialog_restore_zip_title'),
       });
       if (!selected) return;
       const zipPath = typeof selected === 'string' ? selected : selected as string;
@@ -208,10 +220,10 @@ function setupEventListeners() {
 
         const { showConfirm } = await import('./ui/confirm');
         const confirmed = await showConfirm(
-          `This backup requires the following missing dependencies: ${missingList.join(' & ')}.\n\nWould you like PMM to automatically download and install them before restoring?`
+          t('dialogs.confirm_backup_deps_missing', { deps: missingList.join(' & ') })
         );
         if (!confirmed) {
-          showToast('Restore cancelled because dependencies are missing', 'error');
+          showToast(t('toasts.export_failed', { error: 'Missing dependencies' }), 'error');
           return;
         }
 
@@ -219,24 +231,24 @@ function setupEventListeners() {
 
         // Install missing dependencies
         if (missingUe4ss) {
-          showToast('Installing UE4SS...', 'info');
+          showToast(t('toasts.installing_dep', { dep: 'UE4SS' }), 'info');
           await installUe4ss();
           await loadDependencies();
         }
         if (missingPalSchema) {
-          showToast('Installing PalSchema...', 'info');
+          showToast(t('toasts.installing_dep', { dep: 'PalSchema' }), 'info');
           await installPalschema();
           await loadDependencies();
         }
-        showToast('Dependencies installed successfully!', 'success');
+        showToast(t('dependencies.up_to_date'), 'success');
       }
 
-      showToast('Restoring mods from backup...', 'info');
+      showToast(t('toasts.backup_restoring'), 'info');
       await restoreBackup(zipPath);
-      showToast('Backup restored successfully!', 'success');
+      showToast(t('toasts.backup_restored'), 'success');
       loadMods();
     } catch (e) {
-      showToast('Restore failed: ' + e, 'error');
+      showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   });
   safeEl('detail-set-config')?.addEventListener('click', handleDetailSetConfig);
@@ -262,19 +274,24 @@ function setupEventListeners() {
   });
   safeEl('launch-game-btn')?.addEventListener('click', async () => {
     const { showConfirm } = await import('./ui/confirm');
-    const confirmed = await showConfirm('Palworld will be launched. Do you want to proceed?');
+    const confirmed = await showConfirm(
+      t('sidebar.launch_game'),
+      t('launch.confirm'),
+      t('launch.btn_confirm'),
+      t('common.cancel')
+    );
     if (!confirmed) return;
     try {
       await launchGame();
     } catch (e) {
-      showToast('Failed to launch game: ' + e, 'error');
+      showToast(t('toasts.game_launch_failed', { error: String(e) }), 'error');
     }
   });
   safeEl('new-folder-btn')?.addEventListener('click', async () => {
     const { showInputModal, handleCreateFolder } = await import('./ui/modsView');
     const newName = await showInputModal(
-      'New Mod Folder',
-      'Enter a name for the new virtual folder:',
+      t('dialogs.prompt_new_folder_name'),
+      t('dialogs.prompt_new_folder_name'),
       'Skins'
     );
     if (newName === null) return;
@@ -398,6 +415,12 @@ function setupEventListeners() {
   setupContextMenu();
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      const confirmOverlay = document.querySelector('.confirm-overlay');
+      if (confirmOverlay) {
+        // Handled by showConfirm/showPrompt event listener
+        return;
+      }
+
       const fullFilesOverlay = document.getElementById('full-files-modal-overlay');
       if (fullFilesOverlay) {
         fullFilesOverlay.remove();

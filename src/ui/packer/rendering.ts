@@ -1,6 +1,7 @@
 import { stagedFiles, sourcePaths, targetOverrides, backupPaths, viewMode, virtualFolders, setVirtualFolders, setSourcePaths, escapeHtml } from './mod';
 import { toggleSkipFile } from './staging';
 import { showPrompt, showConfirm } from '../confirm';
+import { t } from '../../utils/i18n';
 
 export async function renderWorkspace(): Promise<void> {
   const ws = document.getElementById('packer-workspace-view');
@@ -66,8 +67,8 @@ function renderListMode(): void {
         </td>
         <td>
           <div style="display: flex; align-items: center; gap: 4px;">
-            <button class="packer-skip-file-btn" data-index="${index}" title="${isSkipped ? 'Include file' : 'Skip/Omit file'}">${isSkipped ? '↩️' : '🚫'}</button>
-            <button class="packer-remove-file-btn" data-index="${index}" title="Remove file">✕</button>
+            <button class="packer-skip-file-btn" data-index="${index}" title="${isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">${isSkipped ? '↩️' : '🚫'}</button>
+            <button class="packer-remove-file-btn" data-index="${index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">✕</button>
           </div>
         </td>
       </tr>
@@ -153,7 +154,7 @@ async function renderTreeMode(): Promise<void> {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const oldPath = (btn as HTMLElement).dataset.path || '';
-      const newPath = await showPrompt(`Rename/Move folder to (e.g. 'Mods/MyNewMod'):`, oldPath);
+      const newPath = await showPrompt(t('packer.prompt_rename_dir'), oldPath);
       if (newPath && newPath.trim() !== oldPath) {
         const cleaned = newPath.trim().replace(/\\/g, '/');
         stagedFiles.forEach(f => {
@@ -195,7 +196,7 @@ async function renderTreeMode(): Promise<void> {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const parentPath = (btn as HTMLElement).dataset.path || '';
-      const subName = await showPrompt(`Enter name for new subfolder inside '${parentPath}':`);
+      const subName = await showPrompt(t('packer.prompt_new_subdir', { path: parentPath }));
       if (subName && subName.trim()) {
         const cleanedSub = subName.trim().replace(/\\/g, '/');
         const nextPath = `${parentPath}/${cleanedSub}`;
@@ -212,7 +213,7 @@ async function renderTreeMode(): Promise<void> {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const oldPath = (btn as HTMLElement).dataset.path || '';
-      const confirmed = await showConfirm(`Are you sure you want to remove folder '${oldPath}' and all its contents from staging?`);
+      const confirmed = await showConfirm(t('packer.confirm_remove_folder', { path: oldPath }));
       if (confirmed) {
         const remainingFiles = stagedFiles.filter(f => {
           const match = f.targetPath === oldPath || f.targetPath.startsWith(oldPath + '/');
@@ -251,7 +252,7 @@ async function renderTreeMode(): Promise<void> {
       const file = stagedFiles[idx];
       const isSkipped = file.targetPath === '__SKIP__';
       const currentVal = isSkipped ? (backupPaths.get(file.sourcePath) || file.relativePath) : file.targetPath;
-      const newVal = await showPrompt(`Enter new target path for file:`, currentVal);
+      const newVal = await showPrompt(t('packer.prompt_rename_file'), currentVal);
       if (newVal && newVal.trim() !== currentVal) {
         const cleaned = newVal.trim().replace(/\\/g, '/');
         if (isSkipped) {
@@ -310,9 +311,9 @@ export function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
           <span class="packer-tree-icon">📁</span>
           <span class="packer-tree-name">${escapeHtml(child.name)}</span>
           <div class="packer-tree-actions">
-            <button class="packer-tree-action-btn packer-rename-dir-btn" data-path="${escapeHtml(nextPath)}" title="Rename/Move folder">✏️</button>
-            <button class="packer-tree-action-btn packer-add-subdir-btn" data-path="${escapeHtml(nextPath)}" title="Add subfolder">➕</button>
-            <button class="packer-tree-action-btn danger packer-remove-dir-btn" data-path="${escapeHtml(nextPath)}" title="Remove folder">✕</button>
+            <button class="packer-tree-action-btn packer-rename-dir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_rename_folder_title'))}">✏️</button>
+            <button class="packer-tree-action-btn packer-add-subdir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_add_subfolder_title'))}">➕</button>
+            <button class="packer-tree-action-btn danger packer-remove-dir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_remove_folder_title'))}">✕</button>
           </div>
         </div>
       `;
@@ -322,12 +323,12 @@ export function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
       html += `
         <div class="packer-tree-node packer-tree-file ${child.isSkipped ? 'skipped' : ''}" style="padding-left: ${depth * 16}px;" data-index="${child.index}">
           <span class="packer-tree-icon">📄</span>
-          <span class="packer-tree-name" title="Source: ${escapeHtml(child.file.sourcePath)}" style="${child.isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(child.name)}</span>
+          <span class="packer-tree-name" title="${escapeHtml(t('packer.source_prefix_label', { path: child.file.sourcePath }))}" style="${child.isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(child.name)}</span>
           <span class="packer-tree-size">${sizeStr}</span>
           <div class="packer-tree-actions">
-            <button class="packer-tree-action-btn packer-rename-file-btn" data-index="${child.index}" title="Rename/Move file">✏️</button>
-            <button class="packer-tree-action-btn packer-skip-file-btn" data-index="${child.index}" title="${child.isSkipped ? 'Include file' : 'Skip/Omit file'}">${child.isSkipped ? '↩️' : '🚫'}</button>
-            <button class="packer-tree-action-btn danger packer-remove-file-btn" data-index="${child.index}" title="Remove file">✕</button>
+            <button class="packer-tree-action-btn packer-rename-file-btn" data-index="${child.index}" title="${escapeHtml(t('packer.btn_rename_file_title'))}">✏️</button>
+            <button class="packer-tree-action-btn packer-skip-file-btn" data-index="${child.index}" title="${child.isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">${child.isSkipped ? '↩️' : '🚫'}</button>
+            <button class="packer-tree-action-btn danger packer-remove-file-btn" data-index="${child.index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">✕</button>
           </div>
         </div>
       `;

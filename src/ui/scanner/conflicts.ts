@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { showToast } from '../toast';
 import { lastScanResult, setLastScanResult, setIsScanning, activeSubTab, isScanning, renderScannerView, subTabHeader } from './mod';
 import { escapeHtml } from './rendering';
+import { t } from '../../utils/i18n';
 
 import { ConflictingMod, TableRowConflict, HookConflict, ModSummary, ScanResult } from './mod';
 
@@ -13,10 +14,10 @@ export async function runScan(): Promise<void> {
   try {
     const result = await invoke<ScanResult>('scan_conflicts');
     setLastScanResult(result);
-    showToast(`Scan completed. Scanned ${result.totalScanned} mods.`, 'success');
+    showToast(t('scanner.toast_scan_success', { count: result.totalScanned }), 'success');
   } catch (err: any) {
     console.error(err);
-    showToast(`Scan failed: ${err}`, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   } finally {
     setIsScanning(false);
     renderScannerView();
@@ -30,12 +31,12 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:24px;">
         <div class="scanner-hero">
           <div class="scanner-hero-icon">🛡</div>
-          <div class="scanner-hero-title">Conflict & Compatibility Scanner</div>
+          <div class="scanner-hero-title">${escapeHtml(t('scanner.hero_initial_title'))}</div>
           <div class="scanner-hero-desc">
-            Passive scanner that analyzes enabled mods to detect table collisions (PalSchema row edits) and hook collisions (multiple mods hooking the same engine function in Lua).
+            ${escapeHtml(t('scanner.hero_initial_desc'))}
           </div>
           <button id="scanner-start-btn" class="scanner-btn-run">
-            <span>Run Scanner</span>
+            <span>${escapeHtml(t('scanner.btn_run_scanner'))}</span>
           </button>
         </div>
       </div>
@@ -55,8 +56,8 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     contentHtml = `
       <div class="scanner-clean-state" style="margin-bottom: 20px;">
         <div class="scanner-clean-icon">✅</div>
-        <div class="scanner-clean-title">No Conflicts Detected</div>
-        <div class="scanner-clean-desc">All enabled mods are fully compatible and modify distinct technologies, rows, and engine functions!</div>
+        <div class="scanner-clean-title">${escapeHtml(t('scanner.no_conflicts_title'))}</div>
+        <div class="scanner-clean-desc">${escapeHtml(t('scanner.no_conflicts_desc'))}</div>
       </div>
     `;
   } else {
@@ -64,8 +65,8 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       <div style="display: flex; gap: 20px; flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: 20px;">
         <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer;" open>
           <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between;">
-            <span>UE4SS Lua Hook Conflicts (${hookCount})</span>
-            <span style="font-size: 10px; color: var(--text-muted);">Multiple RegisterHook targets</span>
+            <span>${escapeHtml(t('scanner.hook_conflicts_title', { count: hookCount }))}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.hook_conflicts_desc'))}</span>
           </summary>
           <div class="scanner-card-body" style="cursor: default; gap: 14px;">
             ${hookCount > 0 ? res.hookConflicts.map(c => `
@@ -86,14 +87,14 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
                   `).join('')}
                 </div>
               </div>
-            `).join('') : '<div style="color:var(--text-muted); font-size:11px;">No hook conflicts.</div>'}
+            `).join('') : `<div style="color:var(--text-muted); font-size:11px;">${escapeHtml(t('scanner.hook_conflicts_none'))}</div>`}
           </div>
         </details>
 
         <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer;" open>
           <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between;">
-            <span>PalSchema Row Collision Conflicts (${tableCount})</span>
-            <span style="font-size: 10px; color: var(--text-muted);">Multiple mods modifying same rows</span>
+            <span>${escapeHtml(t('scanner.table_conflicts_title', { count: tableCount }))}</span>
+            <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.table_conflicts_desc'))}</span>
           </summary>
           <div class="scanner-card-body" style="cursor: default; gap: 14px;">
             ${tableCount > 0 ? res.tableConflicts.map(c => `
@@ -114,7 +115,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
                   `).join('')}
                 </div>
               </div>
-            `).join('') : '<div style="color:var(--text-muted); font-size:11px;">No row collisions.</div>'}
+            `).join('') : `<div style="color:var(--text-muted); font-size:11px;">${escapeHtml(t('scanner.table_conflicts_none'))}</div>`}
           </div>
         </details>
       </div>
@@ -133,13 +134,13 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
         <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer; border-color: rgba(255, 165, 0, 0.2);" open>
           <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 165, 0, 0.03); border-bottom: 1px solid rgba(255, 165, 0, 0.08);">
             <span style="color: var(--warning); display: flex; align-items: center; gap: 6px; font-weight: 700;">
-              ⚠️ Self-Conflicts / Internal Duplicates (${internalTableCount + internalHookCount})
+              ${escapeHtml(t('scanner.internal_conflicts_title', { count: internalTableCount + internalHookCount }))}
             </span>
-            <span style="font-size: 10px; color: var(--text-muted);">Duplicate files or repeated hooks within the same mod</span>
+            <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.internal_conflicts_desc'))}</span>
           </summary>
           <div class="scanner-card-body" style="cursor: default; gap: 14px; padding-top: 14px;">
             ${internalHookCount > 0 ? `
-              <div style="font-weight: 700; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">UE4SS Duplicate Internal Hooks:</div>
+              <div style="font-weight: 700; font-size: 11px; color: var(--text-secondary); margin-bottom: 4px;">${escapeHtml(t('scanner.internal_ue4ss_duplicates'))}</div>
               ${res.internalHookConflicts.map(c => `
                 <div class="scanner-conflict-item" style="border-left: 2.5px solid var(--warning);">
                   <div class="scanner-conflict-header">
@@ -155,7 +156,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
                         </div>
                         ${m.detail ? `
                           <div style="font-size: 10px; color: var(--text-muted); background: rgba(0,0,0,0.2); padding: 4px 8px; border-radius: 4px; font-family: monospace; border: 1px solid var(--border); margin-left: 4px; margin-top: 2px;">
-                            Line ${m.lineNumber}: ${escapeHtml(m.detail)}
+                            ${escapeHtml(t('scanner.line_number_prefix', { line: m.lineNumber, detail: m.detail }))}
                           </div>
                         ` : ''}
                       </div>
@@ -166,7 +167,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
             ` : ''}
             
             ${internalTableCount > 0 ? `
-              <div style="font-weight: 700; font-size: 11px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 4px;">PalSchema Duplicate Internal Rows:</div>
+              <div style="font-weight: 700; font-size: 11px; color: var(--text-secondary); margin-top: 10px; margin-bottom: 4px;">${escapeHtml(t('scanner.internal_palschema_duplicates'))}</div>
               ${res.internalTableConflicts.map(c => `
                 <div class="scanner-conflict-item" style="border-left: 2.5px solid var(--warning);">
                   <div class="scanner-conflict-header">
@@ -203,8 +204,8 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     summariesHtml = `
       <div class="scanner-card-section" style="margin-bottom: 20px;">
         <div class="scanner-card-header">
-          <span>Active Mod Registries (Summary by Mod)</span>
-          <span style="font-size:10px;color:var(--text-muted);">Details per mod</span>
+          <span>${escapeHtml(t('scanner.registries_title'))}</span>
+          <span style="font-size:10px;color:var(--text-muted);">${escapeHtml(t('scanner.registries_desc'))}</span>
         </div>
         <div class="scanner-card-body scanner-mod-summary-grid">
           ${res.modSummaries.map(m => {
@@ -230,27 +231,27 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
                     ${badgeHtml}
                   </div>
                   <span style="font-weight: normal; font-size: 11px; color: var(--text-muted); flex-shrink: 0; margin-left: 8px;">
-                    ${hasRows ? `${m.palschemaRows.length} Row${m.palschemaRows.length > 1 ? 's' : ''}` : ''} 
+                    ${hasRows ? `${m.palschemaRows.length} ${escapeHtml(t('scanner.row_count', { count: m.palschemaRows.length }))}` : ''} 
                     ${hasRows && hasHooks ? ' | ' : ''} 
-                    ${hasHooks ? `${m.ue4ssHooks.length} Hook${m.ue4ssHooks.length > 1 ? 's' : ''}` : ''}
+                    ${hasHooks ? `${m.ue4ssHooks.length} ${escapeHtml(t('scanner.hook_count', { count: m.ue4ssHooks.length }))}` : ''}
                   </span>
                 </summary>
                 <div style="cursor: default; padding-top: 10px; display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px;">
                   <div style="min-width: 0;">
-                    <div style="font-size: 11px; font-weight: 700; color: var(--warning); text-transform: uppercase; margin-bottom: 6px;">PalSchema Row Edits</div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--warning); text-transform: uppercase; margin-bottom: 6px;">${escapeHtml(t('scanner.palschema_edits_label'))}</div>
                     ${hasRows ? `
-                      <ul style="margin: 0; padding-left: 16px; font-size: 12px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; word-break: break-word; white-space: normal;">
+                      <ul class="scanner-detail-list" style="margin: 0; padding-left: 16px; font-size: 11px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; word-break: break-word; white-space: normal; max-height: 220px; overflow-y: auto;">
                         ${m.palschemaRows.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
                       </ul>
-                    ` : `<div style="font-size: 11px; color: var(--text-muted); font-style: italic;">None</div>`}
+                    ` : `<div style="font-size: 11px; color: var(--text-muted); font-style: italic;">${escapeHtml(t('common.none'))}</div>`}
                   </div>
                   <div style="min-width: 0;">
-                    <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px;">UE4SS Lua Hooks</div>
+                    <div style="font-size: 11px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 6px;">${escapeHtml(t('scanner.ue4ss_hooks_label'))}</div>
                     ${hasHooks ? `
-                      <ul style="margin: 0; padding-left: 16px; font-size: 12px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; word-break: break-word; white-space: normal;">
+                      <ul class="scanner-detail-list" style="margin: 0; padding-left: 16px; font-size: 11px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 4px; overflow-wrap: anywhere; word-break: break-word; white-space: normal; max-height: 220px; overflow-y: auto;">
                         ${m.ue4ssHooks.map(h => `<li>${escapeHtml(h)}</li>`).join('')}
                       </ul>
-                    ` : `<div style="font-size: 11px; color: var(--text-muted); font-style: italic;">None</div>`}
+                    ` : `<div style="font-size: 11px; color: var(--text-muted); font-style: italic;">${escapeHtml(t('common.none'))}</div>`}
                   </div>
                 </div>
               </details>
@@ -267,8 +268,8 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     warningsHtml = `
       <details class="scanner-card-section" style="margin-top: 24px; cursor: pointer;">
         <summary class="scanner-card-header" style="outline:none;">
-          <span>Scanner Warnings (${res.warnings.length})</span>
-          <span style="font-size:10px;color:var(--warning);">Non-fatal errors</span>
+          <span>${escapeHtml(t('scanner.warnings_title', { count: res.warnings.length }))}</span>
+          <span style="font-size:10px;color:var(--warning);">${escapeHtml(t('scanner.warnings_desc'))}</span>
         </summary>
         <div class="scanner-card-body" style="cursor: default; background: rgba(0,0,0,0.15);">
           ${res.warnings.map(w => `
@@ -286,19 +287,19 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     <!-- Stats Row -->
     <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;flex-shrink:0;">
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">Mods Scanned</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_mods_scanned'))}</div>
         <div class="premium-stat-value">${res.totalScanned}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">PalSchema JSON</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_palschema_json'))}</div>
         <div class="premium-stat-value">${res.palschemaScanned}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">UE4SS Lua</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_ue4ss_lua'))}</div>
         <div class="premium-stat-value">${res.ue4ssScanned}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">Conflicts</div>
+        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_conflicts'))}</div>
         <div class="premium-stat-value ${hasConflicts ? 'danger' : 'success'}">${tableCount + hookCount}</div>
       </div>
     </div>
@@ -309,20 +310,20 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     <div class="scanner-info-banner" style="margin-bottom: 20px; padding: 14px 18px; background: rgba(0, 188, 255, 0.06); border: 1px solid rgba(0, 188, 255, 0.2); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.5;">
       <div style="font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; font-size: 13px;">
         <span style="font-size: 14px;">ℹ</span>
-        <span>Understanding Mod Overlaps & Compatibility</span>
+        <span>${escapeHtml(t('scanner.info_title'))}</span>
       </div>
       <div style="color: var(--text-secondary);">
-        <strong style="color: var(--text-primary);">UE4SS Hook Overlaps:</strong> Multiple mods can hook the exact same engine function simultaneously (callbacks will execute sequentially in order of mod loading). This is generally safe and compatible unless a mod explicitly blocks execution, alters return values incompatibly, or cancels event propagation.
+        <strong style="color: var(--text-primary);">${escapeHtml(t('scanner.info_ue4ss_title'))}:</strong> ${escapeHtml(t('scanner.info_ue4ss_desc'))}
       </div>
       <div style="color: var(--text-secondary);">
-        <strong style="color: var(--text-primary);">PalSchema Row Overlaps:</strong> If mods modify different keys/fields within the same row, they can function together. However, if they modify the exact same field key, only the mod loaded last (lowest in the list/load order) will take effect, overwriting the earlier ones.
+        <strong style="color: var(--text-primary);">${escapeHtml(t('scanner.info_palschema_title'))}:</strong> ${escapeHtml(t('scanner.info_palschema_desc'))}
       </div>
     </div>
   `;
 
   container.innerHTML = `
     ${subTabHeader()}
-    <div style="flex:1; display:flex; flex-direction:column; padding: 20px 24px; overflow-y:auto; box-sizing:border-box;">
+    <div class="scanner-scroll-panel" style="flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; padding: 20px 24px; overflow-y: auto; box-sizing: border-box;">
       ${statCards}
       ${infoBannerHtml}
       ${contentHtml}

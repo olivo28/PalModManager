@@ -1,6 +1,7 @@
 import { updateModHotkey } from '../../api';
 import type { ModHotkey } from '../../api';
 import { showToast } from '../toast';
+import { t } from '../../utils/i18n';
 
 export interface ConflictingMod {
   modId: string;
@@ -73,8 +74,8 @@ export async function renderScannerView(): Promise<void> {
       <div style="padding: 24px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; height: 100%; width: 100%;">
         <div class="scanner-hero">
           <div class="scanner-hero-icon spinner" style="width: 48px; height: 48px; border-width: 4px;"></div>
-          <div class="scanner-hero-title">${isScanning ? 'Scanning Mods...' : 'Scanning Lua Hotkeys...'}</div>
-          <div class="scanner-hero-desc">Reading configurations and parsing files. This may take a few seconds.</div>
+          <div class="scanner-hero-title">${isScanning ? escapeHtml(t('scanner.hero_scanning_conflicts')) : escapeHtml(t('scanner.hero_scanning_hotkeys'))}</div>
+          <div class="scanner-hero-desc">${escapeHtml(t('scanner.hero_desc'))}</div>
         </div>
       </div>
     `;
@@ -94,14 +95,14 @@ export function subTabHeader(): string {
     <!-- Top Fixed Dashboard Bar -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); flex-shrink: 0;">
       <div style="display:flex;align-items:center;gap:20px;">
-        <div style="font-size:16px;font-weight:700;color:var(--text-primary);">${activeSubTab === 'conflicts' ? 'Conflict Scanner' : 'Hotkeys Manager'}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary);">${activeSubTab === 'conflicts' ? escapeHtml(t('scanner.title_conflicts')) : escapeHtml(t('scanner.title_hotkeys'))}</div>
         <div class="scanner-sub-tabs">
-          <button class="scanner-sub-tab ${activeSubTab === 'conflicts' ? 'active' : ''}" data-subtab="conflicts">Conflicts</button>
-          <button class="scanner-sub-tab ${activeSubTab === 'hotkeys' ? 'active' : ''}" data-subtab="hotkeys">Hotkeys</button>
+          <button class="scanner-sub-tab ${activeSubTab === 'conflicts' ? 'active' : ''}" data-subtab="conflicts">${escapeHtml(t('scanner.subtab_conflicts'))}</button>
+          <button class="scanner-sub-tab ${activeSubTab === 'hotkeys' ? 'active' : ''}" data-subtab="hotkeys">${escapeHtml(t('scanner.subtab_hotkeys'))}</button>
         </div>
       </div>
       <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px;">
-        <span>Run Scan</span>
+        <span>↻ ${escapeHtml(t('common.refresh'))}</span>
       </button>
     </div>
   `;
@@ -231,18 +232,18 @@ export function setupEventListeners(): void {
 
       const newKeys = input.value.trim();
       if (!newKeys) {
-        showToast('Keybind cannot be empty', 'error');
+        showToast(t('scanner.toast_empty_keybind'), 'error');
         return;
       }
 
       (btn as HTMLButtonElement).disabled = true;
       try {
         await updateModHotkey(hk.absoluteFilePath, hk.lineNumber, newKeys);
-        showToast('Hotkey trigger modified successfully', 'success');
+        showToast(t('scanner.toast_hotkey_saved'), 'success');
         editingHotkeyKey = null;
         await runHotkeysScan();
       } catch (err: any) {
-        showToast(`Failed to update hotkey: ${err}`, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         (btn as HTMLButtonElement).disabled = false;
       }
     });

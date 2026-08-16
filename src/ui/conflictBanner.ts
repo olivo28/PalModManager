@@ -1,6 +1,7 @@
 import { cleanConflictDlls } from '../api';
 import { showToast } from './toast';
 import { loadDependencies } from './modsView';
+import { t } from '../utils/i18n';
 
 let bannerElement: HTMLElement | null = null;
 
@@ -27,12 +28,12 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
     <div class="conflict-banner-content">
       <span class="conflict-banner-icon">⚠️</span>
       <div class="conflict-banner-text">
-        <strong>Fatal DLL Conflict Detected:</strong> Leftover Nexus DLLs (<code>${dllNames}</code>) found in <code>Pal/Binaries/Win64</code> while using Steam Workshop UE4SS. Palworld will crash on launch!
+        <strong>${t('dependencies.banner_conflict_title')}</strong> ${t('dependencies.banner_conflict_desc', { dlls: dllNames })}
       </div>
     </div>
     <div class="conflict-banner-actions">
-      <button id="clean-conflict-dlls-btn" class="conflict-btn-action" title="Quarantine leftover DLLs safely">🧹 Clean Conflict DLLs</button>
-      <button id="dismiss-conflict-banner-btn" class="conflict-btn-dismiss" title="Dismiss this warning for this session">✕</button>
+      <button id="clean-conflict-dlls-btn" class="conflict-btn-action" title="${t('dependencies.banner_clean_btn_title')}">${t('dependencies.banner_clean_btn')}</button>
+      <button id="dismiss-conflict-banner-btn" class="conflict-btn-dismiss" title="${t('dependencies.banner_dismiss_title')}">✕</button>
     </div>
   `;
 
@@ -43,11 +44,11 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
     try {
       if (cleanBtn) cleanBtn.textContent = 'Cleaning...';
       const removed = await cleanConflictDlls();
-      showToast(`Cleaned ${removed.length} conflicting DLL(s). Files moved to quarantine folder.`, 'success');
+      showToast(t('toasts.dlls_cleaned', { count: removed.length }), 'success');
       removeConflictBanner();
       await loadDependencies();
     } catch (e: any) {
-      showToast(`Failed to clean conflict DLLs: ${e}`, 'error');
+      showToast(t('toasts.clean_conflict_dlls_failed', { error: String(e) }), 'error');
       if (cleanBtn) cleanBtn.textContent = '🧹 Clean Conflict DLLs';
     }
   });

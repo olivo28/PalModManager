@@ -1,6 +1,7 @@
 import { getState, updateState } from '../../state';
 import { buildModCardHtml, buildFolderCardHtml } from './card';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 import type { ModInfo } from '../../types';
 
 export function populateAdvancedFilters(): void {
@@ -24,10 +25,10 @@ export function populateAdvancedFilters(): void {
 
   tagsList.innerHTML = tagsHtml
     ? `<div class="filter-chips">${tagsHtml}</div>`
-    : '<div class="filter-dropdown-empty">No tags</div>';
+    : `<div class="filter-dropdown-empty">${escapeHtml(t('mods.filter_no_tags'))}</div>`;
   catsList.innerHTML = catsHtml
     ? `<div class="filter-chips">${catsHtml}</div>`
-    : '<div class="filter-dropdown-empty">No categories</div>';
+    : `<div class="filter-dropdown-empty">${escapeHtml(t('mods.filter_no_cats'))}</div>`;
 }
 
 export function renderModsView(): void {
@@ -151,14 +152,14 @@ export function renderModsView(): void {
 
     const headerHtml = `
     <div class="list-header-row" style="grid-column: 1 / -1;">
-      <div class="list-header-col sortable name-col" data-sort="name">Name${arrow('name')}</div>
-      <div class="list-header-col sortable status-col" data-sort="status">Status${arrow('status')}</div>
-      <div class="list-header-col sortable type-col" data-sort="type">Type${arrow('type')}</div>
-      <div class="list-header-col version-col">Version</div>
-      <div class="list-header-col path-col">Installed Path</div>
-      <div class="list-header-col extra-col">Extra Files</div>
-      <div class="list-header-col sortable date-col" data-sort="date">Date Installed${arrow('date')}</div>
-      <div class="list-header-col action-col">Action</div>
+      <div class="list-header-col sortable name-col" data-sort="name">${escapeHtml(t('card.table_col_name'))}${arrow('name')}</div>
+      <div class="list-header-col sortable status-col" data-sort="status">${escapeHtml(t('card.table_col_status'))}${arrow('status')}</div>
+      <div class="list-header-col sortable type-col" data-sort="type">${escapeHtml(t('card.table_col_type'))}${arrow('type')}</div>
+      <div class="list-header-col version-col">${escapeHtml(t('card.table_col_version'))}</div>
+      <div class="list-header-col path-col">${escapeHtml(t('card.table_col_pak_target'))}</div>
+      <div class="list-header-col extra-col">${escapeHtml(t('card.table_col_extras'))}</div>
+      <div class="list-header-col sortable date-col" data-sort="date">${escapeHtml(t('card.table_col_date'))}${arrow('date')}</div>
+      <div class="list-header-col action-col">${escapeHtml(t('card.table_col_action'))}</div>
     </div>
     `;
 
@@ -184,13 +185,13 @@ export function renderModsView(): void {
 
       html += `
       <div class="folder-breadcrumb" id="mod-root-drop-zone" style="grid-column: 1 / -1; display: flex; align-items: center; gap: 12px; margin-bottom: 16px; padding: 12px 16px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px;">
-        <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">← Back to Root</button>
-        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">Root / ${escapeHtml(activeFolder ? activeFolder.name : 'Unknown Folder')}</span>
+        <button class="btn-secondary btn-sm" id="btn-back-to-root" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">${escapeHtml(t('mods.btn_back_to_root'))}</button>
+        <span style="font-size: 14px; font-weight: 600; color: var(--text-primary);">${escapeHtml(t('mods.breadcrumb_root'))} / ${escapeHtml(activeFolder ? activeFolder.name : t('mods.unknown_folder'))}</span>
       </div>
       `;
 
       if (modsInFolder.length === 0) {
-        html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">No mods in this folder. Double-click "Back to Root" or drag mods to ungroup them.</div>`;
+        html += `<div style="grid-column: 1 / -1; padding: 48px; text-align: center; color: var(--text-muted); font-size: 13px; border: 1px dashed var(--border); border-radius: 6px;">${escapeHtml(t('mods.folder_empty_desc'))}</div>`;
       } else {
         html += modsInFolder.map(m => buildModCardHtml(m, state)).join('');
       }

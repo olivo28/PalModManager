@@ -2,6 +2,7 @@ import { refreshNexusCache } from '../api';
 import { getState, updateState } from '../state';
 import { renderModsView } from '../ui/modsView';
 import { showToast } from '../ui/toast';
+import { t } from '../utils/i18n';
 
 function sleep(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
@@ -20,7 +21,7 @@ export async function autoFetchNexusInfo(): Promise<void> {
 
   if (needsFetch.length === 0) return;
 
-  showToast(`Fetching Nexus info for ${needsFetch.length} mod(s)...`, 'info');
+  showToast(t('toasts.fetching_nexus_count', { count: needsFetch.length }), 'info');
 
   let fetchedCount = 0;
   for (let i = 0; i < needsFetch.length; i++) {
@@ -44,6 +45,6 @@ export async function autoFetchNexusInfo(): Promise<void> {
   }
 
   if (fetchedCount > 0) {
-    showToast(`Updated Nexus info for ${fetchedCount} mod(s)`, 'success');
+    showToast(t('toasts.updated_nexus_count', { count: fetchedCount }), 'success');
   }
 }

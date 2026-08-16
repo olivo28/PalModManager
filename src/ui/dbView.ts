@@ -6,6 +6,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { showToast } from './toast';
 import { escapeHtml } from '../utils/helpers';
+import { t } from '../utils/i18n';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -61,30 +62,30 @@ export async function renderDbView(): Promise<void> {
   container.innerHTML = `
     <div class="db-view-container">
       <div class="db-toolbar">
-        <span class="db-toolbar-title">🗄 DB Inspector</span>
+        <span class="db-toolbar-title">${escapeHtml(t('db.title'))}</span>
         <div class="db-tab-group">
-          <button class="db-tab-btn active" data-dbtab="mods">Mods</button>
-          <button class="db-tab-btn" data-dbtab="profiles">Profiles</button>
-          <button class="db-tab-btn" data-dbtab="settings">Settings</button>
+          <button class="db-tab-btn active" data-dbtab="mods">${escapeHtml(t('db.tab_mods'))}</button>
+          <button class="db-tab-btn" data-dbtab="profiles">${escapeHtml(t('db.tab_profiles'))}</button>
+          <button class="db-tab-btn" data-dbtab="settings">${escapeHtml(t('db.tab_settings'))}</button>
         </div>
-        <button id="db-refresh-btn" class="db-action-btn" title="Reload from database">↻ Refresh</button>
+        <button id="db-refresh-btn" class="db-action-btn" title="${escapeHtml(t('db.btn_refresh_title'))}">${escapeHtml(t('db.btn_refresh'))}</button>
       </div>
 
       <div class="db-split">
         <div class="db-grid-panel" id="db-grid-panel">
-          <div class="db-loading">Loading database…</div>
+          <div class="db-loading">${escapeHtml(t('db.loading'))}</div>
         </div>
         <div class="db-inspector-panel">
           <div class="db-inspector-toolbar">
-            <span class="db-inspector-label">JSON Inspector</span>
+            <span class="db-inspector-label">${escapeHtml(t('db.inspector_title'))}</span>
             <span id="db-json-status" class="db-json-status"></span>
-            <button id="db-save-btn" class="db-save-btn" disabled>Save Record</button>
+            <button id="db-save-btn" class="db-save-btn" disabled>${escapeHtml(t('db.btn_save'))}</button>
           </div>
           <textarea
             id="db-json-editor"
             class="db-json-editor"
             spellcheck="false"
-            placeholder="Select a record to inspect its raw JSON…"
+            placeholder="${escapeHtml(t('db.editor_placeholder'))}"
           ></textarea>
         </div>
       </div>
@@ -124,8 +125,8 @@ async function loadSnapshot(): Promise<void> {
     clearInspector();
     renderCurrentTable();
   } catch (e) {
-    showToast(`DB load failed: ${e}`, 'error');
-    if (panel) panel.innerHTML = `<div class="db-error">❌ Failed to load database: ${escapeHtml(String(e))}</div>`;
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+    if (panel) panel.innerHTML = `<div class="db-error">❌ ${escapeHtml(t('toasts.export_failed', { error: String(e) }))}</div>`;
   }
 }
 
@@ -180,7 +181,7 @@ function renderCurrentTable(): void {
 }
 
 function renderModsTable(mods: ModInfo[]): string {
-  if (!mods.length) return '<div class="db-empty">No mods in database.</div>';
+  if (!mods.length) return `<div class="db-empty">${escapeHtml(t('db.empty_mods'))}</div>`;
 
   const typeColor: Record<string, string> = {
     ue4ss: 'var(--type-ue4ss)',
@@ -190,25 +191,28 @@ function renderModsTable(mods: ModInfo[]): string {
     hybrid: 'var(--type-hybrid)',
   };
 
-  const rows = mods.map(m => `
+  const rows = mods.map(m => {
+    const typeLabel = m.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : m.type.toUpperCase();
+    return `
     <tr class="db-row" data-id="${escapeHtml(m.id)}" title="${escapeHtml(m.id)}">
       <td class="db-cell db-cell-name">${escapeHtml(m.name)}</td>
-      <td class="db-cell"><span class="db-type-badge" style="color:${typeColor[m.type] ?? 'var(--text-muted)'}">${escapeHtml(m.type)}</span></td>
+      <td class="db-cell"><span class="db-type-badge" style="color:${typeColor[m.type] ?? 'var(--text-muted)'}">${escapeHtml(typeLabel)}</span></td>
       <td class="db-cell"><span class="db-status-dot ${m.enabled ? 'on' : 'off'}"></span></td>
       <td class="db-cell db-cell-mono">${escapeHtml(m.version)}</td>
       <td class="db-cell db-cell-date">${escapeHtml(m.installDate?.split('T')[0] ?? '')}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   return `
     <table class="db-grid-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Type</th>
-          <th>On</th>
-          <th>Version</th>
-          <th>Installed</th>
+          <th>${escapeHtml(t('card.table_col_name'))}</th>
+          <th>${escapeHtml(t('card.table_col_type'))}</th>
+          <th>${escapeHtml(t('common.on'))}</th>
+          <th>${escapeHtml(t('card.table_col_version'))}</th>
+          <th>${escapeHtml(t('detail.installed_label'))}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -217,16 +221,16 @@ function renderModsTable(mods: ModInfo[]): string {
 }
 
 function renderProfilesTable(profiles: Profile[], currentId: string): string {
-  if (!profiles.length) return '<div class="db-empty">No profiles in database.</div>';
+  if (!profiles.length) return `<div class="db-empty">${escapeHtml(t('db.empty_profiles'))}</div>`;
 
   const rows = profiles.map(p => `
     <tr class="db-row ${p.id === currentId ? 'db-row-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(p.id)}">
       <td class="db-cell db-cell-name">
         ${escapeHtml(p.name)}
-        ${p.id === currentId ? '<span class="db-active-badge">Active</span>' : ''}
+        ${p.id === currentId ? `<span class="db-active-badge">${escapeHtml(t('profiles.active_badge'))}</span>` : ''}
       </td>
-      <td class="db-cell db-cell-mono">${p.installedModIds?.length ?? 0} installed</td>
-      <td class="db-cell db-cell-mono">${p.enabledModIds?.length ?? 0} enabled</td>
+      <td class="db-cell db-cell-mono">${p.installedModIds?.length ?? 0} ${escapeHtml(t('detail.installed_label')).toLowerCase()}</td>
+      <td class="db-cell db-cell-mono">${p.enabledModIds?.length ?? 0} ${escapeHtml(t('common.enabled')).toLowerCase()}</td>
       <td class="db-cell db-cell-date">${escapeHtml(p.createdAt?.split('T')[0] ?? '')}</td>
     </tr>
   `).join('');
@@ -235,10 +239,10 @@ function renderProfilesTable(profiles: Profile[], currentId: string): string {
     <table class="db-grid-table">
       <thead>
         <tr>
-          <th>Name</th>
-          <th>Installed</th>
-          <th>Enabled</th>
-          <th>Created</th>
+          <th>${escapeHtml(t('card.table_col_name'))}</th>
+          <th>${escapeHtml(t('detail.installed_label'))}</th>
+          <th>${escapeHtml(t('common.enabled'))}</th>
+          <th>${escapeHtml(t('db.col_created'))}</th>
         </tr>
       </thead>
       <tbody>${rows}</tbody>
@@ -248,16 +252,16 @@ function renderProfilesTable(profiles: Profile[], currentId: string): string {
 
 function renderSettingsTable(settings: AppSettings): string {
   const rows = Object.entries(settings).map(([key, val]) => `
-    <tr class="db-row db-row-settings" title="Click to edit settings">
+    <tr class="db-row db-row-settings" title="${escapeHtml(t('db.click_to_edit'))}">
       <td class="db-cell db-cell-key">${escapeHtml(key)}</td>
       <td class="db-cell db-cell-mono db-cell-val">${escapeHtml(val === null || val === undefined ? 'null' : String(val))}</td>
     </tr>
   `).join('');
 
   return `
-    <div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted);">Click a row to open full settings JSON in the inspector.</div>
+    <div style="padding: 8px 12px; font-size: 11px; color: var(--text-muted);">${escapeHtml(t('db.settings_hint'))}</div>
     <table class="db-grid-table">
-      <thead><tr><th>Key</th><th>Value</th></tr></thead>
+      <thead><tr><th>${escapeHtml(t('db.col_key'))}</th><th>${escapeHtml(t('db.col_val'))}</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
   `;
@@ -309,11 +313,11 @@ function updateJsonStatus(valid: boolean | null): void {
     status.className = 'db-json-status';
     saveBtn.disabled = true;
   } else if (valid) {
-    status.textContent = '✓ Valid JSON';
+    status.textContent = t('db.valid_json');
     status.className = 'db-json-status valid';
     saveBtn.disabled = _selectedRecordType === null;
   } else {
-    status.textContent = '✗ Invalid JSON';
+    status.textContent = t('db.invalid_json');
     status.className = 'db-json-status invalid';
     saveBtn.disabled = true;
   }
@@ -331,7 +335,7 @@ async function handleSaveRecord(): Promise<void> {
   try {
     parsed = JSON.parse(editor.value);
   } catch {
-    showToast('Cannot save: JSON is invalid', 'error');
+    showToast(t('toasts.export_failed', { error: 'Invalid JSON' }), 'error');
     return;
   }
 
@@ -342,22 +346,22 @@ async function handleSaveRecord(): Promise<void> {
       json: JSON.stringify(parsed),
     });
 
-    showToast('Record saved successfully', 'success');
+    showToast(t('toasts.settings_saved'), 'success');
 
     // Ask if user wants to re-scan mods
     const { showConfirm } = await import('./confirm');
     const doRescan = await showConfirm(
-      'Record saved. Do you want to re-scan mods to reflect the changes in the main list?'
+      t('db.confirm_rescan')
     );
     if (doRescan) {
       const { loadMods } = await import('./modsView');
       await loadMods();
-      showToast('Mods re-scanned', 'info');
+      showToast(t('dependencies.up_to_date'), 'info');
     }
 
     // Reload snapshot so the grid reflects changes
     await loadSnapshot();
   } catch (e) {
-    showToast(`Save failed: ${e}`, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }

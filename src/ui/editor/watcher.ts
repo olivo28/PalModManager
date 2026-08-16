@@ -3,6 +3,7 @@ import { getState } from '../../state';
 import { loadFileContent, _originalContent } from './viewer';
 import { renderEditorModTree } from './tree';
 import { showToast } from '../toast';
+import { t } from '../../utils/i18n';
 
 let isSettingUpWatcher = false;
 let debounceTimeout: any = null;
@@ -50,7 +51,7 @@ export async function setupEditorFsWatcher(): Promise<void> {
                 }, 2500);
               }
             } else {
-              showToast(`File "${state.editorSelectedFile}" was modified externally`, 'info');
+              showToast(t('toasts.file_modified_externally', { file: state.editorSelectedFile }), 'info');
             }
           }
         }

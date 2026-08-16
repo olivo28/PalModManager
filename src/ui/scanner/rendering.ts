@@ -147,6 +147,23 @@ export const customStyles = `
       border-color: var(--accent);
       box-shadow: 0 0 10px rgba(0, 188, 255, 0.15);
     }
+    .scanner-scroll-panel, .scanner-detail-list {
+      scrollbar-width: thin;
+      scrollbar-color: var(--border) transparent;
+    }
+    .scanner-scroll-panel::-webkit-scrollbar, .scanner-detail-list::-webkit-scrollbar {
+      width: 6px;
+    }
+    .scanner-scroll-panel::-webkit-scrollbar-track, .scanner-detail-list::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    .scanner-scroll-panel::-webkit-scrollbar-thumb, .scanner-detail-list::-webkit-scrollbar-thumb {
+      background: var(--border);
+      border-radius: 3px;
+    }
+    .scanner-scroll-panel::-webkit-scrollbar-thumb:hover, .scanner-detail-list::-webkit-scrollbar-thumb:hover {
+      background: var(--text-muted);
+    }
   </style>
 `;
 

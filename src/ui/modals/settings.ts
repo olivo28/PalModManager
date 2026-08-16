@@ -2,6 +2,8 @@ import { setGamePath, setHideNativeMods, setDebugConsole, setCustomDataPath, set
 import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
+import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 
 export let _tempCustomDataPath: string | null = null;
 
@@ -36,16 +38,24 @@ export function openSettingsModal(): void {
     const newPalschema = forceLoadOrderPalschemaCheckbox.cloneNode(true) as HTMLInputElement;
     forceLoadOrderPalschemaCheckbox.parentNode!.replaceChild(newPalschema, forceLoadOrderPalschemaCheckbox);
 
-    newUe4ss.checked = !!state.currentSettings?.forceLoadOrderUe4ss;
-    newPalschema.checked = isWindows ? !!state.currentSettings?.forceLoadOrderPalschema : false;
+    const activeProfile = state.currentProfile || state.profiles?.find(p => p.id === state.currentProfileId);
+    newUe4ss.checked = activeProfile?.force_load_order_ue4ss !== undefined && activeProfile?.force_load_order_ue4ss !== null
+      ? !!activeProfile.force_load_order_ue4ss
+      : !!state.currentSettings?.forceLoadOrderUe4ss;
+
+    newPalschema.checked = isWindows
+      ? (activeProfile?.force_load_order_palschema !== undefined && activeProfile?.force_load_order_palschema !== null
+          ? !!activeProfile.force_load_order_palschema
+          : !!state.currentSettings?.forceLoadOrderPalschema)
+      : false;
 
     const handleSubChange = async (elem: HTMLInputElement, systemName: string, detailMsg: string, requireConfirm: boolean) => {
       if (elem.checked && requireConfirm) {
         const confirmed = await showConfirm(
-          `Enable ${systemName} Load Order`,
-          `Enabling this setting will enforce loading sequence for ${systemName} mods. ${detailMsg}<br><br>Do you want to continue?`,
-          'Yes, Enable',
-          'Cancel'
+          t('settings.flo_confirm_title', { systemName }),
+          t('settings.flo_confirm_body', { systemName, detailMsg }),
+          t('settings.flo_confirm_btn'),
+          t('common.cancel')
         );
         if (!confirmed) {
           elem.checked = false;
@@ -55,19 +65,19 @@ export function openSettingsModal(): void {
     };
 
     newUe4ss.addEventListener('change', () => {
-      handleSubChange(newUe4ss, 'UE4SS', 'This will organize your mods via mods.txt.', true);
+      handleSubChange(newUe4ss, 'UE4SS', t('settings.flo_detail_ue4ss'), true);
     });
 
     newPalschema.addEventListener('change', () => {
-      handleSubChange(newPalschema, 'PalSchema', 'This will dynamically redirect your mods to a Storage folder and create NTFS junctions.', true);
+      handleSubChange(newPalschema, 'PalSchema', t('settings.flo_detail_palschema'), true);
     });
   }
 
   if (state.currentSettings?.gamePath) {
-    pathStatus.textContent = 'Path configured';
+    pathStatus.textContent = t('settings.path_configured');
     pathStatus.className = 'settings-path-status valid';
   } else {
-    pathStatus.textContent = 'No path configured - select your Palworld folder';
+    pathStatus.textContent = t('settings.path_not_configured');
     pathStatus.className = 'settings-path-status invalid';
   }
 
@@ -120,6 +130,17 @@ export function openSettingsModal(): void {
 
   refreshSafetyBackupStatus();
 
+  const langSelect = document.getElementById('settings-language-select') as HTMLSelectElement | null;
+  if (langSelect) {
+    import('../../utils/i18n').then(({ getLocale, setLocale }) => {
+      langSelect.value = getLocale();
+      langSelect.onchange = () => {
+        setLocale(langSelect.value as any);
+        import('../modsView').then(m => m.renderModsView()).catch(() => {});
+      };
+    });
+  }
+
   modal.classList.add('visible');
 
   requestAnimationFrame(() => {
@@ -140,14 +161,14 @@ export async function refreshSafetyBackupStatus(): Promise<void> {
     if (info.exists && info.timestamp) {
       const dateStr = new Date(info.timestamp).toLocaleString();
       const sizeKb = info.zipSizeBytes ? Math.round(info.zipSizeBytes / 1024) : 0;
-      statusElem.innerHTML = `✅ <strong>Initial Snapshot:</strong> ${dateStr} (${sizeKb} KB)<br>• ${info.ue4ssModsCount} UE4SS mods, ${info.palschemaModsCount} PalSchema mods tracked`;
+      statusElem.innerHTML = `✅ <strong>${escapeHtml(t('settings.safety_initial_snapshot'))}:</strong> ${dateStr} (${sizeKb} KB)<br>• ${escapeHtml(t('settings.safety_tracked_summary', { ue4ss: info.ue4ssModsCount, palschema: info.palschemaModsCount }))}`;
       statusElem.style.color = 'var(--text-secondary)';
     } else {
-      statusElem.textContent = 'ℹ️ No pre-PMM backup created yet for this game installation.';
+      statusElem.textContent = t('settings.safety_none');
       statusElem.style.color = 'var(--text-muted)';
     }
   } catch (e) {
-    statusElem.textContent = 'Status: Ready';
+    statusElem.textContent = t('settings.safety_ready');
   }
 }
 
@@ -176,14 +197,14 @@ export async function handleDataPathChange(): Promise<void> {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: 'Select Custom Data Storage Directory',
+        title: t('settings.dialog_browse_data_title'),
       });
       if (selected) {
         const path = typeof selected === 'string' ? selected : selected as string;
         _tempCustomDataPath = path;
         if (display) {
           display.style.display = 'block';
-          display.textContent = `Custom Folder: ${path}`;
+          display.textContent = t('settings.custom_folder_display', { path });
         }
       } else {
         revertDataPathSelect(select, display);
@@ -206,7 +227,7 @@ function revertDataPathSelect(select: HTMLSelectElement, display: HTMLElement | 
     select.value = 'custom';
     if (display) {
       display.style.display = 'block';
-      display.textContent = `Custom Folder: ${_tempCustomDataPath}`;
+      display.textContent = t('settings.custom_folder_display', { path: _tempCustomDataPath });
     }
   }
 }
@@ -217,7 +238,7 @@ export async function handleSettingsBrowse(): Promise<void> {
     const selected = await open({
       directory: true,
       multiple: false,
-      title: 'Select Palworld game folder',
+      title: t('settings.dialog_browse_game_title'),
     });
     if (selected) {
       const path = typeof selected === 'string' ? selected : selected as string;
@@ -253,7 +274,7 @@ export async function handleSaveSettings(): Promise<void> {
       try {
         const settings = await setGamePath(newPath);
         updateState({ currentSettings: settings });
-        pathStatus.textContent = 'Path configured';
+        pathStatus.textContent = t('settings.path_configured');
         pathStatus.className = 'settings-path-status valid';
       } catch (e) {
         pathStatus.textContent = String(e);
@@ -297,7 +318,7 @@ export async function handleSaveSettings(): Promise<void> {
     }
 
     if (_tempCustomDataPath !== (state.currentSettings?.customDataPath || null)) {
-      showToast('Migrating data files to new location...', 'info');
+      showToast(t('settings.custom_data_path_desc'), 'info');
       const settings = await setCustomDataPath(_tempCustomDataPath);
       updateState({ currentSettings: settings });
     }
@@ -313,14 +334,14 @@ export async function handleSaveSettings(): Promise<void> {
     }
 
     closeSettingsModal();
-    showToast('Settings saved', 'success');
+    showToast(t('toasts.settings_saved'), 'success');
 
     const { loadGameVersion, loadDependencies, loadMods } = await import('../modsView');
     loadGameVersion();
     await loadDependencies();
     await loadMods();
   } catch (e) {
-    showToast('Failed to save settings: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
     saveBtn.disabled = false;
   }

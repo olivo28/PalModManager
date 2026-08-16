@@ -1,6 +1,7 @@
 import { addStagedPaths } from './staging';
 import { stagedFiles, targetOverrides, renderWorkspace, virtualFolders, setVirtualFolders } from './mod';
 import { showToast as toast } from '../toast';
+import { t } from '../../utils/i18n';
 
 function showToast(msg: string, type: 'success' | 'warning' | 'error' | 'info'): void {
   toast(msg, type);
@@ -211,13 +212,13 @@ export function setupTreeDragAndDropHandlers(container: HTMLElement): void {
         const newTarget = `${folderPath}/${filename}`;
         file.targetPath = newTarget.replace(/\\/g, '/');
         targetOverrides.set(file.sourcePath, file.targetPath);
-        showToast(`Moved ${filename} → ${folderPath}`, 'success');
+        showToast(t('packer.toast_moved_file', { file: filename, target: folderPath }), 'success');
         renderWorkspace();
       } else if (isRoot) {
         // Dropped on root
         file.targetPath = filename;
         targetOverrides.set(file.sourcePath, filename);
-        showToast(`Moved ${filename} → root`, 'success');
+        showToast(t('packer.toast_moved_file', { file: filename, target: 'root' }), 'success');
         renderWorkspace();
       }
     } else if (draggedDirPath !== null) {
@@ -226,19 +227,19 @@ export function setupTreeDragAndDropHandlers(container: HTMLElement): void {
       if (folderPath !== null) {
         // Dropped on another folder
         if (folderPath === oldPath || folderPath.startsWith(oldPath + '/')) {
-          showToast('Cannot move folder inside itself', 'warning');
+          showToast(t('packer.toast_cannot_move_inside_self'), 'warning');
         } else {
           const dirname = oldPath.split('/').pop() || oldPath;
           const newPath = `${folderPath}/${dirname}`;
           moveDirPath(oldPath, newPath);
-          showToast(`Moved 📁 ${dirname} → ${folderPath}`, 'success');
+          showToast(t('packer.toast_moved_file', { file: `📁 ${dirname}`, target: folderPath }), 'success');
           renderWorkspace();
         }
       } else if (isRoot) {
         // Dropped on root
         const dirname = oldPath.split('/').pop() || oldPath;
         moveDirPath(oldPath, dirname);
-        showToast(`Moved 📁 ${dirname} → root`, 'success');
+        showToast(t('packer.toast_moved_file', { file: `📁 ${dirname}`, target: 'root' }), 'success');
         renderWorkspace();
       }
     }

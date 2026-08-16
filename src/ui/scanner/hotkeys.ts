@@ -1,6 +1,7 @@
 import { scanModHotkeys, updateModHotkey } from '../../api';
 import type { ModHotkey } from '../../api';
 import { showToast } from '../toast';
+import { t } from '../../utils/i18n';
 import { lastHotkeysResult, setLastHotkeysResult, setIsScanningHotkeys, editingHotkeyKey, setEditingHotkeyKey, hotkeyFilter, isScanningHotkeys, renderScannerView, subTabHeader } from './mod';
 import { escapeHtml, formatKeyboardBadge } from './rendering';
 
@@ -21,10 +22,10 @@ export async function runHotkeysScan(): Promise<void> {
     }
 
     setLastHotkeysResult(result);
-    showToast(`Hotkey scan complete. Found ${result.length} bindings.`, 'success');
+    showToast(t('scanner.toast_hotkeys_success', { count: result.length }), 'success');
   } catch (err: any) {
     console.error(err);
-    showToast(`Hotkey scan failed: ${err}`, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   } finally {
     setIsScanningHotkeys(false);
     renderScannerView();
@@ -38,12 +39,12 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
       <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:24px;">
         <div class="scanner-hero">
           <div class="scanner-hero-icon">⌨️</div>
-          <div class="scanner-hero-title">Lua Hotkeys Manager</div>
+          <div class="scanner-hero-title">${escapeHtml(t('scanner.hero_hotkeys_initial_title'))}</div>
           <div class="scanner-hero-desc">
-            Scans all enabled UE4SS mods to look for asynchronous key bindings (\`Key.SOMETHING\`) configured inside Lua scripts. You can bind new shortcut combinations dynamically.
+            ${escapeHtml(t('scanner.hero_hotkeys_initial_desc'))}
           </div>
           <button id="scanner-start-hotkeys-btn" class="scanner-btn-run">
-            <span>Scan Hotkeys</span>
+            <span>${escapeHtml(t('scanner.btn_scan_hotkeys'))}</span>
           </button>
         </div>
       </div>
@@ -59,12 +60,12 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
       <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:24px;">
         <div class="scanner-hero">
           <div class="scanner-hero-icon">⌨️</div>
-          <div class="scanner-hero-title">No hotkeys registered</div>
+          <div class="scanner-hero-title">${escapeHtml(t('scanner.hero_no_hotkeys_title'))}</div>
           <div class="scanner-hero-desc">
-            No hotkeys were found in any of your enabled UE4SS mods.
+            ${escapeHtml(t('scanner.hero_no_hotkeys_desc'))}
           </div>
           <button id="scanner-start-hotkeys-btn" class="scanner-btn-run">
-            <span>Rescan Hotkeys</span>
+            <span>${escapeHtml(t('scanner.btn_rescan_hotkeys'))}</span>
           </button>
         </div>
       </div>
@@ -84,15 +85,15 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
   const listRows = filtered.map((hk, idx) => {
     const isEditing = `${hk.absoluteFilePath}::${hk.lineNumber}` === editingHotkeyKey;
     const actionButtons = isEditing ? `
-      <button class="btn-primary btn-sm hk-save-btn" data-idx="${idx}">Save</button>
-      <button class="btn-secondary btn-sm hk-cancel-btn">Cancel</button>
+      <button class="btn-primary btn-sm hk-save-btn" data-idx="${idx}">${escapeHtml(t('common.save'))}</button>
+      <button class="btn-secondary btn-sm hk-cancel-btn">${escapeHtml(t('common.cancel'))}</button>
     ` : `
-      <button class="hk-edit-btn btn-secondary btn-sm" data-key="${escapeHtml(hk.absoluteFilePath)}::${hk.lineNumber}">Change</button>
-      <button class="hk-code-btn btn-secondary btn-sm" data-mod-id="${escapeHtml(hk.modId)}" data-file-path="${escapeHtml(hk.filePath)}" data-line="${hk.lineNumber}">View Code</button>
+      <button class="hk-edit-btn btn-secondary btn-sm" data-key="${escapeHtml(hk.absoluteFilePath)}::${hk.lineNumber}">${escapeHtml(t('common.edit'))}</button>
+      <button class="hk-code-btn btn-secondary btn-sm" data-mod-id="${escapeHtml(hk.modId)}" data-file-path="${escapeHtml(hk.filePath)}" data-line="${hk.lineNumber}">${escapeHtml(t('common.preview'))}</button>
     `;
 
     const keysDisplay = isEditing ? `
-      <input type="text" id="hk-input-${idx}" class="hotkey-edit-input" value="${escapeHtml(hk.keys)}" placeholder="Press keys..." style="padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--accent); color:var(--text-primary); font-size:11px; font-family:monospace; border-radius:4px; outline:none; width:100%; box-sizing:border-box;" />
+      <input type="text" id="hk-input-${idx}" class="hotkey-edit-input" value="${escapeHtml(hk.keys)}" placeholder="${escapeHtml(t('scanner.hotkey_press_keys'))}" style="padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--accent); color:var(--text-primary); font-size:11px; font-family:monospace; border-radius:4px; outline:none; width:100%; box-sizing:border-box;" />
     ` : formatKeyboardBadge(hk.keys);
 
     return `
@@ -113,17 +114,17 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
     <table class="premium-table">
       <thead>
         <tr>
-          <th>Mod Name</th>
-          <th>Location</th>
-          <th>Keybinds Mapped</th>
-          <th style="text-align:right;">Actions</th>
+          <th>${escapeHtml(t('scanner.col_mod'))}</th>
+          <th>${escapeHtml(t('scanner.col_location'))}</th>
+          <th>${escapeHtml(t('scanner.col_binding'))}</th>
+          <th style="text-align:right;">${escapeHtml(t('scanner.col_action'))}</th>
         </tr>
       </thead>
       <tbody>
         ${listRows}
       </tbody>
     </table>
-  ` : `<div style="text-align:center; padding: 48px; color:var(--text-muted); font-size:12px;">No hotkeys found matching filter "${escapeHtml(hotkeyFilter)}".</div>`;
+  ` : `<div style="text-align:center; padding: 48px; color:var(--text-muted); font-size:12px;">${escapeHtml(t('scanner.hero_no_hotkeys_title'))}</div>`;
 
   container.innerHTML = `
     ${subTabHeader()}
@@ -131,11 +132,11 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
     <div style="display:flex; align-items:center; justify-content:space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.15); flex-shrink: 0;">
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
-        <input type="text" id="hk-search-input" class="premium-search-input" placeholder="Search hotkeys..." value="${escapeHtml(hotkeyFilter)}" />
+        <input type="text" id="hk-search-input" class="premium-search-input" placeholder="${escapeHtml(t('scanner.hotkeys_search_placeholder'))}" value="${escapeHtml(hotkeyFilter)}" />
       </div>
-      <div style="font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">Found ${filtered.length} active keybinds</div>
+      <div style="font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">${escapeHtml(t('common.selected_count', { count: filtered.length }))}</div>
     </div>
-    <div style="flex:1; padding: 20px 24px; overflow-y:auto; box-sizing:border-box;">
+    <div class="scanner-scroll-panel" style="flex: 1 1 0; min-height: 0; padding: 20px 24px; overflow-y:auto; box-sizing:border-box;">
       <div class="scanner-card-section" style="cursor: default; padding: 0;">
         ${tableBody}
       </div>

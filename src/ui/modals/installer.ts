@@ -17,6 +17,7 @@ import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 
 export let _pendingUpdateModId: string | null = null;
 export let _pendingBatchPaths: string[] = [];
@@ -59,11 +60,11 @@ export function closeInstallModal(): void {
   const cancelBtn = document.getElementById('modal-cancel')! as HTMLButtonElement;
   if (confirmBtn) {
     confirmBtn.style.display = '';
-    confirmBtn.textContent = 'Install';
+    confirmBtn.textContent = t('installer.btn_install');
     confirmBtn.disabled = false;
   }
   if (cancelBtn) {
-    cancelBtn.textContent = 'Cancel';
+    cancelBtn.textContent = t('common.cancel');
     cancelBtn.disabled = false;
   }
 
@@ -335,15 +336,15 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
       <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
         <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists (Installed: ${(existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : 'unknown version'}).</span>
         <div style="display:flex;gap:4px;background:var(--bg-primary);padding:2px;border-radius:5px;border:1px solid var(--border);">
-          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">Update</button>
-          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 10px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">Install as New</button>
+          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_update'))}</button>
+          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 10px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_new'))}</button>
         </div>
       </div>
     `;
-    confirmBtn.textContent = 'Update';
+    confirmBtn.textContent = t('installer.btn_update');
   } else {
     _pendingUpdateModId = null;
-    confirmBtn.textContent = 'Install';
+    confirmBtn.textContent = t('installer.btn_install');
   }
 
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
@@ -856,7 +857,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
         <td style="padding:6px;font-size:10px;width:180px;max-width:180px;color:var(--text-secondary);">
           <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden;">
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-grow:1;" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</span>
-            <button id="batch-view-files-${idx}" style="padding:2px 6px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);border-radius:4px;font-size:9px;cursor:pointer;white-space:nowrap;font-weight:600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='var(--bg-secondary)'">Show Files</button>
+        <button id="batch-view-files-${idx}" style="padding:2px 6px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);border-radius:4px;font-size:9px;cursor:pointer;white-space:nowrap;font-weight:600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='var(--bg-secondary)'">${escapeHtml(t('installer.btn_show_files'))}</button>
           </div>
         </td>
         <td style="padding:6px;font-size:11px;width:70px;white-space:nowrap;color:var(--text-muted);font-weight:600;">${idText}</td>
@@ -867,7 +868,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             <option value="ue4ss" ${item.type === 'ue4ss' ? 'selected' : ''}>UE4SS</option>
             <option value="palschema" ${item.type === 'palschema' ? 'selected' : ''}>PalSchema</option>
             <option value="pak" ${item.type === 'pak' || item.type === 'logicmods' ? 'selected' : ''}>Pak</option>
-            <option value="hybrid" ${item.type === 'hybrid' ? 'selected' : ''}>Hybrid</option>
+            <option value="hybrid" ${item.type === 'hybrid' ? 'selected' : ''}>${escapeHtml(t('card.type_hybrid'))}</option>
           </select>
         </td>
         <td id="batch-pak-dest-container-${idx}" style="padding:6px;width:95px;">${pakDestSelectHtml}</td>
@@ -881,14 +882,14 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
       <table style="width:100%;border-collapse:collapse;text-align:left;">
         <thead style="position:sticky;top:0;z-index:2;">
           <tr style="background:var(--bg-tertiary);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
-            <th style="padding:6px;width:28px;">Inst.</th>
-            <th style="padding:6px;width:180px;">Archive</th>
-            <th style="padding:6px;width:70px;">Nexus ID</th>
-            <th style="padding:6px;width:60px;">Version</th>
-            <th style="padding:6px;">Target Mod Folder</th>
-            <th style="padding:6px;width:90px;">Type</th>
-            <th style="padding:6px;width:95px;">Pak Target</th>
-            <th style="padding:6px;width:50px;text-align:right;padding-right:12px;">Status</th>
+            <th style="padding:6px;width:28px;">${escapeHtml(t('installer.batch_col_install'))}</th>
+            <th style="padding:6px;width:180px;">${escapeHtml(t('installer.batch_col_archive'))}</th>
+            <th style="padding:6px;width:70px;">${escapeHtml(t('installer.batch_col_nexus_id'))}</th>
+            <th style="padding:6px;width:60px;">${escapeHtml(t('installer.batch_col_version'))}</th>
+            <th style="padding:6px;">${escapeHtml(t('installer.batch_col_target_folder'))}</th>
+            <th style="padding:6px;width:90px;">${escapeHtml(t('installer.batch_col_type'))}</th>
+            <th style="padding:6px;width:95px;">${escapeHtml(t('installer.batch_col_pak_target'))}</th>
+            <th style="padding:6px;width:50px;text-align:right;padding-right:12px;">${escapeHtml(t('installer.batch_col_status'))}</th>
           </tr>
         </thead>
         <tbody>
@@ -924,7 +925,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     if (viewBtn) {
       viewBtn.addEventListener('click', async (e) => {
         e.preventDefault();
-        viewBtn.textContent = 'Loading...';
+        viewBtn.textContent = t('installer.btn_loading_files');
         viewBtn.disabled = true;
         try {
           const customName = (document.getElementById(`batch-name-${i}`) as HTMLInputElement)?.value || item.name;
@@ -937,9 +938,9 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
           );
           showFileTreeModal(manifest.routes, customName);
         } catch (err) {
-          showToast(`Error loading file list: ${err}`, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         } finally {
-          viewBtn.textContent = 'Show Files';
+          viewBtn.textContent = t('installer.btn_show_files');
           viewBtn.disabled = false;
         }
       });
@@ -1049,9 +1050,9 @@ export async function handleInstallConfirm(): Promise<void> {
       resultsList.scrollTop = resultsList.scrollHeight;
     }
 
-    statusEl.textContent = `Batch complete: ${installed} installed, ${updated} updated, ${failed} failed`;
+    statusEl.textContent = t('installer.status_batch_complete', { installed, updated, failed });
     cancelBtn.disabled = false;
-    cancelBtn.textContent = 'Close';
+    cancelBtn.textContent = t('common.close');
     confirmBtn.style.display = 'none';
 
     const { loadMods, loadLibrary } = await import('../modsView');
@@ -1090,8 +1091,16 @@ export async function handleInstallConfirm(): Promise<void> {
     </div>
     <div class="batch-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;min-height:220px;overflow-y:auto;background:#0d0d0d;padding:14px;font-family:monospace;font-size:11px;line-height:1.5;border-bottom-left-radius:6px;border-bottom-right-radius:6px;box-shadow:inset 0 0 10px rgba(0,0,0,0.8);color:#d0d0d0;border:1px solid #282828;border-top:none;"></div>
   `;
-  const resultsList = contentEl.querySelector('.batch-results-list') as HTMLElement;
+  confirmBtn.textContent = _pendingUpdateModId ? t('installer.status_updating_btn') : t('installer.status_installing_btn');
+  statusEl.textContent = _pendingUpdateModId ? t('installer.status_updating') : t('installer.status_installing');
+  confirmBtn.disabled = true;
+  cancelBtn.disabled = true;
+
   const logs: string[] = [];
+  const resultsContainer = document.getElementById('install-results-container')!;
+  const resultsList = document.getElementById('install-results-list')!;
+  resultsContainer.style.display = 'block';
+  resultsList.innerHTML = logs.join('');
 
   const depStatus = await checkDependencies();
   const ue4ssRequired = ['ue4ss', 'palschema', 'hybrid'].includes(customType);
@@ -1101,19 +1110,19 @@ export async function handleInstallConfirm(): Promise<void> {
   const missingPalSchema = palschemaRequired && !depStatus.palschema_installed;
 
   if (missingUe4ss || missingPalSchema) {
-    const missingNames = [];
+    const missingNames: string[] = [];
     if (missingUe4ss) missingNames.push('UE4SS');
     if (missingPalSchema) missingNames.push('PalSchema');
 
-    logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Installation failed: Missing dependencies (${missingNames.join(', ')}).</div>`);
+    logs.push(`<div style="color:#ff9d00;font-weight:bold;">[WARN] Missing required dependencies: ${missingNames.join(', ')}</div>`);
     logs.push(`<div style="color:#888;">&gt; Please click "Install Deps & Retry" to install them automatically.</div>`);
     resultsList.innerHTML = logs.join('');
     resultsList.scrollTop = resultsList.scrollHeight;
-    statusEl.textContent = 'Missing dependencies';
+    statusEl.textContent = t('installer.status_missing_deps');
 
     confirmBtn.disabled = false;
     cancelBtn.disabled = false;
-    confirmBtn.textContent = _pendingUpdateModId ? 'Update' : 'Install';
+    confirmBtn.textContent = _pendingUpdateModId ? t('installer.btn_update') : t('installer.btn_install');
 
     const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
     if (retryBtn) {
@@ -1125,7 +1134,7 @@ export async function handleInstallConfirm(): Promise<void> {
             logs.push(`<div style="color:#e0af68;">&gt; Downloading and installing UE4SS dependency...</div>`);
             resultsList.innerHTML = logs.join('');
             resultsList.scrollTop = resultsList.scrollHeight;
-            statusEl.textContent = 'Downloading and installing UE4SS...';
+            statusEl.textContent = t('installer.status_downloading_ue4ss');
             await installUe4ss();
             logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] UE4SS installed successfully!</div>`);
             resultsList.innerHTML = logs.join('');
@@ -1135,7 +1144,7 @@ export async function handleInstallConfirm(): Promise<void> {
             logs.push(`<div style="color:#e0af68;">&gt; Downloading and installing PalSchema dependency...</div>`);
             resultsList.innerHTML = logs.join('');
             resultsList.scrollTop = resultsList.scrollHeight;
-            statusEl.textContent = 'Downloading and installing PalSchema...';
+            statusEl.textContent = t('installer.status_downloading_palschema');
             await installPalschema();
             logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] PalSchema installed successfully!</div>`);
             resultsList.innerHTML = logs.join('');
@@ -1155,17 +1164,17 @@ export async function handleInstallConfirm(): Promise<void> {
             executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state, pakDestination);
           }, 1000);
         } catch (err) {
-          logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Failed to install dependencies: ${escapeHtml(String(err))}</div>`);
+          logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] ${escapeHtml(t('installer.status_deps_failed'))}: ${escapeHtml(String(err))}</div>`);
           resultsList.innerHTML = logs.join('');
           resultsList.scrollTop = resultsList.scrollHeight;
-          showToast('Failed to install dependencies: ' + err, 'error');
-          statusEl.textContent = 'Failed to install dependencies';
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+          statusEl.textContent = t('installer.status_deps_failed');
         } finally {
           retryBtn.disabled = false;
         }
       };
 
-      showConfirm(`This mod requires missing dependencies: ${missingNames.join(' and ')}. Would you like to download and install them automatically now?`)
+      showConfirm(t('installer.confirm_install_missing_deps', { deps: missingNames.join(' & ') }))
         .then(confirmed => {
           if (confirmed) {
             retryBtn.click();
@@ -1238,7 +1247,7 @@ export async function handleInstall(): Promise<void> {
     const selected = await open({
       multiple: true,
       filters: [{ name: 'Mod Archives', extensions: ['zip', 'rar', '7z'] }],
-      title: 'Select mod archive (.zip, .rar, .7z)',
+      title: t('installer.dialog_select_archive_title'),
     });
 
     if (!selected) return;
@@ -1248,7 +1257,7 @@ export async function handleInstall(): Promise<void> {
     if (paths.length === 1) {
       const zipPath = paths[0];
       showInstallModal();
-      setModalStatus('Analyzing archive file...');
+      setModalStatus(t('modal.status_analyzing'));
 
       const analysis = await analyzeZip(zipPath);
 
@@ -1267,6 +1276,6 @@ export async function handleInstall(): Promise<void> {
   } catch (e) {
     console.error('Error analyzing:', e);
     closeInstallModal();
-    showToast('Failed to analyze archives: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }

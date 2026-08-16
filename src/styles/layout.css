@@ -38,9 +38,9 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 2px;
-  width: 44px;
-  padding: 8px 0;
+  gap: 3px;
+  width: 54px;
+  padding: 8px 2px;
   background: transparent;
   color: var(--text-muted);
   border: none;
@@ -76,7 +76,12 @@
   font-size: 8px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.3px;
+  text-align: center;
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .sidebar-footer {

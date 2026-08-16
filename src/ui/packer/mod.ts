@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { showToast } from '../toast';
 import { showConfirm, showPrompt } from '../confirm';
+import { t } from '../../utils/i18n';
 import { StagedFile, addStagedPaths, scanAndBuildStagedFiles, toggleSkipFile, autoStructureWorkspace } from './staging';
 import { renderWorkspace, renderListMode, renderTreeMode, renderTreeHtml, formatBytes, clearMetadataForm, updateBuildButtonState } from './rendering';
 import { setupPackerDragAndDrop, setupTreeDragAndDropHandlers } from './dragDrop';
@@ -78,7 +79,7 @@ function setupPackerEventListeners(): void {
       const selected = await open({
         multiple: true,
         directory: false,
-        title: 'Select Files to Add to Project'
+        title: t('packer.dialog_select_files_title')
       });
       if (selected) {
         const paths = Array.isArray(selected) ? selected : [selected];
@@ -95,7 +96,7 @@ function setupPackerEventListeners(): void {
       const selected = await open({
         multiple: false,
         directory: true,
-        title: 'Select Folder to Add to Project'
+        title: t('packer.dialog_select_folder_title')
       });
       if (selected) {
         const paths = Array.isArray(selected) ? [selected] : [selected as any];
@@ -107,9 +108,9 @@ function setupPackerEventListeners(): void {
   });
 
   document.getElementById('packer-new-virtual-folder-btn')?.addEventListener('click', async () => {
-    const folderPath = await showPrompt("Enter virtual folder path (e.g. 'Mods/MyMod'):");
-    if (folderPath && folderPath.trim()) {
-      const cleaned = folderPath.trim().replace(/\\/g, '/');
+    const input = await showPrompt(t('packer.prompt_virtual_folder'));
+    if (input && input.trim()) {
+      const cleaned = input.trim().replace(/\\/g, '/');
       if (!virtualFolders.includes(cleaned)) {
         virtualFolders.push(cleaned);
         targetOverrides.set(`__VIRTUAL_DIR__:${cleaned}`, '__VIRTUAL_DIR__');
@@ -119,7 +120,7 @@ function setupPackerEventListeners(): void {
   });
 
   document.getElementById('packer-clear-btn')?.addEventListener('click', async () => {
-    const confirmed = await showConfirm('Clear current staging area? unsaved overrides will be lost.');
+    const confirmed = await showConfirm(t('packer.confirm_clear_staging'));
     if (confirmed) {
       stagedFiles = [];
       sourcePaths = [];
@@ -140,7 +141,7 @@ function setupPackerEventListeners(): void {
 
   document.getElementById('packer-build-btn')?.addEventListener('click', async () => {
     if (stagedFiles.length === 0) {
-      showToast('No files staged to pack.', 'warning');
+      showToast(t('packer.toast_no_files_staged'), 'warning');
       return;
     }
 
@@ -167,7 +168,7 @@ function setupPackerEventListeners(): void {
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const destPath = await save({
-        title: 'Save packed mod archive',
+        title: t('packer.dialog_save_archive_title'),
         filters: [{ name: 'Mod Archive', extensions: [format] }],
         defaultPath: metaName ? `${metaName}_v${metaVersion}.${format}` : `packed_mod.${format}`
       });
@@ -176,8 +177,8 @@ function setupPackerEventListeners(): void {
 
       const btn = document.getElementById('packer-build-btn') as HTMLButtonElement;
       btn.disabled = true;
-      btn.textContent = 'Packing...';
-      showToast('Packing mod archive, please wait...', 'info');
+      btn.textContent = '...';
+      showToast(t('packer.toast_packing_wait'), 'info');
 
       const overridesRecord: Record<string, string> = {};
       targetOverrides.forEach((v, k) => { overridesRecord[k] = v; });
@@ -192,15 +193,15 @@ function setupPackerEventListeners(): void {
         format
       });
 
-      showToast(res, 'success');
+      showToast(t('packer.toast_pack_success'), 'success');
     } catch (err: any) {
       console.error(err);
-      showToast(`Failed to pack mod: ${err}`, 'error');
+      showToast(t('toasts.export_failed', { error: String(err) }), 'error');
     } finally {
       const btn = document.getElementById('packer-build-btn') as HTMLButtonElement;
       if (btn) {
         btn.disabled = false;
-        btn.innerHTML = '📦 Package Mod';
+        btn.innerHTML = `📦 ${escapeHtml(t('packer.btn_package_mod'))}`;
       }
     }
   });

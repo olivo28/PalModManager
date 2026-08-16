@@ -1,6 +1,7 @@
 import { getWorkshopState, setWorkshopGlobalEnabled, activateWorkshopMod, deactivateWorkshopMod } from '../../api';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 
 export async function openWorkshopModal(): Promise<void> {
   const modal = document.getElementById('workshop-modal')!;
@@ -28,16 +29,16 @@ export async function refreshWorkshopUI(): Promise<void> {
 
     masterToggle.checked = wState.globalEnabled;
     masterToggle.onchange = async () => {
-      showToast(masterToggle.checked ? 'Enabling Workshop Mods...' : 'Disabling Workshop Mods...', 'info');
+      showToast(masterToggle.checked ? t('toasts.workshop_enabling') : t('toasts.workshop_disabling'), 'info');
       await setWorkshopGlobalEnabled(masterToggle.checked);
       await refreshWorkshopUI();
       const { loadMods } = await import('../modsView');
       await loadMods();
-      showToast('Workshop state updated', 'success');
+      showToast(t('toasts.workshop_state_updated'), 'success');
     };
 
     if (wState.mods.length === 0) {
-      listContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:var(--text-muted);">No subscribed Workshop mods found. Subscribing in Steam will list them here.</div>`;
+      listContainer.innerHTML = `<div style="text-align:center; padding: 24px; color:var(--text-muted);">${escapeHtml(t('library.empty_workshop'))}</div>`;
       return;
     }
 
@@ -64,7 +65,7 @@ export async function refreshWorkshopUI(): Promise<void> {
               <span style="font-weight:600; font-size:12px; color:var(--text-primary);">${escapeHtml(m.modName)}</span>
               <span style="${badgeStyle}">${badgeText}</span>
             </div>
-            <div style="font-size:10px; color:var(--text-muted);">Version ${escapeHtml(m.version)} by ${escapeHtml(m.author)}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} · ${escapeHtml(t('detail.author_label'))} ${escapeHtml(m.author)}</div>
             ${depWarning}
           </div>
           <div>
@@ -81,17 +82,17 @@ export async function refreshWorkshopUI(): Promise<void> {
         const checked = target.checked;
 
         target.disabled = true;
-        showToast(checked ? 'Activating Workshop mod...' : 'Deactivating Workshop mod...', 'info');
+        showToast(checked ? t('toasts.workshop_activating') : t('toasts.workshop_deactivating'), 'info');
         try {
           if (checked) {
             await activateWorkshopMod(pkgName);
           } else {
             await deactivateWorkshopMod(pkgName);
           }
-          showToast(checked ? 'Activated successfully' : 'Deactivated successfully', 'success');
+          showToast(checked ? t('toasts.workshop_activated') : t('toasts.workshop_deactivated'), 'success');
         } catch (err) {
           target.checked = !checked;
-          showToast('Failed to toggle mod: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         } finally {
           target.disabled = false;
           await refreshWorkshopUI();

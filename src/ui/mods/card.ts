@@ -1,5 +1,6 @@
 import type { ModInfo } from '../../types';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 export function isVersionNewer(local: string, remote: string): boolean {
@@ -74,12 +75,12 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     const isSelected = state.selectedModIds.has(mod.id);
     const shortPath = mod.gamePath ? mod.gamePath.replace(/\\/g, '/').split('/').slice(-3).join('/') : '';
     const extraCount = mod.extraFiles ? mod.extraFiles.length : 0;
-    const extraText = extraCount > 0 ? `+${extraCount} file${extraCount === 1 ? '' : 's'}` : 'None';
-    const formattedDate = mod.installDate ? mod.installDate.substring(0, 10) : 'Unknown';
+    const extraText = extraCount > 0 ? `+${extraCount} ${escapeHtml(t('card.extra_files_count', { count: extraCount }))}` : escapeHtml(t('common.none'));
+    const formattedDate = mod.installDate ? mod.installDate.substring(0, 10) : escapeHtml(t('common.unknown'));
 
     const removeBtn = isWorkshop
-      ? `<span style="font-size: 10px; color: var(--text-muted); opacity: 0.6; font-weight: bold; text-transform: uppercase;">Workshop</span>`
-      : `<button class="card-remove-btn" data-id="${mod.id}" title="Remove mod">✕</button>`;
+      ? `<span style="font-size: 10px; color: var(--text-muted); opacity: 0.6; font-weight: bold; text-transform: uppercase;">${escapeHtml(t('card.badge_workshop'))}</span>`
+      : `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
 
     const childClass = isChild ? 'folder-child-row' : '';
     const childIndent = isChild ? `<span class="tree-connector">↳</span>` : '';
@@ -95,19 +96,19 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         </label>
         <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
         <span class="mod-card-name" style="font-weight:600;">${escapeHtml(mod.name)}</span>
-        ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">WORKSHOP</span>` : ''}
-        ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">UPDATE AVAILABLE (v${escapeHtml(updateVer)})</span>` : ''}
+        ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
+        ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_update_available', { version: updateVer }))}</span>` : ''}
       </div>
       <div class="cell status-cell">
       </div>
       <div class="cell type-cell">
-        <span class="mod-card-type ${mod.type}">${mod.type}</span>
+        <span class="mod-card-type ${mod.type}">${escapeHtml(mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase())}</span>
       </div>
       <div class="cell version-cell">
         <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
       </div>
       <div class="cell path-cell" title="${escapeHtml(mod.gamePath)}">
-        <span class="mod-card-path">${escapeHtml(shortPath || 'Not active')}</span>
+        <span class="mod-card-path">${escapeHtml(shortPath || t('common.disabled'))}</span>
       </div>
       <div class="cell extra-cell" title="${mod.extraFiles ? escapeHtml(mod.extraFiles.join('\n')) : ''}">
         <span class="mod-card-extra">${escapeHtml(extraText)}</span>
@@ -125,7 +126,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     ? `<div class="mod-card-tags">${mod.nexusTags.slice(0, 3).map(t => `<span class="mod-card-tag">${escapeHtml(t)}</span>`).join('')}</div>`
     : '';
   const catHtml = mod.nexusCategory ? `<span class="mod-card-category">${escapeHtml(mod.nexusCategory)}</span>` : '';
-  const author = mod.nexusAuthor ? `<span class="mod-card-author">by ${escapeHtml(mod.nexusAuthor)}</span>` : '';
+  const author = mod.nexusAuthor ? `<span class="mod-card-author">${escapeHtml(t('common.author'))}: ${escapeHtml(mod.nexusAuthor)}</span>` : '';
   let imageSrc = '';
   if (mod.nexusPictureUrl) {
     if (mod.nexusPictureUrl.startsWith('http://') || mod.nexusPictureUrl.startsWith('https://')) {
@@ -145,12 +146,12 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
 
   const updateBadge = updateVer
-    ? `<span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}">&#9650; Update (v${escapeHtml(updateVer)})</span>`
+    ? `<span class="mod-card-update-badge" title="${escapeHtml(t('card.badge_update_available', { version: updateVer }))}">&#9650; ${escapeHtml(t('context.update_mod'))} (v${escapeHtml(updateVer)})</span>`
     : '';
 
   const removeBtn = isWorkshop
-    ? `<span style="font-size: 9px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">Workshop</span>`
-    : `<button class="card-remove-btn" data-id="${mod.id}" title="Remove mod">✕</button>`;
+    ? `<span style="font-size: 9px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${escapeHtml(t('card.badge_workshop'))}</span>`
+    : `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
 
   const isSelected = state.selectedModIds.has(mod.id);
 
@@ -163,11 +164,11 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
       </div>
       <div class="mod-card-meta">
-        <span class="mod-card-type ${mod.type}">${mod.type}</span>
+        <span class="mod-card-type ${mod.type}">${escapeHtml(mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase())}</span>
         <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
         ${updateBadge}
         ${catHtml}
-        ${isWorkshop ? `<span style="margin-left: 4px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">WORKSHOP</span>` : ''}
+        ${isWorkshop ? `<span style="margin-left: 4px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
       </div>
       ${author}
       ${tags}
@@ -184,7 +185,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
 
 export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state: any): string {
   const allEnabled = modsInFolder.length > 0 && modsInFolder.every(m => m.enabled);
-  const folderCheckbox = `<label class="toggle-switch" title="Toggle all mods in this folder" onclick="event.stopPropagation()">
+  const folderCheckbox = `<label class="toggle-switch" title="${escapeHtml(t('card.folder_toggle_all_title'))}" onclick="event.stopPropagation()">
     <input type="checkbox" class="folder-toggle-input" data-folder-id="${folder.id}" ${allEnabled ? 'checked' : ''} />
     <span class="toggle-slider"></span>
   </label>`;
@@ -206,7 +207,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
         ${folderCheckbox}
       </div>
       <div class="cell type-cell">
-        <span class="mod-card-type" style="color: var(--text-muted); border-color: var(--border);">Folder</span>
+        <span class="mod-card-type" style="color: var(--text-muted); border-color: var(--border);">${escapeHtml(t('card.folder_type_label'))}</span>
       </div>
       <div class="cell version-cell">
         <span>-</span>
@@ -215,14 +216,14 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
         <span>-</span>
       </div>
       <div class="cell extra-cell">
-        <span>${modsInFolder.length} mod${modsInFolder.length === 1 ? '' : 's'}</span>
+        <span>${modsInFolder.length} ${escapeHtml(t('common.selected_count_mods', { count: modsInFolder.length })).toLowerCase()}</span>
       </div>
       <div class="cell date-cell">
         <span>-</span>
       </div>
       <div class="cell action-cell" onclick="event.stopPropagation()">
-        <button class="mod-folder-btn rename-btn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="Rename folder">✏</button>
-        <button class="mod-folder-btn delete-btn delete" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="Delete folder">✕</button>
+        <button class="mod-folder-btn rename-btn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}">✏</button>
+        <button class="mod-folder-btn delete-btn delete" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}">✕</button>
       </div>
     </div>`;
 
@@ -235,7 +236,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
         return rowHtml;
       }).join('');
     } else {
-      rowsHtml += `<div class="folder-child-empty folder-child-row ${isCollapsed ? 'is-collapsed' : ''}" data-folder-id="${folder.id}" style="margin-left: 24px; padding: 8px 16px; font-size: 11px; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--border);">No mods in this folder. Drag mods here to group them.</div>`;
+      rowsHtml += `<div class="folder-child-empty folder-child-row ${isCollapsed ? 'is-collapsed' : ''}" data-folder-id="${folder.id}" style="margin-left: 24px; padding: 8px 16px; font-size: 11px; color: var(--text-muted); font-style: italic; border-left: 2px solid var(--border);">${escapeHtml(t('mods.folder_empty_drag_hint'))}</div>`;
     }
 
     return rowsHtml;
@@ -244,8 +245,8 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
   return `
   <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" style="position:relative;">
     <div class="folder-card-actions" style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; z-index: 10;" onclick="event.stopPropagation()">
-      <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="Rename folder" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✏</button>
-      <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="Delete folder" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✕</button>
+      <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✏</button>
+      <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✕</button>
     </div>
     <div class="mod-card-image-wrap folder-icon-wrap" style="display:flex;align-items:center;justify-content:center;height:120px;background:var(--bg-secondary);font-size:48px;">
       📁
@@ -255,7 +256,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
         <span class="mod-card-name" style="font-weight: 600; font-size: 13px;">${escapeHtml(folder.name)}</span>
       </div>
       <div class="mod-card-meta" style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; font-size: 12px; color: var(--text-secondary);">
-        <span>${modsInFolder.length} mod${modsInFolder.length === 1 ? '' : 's'}</span>
+        <span>${modsInFolder.length} ${escapeHtml(t('common.selected_count_mods', { count: modsInFolder.length })).toLowerCase()}</span>
         ${folderCheckbox}
       </div>
     </div>

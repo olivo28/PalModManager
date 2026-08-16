@@ -3,6 +3,7 @@ import { renderModsView, loadMods } from '../ui/modsView';
 import { enableMod, disableMod, removeMod, setModProfileState } from '../api';
 import { showToast } from '../ui/toast';
 import { showConfirm } from '../ui/confirm';
+import { t } from '../utils/i18n';
 
 let isDragging = false;
 let startX = 0;
@@ -299,7 +300,7 @@ async function handleBulkEnable(enable: boolean): Promise<void> {
   const ids = Array.from(getState().selectedModIds);
   if (ids.length === 0) return;
 
-  showToast(`${enable ? 'Enabling' : 'Disabling'} ${ids.length} mods...`, 'info');
+  showToast(`${enable ? t('common.enable') : t('common.disable')} ${ids.length} ${t('common.selected_count_mods', { count: ids.length })}...`, 'info');
   let successCount = 0;
 
   for (const id of ids) {
@@ -316,7 +317,7 @@ async function handleBulkEnable(enable: boolean): Promise<void> {
     }
   }
 
-  showToast(`Successfully updated ${successCount}/${ids.length} mods`, 'success');
+  showToast(`${enable ? t('toasts.enabled_all_success', { count: successCount }) : t('toasts.disabled_all_success', { count: successCount })}`, 'success');
   clearSelection();
   await loadMods();
 }
@@ -325,10 +326,10 @@ async function handleBulkRemove(): Promise<void> {
   const ids = Array.from(getState().selectedModIds);
   if (ids.length === 0) return;
 
-  const confirmed = await showConfirm(`Remove all ${ids.length} selected mods permanently?`);
+  const confirmed = await showConfirm(t('dialogs.confirm_remove_mods_bulk', { count: ids.length }));
   if (!confirmed) return;
 
-  showToast(`Removing ${ids.length} mods...`, 'info');
+  showToast(`${t('common.delete')} ${ids.length} ${t('common.selected_count_mods', { count: ids.length })}...`, 'info');
   let successCount = 0;
 
   for (const id of ids) {
@@ -340,7 +341,7 @@ async function handleBulkRemove(): Promise<void> {
     }
   }
 
-  showToast(`Successfully removed ${successCount}/${ids.length} mods`, 'success');
+  showToast(t('toasts.removed_all_success', { count: successCount }), 'success');
   clearSelection();
   await loadMods();
 }

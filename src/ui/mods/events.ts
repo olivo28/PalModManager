@@ -7,6 +7,7 @@ import { renderModsView } from './renderer';
 import { loadMods } from './loader';
 import { loadProfiles, showInputModal } from './profiles';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 
 export function attachCardEvents(container: HTMLElement): void {
   container.querySelectorAll('.mod-card').forEach((card) => {
@@ -94,7 +95,7 @@ export function attachCardEvents(container: HTMLElement): void {
           if (isEnabled) { await enableMod(id); } else { await disableMod(id); }
           try { await setModProfileState(id, isEnabled); } catch { }
         }
-        showToast(isEnabled ? 'Mod enabled' : 'Mod disabled', isEnabled ? 'success' : 'info');
+        showToast(isEnabled ? t('toasts.mod_enabled') : t('toasts.mod_disabled'), isEnabled ? 'success' : 'info');
         await loadMods();
         const state = getState();
         if (state.currentDetailMod?.id === id) {
@@ -111,7 +112,7 @@ export function attachCardEvents(container: HTMLElement): void {
           }
         }
         console.error('Error toggling mod:', e);
-        showToast('Failed to toggle mod: ' + e, 'error');
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       }
     });
   });
@@ -128,7 +129,7 @@ export function attachCardEvents(container: HTMLElement): void {
 
       try {
         if (isWorkshop) {
-          showToast('Preparing workshop update files...', 'info');
+          showToast(t('toasts.preparing_workshop_update'), 'info');
           const { prepareWorkshopUpdateZip, analyzeZip, checkModExistsCommand } = await import('../../api');
           const { renderInstallPreview, showInstallModal } = await import('../modal');
           const zipPath = await prepareWorkshopUpdateZip(mod.id);
@@ -162,11 +163,11 @@ export function attachCardEvents(container: HTMLElement): void {
           } else {
             const { openDetailPanel } = await import('../detailPanel');
             openDetailPanel(modId);
-            showToast(`Update v${updateVer} is available`, 'info');
+            showToast(t('toasts.update_available', { target: updateVer || '', current: mod.version }), 'info');
           }
         }
       } catch (err) {
-        showToast('Failed to start update: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   });
@@ -177,16 +178,16 @@ export function attachCardEvents(container: HTMLElement): void {
       const id = (e.currentTarget as HTMLElement).dataset.id!;
       const mod = getState().allMods.find((m) => m.id === id);
       const name = mod ? mod.name : 'this mod';
-      const confirmed = await showConfirm(`Remove "${name}" permanently?`);
+      const confirmed = await showConfirm(t('dialogs.confirm_remove_mod', { name }));
       if (confirmed) {
         try {
           await removeMod(id);
           closeDetailPanel();
           await loadMods();
-          showToast('Mod removed', 'success');
+          showToast(t('toasts.mod_removed'), 'success');
         } catch (e) {
           console.error('Error removing mod:', e);
-          showToast('Failed to remove mod: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       }
     });
@@ -258,8 +259,8 @@ export function setupFilterListeners(): void {
 export async function handleCheckUpdates(): Promise<void> {
   const btn = document.getElementById('check-updates-btn')! as HTMLButtonElement;
   btn.disabled = true;
-  btn.innerHTML = '<span class="btn-icon-text">&#8634;</span> Checking...';
-  showToast('Checking for updates...', 'info');
+  btn.innerHTML = '<span class="btn-icon-text">&#8634;</span> ...';
+  showToast(t('common.checking_updates'), 'info');
 
   try {
     const updates = await checkForUpdates();
@@ -271,18 +272,18 @@ export async function handleCheckUpdates(): Promise<void> {
     renderModsView();
 
     if (updates.length === 0) {
-      showToast('All mods are up to date', 'success');
+      showToast(t('toasts.all_mods_up_to_date'), 'success');
     } else {
-      showToast(`Found ${updates.length} mod(s) with updates available`, 'success');
+      showToast(t('toasts.found_updates_count', { count: updates.length }), 'success');
       for (const u of updates) {
         showToast(`${u.name}: ${u.currentVersion} → ${u.latestVersion}`, 'info');
       }
     }
   } catch (e) {
-    showToast('Failed to check updates: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = '<span class="btn-icon-text">&#8634;</span> Updates';
+    btn.innerHTML = `<span class="btn-icon-text">&#8634;</span> ${escapeHtml(t('mods.btn_updates_title'))}`;
   }
 }
 
@@ -300,30 +301,30 @@ export function handleOpenAllUpdates(): void {
     }
   }
   if (count > 0) {
-    showToast(`Opening ${count} NexusMods update page(s) in browser`, 'success');
+    showToast(t('toasts.opening_nexus_pages', { count }), 'success');
   }
   });
 }
 
 export async function handleDisableAll(): Promise<void> {
-  showToast('Disabling all mods...', 'info');
+  showToast(t('toasts.disabled_all_success', { count: '' }), 'info');
   try {
     const result = await disableAllMods();
-    showToast(`Disabled ${result.disabled} mod(s)`, 'success');
+    showToast(t('toasts.disabled_all_success', { count: result.disabled }), 'success');
     await loadMods();
   } catch (e) {
-    showToast('Failed to disable all: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
 export async function handleEnableAll(): Promise<void> {
-  showToast('Enabling all mods...', 'info');
+  showToast(t('toasts.enabled_all_success', { count: '' }), 'info');
   try {
     const result = await enableAllMods();
-    showToast(`Enabled ${result.enabled} mod(s)`, 'success');
+    showToast(t('toasts.enabled_all_success', { count: result.enabled }), 'success');
     await loadMods();
   } catch (e) {
-    showToast('Failed to enable all: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
@@ -391,11 +392,11 @@ export function attachFolderEvents(container: HTMLElement): void {
         const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
         updateState({ profiles: updatedProfiles });
 
-        showToast(enabled ? 'All folder mods enabled' : 'All folder mods disabled', 'success');
+        showToast(enabled ? t('toasts.folder_mods_enabled') : t('toasts.folder_mods_disabled'), 'success');
         await loadMods();
       } catch (err) {
         target.checked = !enabled;
-        showToast('Failed to toggle folder mods: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   });
@@ -408,7 +409,7 @@ export function attachFolderEvents(container: HTMLElement): void {
       const folder = state.profiles.find(p => p.id === state.currentProfileId)?.mod_folders?.find(f => f.id === folderId);
       if (!folder) return;
 
-      const newName = await showInputModal('Rename Folder', 'Enter new folder name:', folder.name);
+      const newName = await showInputModal(t('dialogs.prompt_rename_folder'), t('dialogs.prompt_rename_folder'), folder.name);
       if (newName === null) return;
       const trimmed = newName.trim();
       if (!trimmed) return;
@@ -420,10 +421,10 @@ export function attachFolderEvents(container: HTMLElement): void {
         const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
         updateState({ profiles: updatedProfiles });
 
-        showToast('Folder renamed', 'success');
+        showToast(t('toasts.folder_renamed'), 'success');
         await loadMods();
       } catch (err) {
-        showToast('Failed to rename folder: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   });
@@ -436,7 +437,7 @@ export function attachFolderEvents(container: HTMLElement): void {
       const folder = state.profiles.find(p => p.id === state.currentProfileId)?.mod_folders?.find(f => f.id === folderId);
       const name = folder ? folder.name : 'this folder';
 
-      const confirmed = await showConfirm(`Delete folder "${name}"? Mods inside will not be deleted (they will just return to Ungrouped).`);
+      const confirmed = await showConfirm(t('dialogs.confirm_delete_folder', { name }));
       if (confirmed) {
         try {
           const { deleteModFolder } = await import('../../api');
@@ -445,13 +446,13 @@ export function attachFolderEvents(container: HTMLElement): void {
           const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
           updateState({ profiles: updatedProfiles });
 
-          showToast('Folder deleted', 'success');
+          showToast(t('toasts.folder_deleted'), 'success');
           if (state.currentFolderId === folderId) {
             updateState({ currentFolderId: null });
           }
           await loadMods();
         } catch (err) {
-          showToast('Failed to delete folder: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         }
       }
     });
@@ -469,9 +470,9 @@ export async function handleAddModToFolder(folderId: string | null, modId: strin
     updateState({ profiles });
 
     await loadMods();
-    showToast(folderId ? 'Mod grouped into folder' : 'Mod moved to ungrouped', 'success');
+    showToast(folderId ? t('toasts.mod_grouped_success') : t('toasts.mod_ungrouped_success'), 'success');
   } catch (err) {
-    showToast('Failed to move mod: ' + err, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 
@@ -480,7 +481,7 @@ export async function handleCreateFolder(name: string): Promise<void> {
   try {
     const { createModFolder } = await import('../../api');
     const updatedProfile = await createModFolder(currentProfileId, name);
-    showToast('Folder created', 'success');
+    showToast(t('toasts.folder_created'), 'success');
 
     const state = getState();
     const profiles = state.profiles.map(p => p.id === currentProfileId ? updatedProfile : p);
@@ -488,7 +489,7 @@ export async function handleCreateFolder(name: string): Promise<void> {
 
     await loadMods();
   } catch (err) {
-    showToast('Failed to create folder: ' + err, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 export { setupCardDragToFolder } from './dragDrop';

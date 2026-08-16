@@ -3,6 +3,7 @@ import { analyzeZip, checkModExistsCommand } from '../api';
 import { getState, updateState } from '../state';
 import { showInstallModal, setModalStatus, renderInstallPreview, closeInstallModal, renderBatchInstallPreview } from '../ui/modal';
 import { showToast } from '../ui/toast';
+import { t } from '../utils/i18n';
 
 export function setupDragAndDrop(): void {
   const overlay = document.getElementById('drop-overlay')!;
@@ -72,7 +73,7 @@ export function setupDragAndDrop(): void {
         }
 
         if (skipped > 0) {
-          showToast(`Skipped ${skipped} non-supported file(s)`, 'info');
+          showToast(t('toasts.skipped_unsupported_files', { count: skipped }), 'info');
         }
 
         if (archives.length === 0) return;
@@ -108,14 +109,14 @@ async function handleImportToLibrary(archives: string[]): Promise<void> {
       console.error('Failed to add to library:', e);
     }
   }
-  showToast(`Added ${added} mod(s) to library`, 'success');
+  showToast(t('toasts.added_to_library', { count: added }), 'success');
   loadLibrary();
 }
 
 async function handleInstallFromPath(zipPath: string): Promise<void> {
   try {
     showInstallModal();
-    setModalStatus('Analyzing zip file...');
+    setModalStatus(t('installer.status_analyzing'));
     const analysis = await analyzeZip(zipPath);
 
     let existingMod: { id: string; name: string; version: string } | null = null;
@@ -130,6 +131,6 @@ async function handleInstallFromPath(zipPath: string): Promise<void> {
     renderInstallPreview(analysis, existingMod);
   } catch (e) {
     closeInstallModal();
-    showToast('Failed to analyze zip: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }

@@ -3,6 +3,7 @@ import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
 import { highlightText } from '../../utils/syntax';
+import { t } from '../../utils/i18n';
 import { marked } from 'marked';
 import { confirmDiscardOrSave } from './unsaved';
 import { renderFileTree } from './tree';
@@ -77,7 +78,7 @@ export async function loadFileContent(filePath: string): Promise<void> {
   try {
     const result = await readModFile(state.editorModId, filePath);
     if (!result.content) {
-      editorPath.textContent = 'No content available';
+      editorPath.textContent = t('editor.no_content_available');
       editorContent.value = '';
       editorContent.disabled = true;
       formatBtn.style.display = 'none';
@@ -112,7 +113,7 @@ export async function loadFileContent(filePath: string): Promise<void> {
         highlight.style.display = '';
         editorContent.style.display = '';
         gutter.style.display = 'block';
-        previewBtn.textContent = 'Preview';
+        previewBtn.textContent = t('editor.btn_preview');
         updateState({ editorPreviewMode: false });
       }
     }
@@ -148,24 +149,24 @@ export async function handleEditorSave(): Promise<void> {
         : content;
       JSON.parse(cleanContent);
     } catch (e) {
-      editorStatus.textContent = 'Invalid JSON: ' + (e as Error).message;
+      editorStatus.textContent = t('editor.status_invalid_json', { error: (e as Error).message });
       return;
     }
   }
 
   saveBtn.disabled = true;
-  editorStatus.textContent = 'Saving...';
+  editorStatus.textContent = t('editor.status_saving');
 
   try {
     await saveModFile(state.editorModId, state.editorSelectedFile, content);
     _originalContent = content;
-    editorStatus.textContent = 'Saved!';
-    showToast('File saved', 'success');
+    editorStatus.textContent = t('editor.status_saved');
+    showToast(t('editor.toast_saved'), 'success');
 
     setTimeout(() => { editorStatus.textContent = ''; }, 2000);
   } catch (e) {
-    editorStatus.textContent = 'Error: ' + e;
-    showToast('Failed to save: ' + e, 'error');
+    editorStatus.textContent = String(e);
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
     saveBtn.disabled = false;
   }
@@ -182,11 +183,11 @@ export function handleEditorFormat(): void {
     const clean = isJsonc ? stripJsonComments(raw) : raw;
     const parsed = JSON.parse(clean);
     editorContent.value = JSON.stringify(parsed, null, 2);
-    editorStatus.textContent = isJsonc ? 'Formatted (Comments removed)' : 'Formatted';
+    editorStatus.textContent = isJsonc ? t('editor.status_formatted_clean') : t('editor.status_formatted');
     syncHighlight();
     setTimeout(() => { editorStatus.textContent = ''; }, 2000);
   } catch (e) {
-    editorStatus.textContent = 'Invalid JSON: ' + (e as Error).message;
+    editorStatus.textContent = t('editor.status_invalid_json', { error: (e as Error).message });
   }
 }
 
@@ -205,7 +206,7 @@ export async function handleEditorPreview(): Promise<void> {
     editorContent.style.display = '';
     gutter.style.display = 'block';
     editorContent.disabled = false;
-    previewBtn.textContent = 'Preview';
+    previewBtn.textContent = t('editor.btn_preview');
     previewBtn.classList.remove('active');
     updateState({ editorPreviewMode: false });
   } else {
@@ -214,7 +215,7 @@ export async function handleEditorPreview(): Promise<void> {
     highlight.style.display = 'none';
     editorContent.style.display = 'none';
     gutter.style.display = 'none';
-    previewBtn.textContent = 'Edit';
+    previewBtn.textContent = t('editor.btn_edit');
     previewBtn.classList.add('active');
     updateState({ editorPreviewMode: true });
   }

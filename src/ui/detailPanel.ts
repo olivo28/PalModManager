@@ -6,6 +6,7 @@ import { loadMods, renderModsView } from './modsView';
 import { showToast } from './toast';
 import { showConfirm } from './confirm';
 import { escapeHtml } from '../utils/helpers';
+import { t } from '../utils/i18n';
 import { descriptionToHtml } from '../utils/bbcode';
 import type { ModInfo } from '../types';
 
@@ -19,14 +20,15 @@ export function openDetailPanel(modId: string): void {
   panel.dataset.id = modId;
 
   document.getElementById('detail-name-header')!.textContent = mod.name;
-  document.getElementById('detail-type')!.textContent = mod.type;
+  const typeLabel = mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase();
+  document.getElementById('detail-type')!.textContent = typeLabel;
   document.getElementById('detail-type')!.className = `mod-type-badge ${mod.type}`;
   renderVersion(mod);
-  document.getElementById('detail-status')!.textContent = mod.enabled ? 'Enabled' : 'Disabled';
+  document.getElementById('detail-status')!.textContent = mod.enabled ? t('common.enabled') : t('common.disabled');
   document.getElementById('detail-status')!.className = `detail-status ${mod.enabled ? 'enabled' : 'disabled'}`;
 
   const toggleBtn = document.getElementById('detail-toggle')! as HTMLButtonElement;
-  toggleBtn.textContent = mod.enabled ? 'Disable' : 'Enable';
+  toggleBtn.textContent = mod.enabled ? t('common.disabled') : t('common.enabled');
   toggleBtn.dataset.enabled = String(mod.enabled);
 
   const nexusSection = document.getElementById('detail-nexus')!;
@@ -38,18 +40,18 @@ export function openDetailPanel(modId: string): void {
     const hasNexusInfo = mod.nexusAuthor || mod.nexusDescription || mod.nexusEndorsements !== null;
     if (hasNexusInfo) {
       const tagsHtml = mod.nexusTags && mod.nexusTags.length > 0
-        ? `<div class="detail-row"><span class="detail-label">Tags:</span> <span class="detail-tags-list">${mod.nexusTags.map(t => `<span class="detail-tag-chip">${escapeHtml(t)}</span>`).join('')}</span></div>`
+        ? `<div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.tags_label'))}</span> <span class="detail-tags-list">${mod.nexusTags.map(t => `<span class="detail-tag-chip">${escapeHtml(t)}</span>`).join('')}</span></div>`
         : '';
       const catHtml = mod.nexusCategory
-        ? `<div class="detail-row"><span class="detail-label">Category:</span> ${escapeHtml(mod.nexusCategory)}</div>`
+        ? `<div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.category_label'))}</span> ${escapeHtml(mod.nexusCategory)}</div>`
         : '';
       nexusSection.innerHTML = `
-        <div class="detail-row"><span class="detail-label">NexusMods:</span> <span class="detail-nexus-id-row"><a class="nexus-link" href="https://www.nexusmods.com/palworld/mods/${mod.nexusModId}" target="_blank">#${mod.nexusModId}</a> <button class="btn-tiny nexus-id-edit-btn">Edit</button></span></div>
-        <div class="detail-row detail-nexus-edit-row" style="display:none"><span class="detail-label"></span> <span><input type="text" class="nexus-id-input" value="${mod.nexusModId}" /><button class="btn-tiny nexus-id-save-btn" style="margin-left:4px">Save</button><button class="btn-tiny nexus-id-cancel-btn">Cancel</button></span></div>
-        ${mod.nexusAuthor ? `<div class="detail-row"><span class="detail-label">Author:</span> ${escapeHtml(mod.nexusAuthor)}</div>` : ''}
+        <div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.nexus_label'))}</span> <span class="detail-nexus-id-row"><a class="nexus-link" href="https://www.nexusmods.com/palworld/mods/${mod.nexusModId}" target="_blank">#${mod.nexusModId}</a> <button class="btn-tiny nexus-id-edit-btn">${escapeHtml(t('detail.nexus_edit'))}</button></span></div>
+        <div class="detail-row detail-nexus-edit-row" style="display:none"><span class="detail-label"></span> <span><input type="text" class="nexus-id-input" value="${mod.nexusModId}" /><button class="btn-tiny nexus-id-save-btn" style="margin-left:4px">${escapeHtml(t('detail.nexus_save'))}</button><button class="btn-tiny nexus-id-cancel-btn">${escapeHtml(t('detail.nexus_cancel'))}</button></span></div>
+        ${mod.nexusAuthor ? `<div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.author_label'))}</span> ${escapeHtml(mod.nexusAuthor)}</div>` : ''}
         ${catHtml}
-        ${mod.nexusEndorsements !== null ? `<div class="detail-row"><span class="detail-label">Endorsements:</span> ${mod.nexusEndorsements.toLocaleString()}</div>` : ''}
-        ${mod.nexusCachedAt ? `<div class="detail-row"><span class="detail-label">Last updated:</span> ${new Date(mod.nexusCachedAt).toLocaleDateString()}</div>` : ''}
+        ${mod.nexusEndorsements !== null ? `<div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.endorsements_label'))}</span> ${mod.nexusEndorsements.toLocaleString()}</div>` : ''}
+        ${mod.nexusCachedAt ? `<div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.last_updated_label'))}</span> ${new Date(mod.nexusCachedAt).toLocaleDateString()}</div>` : ''}
         ${tagsHtml}
       `;
       nexusSection.style.display = 'block';
@@ -59,17 +61,17 @@ export function openDetailPanel(modId: string): void {
       }
     } else {
       nexusSection.innerHTML = `
-        <div class="detail-row"><span class="detail-label">NexusMods:</span> <span class="detail-nexus-id-row"><a class="nexus-link" href="https://www.nexusmods.com/palworld/mods/${mod.nexusModId}" target="_blank">#${mod.nexusModId}</a> <button class="btn-tiny nexus-id-edit-btn">Edit</button></span></div>
-        <div class="detail-row detail-nexus-edit-row" style="display:none"><span class="detail-label"></span> <span><input type="text" class="nexus-id-input" value="${mod.nexusModId}" /><button class="btn-tiny nexus-id-save-btn" style="margin-left:4px">Save</button><button class="btn-tiny nexus-id-cancel-btn">Cancel</button></span></div>
-        <div class="detail-row"><span class="detail-label"></span> <span class="nexus-fetching">(fetching info...)</span></div>`;
+        <div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.nexus_label'))}</span> <span class="detail-nexus-id-row"><a class="nexus-link" href="https://www.nexusmods.com/palworld/mods/${mod.nexusModId}" target="_blank">#${mod.nexusModId}</a> <button class="btn-tiny nexus-id-edit-btn">${escapeHtml(t('detail.nexus_edit'))}</button></span></div>
+        <div class="detail-row detail-nexus-edit-row" style="display:none"><span class="detail-label"></span> <span><input type="text" class="nexus-id-input" value="${mod.nexusModId}" /><button class="btn-tiny nexus-id-save-btn" style="margin-left:4px">${escapeHtml(t('detail.nexus_save'))}</button><button class="btn-tiny nexus-id-cancel-btn">${escapeHtml(t('detail.nexus_cancel'))}</button></span></div>
+        <div class="detail-row"><span class="detail-label"></span> <span class="nexus-fetching">${escapeHtml(t('detail.nexus_fetching'))}</span></div>`;
       nexusSection.style.display = 'block';
       setupNexusIdEdit(mod.id);
       autoFetchNexusInfo(mod);
     }
   } else {
     nexusSection.innerHTML = `
-      <div class="detail-row"><span class="detail-label">NexusMods:</span>
-        <span><input type="text" class="nexus-id-input" placeholder="Enter NexusMods ID..." /><button class="btn-tiny nexus-id-add-btn" style="margin-left:4px">Save</button></span>
+      <div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.nexus_label'))}</span>
+        <span><input type="text" class="nexus-id-input" placeholder="${escapeHtml(t('detail.nexus_placeholder'))}" /><button class="btn-tiny nexus-id-add-btn" style="margin-left:4px">${escapeHtml(t('detail.nexus_save'))}</button></span>
       </div>`;
     nexusSection.style.display = 'block';
     const input = nexusSection.querySelector('.nexus-id-input') as HTMLInputElement;
@@ -83,9 +85,9 @@ export function openDetailPanel(modId: string): void {
         await loadMods();
         openDetailPanel(mod.id);
         renderModsView();
-        showToast('NexusMods ID updated', 'success');
+        showToast(t('toasts.nexus_id_updated'), 'success');
       } catch (e) {
-        showToast('Failed to update NexusMods ID: ' + e, 'error');
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       } finally {
         addBtn.disabled = false;
       }
@@ -187,14 +189,14 @@ export function openDetailPanel(modId: string): void {
         await loadMods();
         openDetailPanel(updated.id);
         renderModsView();
-        showToast(`Pak destination changed to ${selectedDest}`, 'success');
+        showToast(t('toasts.pak_dest_changed', { dest: selectedDest }), 'success');
       } catch (err) {
-        showToast('Failed to change Pak destination: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         newSelect.value = currentDest;
       }
     });
   } else {
-    configPathEl.textContent = mod.configPath || 'Not detected';
+    configPathEl.textContent = mod.configPath || t('common.none');
     configRow.style.display = '';
     pakDestRow.style.display = 'none';
   }
@@ -206,7 +208,7 @@ export function openDetailPanel(modId: string): void {
     const folders = currentProfile?.mod_folders || [];
     const currentFolder = folders.find(f => f.mod_ids.includes(mod.id));
     
-    folderSelect.innerHTML = `<option value="">(None / Ungrouped)</option>` + 
+    folderSelect.innerHTML = `<option value="">${escapeHtml(t('detail.folder_none'))}</option>` + 
       folders.map(f => `<option value="${escapeHtml(f.id)}" ${currentFolder?.id === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('');
       
     const newSelect = folderSelect.cloneNode(true) as HTMLSelectElement;
@@ -222,9 +224,9 @@ export function openDetailPanel(modId: string): void {
         updateState({ profiles: updatedProfiles });
         
         await loadMods();
-        showToast(selectedFolderId ? 'Mod folder updated' : 'Mod removed from folder', 'success');
+        showToast(selectedFolderId ? t('toasts.folder_assigned') : t('toasts.folder_unassigned'), 'success');
       } catch (err) {
-        showToast('Failed to change folder: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   }
@@ -303,9 +305,9 @@ function setupNexusIdEdit(modId: string): void {
       await loadMods();
       openDetailPanel(modId);
       renderModsView();
-      showToast('NexusMods ID updated', 'success');
+      showToast(t('toasts.nexus_id_updated'), 'success');
     } catch (e) {
-      showToast('Failed to update NexusMods ID: ' + e, 'error');
+      showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     } finally {
       saveBtn.disabled = false;
     }
@@ -322,7 +324,7 @@ export async function handleRefreshDetail(): Promise<void> {
   if (!state.currentDetailMod?.nexusModId) return;
   const btn = document.getElementById('detail-refresh')! as HTMLButtonElement;
   btn.disabled = true;
-  btn.textContent = 'Refreshing...';
+  btn.textContent = t('toasts.refreshing');
   try {
     const updated = await refreshNexusCache(state.currentDetailMod.id);
     const idx = state.allMods.findIndex(m => m.id === state.currentDetailMod!.id);
@@ -334,10 +336,10 @@ export async function handleRefreshDetail(): Promise<void> {
     openDetailPanel(updated.id);
     renderModsView();
   } catch (e) {
-    showToast('Failed to refresh: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
     btn.disabled = false;
-    btn.textContent = 'Refresh info';
+    btn.textContent = t('toasts.refresh_info');
   }
 }
 
@@ -371,22 +373,22 @@ export async function handleDetailToggle(): Promise<void> {
     await loadMods();
     openDetailPanel(state.currentDetailMod.id);
   } catch (e) {
-    showToast('Failed to toggle: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
 export async function handleDetailRemove(): Promise<void> {
   const state = getState();
   if (!state.currentDetailMod) return;
-  const confirmed = await showConfirm(`Remove "${state.currentDetailMod.name}" permanently?`);
+  const confirmed = await showConfirm(t('dialogs.confirm_remove_mod', { name: state.currentDetailMod.name }));
   if (confirmed) {
     try {
       await removeMod(state.currentDetailMod.id);
       closeDetailPanel();
       await loadMods();
-      showToast('Mod removed', 'success');
+      showToast(t('toasts.mod_removed'), 'success');
     } catch (e) {
-      showToast('Failed to remove: ' + e, 'error');
+      showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   }
 }
@@ -403,16 +405,16 @@ export async function handleDetailSetConfig(): Promise<void> {
       multiple: false,
       defaultPath: basePath,
       filters: [{ name: 'Config files', extensions: ['json', 'lua'] }],
-      title: 'Select config file for ' + state.currentDetailMod.name,
+      title: t('detail.dialog_select_config_title', { name: state.currentDetailMod.name }),
     });
     if (!selected) return;
     const configPath = typeof selected === 'string' ? selected : selected as string;
     await setModConfig(state.currentDetailMod.id, configPath);
     await loadMods();
     openDetailPanel(state.currentDetailMod.id);
-    showToast('Config file set', 'success');
+    showToast(t('toasts.settings_saved'), 'success');
   } catch (e) {
-    showToast('Failed to set config: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
@@ -423,9 +425,9 @@ export async function handleDetailClearConfig(): Promise<void> {
     await setModConfig(state.currentDetailMod.id, null);
     await loadMods();
     openDetailPanel(state.currentDetailMod.id);
-    showToast('Config file cleared', 'success');
+    showToast(t('toasts.settings_saved'), 'success');
   } catch (e) {
-    showToast('Failed to clear config: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
@@ -435,7 +437,7 @@ export async function handleDetailOpenFolder(): Promise<void> {
   try {
     await openModFolder(state.currentDetailMod.id);
   } catch (e) {
-    showToast('Failed to open folder: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
@@ -446,7 +448,7 @@ export async function handleDetailOpenExtraFolder(): Promise<void> {
     const { openExtraFolder } = await import('../api');
     await openExtraFolder(state.currentDetailMod.id);
   } catch (e) {
-    showToast('Failed to open extra folder: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
@@ -474,9 +476,9 @@ export async function handleDetailRename(): Promise<void> {
           updateState({ currentDetailMod: updated });
           header.textContent = updated.name;
           renderModsView();
-          showToast('Mod renamed successfully', 'success');
+          showToast(t('toasts.mod_updated', { name: newName }), 'success');
         } catch (e) {
-          showToast('Rename failed: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
           header.textContent = currentName;
         }
       } else {
@@ -502,16 +504,16 @@ function renderVersion(mod: ModInfo): void {
   let updateBadge = '';
   if (updateVer) {
     updateBadge = `
-      <span class="mod-card-update-badge" title="Update available to v${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle;">&#9650; Update (v${escapeHtml(updateVer)})</span>
-      <button class="btn-tiny ignore-update-btn" data-latest="${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">Ignore</button>
+      <span class="mod-card-update-badge" title="${escapeHtml(t('card.badge_update_available', { version: updateVer }))}" style="margin-left: 6px; vertical-align: middle;">&#9650; ${escapeHtml(t('context.update_mod'))} (v${escapeHtml(updateVer)})</span>
+      <button class="btn-tiny ignore-update-btn" data-latest="${escapeHtml(updateVer)}" style="margin-left: 6px; vertical-align: middle; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">${escapeHtml(t('common.cancel'))}</button>
     `;
   }
 
   const ignoredLabel = mod.ignoredVersion
-    ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 6px; vertical-align: middle;">(Ignored v${escapeHtml(mod.ignoredVersion)}) <button class="btn-tiny unignore-update-btn" style="margin-left: 4px; vertical-align: middle; background: transparent; border: none; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0;">Unignore</button></span>`
+    ? `<span style="font-size: 10px; color: var(--text-muted); margin-left: 6px; vertical-align: middle;">(${escapeHtml(t('context.ignore_update', { version: mod.ignoredVersion }))}) <button class="btn-tiny unignore-update-btn" style="margin-left: 4px; vertical-align: middle; background: transparent; border: none; color: var(--accent); cursor: pointer; text-decoration: underline; padding: 0;">${escapeHtml(t('common.retry'))}</button></span>`
     : '';
 
-  el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> ${updateBadge} ${ignoredLabel} <button class="btn-tiny version-edit-btn" style="margin-left: 6px;">Edit</button>`;
+  el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> ${updateBadge} ${ignoredLabel} <button class="btn-tiny version-edit-btn" style="margin-left: 6px;">${escapeHtml(t('common.edit'))}</button>`;
   
   const editBtn = el.querySelector('.version-edit-btn') as HTMLButtonElement;
   const valSpan = el.querySelector('.version-value') as HTMLSpanElement;
@@ -523,11 +525,11 @@ function renderVersion(mod: ModInfo): void {
       const latest = ignoreBtn.dataset.latest || '';
       try {
         await ignoreModVersion(mod.id, latest);
-        showToast('Update version ignored', 'success');
+        showToast(t('toasts.settings_saved'), 'success');
         await loadMods();
         openDetailPanel(mod.id);
       } catch (e) {
-        showToast('Failed to ignore version: ' + e, 'error');
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       }
     });
   }
@@ -537,11 +539,11 @@ function renderVersion(mod: ModInfo): void {
     unignoreBtn.addEventListener('click', async () => {
       try {
         await ignoreModVersion(mod.id, null);
-        showToast('Update version unignored', 'success');
+        showToast(t('toasts.settings_saved'), 'success');
         await loadMods();
         openDetailPanel(mod.id);
       } catch (e) {
-        showToast('Failed to unignore version: ' + e, 'error');
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       }
     });
   }
@@ -572,9 +574,9 @@ function renderVersion(mod: ModInfo): void {
             }
             renderVersion(updated);
             renderModsView();
-            showToast('Version updated', 'success');
+            showToast(t('toasts.mod_updated', { name: mod.name }), 'success');
           } catch (e) {
-            showToast('Version update failed: ' + e, 'error');
+            showToast(t('toasts.export_failed', { error: String(e) }), 'error');
             renderVersion(mod);
           }
         } else {
@@ -598,8 +600,8 @@ function renderGithubSection(mod: ModInfo): void {
 
   if (!mod.githubRepo) {
     container.innerHTML = `
-      <div class="detail-row"><span class="detail-label">GitHub:</span>
-        <span><input type="text" class="github-repo-input" placeholder="owner/repo..." /><button class="btn-tiny github-add-btn" style="margin-left:4px">Add</button></span>
+      <div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.github_label'))}</span>
+        <span><input type="text" class="github-repo-input" placeholder="owner/repo..." /><button class="btn-tiny github-add-btn" style="margin-left:4px">${escapeHtml(t('common.save'))}</button></span>
       </div>`;
     container.style.display = 'block';
     const input = container.querySelector('.github-repo-input') as HTMLInputElement;
@@ -620,9 +622,9 @@ function renderGithubSection(mod: ModInfo): void {
         }
         renderGithubSection(updated);
         renderModsView();
-        showToast('GitHub repo added', 'success');
+        showToast(t('toasts.settings_saved'), 'success');
       } catch (e) {
-        showToast('GitHub check failed: ' + e, 'error');
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         renderGithubSection(mod);
       }
     };
@@ -634,14 +636,14 @@ function renderGithubSection(mod: ModInfo): void {
   const repoLink = `https://github.com/${mod.githubRepo}`;
   const versionDisplay = mod.githubVersion
     ? `<span class="github-version-value">${escapeHtml(mod.githubVersion)}</span>`
-    : '<span class="github-version-value" style="color:var(--text-muted)">Unknown</span>';
+    : `<span class="github-version-value" style="color:var(--text-muted)">${escapeHtml(t('common.unknown'))}</span>`;
   const cachedInfo = mod.githubCachedAt
-    ? `<div class="detail-row"><span class="detail-label">Checked:</span> ${new Date(mod.githubCachedAt).toLocaleDateString()}</div>`
+    ? `<div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.last_updated_label'))}</span> ${new Date(mod.githubCachedAt).toLocaleDateString()}</div>`
     : '';
 
   container.innerHTML = `
-    <div class="detail-row"><span class="detail-label">GitHub:</span> <a class="nexus-link" href="${repoLink}" target="_blank">${escapeHtml(mod.githubRepo)}</a></div>
-    <div class="detail-row"><span class="detail-label">Version:</span> ${versionDisplay} <button class="btn-tiny github-refresh-btn">Refresh</button></div>
+    <div class="detail-row"><span class="detail-label">${escapeHtml(t('detail.github_label'))}</span> <a class="nexus-link" href="${repoLink}" target="_blank">${escapeHtml(mod.githubRepo)}</a></div>
+    <div class="detail-row"><span class="detail-label">${escapeHtml(t('common.version'))}:</span> ${versionDisplay} <button class="btn-tiny github-refresh-btn">${escapeHtml(t('common.refresh'))}</button></div>
     ${cachedInfo}
   `;
 
@@ -661,9 +663,9 @@ function renderGithubSection(mod: ModInfo): void {
       }
       renderGithubSection(updated);
       renderModsView();
-      showToast('GitHub version updated', 'success');
+      showToast(t('toasts.settings_saved'), 'success');
     } catch (e) {
-      showToast('GitHub check failed: ' + e, 'error');
+      showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       renderGithubSection(mod);
     }
   });

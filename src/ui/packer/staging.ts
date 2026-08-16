@@ -1,5 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
 import { showToast } from '../toast';
+import { t } from '../../utils/i18n';
 import { stagedFiles, sourcePaths, targetOverrides, backupPaths, renderWorkspace, setStagedFiles, setSourcePaths } from './mod';
 
 export async function addStagedPaths(paths: string[]): Promise<void> {
@@ -12,7 +13,7 @@ export async function addStagedPaths(paths: string[]): Promise<void> {
   setSourcePaths(currentSources);
 
   await scanAndBuildStagedFiles();
-  showToast(`Added ${paths.length} path(s) to project`, 'success');
+  showToast(t('packer.toast_added_paths', { count: paths.length }), 'success');
 }
 
 export async function scanAndBuildStagedFiles(): Promise<void> {
@@ -36,7 +37,7 @@ export async function scanAndBuildStagedFiles(): Promise<void> {
     renderWorkspace();
   } catch (err: any) {
     console.error(err);
-    showToast(`Error scanning paths: ${err}`, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 
@@ -62,7 +63,7 @@ export function autoStructureWorkspace(): void {
   const modType = modTypeSelect?.value;
 
   if (!rawModName) {
-    showToast('Please fill in the Mod Name first to determine folder structure', 'warning');
+    showToast(t('packer.toast_fill_mod_name'), 'warning');
     return;
   }
 
@@ -128,7 +129,7 @@ export function autoStructureWorkspace(): void {
   });
 
   renderWorkspace();
-  showToast('Workspace structured automatically based on mod type', 'success');
+  showToast(t('packer.toast_auto_structured'), 'success');
 }
 
 export { stagedFiles, sourcePaths, targetOverrides, backupPaths };

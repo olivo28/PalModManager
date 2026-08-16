@@ -1,0 +1,129 @@
+/**
+ * i18n.ts - Ultra-lightweight reactive internationalization engine for PalModManager.
+ * Zero external dependencies. Fast JSON-based nested dictionary lookups with fallback.
+ */
+
+import en from '../locales/en.json';
+import es from '../locales/es.json';
+
+export type SupportedLocale = 'en' | 'es';
+
+type TranslationTree = Record<string, any>;
+
+const localeDictionaries: Record<string, TranslationTree> = {
+  en,
+  es,
+};
+
+let currentLocale: SupportedLocale = 'en';
+
+/**
+ * Initializes i18n language preference from localStorage or browser language.
+ */
+export function initI18n(): void {
+  const saved = localStorage.getItem('pmm_locale') as SupportedLocale | null;
+  if (saved && localeDictionaries[saved]) {
+    currentLocale = saved;
+  } else {
+    const navLang = navigator.language?.split('-')[0]?.toLowerCase();
+    if (navLang === 'es') {
+      currentLocale = 'es';
+    } else {
+      currentLocale = 'en';
+    }
+  }
+  document.documentElement.lang = currentLocale;
+  updateDOMTranslations();
+}
+
+/**
+ * Gets the current active locale code (e.g. 'en' or 'es').
+ */
+export function getLocale(): SupportedLocale {
+  return currentLocale;
+}
+
+/**
+ * Sets the active locale, saves preference, and triggers live DOM updates.
+ */
+export function setLocale(locale: SupportedLocale): void {
+  if (!localeDictionaries[locale]) {
+    console.warn(`Locale '${locale}' is not supported. Falling back to 'en'.`);
+    locale = 'en';
+  }
+  currentLocale = locale;
+  localStorage.setItem('pmm_locale', locale);
+  document.documentElement.lang = locale;
+  updateDOMTranslations();
+}
+
+/**
+ * Translates a key (e.g. 'mods.btn_install_title') with optional interpolation parameters.
+ * Automatically falls back to English if the key is missing in the active locale.
+ */
+export function t(key: string, params?: Record<string, string | number>): string {
+  const keys = key.split('.');
+
+  // 1. Look up in current locale
+  let val: any = localeDictionaries[currentLocale];
+  for (const k of keys) {
+    if (val && typeof val === 'object' && k in val) {
+      val = val[k];
+    } else {
+      val = undefined;
+      break;
+    }
+  }
+
+  // 2. Fallback to English if missing
+  if (typeof val !== 'string') {
+    let fallback: any = localeDictionaries['en'];
+    for (const k of keys) {
+      if (fallback && typeof fallback === 'object' && k in fallback) {
+        fallback = fallback[k];
+      } else {
+        fallback = undefined;
+        break;
+      }
+    }
+    val = typeof fallback === 'string' ? fallback : key;
+  }
+
+  // 3. Interpolate parameters (e.g. {count}, {name})
+  if (params && typeof val === 'string') {
+    for (const [pKey, pVal] of Object.entries(params)) {
+      val = val.replace(new RegExp(`\\{${pKey}\\}`, 'g'), String(pVal));
+    }
+  }
+
+  return typeof val === 'string' ? val : key;
+}
+
+/**
+ * Automatically scans and translates all declarative data-i18n attributes in the DOM.
+ */
+export function updateDOMTranslations(root: HTMLElement | Document = document): void {
+  // Text contents
+  root.querySelectorAll<HTMLElement>('[data-i18n]').forEach((el) => {
+    const key = el.getAttribute('data-i18n');
+    if (key) {
+      el.textContent = t(key);
+    }
+  });
+
+  // Input Placeholders
+  root.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('[data-i18n-placeholder]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    if (key) {
+      el.placeholder = t(key);
+    }
+  });
+
+  // Tooltips & Titles
+  root.querySelectorAll<HTMLElement>('[data-i18n-title]').forEach((el) => {
+    const key = el.getAttribute('data-i18n-title');
+    if (key) {
+      el.title = t(key);
+    }
+  });
+}

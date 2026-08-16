@@ -2,6 +2,7 @@ import { getState, updateState } from '../../state';
 import { getLibrary, removeFromLibrary, getWorkshopState, setWorkshopGlobalEnabled, activateWorkshopMod, deactivateWorkshopMod, openUrl } from '../../api';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 
@@ -77,7 +78,7 @@ export function updateWorkshopBadges(newCount: number): void {
 
   if (subtabBadge) {
     if (newCount > 0) {
-      subtabBadge.textContent = `+${newCount} NEW`;
+      subtabBadge.textContent = t('library.badge_new_count', { count: newCount });
       subtabBadge.style.display = 'inline-block';
     } else {
       subtabBadge.style.display = 'none';
@@ -106,7 +107,7 @@ export function setupLibraryHandlers(): void {
       const sync = syncWorkshopModTimestamps(wState.mods);
       updateWorkshopBadges(sync.newModCount);
       if (sync.newModNames.length > 0) {
-        showToast(`Steam Workshop: New mod subscribed — "${sync.newModNames[0]}"`, 'success');
+        showToast(t('library.new_mod_subscribed', { name: sync.newModNames[0] }), 'success');
       }
     } catch {}
     if (_activeLibrarySubTab === 'workshop') {
@@ -232,7 +233,7 @@ export async function renderLibraryView(): Promise<void> {
     }
 
     if (entries.length === 0) {
-      container.innerHTML = '<div id="library-empty">No mods in library. Mods are automatically copied here when installed.</div>';
+      container.innerHTML = `<div id="library-empty">${escapeHtml(t('library.empty_local'))}</div>`;
       updateLibraryBulkBar();
       return;
     }
@@ -341,18 +342,18 @@ function compareVersions(a: string, b: string): number {
         const cmp = group.installedVersion ? compareVersions(latestVersion, group.installedVersion) : 0;
         if (cmp > 0) {
           isUpdateAvailable = true;
-          statusBadgeHtml = `<span class="library-status-badge badge-warning" title="Installed: v${escapeHtml(group.installedVersion || '')}">Installed (v${escapeHtml(group.installedVersion || '')})</span>`;
-          installBtnText = `Update to v${escapeHtml(latestVersion)}`;
+          statusBadgeHtml = `<span class="library-status-badge badge-warning" title="${escapeHtml(t('library.status_installed_exact', { version: group.installedVersion || '' }))}">${escapeHtml(t('library.status_installed_exact', { version: group.installedVersion || '' }))}</span>`;
+          installBtnText = t('library.btn_update_to', { version: latestVersion });
         } else if (cmp === 0) {
-          statusBadgeHtml = `<span class="library-status-badge badge-success" title="Currently installed in game">Installed${group.installedVersion && group.installedVersion !== 'unknown' ? ' (v' + escapeHtml(group.installedVersion) + ')' : ''}</span>`;
-          installBtnText = 'Reinstall';
+          statusBadgeHtml = `<span class="library-status-badge badge-success" title="${escapeHtml(t('library.status_installed_exact', { version: group.installedVersion || '' }))}">${escapeHtml(t('library.status_installed_exact', { version: group.installedVersion || '' }))}</span>`;
+          installBtnText = t('library.btn_reinstall');
         } else {
-          statusBadgeHtml = `<span class="library-status-badge badge-success" title="Currently installed in game">Installed (v${escapeHtml(group.installedVersion || '')})</span>`;
-          installBtnText = `Rollback to v${escapeHtml(latestVersion)}`;
+          statusBadgeHtml = `<span class="library-status-badge badge-success" title="${escapeHtml(t('library.status_installed_exact', { version: group.installedVersion || '' }))}">${escapeHtml(t('library.status_installed_exact', { version: group.installedVersion || '' }))}</span>`;
+          installBtnText = t('library.btn_rollback_to', { version: latestVersion });
         }
       } else {
-        statusBadgeHtml = `<span class="library-status-badge badge-muted">Not Installed</span>`;
-        installBtnText = group.versions.length > 1 ? `Install v${escapeHtml(latestVersion)}` : 'Install';
+        statusBadgeHtml = `<span class="library-status-badge badge-muted">${escapeHtml(t('library.status_not_installed'))}</span>`;
+        installBtnText = group.versions.length > 1 ? t('library.btn_install_ver', { version: latestVersion }) : t('common.install');
       }
 
       let imageHtml = `<div style="font-size:32px;text-align:center;color:var(--text-muted);opacity:0.8;margin:8px 0;">📦</div>`;
@@ -400,7 +401,7 @@ function compareVersions(a: string, b: string): number {
           <select class="library-version-select form-select" data-id="${group.modId}" style="flex:1;padding:4px 6px;font-size:11px;font-weight:600;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;">
             ${group.versions.map((v, idx) => `
               <option value="${escapeHtml(v.zipName)}" data-version="${escapeHtml(v.version)}" data-size="${formatSize(v.zipSize)}">
-                v${escapeHtml(v.version)} ${idx === 0 ? '(Latest)' : ''}
+                v${escapeHtml(v.version)} ${idx === 0 ? escapeHtml(t('library.badge_latest')) : ''}
               </option>
             `).join('')}
           </select>
@@ -428,7 +429,7 @@ function compareVersions(a: string, b: string): number {
               <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:left;word-break:break-word;line-height:1.3;margin-top:2px;">
                 ${escapeHtml(cleanName)}
               </div>
-              ${author ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;text-align:left;">by ${escapeHtml(author)}</div>` : ''}
+              ${author ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;text-align:left;">${escapeHtml(t('common.author'))}: ${escapeHtml(author)}</div>` : ''}
               ${description ? `<div style="font-size:10px;color:var(--text-secondary);opacity:0.8;line-height:1.3;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word;" title="${escapeHtml(description)}">${escapeHtml(description)}</div>` : ''}
             </div>
 
@@ -436,7 +437,7 @@ function compareVersions(a: string, b: string): number {
 
             <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
               <button class="library-item-install btn-action ${isUpdateAvailable ? 'btn-action-primary' : ''}" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" style="flex:1;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;">${installBtnText}</button>
-              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" title="Remove selected archive from library" style="padding:5px 8px;font-size:11px;cursor:pointer;">✕</button>
+              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:5px 8px;font-size:11px;cursor:pointer;">✕</button>
             </div>
           </div>
         </div>
@@ -467,17 +468,17 @@ function compareVersions(a: string, b: string): number {
           if (isInstalled) {
             const cmp = installedVer ? compareVersions(selectedVer, installedVer) : 0;
             if (cmp === 0) {
-              installBtn.textContent = 'Reinstall';
+              installBtn.textContent = t('library.btn_reinstall');
               installBtn.classList.remove('btn-action-primary');
             } else if (cmp > 0) {
-              installBtn.textContent = `Update to v${selectedVer}`;
+              installBtn.textContent = t('library.btn_update_to', { version: selectedVer });
               installBtn.classList.add('btn-action-primary');
             } else {
-              installBtn.textContent = `Rollback to v${selectedVer}`;
+              installBtn.textContent = t('library.btn_rollback_to', { version: selectedVer });
               installBtn.classList.remove('btn-action-primary');
             }
           } else {
-            installBtn.textContent = `Install v${selectedVer}`;
+            installBtn.textContent = t('library.btn_install_ver', { version: selectedVer });
             installBtn.classList.remove('btn-action-primary');
           }
         }
@@ -495,17 +496,17 @@ function compareVersions(a: string, b: string): number {
             const cmp = installedVer ? compareVersions(selectedVer, installedVer) : 0;
             if (cmp === 0) {
               statusBadge.className = 'library-status-badge badge-success';
-              statusBadge.textContent = `Installed (v${installedVer})`;
+              statusBadge.textContent = t('library.status_installed_exact', { version: installedVer });
             } else if (cmp > 0) {
               statusBadge.className = 'library-status-badge badge-warning';
-              statusBadge.textContent = `Installed (v${installedVer})`;
+              statusBadge.textContent = t('library.status_installed_exact', { version: installedVer });
             } else {
               statusBadge.className = 'library-status-badge badge-success';
-              statusBadge.textContent = `Installed (v${installedVer})`;
+              statusBadge.textContent = t('library.status_installed_exact', { version: installedVer });
             }
           } else {
             statusBadge.className = 'library-status-badge badge-muted';
-            statusBadge.textContent = 'Not Installed';
+            statusBadge.textContent = t('library.status_not_installed');
           }
         }
       });
@@ -525,13 +526,15 @@ function compareVersions(a: string, b: string): number {
         ev.stopPropagation();
         const id = (btn as HTMLElement).dataset.id!;
         const zip = (btn as HTMLElement).dataset.zip!;
-        if (confirm(`Are you sure you want to remove version "${zip}" from your library?\n\n(Other versions of this mod in your library will NOT be deleted)`)) {
+        const { showConfirm } = await import('../confirm');
+        const confirmed = await showConfirm(t('library.confirm_remove_version', { zip }));
+        if (confirmed) {
           try {
             await removeFromLibrary(id, zip);
-            showToast('Mod version removed from library', 'success');
+            showToast(t('toasts.library_mod_version_removed'), 'success');
             await loadLibrary();
           } catch (err) {
-            showToast('Failed to remove: ' + err, 'error');
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
           }
         }
       });
@@ -549,12 +552,12 @@ function compareVersions(a: string, b: string): number {
       if (masterToggle) {
         masterToggle.checked = wState.globalEnabled;
         masterToggle.onchange = async () => {
-          showToast(masterToggle.checked ? 'Enabling Workshop Mods...' : 'Disabling Workshop Mods...', 'info');
+          showToast(masterToggle.checked ? t('toasts.workshop_enabling') : t('toasts.workshop_disabling'), 'info');
           await setWorkshopGlobalEnabled(masterToggle.checked);
           await renderLibraryView();
           const { loadMods } = await import('../modsView');
           await loadMods();
-          showToast('Workshop state updated', 'success');
+          showToast(t('toasts.workshop_state_updated'), 'success');
         };
       }
 
@@ -564,7 +567,7 @@ function compareVersions(a: string, b: string): number {
       }
 
       if (mods.length === 0) {
-        container.innerHTML = '<div id="library-empty">No subscribed Workshop mods found. Subscribing in Steam will list them here.</div>';
+        container.innerHTML = `<div id="library-empty">${escapeHtml(t('library.empty_workshop'))}</div>`;
         return;
       }
 
@@ -579,19 +582,19 @@ function compareVersions(a: string, b: string): number {
           ? `<img src="${convertFileSrc(m.thumbnailPath)}" style="width:100%;height:100%;object-fit:cover;" />` 
           : `<div class="mod-card-image-placeholder ${typeClass}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:24px;color:#fff;">${typeLabel}</div>`;
         const isDepMissing = m.dependencies.some((dep: string) => !wState.activeModList.includes(dep));
-        const depWarning = isDepMissing ? `<div style="color:#ff4a4a; font-size:10px; margin-top:2px; text-align:center;">Missing dependencies: ${escapeHtml(m.dependencies.join(', '))}</div>` : '';
+        const depWarning = isDepMissing ? `<div style="color:#ff4a4a; font-size:10px; margin-top:2px; text-align:center;">${escapeHtml(t('library.missing_deps_warning', { deps: m.dependencies.join(', ') }))}</div>` : '';
 
         const isNew = isWorkshopModNew(m.packageName);
         const newBadge = isNew
-          ? `<span style="font-size: 8px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,188,255,0.6); margin-left: 4px; letter-spacing: 0.5px;">✨ NEW</span>`
+          ? `<span style="font-size: 8px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,188,255,0.6); margin-left: 4px; letter-spacing: 0.5px;">✨ ${escapeHtml(t('card.badge_new'))}</span>`
           : '';
 
-        const badgeText = m.isFramework ? 'FRAMEWORK' : 'WORKSHOP';
+        const badgeText = m.isFramework ? 'FRAMEWORK' : t('card.badge_workshop');
         const badgeStyle = `font-size: 8px; font-weight: bold; background: ${m.isFramework ? 'rgba(0,188,255,0.1)' : 'rgba(255, 157, 0, 0.1)'}; color: ${m.isFramework ? '#00bcff' : '#ff9d00'}; border: 1px solid ${m.isFramework ? 'rgba(0,188,255,0.2)' : 'rgba(255, 157, 0, 0.2)'}; padding: 1px 4px; border-radius: 3px;`;
 
         const hasUpdate = m.hasPendingUpdate || (m.isInstalled && m.installedVersion && m.installedVersion !== m.version);
         const updateBadge = hasUpdate
-          ? `<span style="font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.2); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 1px 5px; border-radius: 3px; margin-left: 4px;">▲ UPDATE AVAILABLE (v${escapeHtml(m.version)})</span>`
+          ? `<span style="font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.2); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 1px 5px; border-radius: 3px; margin-left: 4px;">▲ ${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span>`
           : '';
 
         let versionTextHtml = '';
@@ -599,27 +602,27 @@ function compareVersions(a: string, b: string): number {
           if (hasUpdate) {
             versionTextHtml = `
               <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:2px;">
-                <div>Installed: <b style="color:var(--text-primary);">v${escapeHtml(m.installedVersion || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
-                <div style="font-size:9px; color:var(--text-muted);">by ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
+                <div>${escapeHtml(t('detail.installed_label'))}: <b style="color:var(--text-primary);">v${escapeHtml(m.installedVersion || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
+                <div style="font-size:9px; color:var(--text-muted);">${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
               </div>`;
           } else {
             versionTextHtml = `
               <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-                Version ${escapeHtml(m.version)} by ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(Installed ✓)</span>
+                ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('common.installed'))} ✓)</span>
               </div>`;
           }
         } else {
           versionTextHtml = `
             <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-              Version ${escapeHtml(m.version)} by ${escapeHtml(m.author)} (ID: ${m.workshopId})
+              ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})
             </div>`;
         }
 
-        const toggleBtnText = m.isActive ? 'Deactivate' : 'Activate';
+        const toggleBtnText = m.isActive ? t('common.disable') : t('common.enable');
         const toggleBtnClass = m.isActive ? 'btn-action btn-action-danger' : 'btn-primary btn-sm';
 
         const updateBtn = (hasUpdate && m.isActive)
-          ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);" title="Update installed files to Workshop v${escapeHtml(m.version)}">▲ Update to v${escapeHtml(m.version)}</button>`
+          ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);" title="${escapeHtml(t('library.btn_update_to', { version: m.version }))}">▲ ${escapeHtml(t('library.btn_update_to', { version: m.version }))}</button>`
           : '';
 
         return `
@@ -643,8 +646,8 @@ function compareVersions(a: string, b: string): number {
                 <button class="workshop-item-toggle-btn ${toggleBtnClass}" data-package="${escapeHtml(m.packageName)}" data-active="${m.isActive}" ${m.isFramework ? 'disabled style="opacity:0.5;"' : ''} style="flex:1;padding:6px;font-size:10px;cursor:pointer;">
                   ${toggleBtnText}
                 </button>
-                <button class="workshop-item-folder-btn btn-secondary btn-sm" data-path="${escapeHtml(wState.workshopRoot + '/' + m.workshopId)}" style="padding:6px 8px;font-size:10px;cursor:pointer;" title="Open local Workshop folder">
-                  📂 Folder
+                <button class="workshop-item-folder-btn btn-secondary btn-sm" data-path="${escapeHtml(wState.workshopRoot + '/' + m.workshopId)}" style="padding:6px 8px;font-size:10px;cursor:pointer;" title="${escapeHtml(t('library.workshop_open_folder_title'))}">
+                  📁 ${escapeHtml(t('common.folder'))}
                 </button>
               </div>
             </div>
@@ -657,12 +660,12 @@ function compareVersions(a: string, b: string): number {
           const target = e.currentTarget as HTMLButtonElement;
           const pkgName = target.dataset.package!;
           target.disabled = true;
-          showToast(`Updating Workshop mod "${pkgName}" to latest version...`, 'info');
+          showToast(t('toasts.preparing_workshop_update'), 'info');
           try {
             await activateWorkshopMod(pkgName);
-            showToast('Mod updated successfully to latest Workshop version!', 'success');
+            showToast(t('toasts.mod_updated', { name: pkgName }), 'success');
           } catch (err) {
-            showToast('Failed to update mod: ' + err, 'error');
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
           } finally {
             target.disabled = false;
             await renderLibraryView();
@@ -679,16 +682,16 @@ function compareVersions(a: string, b: string): number {
           const isActive = target.dataset.active === 'true';
 
           target.disabled = true;
-          showToast(!isActive ? 'Activating Workshop mod...' : 'Deactivating Workshop mod...', 'info');
+          showToast(!isActive ? t('toasts.workshop_activating') : t('toasts.workshop_deactivating'), 'info');
           try {
             if (!isActive) {
               await activateWorkshopMod(pkgName);
             } else {
               await deactivateWorkshopMod(pkgName);
             }
-            showToast(!isActive ? 'Activated successfully' : 'Deactivated successfully', 'success');
+            showToast(!isActive ? t('toasts.workshop_activated') : t('toasts.workshop_deactivated'), 'success');
           } catch (err) {
-            showToast('Failed to toggle mod: ' + err, 'error');
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
           } finally {
             target.disabled = false;
             await renderLibraryView();
@@ -706,7 +709,7 @@ function compareVersions(a: string, b: string): number {
           try {
             await openUrl(path);
           } catch (err) {
-            showToast('Failed to open folder: ' + err, 'error');
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
           }
         });
       });
@@ -731,7 +734,7 @@ export async function triggerInstallFromLibrary(id: string, zipName?: string): P
     renderInstallPreview(analysis, existingMod);
     showInstallModal();
   } catch (err) {
-    showToast('Failed to open install preview: ' + err, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 
@@ -764,7 +767,7 @@ export async function handleLibraryBulkInstall(): Promise<void> {
       await renderBatchInstallPreview(zipPaths);
     }
   } catch (err) {
-    showToast('Failed to prepare batch install: ' + err, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 
@@ -773,7 +776,9 @@ export async function handleLibraryBulkRemove(): Promise<void> {
   const selected = Array.from(state.selectedLibraryIds);
   if (selected.length === 0) return;
 
-  if (confirm(`Are you sure you want to delete ${selected.length} mod(s) from your library?`)) {
+  const { showConfirm } = await import('../confirm');
+  const confirmed = await showConfirm(t('library.confirm_remove_bulk', { count: selected.length }));
+  if (confirmed) {
     let deleted = 0;
     for (const id of selected) {
       try {
@@ -781,7 +786,7 @@ export async function handleLibraryBulkRemove(): Promise<void> {
         deleted++;
       } catch { }
     }
-    showToast(`Deleted ${deleted} mods from library`, 'success');
+    showToast(t('toasts.library_mods_deleted', { count: deleted }), 'success');
     updateState({ selectedLibraryIds: new Set() });
     updateLibraryBulkBar();
     await loadLibrary();

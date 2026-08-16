@@ -51,24 +51,25 @@ export function setupModalListeners(): void {
       const { showConfirm } = await import('../confirm');
       const { showToast } = await import('../toast');
       const { restoreSafetyBackup } = await import('../../api');
+      const { t } = await import('../../utils/i18n');
       const confirmed = await showConfirm(
-        'Restore Pre-PMM State',
-        'This will restore your original <code>mods.txt</code>, <code>enabled.txt</code> states, configs, and original mod folders from the initial snapshot taken before PMM modified anything.<br><br><strong>Note:</strong> .pak files are not modified/restored. Do you want to proceed?',
-        'Yes, Restore',
-        'Cancel'
+        t('settings.safety_restore_dialog_title'),
+        t('settings.safety_restore_dialog_body'),
+        t('settings.safety_restore_btn_confirm'),
+        t('common.cancel')
       );
       if (confirmed) {
         try {
-          showToast('Restoring initial backup...', 'info');
+          showToast(t('toasts.backup_restoring'), 'info');
           await restoreSafetyBackup();
-          showToast('Original mod setup restored successfully!', 'success');
+          showToast(t('toasts.backup_restored'), 'success');
           const { loadDependencies, loadMods } = await import('../modsView');
           await loadDependencies();
           await loadMods();
           const { refreshSafetyBackupStatus } = await import('./settings');
           refreshSafetyBackupStatus();
         } catch (e: any) {
-          showToast('Failed to restore backup: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       }
     });
@@ -79,14 +80,15 @@ export function setupModalListeners(): void {
     backupNowBtn.addEventListener('click', async () => {
       const { showToast } = await import('../toast');
       const { triggerSafetyBackup } = await import('../../api');
+      const { t } = await import('../../utils/i18n');
       try {
-        showToast('Creating new safety snapshot...', 'info');
+        showToast(t('toasts.backup_creating'), 'info');
         await triggerSafetyBackup();
-        showToast('Safety snapshot created successfully!', 'success');
+        showToast(t('toasts.backup_created', { path: 'Pre-PMM' }), 'success');
         const { refreshSafetyBackupStatus } = await import('./settings');
         refreshSafetyBackupStatus();
       } catch (e: any) {
-        showToast('Failed to create snapshot: ' + e, 'error');
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       }
     });
   }
@@ -97,20 +99,21 @@ export function setupModalListeners(): void {
       const { showConfirm } = await import('../confirm');
       const { showToast } = await import('../toast');
       const { resetWorkshopCache } = await import('../../api');
+      const { t } = await import('../../utils/i18n');
       const confirmed = await showConfirm(
-        'Reset Workshop UE4SS Cache',
-        'This will delete <code>Mods\\ManagedMods\\UE4SSExperimentalPW</code>. Next time you launch Palworld, Steam Workshop will automatically extract a fresh copy of UE4SS.<br><br>Do you want to proceed?',
-        'Reset Cache',
-        'Cancel'
+        t('settings.safety_reset_ws_title'),
+        t('settings.safety_reset_ws_body'),
+        t('settings.safety_reset_ws_btn_confirm'),
+        t('common.cancel')
       );
       if (confirmed) {
         try {
           await resetWorkshopCache();
-          showToast('Workshop cache cleared! Steam will reinstall UE4SS on next launch.', 'success');
+          showToast(t('toasts.workshop_state_updated'), 'success');
           const { loadDependencies } = await import('../modsView');
           await loadDependencies();
         } catch (e: any) {
-          showToast('Failed to reset workshop cache: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       }
     });

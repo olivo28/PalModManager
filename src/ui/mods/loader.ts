@@ -6,6 +6,7 @@ import { populateAdvancedFilters } from './renderer';
 import { populateEditorModSelect } from '../editorView';
 import { loadProfiles } from './profiles';
 import { showToast } from '../toast';
+import { t } from '../../utils/i18n';
 
 export async function loadMods(): Promise<void> {
   const container = document.getElementById('mods-container');
@@ -42,7 +43,7 @@ export async function loadMods(): Promise<void> {
       return m.hasPendingUpdate && (!old || !old.hasPendingUpdate || old.version !== m.version);
     });
     for (const mod of newlyUpdated) {
-      showToast(`Workshop mod "${mod.name}" was updated by Steam! Right-click to Update Mod.`, 'info');
+      showToast(t('toasts.workshop_mod_updated', { name: mod.name }), 'info');
     }
 
     updateState({ allMods: freshMods, availableUpdates: updatesMap });

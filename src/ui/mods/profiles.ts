@@ -6,6 +6,7 @@ import { loadLibrary } from './library';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 import { switchProfile, clearProfile } from '../../api';
 
 export async function loadProfiles(): Promise<void> {
@@ -38,7 +39,7 @@ function updateActiveProfileLabel(): void {
   if (!label) return;
   const { profiles, currentProfileId } = getState();
   const current = profiles.find(p => p.id === currentProfileId);
-  label.textContent = `Profile: ${current ? current.name : 'Default'}`;
+  label.textContent = t('mods.profile_label', { name: current ? current.name : 'Default' });
 }
 
 export function renderProfileList(): void {
@@ -61,14 +62,14 @@ export function renderProfileList(): void {
 
     const ue4ssBadge = p.ue4ss_enabled ? `<span class="${ue4ssClass}">${ue4ssText}</span>` : '';
     const palschemaBadge = p.palschema_enabled ? `<span class="${palschemaClass}">${palschemaText}</span>` : '';
-    const modCountBadge = `<span class="profile-badge count">${modCount} mod${modCount === 1 ? '' : 's'}</span>`;
+    const modCountBadge = `<span class="profile-badge count">${escapeHtml(t('profiles.mod_count_badge', { count: modCount }))}</span>`;
 
     return `
     <div class="profile-item ${isActive ? 'active' : ''}" data-id="${p.id}">
       <div style="display:flex;flex-direction:column;gap:4px;">
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="profile-item-name">${escapeHtml(p.name)}</span>
-          ${isActive ? '<span class="profile-item-badge-active">ACTIVE</span>' : ''}
+          ${isActive ? `<span class="profile-item-badge-active">${escapeHtml(t('profiles.active_badge'))}</span>` : ''}
         </div>
         <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
           ${ue4ssBadge}
@@ -77,9 +78,9 @@ export function renderProfileList(): void {
         </div>
       </div>
       <div class="profile-actions">
-        <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}">Clone</button>
-        <button class="btn-secondary btn-sm profile-clear-btn" data-id="${p.id}">Clear</button>
-        ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}">Switch</button>` : ''}
+        <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clone'))}</button>
+        <button class="btn-secondary btn-sm profile-clear-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clear'))}</button>
+        ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_switch'))}</button>` : ''}
         <button class="profile-item-delete ${p.id === 'default' ? 'disabled' : ''}" data-id="${p.id}" ${p.id === 'default' ? 'disabled' : ''}>✕</button>
       </div>
     </div>`;
@@ -107,8 +108,8 @@ export function renderProfileList(): void {
       const name = current ? current.name : '';
 
       const newName = await showInputModal(
-        'Duplicate Profile',
-        `Enter a name for the duplicated profile of "${name}":`,
+        t('profiles.prompt_duplicate_title'),
+        t('profiles.prompt_duplicate_body', { name }),
         `${name} - Copy`
       );
       if (newName === null) return;
@@ -118,11 +119,11 @@ export function renderProfileList(): void {
       try {
         const { cloneProfile } = await import('../../api');
         await cloneProfile(id, trimmed);
-        showToast('Profile duplicated', 'success');
+        showToast(t('toasts.profile_created', { name: trimmed }), 'success');
         await loadProfiles();
         renderModsView();
       } catch (err) {
-        showToast('Failed to duplicate profile: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   });
@@ -131,14 +132,19 @@ export function renderProfileList(): void {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = (btn as HTMLElement).dataset.id!;
+      const { profiles } = getState();
+      const current = profiles.find(p => p.id === id);
+      const name = current ? current.name : '';
+      const confirmed = await showConfirm(t('dialogs.confirm_delete_profile', { name }));
+      if (!confirmed) return;
       try {
         const { deleteProfile } = await import('../../api');
         await deleteProfile(id);
-        showToast('Profile deleted', 'success');
+        showToast(t('toasts.profile_deleted', { name }), 'success');
         await loadProfiles();
         renderModsView();
       } catch (err) {
-        showToast('Failed to delete profile: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   });
@@ -151,13 +157,13 @@ export function renderProfileList(): void {
       const current = profiles.find(p => p.id === id);
       const name = current ? current.name : '';
 
-      const confirmed = await showConfirm(`Are you sure you want to clear/purge all mods from the profile "${name}"? This will physically disable and clear active mods in the game (if active).`);
+      const confirmed = await showConfirm(t('dialogs.confirm_clear_profile', { name }));
       if (!confirmed) return;
 
       try {
         const updatedProfiles = await clearProfile(id);
         updateState({ profiles: updatedProfiles });
-        showToast('Profile cleared successfully', 'success');
+        showToast(t('toasts.profile_cleared', { name }), 'success');
 
         if (id === getState().currentProfileId) {
           const { getMods } = await import('../../api');
@@ -168,7 +174,7 @@ export function renderProfileList(): void {
         await loadProfiles();
         renderModsView();
       } catch (err) {
-        showToast('Failed to clear profile: ' + err, 'error');
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
       }
     });
   });
@@ -178,84 +184,61 @@ export function showInputModal(title: string, message: string, defaultValue: str
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
     overlay.className = 'modal-overlay visible';
-    overlay.style.zIndex = '3000';
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.right = '0';
-    overlay.style.bottom = '0';
-    overlay.style.background = 'rgba(0,0,0,0.6)';
-    overlay.style.backdropFilter = 'blur(4px)';
-    overlay.style.display = 'flex';
-    overlay.style.alignItems = 'center';
-    overlay.style.justifyContent = 'center';
-
+    overlay.style.zIndex = '1500';
     overlay.innerHTML = `
-      <div class="modal" style="width: 400px; max-width: 90vw; border: 1px solid var(--border); background: var(--bg-primary); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5);">
-        <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;">
-          <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${escapeHtml(title)}</h3>
-          <button class="modal-close-btn" id="input-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
+      <div class="modal" style="width: 400px; max-width: 90vw;">
+        <div class="modal-header">
+          <h3>${escapeHtml(title)}</h3>
+          <button class="modal-close-btn">✕</button>
         </div>
-        <div class="modal-body" style="padding: 20px; display: flex; flex-direction: column; gap: 12px;">
-          <div style="font-size: 13px; color: var(--text-secondary);">${escapeHtml(message)}</div>
-          <input type="text" id="input-modal-value" value="${escapeHtml(defaultValue)}" style="width: 100%; padding: 8px 12px; border: 1px solid var(--border); background: var(--bg-secondary); color: var(--text-primary); border-radius: 4px; font-size: 13px; outline: none; box-sizing: border-box;" />
+        <div class="modal-body" style="gap:12px;padding:20px;">
+          <label style="font-size:12px;color:var(--text-secondary);">${escapeHtml(message)}</label>
+          <input type="text" class="input-field modal-input" value="${escapeHtml(defaultValue)}" style="width:100%;box-sizing:border-box;" />
         </div>
-        <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; gap: 8px;">
-          <button id="input-modal-cancel" class="btn-secondary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">Cancel</button>
-          <button id="input-modal-confirm" class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">Confirm</button>
+        <div class="modal-footer" style="padding:16px 20px;">
+          <button class="btn-secondary modal-cancel-btn">${escapeHtml(t('common.cancel'))}</button>
+          <button class="btn-primary modal-confirm-btn">${escapeHtml(t('common.save'))}</button>
         </div>
       </div>
     `;
 
     document.body.appendChild(overlay);
 
-    const input = overlay.querySelector('#input-modal-value') as HTMLInputElement;
+    const input = overlay.querySelector('.modal-input') as HTMLInputElement;
+    const confirmBtn = overlay.querySelector('.modal-confirm-btn') as HTMLButtonElement;
+    const cancelBtn = overlay.querySelector('.modal-cancel-btn') as HTMLButtonElement;
+    const closeBtn = overlay.querySelector('.modal-close-btn') as HTMLButtonElement;
+
     input.focus();
     input.select();
 
-    const cleanUp = () => {
-      document.body.removeChild(overlay);
+    const cleanup = (val: string | null) => {
+      overlay.remove();
+      resolve(val);
     };
 
-    overlay.querySelector('#input-modal-close-x')!.addEventListener('click', () => {
-      cleanUp();
-      resolve(null);
-    });
-
-    overlay.querySelector('#input-modal-cancel')!.addEventListener('click', () => {
-      cleanUp();
-      resolve(null);
-    });
-
-    const handleConfirm = () => {
-      const val = input.value.trim();
-      cleanUp();
-      resolve(val ? val : null);
-    };
-
-    overlay.querySelector('#input-modal-confirm')!.addEventListener('click', handleConfirm);
+    confirmBtn.addEventListener('click', () => cleanup(input.value));
+    cancelBtn.addEventListener('click', () => cleanup(null));
+    closeBtn.addEventListener('click', () => cleanup(null));
 
     input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        handleConfirm();
-      }
-      if (e.key === 'Escape') {
-        cleanUp();
-        resolve(null);
-      }
+      if (e.key === 'Enter') cleanup(input.value);
+      if (e.key === 'Escape') cleanup(null);
     });
   });
 }
 
 export async function handleProfileChange(profileId: string): Promise<void> {
-  const { currentProfileId } = getState();
+  const { currentProfileId, profiles } = getState();
   if (profileId === currentProfileId) return;
   try {
     const { confirmDiscardOrSave, clearOriginalContent } = await import('../editorView');
     const proceed = await confirmDiscardOrSave();
     if (!proceed) return;
 
-    showToast('Switching profile... Backing up current and restoring target mods...', 'info');
+    const targetProf = profiles.find(p => p.id === profileId);
+    const targetName = targetProf ? targetProf.name : profileId;
+    showToast(t('toasts.profile_switched', { name: targetName }), 'info');
     const mods = await switchProfile(profileId);
 
     clearOriginalContent();
@@ -282,17 +265,16 @@ export async function handleProfileChange(profileId: string): Promise<void> {
     const highlightCode = document.getElementById('editor-highlight-code');
     if (highlightCode) highlightCode.innerHTML = '';
     const fileTreeEl = document.getElementById('editor-file-tree');
-    if (fileTreeEl) fileTreeEl.innerHTML = '<div class="editor-file-empty">No files loaded</div>';
+    if (fileTreeEl) fileTreeEl.innerHTML = `<div class="editor-file-empty">${escapeHtml(t('editor.file_empty'))}</div>`;
 
     const { populateEditorModSelect, renderEditorModTree } = await import('../editorView');
     populateEditorModSelect();
     renderEditorModTree();
 
-    showToast('Profile switched', 'success');
     await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
     renderModsView();
   } catch (e) {
-    showToast('Failed to switch profile: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
 
@@ -300,12 +282,12 @@ export async function handleCreateProfile(name: string): Promise<void> {
   try {
     const { createProfile } = await import('../../api');
     const newProfile = await createProfile(name);
-    showToast('Profile created', 'success');
+    showToast(t('toasts.profile_created', { name }), 'success');
     await loadProfiles();
     if (newProfile && newProfile.id) {
       await handleProfileChange(newProfile.id);
     }
   } catch (e) {
-    showToast('Failed to create profile: ' + e, 'error');
+    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }

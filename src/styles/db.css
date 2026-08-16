@@ -99,6 +99,25 @@
   min-width: 0;
   overflow-y: auto;
   border-right: 1px solid var(--border);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.db-grid-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.db-grid-panel::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.db-grid-panel::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.db-grid-panel::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
 }
 
 .db-grid-table {

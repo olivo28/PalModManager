@@ -11,6 +11,7 @@ import { loadDependencies, handleDepBadgeClick } from './dependencies';
 import { handleLibraryBulkInstall, triggerInstallFromLibrary, loadLibrary, updateLibraryBulkBar } from './library';
 import { renderModsView } from './renderer';
 import { escapeHtml } from '../../utils/helpers';
+import { t } from '../../utils/i18n';
 
 export function runContextAction(action: string, modId: string): void {
   const mod = getState().allMods.find(m => m.id === modId);
@@ -20,7 +21,7 @@ export function runContextAction(action: string, modId: string): void {
     case 'check-updates':
       (async () => {
         try {
-          showToast(`Checking updates for "${mod.name}"...`, 'info');
+          showToast(t('toasts.checking_updates', { name: mod.name }), 'info');
           const { refreshNexusCache } = await import('../../api');
           const { isVersionNewer } = await import('./card');
           const updated = await refreshNexusCache(modId);
@@ -64,15 +65,15 @@ export function runContextAction(action: string, modId: string): void {
             newMap.set(modId, targetUpdateVer);
             updateState({ availableUpdates: newMap });
             renderModsView();
-            showToast(`Update available: v${targetUpdateVer} (current: v${localVer})`, 'info');
+            showToast(t('toasts.update_available', { target: targetUpdateVer, current: localVer }), 'info');
           } else {
             newMap.delete(modId);
             updateState({ availableUpdates: newMap });
             renderModsView();
-            showToast(`"${mod.name}" is up to date`, 'success');
+            showToast(t('toasts.mod_up_to_date', { name: mod.name }), 'success');
           }
         } catch (e) {
-          showToast('Failed to check updates: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       })();
       break;
@@ -102,17 +103,17 @@ export function runContextAction(action: string, modId: string): void {
           } else {
             const { openDetailPanel } = await import('../detailPanel');
             openDetailPanel(modId);
-            showToast(`Update v${updateVer} is available on Nexus Mods`, 'info');
+            showToast(t('toasts.update_available', { target: updateVer || '', current: mod.version }), 'info');
           }
         } catch (e) {
-          showToast('Failed to start update: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       })();
       break;
     case 'update-workshop-mod':
       (async () => {
         try {
-          showToast('Preparing workshop update files...', 'info');
+          showToast(t('toasts.preparing_workshop_update'), 'info');
           const { prepareWorkshopUpdateZip, analyzeZip, checkModExistsCommand } = await import('../../api');
           const { renderInstallPreview, showInstallModal } = await import('../modal');
 
@@ -127,7 +128,7 @@ export function runContextAction(action: string, modId: string): void {
           renderInstallPreview(analysis, existingMod);
           showInstallModal();
         } catch (e) {
-          showToast('Failed to prepare update: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       })();
       break;
@@ -138,10 +139,10 @@ export function runContextAction(action: string, modId: string): void {
           if (!updateVer) return;
           const { ignoreModVersion } = await import('../../api');
           await ignoreModVersion(modId, updateVer);
-          showToast('Update version ignored', 'success');
+          showToast(t('toasts.settings_saved'), 'success');
           await loadMods();
         } catch (e) {
-          showToast('Failed to ignore version: ' + e, 'error');
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
       })();
       break;
@@ -151,16 +152,16 @@ export function runContextAction(action: string, modId: string): void {
           const { setModProfileState } = await import('../../api');
           if (mod.enabled) { await disableMod(modId); } else { await enableMod(modId); }
           try { await setModProfileState(modId, !mod.enabled); } catch { }
-          showToast(mod.enabled ? 'Mod disabled' : 'Mod enabled', mod.enabled ? 'info' : 'success');
+          showToast(mod.enabled ? t('toasts.mod_disabled') : t('toasts.mod_enabled'), mod.enabled ? 'info' : 'success');
           await loadMods();
-        } catch (e) { showToast('Failed: ' + e, 'error'); }
+        } catch (e) { showToast(t('toasts.export_failed', { error: String(e) }), 'error'); }
       })();
       break;
     case 'open-folder':
-      openModFolder(modId).catch(e => showToast('Failed: ' + e, 'error'));
+      openModFolder(modId).catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
       break;
     case 'open-extras':
-      openExtraFolder(modId).catch(e => showToast('Failed: ' + e, 'error'));
+      openExtraFolder(modId).catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
       break;
     case 'edit-config':
       openConfigEditor(modId);
@@ -191,13 +192,13 @@ export function runContextAction(action: string, modId: string): void {
       break;
     }
     case 'remove':
-      showConfirm(`Remove "${mod.name}" permanently?`).then(confirmed => {
+      showConfirm(t('dialogs.confirm_remove_mod', { name: mod.name })).then(confirmed => {
         if (!confirmed) return;
         removeMod(modId).then(() => {
           closeDetailPanel();
           loadMods();
-          showToast('Mod removed', 'success');
-        }).catch(e => showToast('Failed: ' + e, 'error'));
+          showToast(t('toasts.mod_removed'), 'success');
+        }).catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
       });
       break;
   }
@@ -219,7 +220,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     html += `
       <button type="button" class="context-menu-item" data-action="check-updates">
         <span class="ctx-icon">&#8634;</span>
-        Check for updates
+        ${escapeHtml(t('context.check_updates'))}
       </button>
     `;
   }
@@ -230,7 +231,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       html += `
         <button type="button" class="context-menu-item" data-action="update-workshop-mod" style="font-weight: bold; color: #ff9d00;">
           <span class="ctx-icon">⚡</span>
-          Update Mod
+          ${escapeHtml(t('context.update_mod'))}
         </button>
       `;
     } else {
@@ -238,11 +239,11 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       html += `
         <button type="button" class="context-menu-item" data-action="update-local-mod" style="font-weight: bold; color: #00bcff;">
           <span class="ctx-icon">⚡</span>
-          Update Mod (v${escapeHtml(updateVer)})
+          ${escapeHtml(t('context.update_mod_ver', { version: updateVer }))}
         </button>
         <button type="button" class="context-menu-item" data-action="ignore-update">
           <span class="ctx-icon">✕</span>
-          Ignore update (v${escapeHtml(updateVer)})
+          ${escapeHtml(t('context.ignore_update', { version: updateVer }))}
         </button>
       `;
     }
@@ -251,25 +252,25 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="toggle">
       <span class="ctx-icon">${mod.enabled ? '◌' : '●'}</span>
-      ${mod.enabled ? 'Disable' : 'Enable'}
+      ${escapeHtml(mod.enabled ? t('context.disable_mod') : t('context.enable_mod'))}
     </button>
     <button type="button" class="context-menu-item" data-action="open-folder">
       <span class="ctx-icon">📁</span>
-      Open folder
+      ${escapeHtml(t('context.open_folder'))}
     </button>
     ${mod.extraFiles && mod.extraFiles.length > 0 ? `
     <button type="button" class="context-menu-item" data-action="open-extras">
       <span class="ctx-icon">📂</span>
-      Open extra folder
+      ${escapeHtml(t('context.open_extra_folder'))}
     </button>
     ` : ''}
     <button type="button" class="context-menu-item" data-action="edit-config">
       <span class="ctx-icon">⚙</span>
-      Edit config
+      ${escapeHtml(t('context.edit_config'))}
     </button>
     <button type="button" class="context-menu-item" data-action="detail">
       <span class="ctx-icon">ℹ</span>
-      View details
+      ${escapeHtml(t('context.view_details'))}
     </button>
   `;
 
@@ -286,17 +287,17 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <div class="context-menu-sep"></div>
     <div class="context-menu-item has-submenu" style="position:relative;display:flex;align-items:center;width:100%;">
       <span class="ctx-icon">📁</span>
-      Move to folder...
+      ${escapeHtml(t('context.move_to_folder'))}
       <span style="margin-left:auto;font-size:9px;color:var(--text-muted);pointer-events:none;">▶</span>
       <div class="context-submenu" style="display:none;position:absolute;top:-4px;left:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;z-index:4000;padding:4px 0;">
         ${foldersHtml}
         ${(folders.length > 0 && isInFolder) ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         ${isInFolder ? `<button type="button" class="context-submenu-item" data-action="move-to-folder" data-folder-id="none" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>❌</span> Remove from folder
+          <span>❌</span> ${escapeHtml(t('context.folder_none'))}
         </button>` : ''}
         ${folders.length > 0 ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         <button type="button" class="context-submenu-item" data-action="move-to-new-folder" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>➕</span> New folder...
+          <span>➕</span> ${escapeHtml(t('mods.btn_new_folder'))}...
         </button>
       </div>
     </div>
@@ -307,13 +308,13 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     if (mod.nexusModId) {
       html += `<button type="button" class="context-menu-item" data-action="visit-nexus">
         <span class="ctx-icon">N</span>
-        Visit on NexusMods
+        ${escapeHtml(t('context.visit_nexus'))}
       </button>`;
     }
     if (mod.githubRepo) {
       html += `<button type="button" class="context-menu-item" data-action="visit-github">
         <span class="ctx-icon">G</span>
-        Visit on GitHub
+        ${escapeHtml(t('context.visit_github'))}
       </button>`;
     }
   }
@@ -325,11 +326,11 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       html += `<div class="context-menu-sep"></div>
         <button type="button" class="context-menu-item" data-action="visit-steam-app">
           <span class="ctx-icon">♨️</span>
-          Open in Steam (App)
+          ${escapeHtml(t('context.visit_steam_app'))}
         </button>
         <button type="button" class="context-menu-item" data-action="visit-steam-web">
           <span class="ctx-icon">🌐</span>
-          Open in Steam (Web)
+          ${escapeHtml(t('context.visit_steam_web'))}
         </button>`;
     }
   }
@@ -338,7 +339,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     html += `<div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item danger" data-action="remove">
         <span class="ctx-icon">✕</span>
-        Remove
+        ${escapeHtml(t('context.remove_mod'))}
       </button>`;
   }
 
@@ -395,8 +396,8 @@ export function showContextMenu(modId: string, x: number, y: number): void {
         showToast(folderId ? 'Mod grouped into folder' : 'Mod moved to ungrouped', 'success');
       } else if (subAction === 'move-to-new-folder') {
         const newName = await showInputModal(
-          'New Mod Folder',
-          'Enter a name for the new virtual folder:',
+          t('dialogs.prompt_new_folder_name'),
+          t('dialogs.prompt_new_folder_name'),
           'Skins'
         );
         if (newName === null) return;
@@ -413,10 +414,10 @@ export function showContextMenu(modId: string, x: number, y: number): void {
             const profiles = state.profiles.map(p => p.id === state.currentProfileId ? finalProfile : p);
             updateState({ profiles });
             await loadMods();
-            showToast('Mod grouped into folder', 'success');
+            showToast(t('toasts.mod_grouped_success'), 'success');
           }
         } catch (err) {
-          showToast('Failed: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         }
       }
     });
@@ -434,80 +435,77 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
   const overlay = getContextOverlay();
   const menu = document.getElementById('context-menu')!;
 
-  const modsInFolder = (state.allMods || []).filter(m => folder.mod_ids.includes(m.id));
+  const modsInFolder = state.allMods.filter(m => folder.mod_ids.includes(m.id));
   const allEnabled = modsInFolder.length > 0 && modsInFolder.every(m => m.enabled);
+  const toggleLabel = allEnabled ? t('context.folder_disable_all') : t('context.folder_enable_all');
+  const toggleIcon = allEnabled ? '⏸' : '▶';
 
-  let html = `
-    <button type="button" class="context-menu-item" data-action="enter">
+  const html = `
+    <button type="button" class="context-menu-item" data-action="enter-folder">
       <span class="ctx-icon">📂</span>
-      Enter folder
+      ${escapeHtml(t('context.folder_enter'))}
     </button>
-    <button type="button" class="context-menu-item" data-action="rename">
+    <button type="button" class="context-menu-item" data-action="rename-folder">
       <span class="ctx-icon">✏</span>
-      Rename folder
+      ${escapeHtml(t('context.folder_rename'))}
     </button>
-    <div class="context-menu-sep"></div>
-    <button type="button" class="context-menu-item" data-action="toggle-mods">
-      <span class="ctx-icon">${allEnabled ? '◌' : '●'}</span>
-      ${allEnabled ? 'Disable all mods' : 'Enable all mods'}
+    <button type="button" class="context-menu-item" data-action="toggle-folder-mods">
+      <span class="ctx-icon">${toggleIcon}</span>
+      ${escapeHtml(toggleLabel)}
     </button>
     <button type="button" class="context-menu-item" data-action="check-updates-mods">
-      <span class="ctx-icon">&#8634;</span>
-      Check updates for mods
+      <span class="ctx-icon">↑</span>
+      ${escapeHtml(t('context.check_updates'))}
     </button>
     <div class="context-menu-sep"></div>
-    <button type="button" class="context-menu-item danger" data-action="delete">
-      <span class="ctx-icon">✕</span>
-      Delete folder
+    <button type="button" class="context-menu-item danger" data-action="delete-folder">
+      <span class="ctx-icon">🗑</span>
+      ${escapeHtml(t('context.folder_delete'))}
     </button>
   `;
 
   menu.innerHTML = html;
 
-  document.querySelectorAll('.mod-card.context-active').forEach(el => el.classList.remove('context-active'));
-  const folderCard = document.querySelector(`.mod-card.folder-card[data-id="${folderId}"]`);
-  if (folderCard) folderCard.classList.add('context-active');
-
   menu.querySelectorAll('.context-menu-item').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
+    btn.addEventListener('click', async (e: Event) => {
       e.stopPropagation();
       e.preventDefault();
       const action = (btn as HTMLElement).dataset.action!;
       hideContextMenu();
 
-      if (action === 'enter') {
+      if (action === 'enter-folder') {
         updateState({ currentFolderId: folderId });
         renderModsView();
-      } else if (action === 'rename') {
+      } else if (action === 'rename-folder') {
         const renameBtn = document.querySelector(`.folder-card[data-id="${folderId}"] .rename-btn`) as HTMLElement | null;
         renameBtn?.click();
-      } else if (action === 'delete') {
+      } else if (action === 'delete-folder') {
         const deleteBtn = document.querySelector(`.folder-card[data-id="${folderId}"] .delete-btn`) as HTMLElement | null;
         deleteBtn?.click();
-      } else if (action === 'toggle-mods') {
+      } else if (action === 'toggle-folder-mods') {
         try {
           const { toggleFolderMods } = await import('../../api');
           const updatedProfile = await toggleFolderMods(state.currentProfileId, folderId, !allEnabled);
           const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
           updateState({ profiles: updatedProfiles });
-          showToast(!allEnabled ? 'All folder mods enabled' : 'All folder mods disabled', 'success');
+          showToast(!allEnabled ? t('toasts.folder_mods_enabled') : t('toasts.folder_mods_disabled'), 'success');
           await loadMods();
         } catch (err) {
-          showToast('Failed to toggle: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         }
       } else if (action === 'check-updates-mods') {
         if (modsInFolder.length === 0) {
-          showToast('No mods in this folder', 'info');
+          showToast(t('mods.folder_empty_desc'), 'info');
           return;
         }
-        showToast('Checking for updates...', 'info');
+        showToast(t('toasts.checking_updates', { name: folder.name }), 'info');
         try {
           const { checkForUpdates } = await import('../../api');
           await checkForUpdates();
           await loadMods();
-          showToast('Folder mods update check completed', 'success');
+          showToast(t('toasts.all_mods_up_to_date'), 'success');
         } catch (err) {
-          showToast('Failed to check updates: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         }
       }
     });
@@ -530,89 +528,89 @@ export function showGlobalContextMenu(x: number, y: number): void {
   const ue4ssInstalled = deps?.ue4ss_installed === true;
   const palschemaInstalled = deps?.palschema_installed === true;
 
-  const workshopTooltip = 'Managed by Steam Workshop — cannot be uninstalled from PMM';
+  const workshopTooltip = escapeHtml(t('context.workshop_managed_hint'));
 
   const html = `
     <button type="button" class="context-menu-item" data-action="new-folder">
       <span class="ctx-icon">📁</span>
-      New mod folder
+      ${escapeHtml(t('context.new_mod_folder'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="install">
       <span class="ctx-icon">+</span>
-      Install mod (.zip, .rar, .7z)
+      ${escapeHtml(t('context.install_archive'))}
     </button>
     <button type="button" class="context-menu-item" data-action="rescan">
       <span class="ctx-icon">↻</span>
-      Rescan mods
+      ${escapeHtml(t('context.rescan_mods'))}
     </button>
     <button type="button" class="context-menu-item" data-action="check-updates-global">
       <span class="ctx-icon">↑</span>
-      Check for updates
+      ${escapeHtml(t('context.check_updates'))}
     </button>
     <button type="button" class="context-menu-item" data-action="export-json">
       <span class="ctx-icon">📤</span>
-      Export mods JSON
+      ${escapeHtml(t('context.export_json'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="check-deps">
       <span class="ctx-icon">&#8634;</span>
-      Check UE4SS &amp; PalSchema updates
+      ${escapeHtml(t('context.check_deps_updates'))}
     </button>
     ${ue4ssInstalled
       ? isWorkshop
         ? `<button type="button" class="context-menu-item disabled" disabled title="${workshopTooltip}">
             <span class="ctx-icon" style="opacity:0.4">✕</span>
-            <span style="opacity:0.4">Uninstall UE4SS</span>
+            <span style="opacity:0.4">${escapeHtml(t('context.uninstall_ue4ss'))}</span>
             <span style="margin-left:auto;font-size:9px;opacity:0.5">Workshop</span>
            </button>`
         : `<button type="button" class="context-menu-item danger" data-action="uninstall-ue4ss">
             <span class="ctx-icon">✕</span>
-            Uninstall UE4SS
+            ${escapeHtml(t('context.uninstall_ue4ss'))}
            </button>`
       : `<button type="button" class="context-menu-item" data-action="update-ue4ss">
           <span class="ctx-icon">U</span>
-          Install UE4SS
+          ${escapeHtml(t('context.install_ue4ss'))}
          </button>`
     }
     ${palschemaInstalled
       ? isWorkshop
         ? `<button type="button" class="context-menu-item disabled" disabled title="${workshopTooltip}">
             <span class="ctx-icon" style="opacity:0.4">✕</span>
-            <span style="opacity:0.4">Uninstall PalSchema</span>
+            <span style="opacity:0.4">${escapeHtml(t('context.uninstall_palschema'))}</span>
             <span style="margin-left:auto;font-size:9px;opacity:0.5">Workshop</span>
            </button>`
         : `<button type="button" class="context-menu-item danger" data-action="uninstall-palschema">
             <span class="ctx-icon">✕</span>
-            Uninstall PalSchema
+            ${escapeHtml(t('context.uninstall_palschema'))}
            </button>`
       : `<button type="button" class="context-menu-item" data-action="update-palschema">
           <span class="ctx-icon">S</span>
-          Install PalSchema
+          ${escapeHtml(t('context.install_palschema'))}
          </button>`
     }
     <div class="context-menu-sep"></div>
-    <div style="padding: 4px 12px 2px; font-size: 9px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; opacity: 0.7;">Open Folder</div>
+    <div style="padding: 4px 12px 2px; font-size: 9px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; opacity: 0.7;">${escapeHtml(t('context.open_folder_header'))}</div>
     ${hasUe4ss ? `
       <button type="button" class="context-menu-item" data-action="open-folder-ue4ss">
         <span class="ctx-icon">📂</span>
-        UE4SS Mods
+        ${escapeHtml(t('context.folder_ue4ss'))}
       </button>
     ` : ''}
     ${hasPalSchema ? `
       <button type="button" class="context-menu-item" data-action="open-folder-palschema">
         <span class="ctx-icon">📂</span>
-        PalSchema Mods
+        ${escapeHtml(t('context.folder_palschema'))}
       </button>
     ` : ''}
     <button type="button" class="context-menu-item" data-action="open-folder-paks">
       <span class="ctx-icon">📂</span>
-      Pak Mods (Paks)
+      ${escapeHtml(t('context.folder_paks'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="settings">
       <span class="ctx-icon">⚙</span>
-      Settings
+      ${escapeHtml(t('context.settings'))}
     </button>
   `;
 
@@ -645,8 +643,60 @@ export function showGlobalContextMenu(x: number, y: number): void {
           document.getElementById('new-folder-btn')?.click();
           break;
         case 'check-deps':
-          showToast('Checking for dependency updates...', 'info');
-          loadDependencies().then(() => showToast('Dependency check finished', 'success'));
+          showToast(t('context.checking_deps'), 'info');
+          sessionStorage.removeItem('dismissed_ue4ss_update');
+          sessionStorage.removeItem('dismissed_palschema_update');
+          (async () => {
+            try {
+              const { checkDependenciesFull } = await import('../../api');
+              const fullDeps = await checkDependenciesFull();
+              updateState({ dependencies: fullDeps });
+              const { renderDependencyBadges, handleDepBadgeClick } = await import('./dependencies');
+              const { renderConflictBanner, removeConflictBanner } = await import('../conflictBanner');
+              renderDependencyBadges(fullDeps);
+              if (fullDeps.has_dll_conflict && fullDeps.conflicting_dlls && fullDeps.conflicting_dlls.length > 0) {
+                renderConflictBanner(fullDeps.conflicting_dlls);
+              } else {
+                removeConflictBanner();
+              }
+
+              const ue4ssUp = fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop';
+              const psUp = fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_version !== 'Workshop';
+
+              if (ue4ssUp || psUp) {
+                const updatesList: string[] = [];
+                if (ue4ssUp) updatesList.push('UE4SS');
+                if (psUp) updatesList.push('PalSchema');
+                showToast(t('dependencies.found_dep_updates', { deps: updatesList.join(', ') }), 'info');
+
+                if (ue4ssUp) {
+                  const latestTarget = fullDeps.ue4ss_latest_date || fullDeps.ue4ss_latest_tag || 'latest';
+                  const confirmed = await showConfirm(
+                    t('dependencies.prompt_body_ue4ss', { installed: fullDeps.ue4ss_version || 'installed', latest: latestTarget }),
+                    t('dependencies.prompt_title_ue4ss')
+                  );
+                  if (confirmed) {
+                    const { executeInstallOrUpdate } = await import('./dependencies');
+                    executeInstallOrUpdate('ue4ss', true);
+                  }
+                } else if (psUp) {
+                  const latestVer = fullDeps.palschema_latest_version || 'latest';
+                  const confirmed = await showConfirm(
+                    t('dependencies.prompt_body_palschema', { installed: fullDeps.palschema_version || 'installed', latest: latestVer }),
+                    t('dependencies.prompt_title_palschema')
+                  );
+                  if (confirmed) {
+                    const { executeInstallOrUpdate } = await import('./dependencies');
+                    executeInstallOrUpdate('palschema', true);
+                  }
+                }
+              } else {
+                showToast(t('dependencies.up_to_date'), 'success');
+              }
+            } catch (err) {
+              showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+            }
+          })();
           break;
         case 'update-ue4ss':
           handleDepBadgeClick('ue4ss');
@@ -659,16 +709,16 @@ export function showGlobalContextMenu(x: number, y: number): void {
             const modState = getState();
             const dependentMods = modState.allMods.filter(m => m.enabled && (m.type === 'ue4ss' || m.type === 'hybrid'));
             const proceed = dependentMods.length > 0
-              ? showConfirm(`Warning: You have ${dependentMods.length} enabled mod(s) that depend on UE4SS (e.g. ${dependentMods[0].name}). Uninstalling UE4SS will disable these mods. Do you want to proceed?`)
+              ? showConfirm(t('context.warn_uninstall_dep', { count: dependentMods.length, dep: 'UE4SS', sample: dependentMods[0].name }))
               : Promise.resolve(true);
             proceed.then(confirmed => {
               if (!confirmed) return;
-              showToast('Uninstalling UE4SS...', 'info');
+              showToast(t('context.uninstalling_ue4ss'), 'info');
               uninstallUe4ss().then(msg => {
                 showToast(msg, 'success');
                 loadDependencies();
                 loadMods();
-              }).catch(e => showToast('Failed: ' + e, 'error'));
+              }).catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
             });
           }
           break;
@@ -677,27 +727,27 @@ export function showGlobalContextMenu(x: number, y: number): void {
             const modState = getState();
             const dependentMods = modState.allMods.filter(m => m.enabled && (m.type === 'palschema' || m.type === 'hybrid'));
             const proceed = dependentMods.length > 0
-              ? showConfirm(`Warning: You have ${dependentMods.length} enabled mod(s) that depend on PalSchema (e.g. ${dependentMods[0].name}). Uninstalling PalSchema will disable these mods. Do you want to proceed?`)
+              ? showConfirm(t('context.warn_uninstall_dep', { count: dependentMods.length, dep: 'PalSchema', sample: dependentMods[0].name }))
               : Promise.resolve(true);
             proceed.then(confirmed => {
               if (!confirmed) return;
-              showToast('Uninstalling PalSchema...', 'info');
+              showToast(t('context.uninstalling_palschema'), 'info');
               uninstallPalschema().then(msg => {
                 showToast(msg, 'success');
                 loadDependencies();
                 loadMods();
-              }).catch(e => showToast('Failed: ' + e, 'error'));
+              }).catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
             });
           }
           break;
         case 'open-folder-ue4ss':
-          openFolderByType('ue4ss').catch(e => showToast('Failed: ' + e, 'error'));
+          openFolderByType('ue4ss').catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
           break;
         case 'open-folder-palschema':
-          openFolderByType('palschema').catch(e => showToast('Failed: ' + e, 'error'));
+          openFolderByType('palschema').catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
           break;
         case 'open-folder-paks':
-          openFolderByType('paks').catch(e => showToast('Failed: ' + e, 'error'));
+          openFolderByType('paks').catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
           break;
         case 'settings':
           document.getElementById('settings-btn')?.click();
@@ -755,37 +805,37 @@ export function showBulkContextMenu(x: number, y: number): void {
   `).join('');
 
   const html = `
-    <div style="font-size:9px;font-weight:700;color:var(--text-muted);padding:6px 16px 2px;text-transform:uppercase">${selectedCount} Mods Selected</div>
+    <div style="font-size:9px;font-weight:700;color:var(--text-muted);padding:6px 16px 2px;text-transform:uppercase">${selectedCount} ${escapeHtml(t('common.selected_count_mods', { count: selectedCount }))}</div>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="bulk-enable">
       <span class="ctx-icon">●</span>
-      Enable Selected
+      ${escapeHtml(t('bulk.enable_selected'))}
     </button>
     <button type="button" class="context-menu-item" data-action="bulk-disable">
       <span class="ctx-icon">◌</span>
-      Disable Selected
+      ${escapeHtml(t('bulk.disable_selected'))}
     </button>
     <div class="context-menu-sep"></div>
     <div class="context-menu-item has-submenu" style="position:relative;display:flex;align-items:center;width:100%;">
       <span class="ctx-icon">📁</span>
-      Move selected to folder...
+      ${escapeHtml(t('context.move_to_folder'))}
       <span style="margin-left:auto;font-size:9px;color:var(--text-muted);pointer-events:none;">▶</span>
       <div class="context-submenu" style="display:none;position:absolute;top:-4px;left:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;z-index:4000;padding:4px 0;">
         ${foldersHtml}
         ${(folders.length > 0 && anyInFolder) ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         ${anyInFolder ? `<button type="button" class="context-submenu-item" data-action="bulk-move-to-folder" data-folder-id="none" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>❌</span> Remove from folders
+          <span>❌</span> ${escapeHtml(t('context.remove_from_folders'))}
         </button>` : ''}
         ${folders.length > 0 ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         <button type="button" class="context-submenu-item" data-action="bulk-move-to-new-folder" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>➕</span> New folder...
+          <span>➕</span> ${escapeHtml(t('context.new_folder'))}
         </button>
       </div>
     </div>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item danger" data-action="bulk-remove">
       <span class="ctx-icon">✕</span>
-      Remove Selected
+      ${escapeHtml(t('bulk.delete_selected'))}
     </button>
   `;
 
@@ -839,7 +889,7 @@ export function showBulkContextMenu(x: number, y: number): void {
       if (subAction === 'bulk-move-to-folder') {
         const folderId = (subBtn as HTMLElement).dataset.folderId!;
         const targetFolder = folderId === 'none' ? null : folderId;
-        showToast(`Grouping ${modIds.length} mods...`, 'info');
+        showToast(targetFolder ? t('toasts.mod_grouped_success') : t('toasts.mod_ungrouped_success'), 'info');
         try {
           const { addModToFolder } = await import('../../api');
           const state = getState();
@@ -852,14 +902,14 @@ export function showBulkContextMenu(x: number, y: number): void {
             updateState({ profiles });
           }
           await loadMods();
-          showToast(`Moved ${modIds.length} mods successfully`, 'success');
+          showToast(targetFolder ? t('toasts.mod_grouped_success') : t('toasts.mod_ungrouped_success'), 'success');
         } catch (err) {
-          showToast('Failed to group mods: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         }
       } else if (subAction === 'bulk-move-to-new-folder') {
         const newName = await showInputModal(
-          'New Mod Folder',
-          'Enter a name for the new virtual folder:',
+          t('dialogs.prompt_new_folder_name'),
+          t('dialogs.prompt_new_folder_name'),
           'Skins'
         );
         if (newName === null) return;
@@ -881,10 +931,10 @@ export function showBulkContextMenu(x: number, y: number): void {
               updateState({ profiles });
             }
             await loadMods();
-            showToast(`Created folder and grouped ${modIds.length} mods`, 'success');
+            showToast(t('toasts.folder_created'), 'success');
           }
         } catch (err) {
-          showToast('Failed: ' + err, 'error');
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         }
       }
     });
@@ -996,21 +1046,21 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
   if (selectedCount > 1) {
     menu.innerHTML = `
       <button type="button" class="context-menu-item" id="lib-ctx-install" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">📥</span> Install Selected (${selectedCount})
+        <span class="ctx-icon">📥</span> ${escapeHtml(t('library.btn_install_selected', { count: selectedCount }))}
       </button>
       <div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item danger" id="lib-ctx-remove" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">🗑️</span> Remove Selected from Library
+        <span class="ctx-icon">🗑️</span> ${escapeHtml(t('library.btn_delete_selected_library'))}
       </button>
     `;
   } else if (modId) {
     menu.innerHTML = `
       <button type="button" class="context-menu-item" id="lib-ctx-install" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">📥</span> Install Mod
+        <span class="ctx-icon">📥</span> ${escapeHtml(t('library.btn_install_mod'))}
       </button>
       <div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item danger" id="lib-ctx-remove" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">🗑️</span> Remove from Library
+        <span class="ctx-icon">🗑️</span> ${escapeHtml(t('library.btn_delete_from_library'))}
       </button>
     `;
   } else {
@@ -1034,23 +1084,26 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
     e.stopPropagation();
     hideContextMenu();
     const { removeFromLibrary } = await import('../../api');
+    const { showConfirm } = await import('../confirm');
     if (selectedCount > 1) {
-      if (confirm(`Remove ${selectedCount} mods from library?`)) {
+      const confirmed = await showConfirm(t('library.confirm_remove_bulk', { count: selectedCount }));
+      if (confirmed) {
         for (const id of Array.from(state.selectedLibraryIds)) {
           await removeFromLibrary(id).catch(() => { });
         }
-        showToast('Mods removed from library', 'success');
+        showToast(t('toasts.library_mods_deleted', { count: selectedCount }), 'success');
         updateState({ selectedLibraryIds: new Set() });
         updateLibraryBulkBar();
         loadLibrary();
       }
     } else if (modId) {
       const confirmMsg = zipName
-        ? `Remove "${zipName}" from library?`
-        : 'Remove this mod from library?';
-      if (confirm(confirmMsg)) {
+        ? t('library.confirm_remove_version', { zip: zipName })
+        : t('dialogs.confirm_remove_mod', { name: modId });
+      const confirmed = await showConfirm(confirmMsg);
+      if (confirmed) {
         await removeFromLibrary(modId, zipName || undefined).catch(() => { });
-        showToast(zipName ? 'Version removed from library' : 'Mod removed from library', 'success');
+        showToast(t('toasts.library_mod_version_removed'), 'success');
         loadLibrary();
       }
     }

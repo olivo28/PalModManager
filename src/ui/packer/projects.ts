@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
+import { t } from '../../utils/i18n';
 import { stagedFiles, sourcePaths, targetOverrides, virtualFolders, backupPaths, activeProjectName, savedProjects, setStagedFiles, setSourcePaths, setVirtualFolders, setBackupPaths, setActiveProject, setSavedProjects, renderWorkspace, escapeHtml } from './mod';
 import { scanAndBuildStagedFiles } from './staging';
 import { clearMetadataForm } from './rendering';
@@ -27,11 +28,11 @@ export function renderProjectsHub(): void {
       <div class="packer-project-card" data-name="${escapeHtml(proj.name)}">
         <div class="packer-project-card-icon">📁</div>
         <div class="packer-project-card-title">${escapeHtml(proj.name)}</div>
-        <div class="packer-project-card-meta">Version: ${escapeHtml(proj.metadata?.version || '1.0.0')}</div>
+        <div class="packer-project-card-meta">${escapeHtml(t('common.version'))}: ${escapeHtml(proj.metadata?.version || '1.0.0')}</div>
         ${typeBadge}
         <div class="packer-project-card-actions">
-          <button class="packer-project-card-btn primary" data-action="open" data-name="${escapeHtml(proj.name)}">Open</button>
-          <button class="packer-project-card-btn danger" data-action="delete" data-name="${escapeHtml(proj.name)}">Delete</button>
+          <button class="packer-project-card-btn primary" data-action="open" data-name="${escapeHtml(proj.name)}">${escapeHtml(t('common.edit'))}</button>
+          <button class="packer-project-card-btn danger" data-action="delete" data-name="${escapeHtml(proj.name)}">${escapeHtml(t('common.delete'))}</button>
         </div>
       </div>
     `;
@@ -40,8 +41,8 @@ export function renderProjectsHub(): void {
   html += `
     <div class="packer-project-card new-placeholder" id="packer-hub-create-card">
       <div class="packer-project-card-icon">+</div>
-      <div class="packer-project-card-title">New Project</div>
-      <div class="packer-project-card-meta">Create a blank stash</div>
+      <div class="packer-project-card-title">${escapeHtml(t('packer.btn_new_project'))}</div>
+      <div class="packer-project-card-meta">${escapeHtml(t('packer.project_meta_type'))}</div>
     </div>
   `;
 
@@ -90,7 +91,7 @@ export function openNewProjectWorkspace(): void {
   const nameInput = document.getElementById('packer-project-name') as HTMLInputElement;
   if (nameInput) nameInput.value = '';
 
-  document.getElementById('packer-workspace-title')!.textContent = 'New Project / Staging Area';
+  document.getElementById('packer-workspace-title')!.textContent = t('packer.workspace_title_new');
   document.getElementById('packer-projects-hub')!.style.display = 'none';
   document.getElementById('packer-workspace-view')!.style.display = 'flex';
   renderWorkspace();
@@ -143,12 +144,12 @@ export function loadSelectedProject(name: string): void {
   const nameInput = document.getElementById('packer-project-name') as HTMLInputElement;
   if (nameInput) nameInput.value = name;
 
-  document.getElementById('packer-workspace-title')!.textContent = `Project: ${name}`;
+  document.getElementById('packer-workspace-title')!.textContent = t('packer.workspace_title_project', { name });
   document.getElementById('packer-projects-hub')!.style.display = 'none';
   document.getElementById('packer-workspace-view')!.style.display = 'flex';
 
   scanAndBuildStagedFiles().then(() => {
-    showToast(`Loaded project '${name}' and scanned folders`, 'info');
+    showToast(t('packer.toast_loaded_project', { name }), 'info');
   });
 }
 
@@ -161,7 +162,7 @@ export async function saveCurrentProject(): Promise<void> {
     if (modName) {
       projName = modName;
     } else {
-      showToast('Please enter a Project Name to save.', 'warning');
+      showToast(t('packer.toast_enter_project_name'), 'warning');
       return;
     }
   }
@@ -207,9 +208,9 @@ export async function saveCurrentProject(): Promise<void> {
 
     setActiveProject(projName);
     document.getElementById('packer-workspace-title')!.textContent = `Project: ${projName}`;
-    showToast(res, 'success');
+    showToast(t('packer.toast_saved_project'), 'success');
   } catch (err: any) {
-    showToast(`Failed to save project: ${err}`, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 
@@ -226,9 +227,9 @@ export async function deleteProjectByName(name: string): Promise<void> {
     } else {
       loadProjectsList();
     }
-    showToast(res, 'success');
+    showToast(t('packer.toast_deleted_project'), 'success');
   } catch (err: any) {
-    showToast(`Failed to delete project: ${err}`, 'error');
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }
 export { savedProjects, activeProjectName };
