@@ -673,6 +673,8 @@ fn merge_scan_with_db(
             if fs_mod.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod")) {
                 merged.nexus_summary = fs_mod.nexus_summary.clone();
                 merged.has_pending_update = fs_mod.has_pending_update;
+                merged.version = fs_mod.version.clone();
+                merged.nexus_version_cached = fs_mod.nexus_version_cached.clone();
             }
             result.push(merged);
         } else {

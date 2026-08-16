@@ -18,10 +18,10 @@ const localeDictionaries: Record<string, TranslationTree> = {
 let currentLocale: SupportedLocale = 'en';
 
 /**
- * Initializes i18n language preference from localStorage or browser language.
+ * Initializes i18n language preference from localStorage, AppSettings or browser language.
  */
-export function initI18n(): void {
-  const saved = localStorage.getItem('pmm_locale') as SupportedLocale | null;
+export function initI18n(preferredLocale?: string | null): void {
+  const saved = (preferredLocale || localStorage.getItem('pmm_locale')) as SupportedLocale | null;
   if (saved && localeDictionaries[saved]) {
     currentLocale = saved;
   } else {
@@ -32,6 +32,7 @@ export function initI18n(): void {
       currentLocale = 'en';
     }
   }
+  localStorage.setItem('pmm_locale', currentLocale);
   document.documentElement.lang = currentLocale;
   updateDOMTranslations();
 }
@@ -44,7 +45,7 @@ export function getLocale(): SupportedLocale {
 }
 
 /**
- * Sets the active locale, saves preference, and triggers live DOM updates.
+ * Sets the active locale, saves preference, persists to backend DB, and triggers live DOM updates.
  */
 export function setLocale(locale: SupportedLocale): void {
   if (!localeDictionaries[locale]) {
@@ -55,6 +56,11 @@ export function setLocale(locale: SupportedLocale): void {
   localStorage.setItem('pmm_locale', locale);
   document.documentElement.lang = locale;
   updateDOMTranslations();
+
+  // Persist to backend DB AppSettings
+  import('../api').then(({ setLanguage }) => {
+    setLanguage(locale).catch(err => console.error('Failed to persist language to backend DB:', err));
+  }).catch(() => {});
 }
 
 /**

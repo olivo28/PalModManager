@@ -59,6 +59,9 @@ async function init() {
     await logFromJs("JS: Iniciando script de frontend (main.ts)");
     const settings = await getSettings();
     updateState({ currentSettings: settings });
+    if (settings.language) {
+      initI18n(settings.language);
+    }
     const { updateLoadTabVisibility } = await import('./ui/loadView');
     updateLoadTabVisibility();
     const scale = settings.toolbarScale || 1.0;
@@ -274,9 +277,77 @@ function setupEventListeners() {
   });
   safeEl('launch-game-btn')?.addEventListener('click', async () => {
     const { showConfirm } = await import('./ui/confirm');
+    const { checkDependencies, checkDependenciesFull } = await import('./api');
+    const { getState } = await import('./state');
+    const state = getState();
+
+    // 1. Check if active mods need UE4SS or PalSchema that aren't installed
+    const activeMods = state.allMods.filter(m => m.enabled);
+    const hasUe4ssMods = activeMods.some(m => m.type === 'ue4ss' || m.type === 'hybrid');
+    const hasPalSchemaMods = activeMods.some(m => m.type === 'palschema' || m.type === 'hybrid');
+
+    const deps = await checkDependencies();
+
+    if (hasUe4ssMods && !deps.ue4ss_installed) {
+      const confirmed = await showConfirm(
+        t('sidebar.launch_game'),
+        t('launch.warn_missing_ue4ss'),
+        t('common.install'),
+        t('common.cancel')
+      );
+      if (confirmed) {
+        const { handleDepBadgeClick } = await import('./ui/modsView');
+        handleDepBadgeClick('ue4ss');
+      }
+      return;
+    }
+
+    if (hasPalSchemaMods && !deps.palschema_installed) {
+      const confirmed = await showConfirm(
+        t('sidebar.launch_game'),
+        t('launch.warn_missing_palschema'),
+        t('common.install'),
+        t('common.cancel')
+      );
+      if (confirmed) {
+        const { handleDepBadgeClick } = await import('./ui/modsView');
+        handleDepBadgeClick('palschema');
+      }
+      return;
+    }
+
+    // 2. Check if installed dependencies have pending updates
+    let updatePromptMessage = '';
+    const fullDeps = await checkDependenciesFull().catch(() => deps);
+    const ue4ssNeedsUpdate = fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop';
+    const palschemaNeedsUpdate = fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_version !== 'Workshop';
+
+    if (ue4ssNeedsUpdate && palschemaNeedsUpdate) {
+      updatePromptMessage = t('launch.warn_update_both', {
+        ue4ssCurrent: fullDeps.ue4ss_version || 'old',
+        ue4ssTarget: fullDeps.ue4ss_latest_date || fullDeps.ue4ss_latest_tag || 'latest',
+        palschemaCurrent: fullDeps.palschema_version || 'old',
+        palschemaTarget: fullDeps.palschema_latest_version || 'latest'
+      });
+    } else if (ue4ssNeedsUpdate) {
+      updatePromptMessage = t('launch.warn_update_ue4ss', {
+        current: fullDeps.ue4ss_version || 'old',
+        target: fullDeps.ue4ss_latest_date || fullDeps.ue4ss_latest_tag || 'latest'
+      });
+    } else if (palschemaNeedsUpdate) {
+      updatePromptMessage = t('launch.warn_update_palschema', {
+        current: fullDeps.palschema_version || 'old',
+        target: fullDeps.palschema_latest_version || 'latest'
+      });
+    }
+
+    const confirmMsg = updatePromptMessage 
+      ? `${updatePromptMessage}\n\n${t('launch.confirm')}`
+      : t('launch.confirm');
+
     const confirmed = await showConfirm(
-      t('sidebar.launch_game'),
-      t('launch.confirm'),
+      t('launch.title'),
+      confirmMsg,
       t('launch.btn_confirm'),
       t('common.cancel')
     );

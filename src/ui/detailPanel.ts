@@ -123,12 +123,17 @@ export function openDetailPanel(modId: string): void {
 
   renderGithubSection(mod);
 
-  document.getElementById('detail-install-date')!.textContent = mod.installDate !== 'unknown' ? new Date(mod.installDate).toLocaleString() : 'Unknown';
-  document.getElementById('detail-source-zip')!.textContent = mod.sourceZip || 'N/A';
+  let formattedInstallDate = t('common.none');
+  if (mod.installDate && mod.installDate !== 'unknown' && mod.installDate.trim() !== '') {
+    const d = new Date(mod.installDate);
+    formattedInstallDate = isNaN(d.getTime()) ? t('common.none') : d.toLocaleString();
+  }
+  document.getElementById('detail-install-date')!.textContent = formattedInstallDate;
+  document.getElementById('detail-source-zip')!.textContent = mod.sourceZip || t('common.none');
 
   // Root folder
   const gamePath = mod.enabled ? mod.gamePath : mod.disabledPath;
-  document.getElementById('detail-root-folder')!.textContent = gamePath;
+  document.getElementById('detail-root-folder')!.textContent = gamePath || t('common.none');
 
   // Extra companion files/folders
   const extraFilesRow = document.getElementById('detail-extra-files-row')!;
@@ -152,7 +157,7 @@ export function openDetailPanel(modId: string): void {
      mod.name.toLowerCase().includes(m.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')))
   );
   if (similar.length > 0) {
-    duplicateWarning.textContent = `Possible duplicate: ${similar.map(m => m.name).join(', ')}`;
+    duplicateWarning.textContent = t('detail.duplicate_warning', { names: similar.map(m => m.name).join(', ') });
     duplicateRow.style.display = '';
   } else {
     duplicateRow.style.display = 'none';

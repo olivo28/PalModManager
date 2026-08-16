@@ -66,6 +66,10 @@ export async function setCustomDataPath(path: string | null): Promise<AppSetting
   return invoke('set_custom_data_path', { path });
 }
 
+export async function setLanguage(language: string): Promise<AppSettings> {
+  return invoke('set_language', { language });
+}
+
 
 export async function getMods(): Promise<ModInfo[]> {
   return invoke('get_mods');

@@ -586,22 +586,22 @@ function compareVersions(a: string, b: string): number {
 
         const isNew = isWorkshopModNew(m.packageName);
         const newBadge = isNew
-          ? `<span style="font-size: 8px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 6px; border-radius: 10px; box-shadow: 0 0 8px rgba(0,188,255,0.6); margin-left: 4px; letter-spacing: 0.5px;">✨ ${escapeHtml(t('card.badge_new'))}</span>`
+          ? `<span style="font-size: 7.5px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 5px; border-radius: 8px; box-shadow: 0 0 6px rgba(0,188,255,0.5); letter-spacing: 0.3px; white-space: nowrap;">✨ ${escapeHtml(t('card.badge_new'))}</span>`
           : '';
 
         const badgeText = m.isFramework ? 'FRAMEWORK' : t('card.badge_workshop');
-        const badgeStyle = `font-size: 8px; font-weight: bold; background: ${m.isFramework ? 'rgba(0,188,255,0.1)' : 'rgba(255, 157, 0, 0.1)'}; color: ${m.isFramework ? '#00bcff' : '#ff9d00'}; border: 1px solid ${m.isFramework ? 'rgba(0,188,255,0.2)' : 'rgba(255, 157, 0, 0.2)'}; padding: 1px 4px; border-radius: 3px;`;
+        const badgeStyle = `font-size: 7.5px; font-weight: bold; background: ${m.isFramework ? 'rgba(0,188,255,0.1)' : 'rgba(255, 157, 0, 0.1)'}; color: ${m.isFramework ? '#00bcff' : '#ff9d00'}; border: 1px solid ${m.isFramework ? 'rgba(0,188,255,0.2)' : 'rgba(255, 157, 0, 0.2)'}; padding: 2px 4px; border-radius: 3px; white-space: nowrap;`;
 
         const hasUpdate = m.hasPendingUpdate || (m.isInstalled && m.installedVersion && m.installedVersion !== m.version);
         const updateBadge = hasUpdate
-          ? `<span style="font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.2); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 1px 5px; border-radius: 3px; margin-left: 4px;">▲ ${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span>`
+          ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span>`
           : '';
 
         let versionTextHtml = '';
         if (m.isInstalled) {
           if (hasUpdate) {
             versionTextHtml = `
-              <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:2px;">
+              <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:3px;">
                 <div>${escapeHtml(t('detail.installed_label'))}: <b style="color:var(--text-primary);">v${escapeHtml(m.installedVersion || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
                 <div style="font-size:9px; color:var(--text-muted);">${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
               </div>`;
@@ -627,12 +627,12 @@ function compareVersions(a: string, b: string): number {
 
         return `
           <div class="mod-card library-card workshop-card" data-package="${escapeHtml(m.packageName)}" style="position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
-            <div style="position:absolute;top:10px;right:10px;z-index:5;display:flex;align-items:center;gap:4px;">
+            <div style="position:absolute;top:8px;right:8px;z-index:5;display:flex;align-items:center;gap:3px;max-width:calc(100% - 16px);flex-wrap:wrap;justify-content:flex-end;">
               <span style="${badgeStyle}">${badgeText}</span>
               ${updateBadge}
               ${newBadge}
             </div>
-            <div style="padding-top:14px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
+            <div style="padding-top:16px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
               <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
                 ${thumb}
               </div>

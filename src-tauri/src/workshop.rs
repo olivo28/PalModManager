@@ -253,28 +253,34 @@ pub fn activate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod, force_
     let game_root = Path::new(game_path);
     let gp = crate::dependency_checker::build_game_profile(game_root);
 
-    // Perform copy depending on type
+    // Perform copy depending on type with Config Snapshot & Smart Merge preservation
     match workshop_mod.install_type {
         WorkshopInstallType::UE4SSMod => {
             let src_mod_dir = src_dir.join("UE4SS").join("Mods");
             let dest_mod_dir = gp.ue4ss_mods_dir.clone();
             if src_mod_dir.exists() {
+                let snapshot = crate::config_merge::snapshot_configs(&dest_mod_dir);
                 copy_dir_all(&src_mod_dir, &dest_mod_dir, &mut installed_files, &mut installed_dirs, game_root)
                     .map_err(|e| format!("Failed to copy UE4SSMod: {}", e))?;
+                crate::config_merge::apply_config_merge(&dest_mod_dir, &snapshot, &[]);
             }
         }
         WorkshopInstallType::PalSchemaMod => {
             let src_schema_dir = src_dir.join("PalSchema");
             let dest_schema_dir = gp.palschema_mods_dir.join(&workshop_mod.package_name);
             if src_schema_dir.exists() {
+                let snapshot = crate::config_merge::snapshot_configs(&dest_schema_dir);
                 copy_dir_all(&src_schema_dir, &dest_schema_dir, &mut installed_files, &mut installed_dirs, game_root)
                     .map_err(|e| format!("Failed to copy PalSchemaMod: {}", e))?;
+                crate::config_merge::apply_config_merge(&dest_schema_dir, &snapshot, &[]);
             }
         }
         WorkshopInstallType::LuaMod => {
             let dest_mod_dir = gp.ue4ss_mods_dir.join(&workshop_mod.package_name);
+            let snapshot = crate::config_merge::snapshot_configs(&dest_mod_dir);
             copy_dir_all(&src_dir, &dest_mod_dir, &mut installed_files, &mut installed_dirs, game_root)
                 .map_err(|e| format!("Failed to copy LuaMod: {}", e))?;
+            crate::config_merge::apply_config_merge(&dest_mod_dir, &snapshot, &[]);
             
             if force_load_order_ue4ss {
                 let mods_txt = gp.mods_txt_path.clone();

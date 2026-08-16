@@ -15,14 +15,26 @@
   z-index: 10;
 }
 
-.sidebar-logo {
-  font-size: 16px;
-  font-weight: 900;
-  color: var(--accent);
-  letter-spacing: 1px;
-  padding: 16px 0 8px;
-  writing-mode: vertical-lr;
-  text-orientation: mixed;
+.sidebar-logo-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 12px 0 6px;
+  width: 100%;
+}
+
+.sidebar-logo-img {
+  width: 36px;
+  height: 36px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 8px rgba(0, 120, 212, 0.35));
+  transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
+  cursor: pointer;
+}
+
+.sidebar-logo-img:hover {
+  transform: scale(1.1) rotate(5deg);
+  filter: drop-shadow(0 4px 14px rgba(0, 120, 212, 0.6));
 }
 
 .sidebar-tabs {

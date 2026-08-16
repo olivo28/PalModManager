@@ -130,16 +130,10 @@ export function attachCardEvents(container: HTMLElement): void {
       try {
         if (isWorkshop) {
           showToast(t('toasts.preparing_workshop_update'), 'info');
-          const { prepareWorkshopUpdateZip, analyzeZip, checkModExistsCommand } = await import('../../api');
-          const { renderInstallPreview, showInstallModal } = await import('../modal');
-          const zipPath = await prepareWorkshopUpdateZip(mod.id);
-          const analysis = await analyzeZip(zipPath);
-          const check = await checkModExistsCommand(zipPath);
-          const existingMod = check.exists && check.modInfo 
-            ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } 
-            : null;
-          renderInstallPreview(analysis, existingMod);
-          showInstallModal();
+          const { activateWorkshopMod } = await import('../../api');
+          await activateWorkshopMod(mod.id);
+          showToast(t('toasts.mod_updated', { name: mod.name }), 'success');
+          await loadMods();
         } else {
           const updateVer = getState().availableUpdates?.get(modId);
           const libEntries = getState().libraryEntries || [];

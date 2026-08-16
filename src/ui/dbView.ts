@@ -37,6 +37,7 @@ interface AppSettings {
   hideNativeMods: boolean | null;
   debugConsole: boolean | null;
   customDataPath: string | null;
+  language?: string | null;
 }
 
 interface DbSnapshot {

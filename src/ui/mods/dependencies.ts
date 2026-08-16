@@ -101,10 +101,7 @@ export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
   if (type === 'palschema' && !deps.ue4ss_installed) {
     showConfirm(t('dependencies.missing_ue4ss_for_palschema'))
       .then(async (confirmed) => {
-        if (!confirmed) {
-          showToast(t('dependencies.missing_ue4ss_for_palschema'), 'info');
-          return;
-        }
+        if (!confirmed) return;
         try {
           showToast(t('toasts.installing_dep', { dep: 'UE4SS' }), 'info');
           await installUe4ss();

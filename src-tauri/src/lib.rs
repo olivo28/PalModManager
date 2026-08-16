@@ -116,6 +116,7 @@ pub fn run() {
             settings_commands::set_force_load_order_palschema,
             settings_commands::set_custom_data_path,
             settings_commands::set_toolbar_scale,
+            settings_commands::set_language,
 
             mod_commands::get_mods,
             mod_commands::scan_mods,

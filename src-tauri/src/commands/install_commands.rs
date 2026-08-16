@@ -62,14 +62,6 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         zip_handler::DetectedModType::Unknown => "unknown",
     };
 
-    let detected_version = {
-        let filename = Path::new(&zip_path)
-            .file_name()
-            .map(|s| s.to_string_lossy().to_string())
-            .unwrap_or_default();
-        nexus::parse_mod_filename(&filename).version
-    };
-
     let mut modinfo_data = None;
     if analysis.has_info_json {
         let info_file_path = analysis.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.pmm.json"))
@@ -83,6 +75,21 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
             }
         }
     }
+
+    let detected_version = {
+        let from_info = modinfo_data.as_ref().and_then(|info| {
+            info.get("version").and_then(|v| v.as_str()).map(|s| s.to_string())
+        });
+        if from_info.is_some() {
+            from_info
+        } else {
+            let filename = Path::new(&zip_path)
+                .file_name()
+                .map(|s| s.to_string_lossy().to_string())
+                .unwrap_or_default();
+            nexus::parse_mod_filename(&filename).version
+        }
+    };
 
     if nexus_id.is_none() {
         if let Some(ref info) = modinfo_data {

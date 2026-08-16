@@ -50,6 +50,7 @@ export interface AppSettings {
   forceLoadOrderPalschema?: boolean;
   customDataPath?: string | null;
   toolbarScale?: number;
+  language?: string;
 }
 
 export interface ModFolder {

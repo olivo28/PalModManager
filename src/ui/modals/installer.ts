@@ -247,14 +247,14 @@ export function showFileTreeModal(routes: any[], modName: string): void {
   container.innerHTML = `
     <div class="modal" style="width: 600px; max-width: 90vw; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden;">
       <div class="modal-header" style="padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
-        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${escapeHtml(modName)} Files</h3>
+        <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: var(--text-primary);">${escapeHtml(modName)} - ${escapeHtml(t('installer.btn_show_files'))}</h3>
         <button id="filetree-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
       </div>
       <div class="modal-body" style="padding: 20px; overflow-y: auto; max-height: 60vh; display: flex; flex-direction: column; gap: 8px;">
         ${renderFileTreeHTML(rootNode)}
       </div>
       <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end; flex-shrink: 0;">
-        <button id="filetree-modal-close" class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">Close</button>
+        <button id="filetree-modal-close" class="btn-primary" style="padding: 6px 12px; font-size: 12px; cursor: pointer; border-radius: 4px;">${escapeHtml(t('common.close'))}</button>
       </div>
     </div>
   `;
@@ -332,12 +332,13 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   let updateHtml = '';
   if (existingMod) {
     _pendingUpdateModId = existingMod.id;
+    const existingVerStr = (existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : t('installer.unknown_version');
     updateHtml = `
-      <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
-        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);">${escapeHtml(existingMod.name)} already exists (Installed: ${(existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : 'unknown version'}).</span>
-        <div style="display:flex;gap:4px;background:var(--bg-primary);padding:2px;border-radius:5px;border:1px solid var(--border);">
-          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 10px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_update'))}</button>
-          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 10px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_new'))}</button>
+      <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}">${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}</span>
+        <div style="display:flex;gap:4px;background:var(--bg-primary);padding:2px;border-radius:5px;border:1px solid var(--border);flex-shrink:0;">
+          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 8px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_update'))}</button>
+          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 8px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_new'))}</button>
         </div>
       </div>
     `;
@@ -359,15 +360,15 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
 
   let pakDestHtml = `
     <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${manifest.hasPak ? 'block' : 'none'}; margin-top:8px;">
-      <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">Pak destination</label>
+      <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">${escapeHtml(t('installer.pak_dest_title'))}</label>
       <div class="pak-dest-options" style="display:flex;gap:12px;">
         <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
           <input type="radio" name="pak-dest" value="~mods" ${isLogicModsDefault ? '' : 'checked'} />
-          <span>~mods/ (Resource Paks)</span>
+          <span>${escapeHtml(t('installer.pak_dest_res'))}</span>
         </label>
         <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
           <input type="radio" name="pak-dest" value="logicmods" ${isLogicModsDefault ? 'checked' : ''} />
-          <span>LogicMods/ (Blueprint Logic)</span>
+          <span>${escapeHtml(t('installer.pak_dest_logic'))}</span>
         </label>
       </div>
     </div>
@@ -386,7 +387,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
           </div>
           <div style="padding:14px;display:flex;flex-direction:column;gap:8px;flex:1;">
              <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
-             <div style="font-size:10px;color:var(--text-muted)">by ${escapeHtml(analysis.nexusInfo.author)}</div>
+             <div style="font-size:10px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author }))}</div>
              <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
           </div>
        </div>
@@ -395,13 +396,13 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
           <div style="position:relative;width:100%;height:140px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
              <div style="font-size:42px;color:var(--accent);">🛠</div>
              <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
-                Local Package
+                ${escapeHtml(t('installer.local_package'))}
              </div>
           </div>
           <div style="padding:14px;display:flex;flex-direction:column;gap:8px;flex:1;">
              <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
-             <div style="font-size:10px;color:var(--text-muted)">by ${escapeHtml(analysis.modinfo.author || 'Unknown')}</div>
-             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || 'No description provided.')}</div>
+             <div style="font-size:10px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.modinfo.author || t('common.unknown') }))}</div>
+             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
           </div>
        </div>
        ` : '')}
@@ -414,39 +415,39 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px;">⚙</span>
                 <div style="display: flex; flex-direction: column; text-align: left;">
-                   <span style="font-size: 11px; font-weight: bold; color: var(--text-primary);">Config Settings Merge</span>
-                   <span id="config-diff-summary-text" style="font-size: 9px; color: var(--text-muted);">Differences detected in config files.</span>
+                   <span style="font-size: 11px; font-weight: bold; color: var(--text-primary);">${escapeHtml(t('installer.config_merge_title'))}</span>
+                   <span id="config-diff-summary-text" style="font-size: 9px; color: var(--text-muted);">${escapeHtml(t('installer.config_merge_desc'))}</span>
                 </div>
               </div>
-              <button id="view-config-diff-btn" class="btn btn-secondary" style="font-size: 10px; padding: 4px 8px; height: auto; line-height: 1; margin: 0;">Show Details</button>
+              <button id="view-config-diff-btn" class="btn btn-secondary" style="font-size: 10px; padding: 4px 8px; height: auto; line-height: 1; margin: 0;">${escapeHtml(t('installer.btn_show_details'))}</button>
            </div>
            
            <div style="display:flex;gap:12px;">
              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Mod Display Name</label>
+                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_mod_name'))}</label>
                 <input type="text" id="mod-name-input" value="${escapeHtml(existingMod ? existingMod.name : cleanName)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;" />
              </div>
              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Folder Name (Disk)</label>
+                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_folder_name'))}</label>
                 <input type="text" id="mod-folder-name-input" value="${escapeHtml(manifest.folderName)}" disabled style="width:100%;padding:8px 12px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;cursor:not-allowed;" />
              </div>
            </div>
 
            <div style="display:flex;gap:12px;">
               <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Detected Type</label>
+                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_detected_type'))}</label>
                  <input type="text" value="${escapeHtml(displayType)}" disabled style="width:100%;padding:8px 12px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;cursor:not-allowed;" />
               </div>
               <div style="width:120px;display:flex;flex-direction:column;gap:6px;">
-                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Version</label>
+                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_version'))}</label>
                  <input type="text" id="mod-version-input" value="${escapeHtml(versionVal)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;" />
               </div>
            </div>
 
            <div style="display:flex;flex-direction:column;gap:6px;">
               <div style="display:flex;justify-content:space-between;align-items:center;">
-                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">Files to install</label>
-                 <button id="view-all-files-btn" class="btn btn-secondary" style="font-size:10px;padding:2px 6px;height:auto;line-height:1;margin:0;">Show Full List</button>
+                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_files_to_install'))}</label>
+                 <button id="view-all-files-btn" class="btn btn-secondary" style="font-size:10px;padding:2px 6px;height:auto;line-height:1;margin:0;">${escapeHtml(t('installer.btn_show_full_list'))}</button>
               </div>
               <div class="manifest-files-list" style="max-height:85px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:6px;font-family:monospace;font-size:10px;display:flex;flex-direction:column;gap:4px;">
                 ${manifest.routes.map((r: any) => `
@@ -508,7 +509,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     if (!existingMod) return;
     if (isUpdate) {
       _pendingUpdateModId = existingMod.id;
-      confirmBtn.textContent = 'Update';
+      confirmBtn.textContent = t('installer.btn_update');
       if (updateModeBtn) {
         updateModeBtn.style.background = '#00bcff';
         updateModeBtn.style.color = '#fff';
@@ -524,7 +525,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
       }
     } else {
       _pendingUpdateModId = null;
-      confirmBtn.textContent = 'Install';
+      confirmBtn.textContent = t('installer.btn_install');
       if (updateModeBtn) {
         updateModeBtn.style.background = 'transparent';
         updateModeBtn.style.color = 'var(--text-secondary)';
@@ -692,7 +693,7 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
   html += `
       </div>
       <div class="modal-footer" style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; background:var(--bg-secondary); border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
-        <button id="config-diff-modal-close-btn" class="btn btn-secondary">Close</button>
+        <button id="config-diff-modal-close-btn" class="btn btn-secondary">${escapeHtml(t('common.close'))}</button>
       </div>
     </div>
   `;
@@ -761,7 +762,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
   const statusEl = document.getElementById('modal-status')!;
 
   confirmBtn.disabled = true;
-  confirmBtn.textContent = 'Install';
+  confirmBtn.textContent = t('installer.btn_install');
   statusEl.textContent = '';
 
   content.innerHTML = `
@@ -1237,7 +1238,7 @@ async function executeModInstallation(
     statusEl.textContent = 'Installation failed';
     confirmBtn.disabled = false;
     cancelBtn.disabled = false;
-    confirmBtn.textContent = _pendingUpdateModId ? 'Update' : 'Install';
+    confirmBtn.textContent = _pendingUpdateModId ? t('installer.btn_update') : t('installer.btn_install');
   }
 }
 

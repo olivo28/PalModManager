@@ -36,3 +36,54 @@ PROJECT.md
 RESUMEN.md
 palmodmanager_mods.json
 UE4SS-Palworld (3).zip
+/.agents
+skills-lock.json
+/src-tauri/scratch/mock_game_environment
+/scratch/mock_game_environment
+/scratch
+*.bak
+CHANGELOG v1.3.md
+CHANGELOG v1.3.md
+CHANGELOG_BBCODE v1.1.txt
+CHANGELOG_BBCODE v1.2.1.txt
+CHANGELOG_BBCODE v1.2.2.txt
+CHANGELOG_BBCODE v1.2.txt
+CHANGELOG_BBCODE v1.3.1.txt
+CHANGELOG_BBCODE v1.3.txt
+CHANGELOG_BBCODE v1.4.txt
+CHANGELOG_TEXT v1.2.2.txt
+CHANGELOG_TEXT v1.3.1.txt
+CHANGELOG_TEXT v1.3.txt
+CHANGELOG_TEXT v1.4.txt
+CHANGELOG v1.3.md
+CHANGELOG_BBCODE v1.3.txt
+DISCORD_FAQ.md
+junction_preservation_spec.md
+nexus_api_reference.md
+NEXUSMODS_DESCRIPTION.bbcode
+PalModManager_Source.zip
+per-profile settings plan.md
+PLAN_v1.3.md
+PLAN_v1.4_v1.5.md
+roadmap_sugerencias.md
+SCANNER_PLAN.md
+scratch/test_installation_simulation.rs
+smart merge plan.md
+src-tauri/2.txt
+src-tauri/profiles/default/profile.json
+
+# --- Agent Plans, Docs & Changelogs ---
+*PLAN*.md
+*plan*.md
+*roadmap*.md
+*.bbcode
+CHANGELOG_TEXT v1.5.txt
+CHANGELOG_BBCODE v1.5.txt
+src-tauri/profiles/
+
+altermatic_integration_plan.md
+
+v1.5.1_safety_backup_plan.md
+i18n_multilanguage_proposal.md
+extracted_i18n_strings.md
+
