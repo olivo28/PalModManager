@@ -349,6 +349,17 @@ async function handleSaveRecord(): Promise<void> {
 
     showToast(t('toasts.settings_saved'), 'success');
 
+    if (_selectedRecordType === 'settings') {
+      const { getSettings } = await import('../api');
+      const updatedSettings = await getSettings();
+      const { updateState } = await import('../state');
+      updateState({ currentSettings: updatedSettings });
+      if (updatedSettings.language) {
+        const { initI18n } = await import('../utils/i18n');
+        initI18n(updatedSettings.language);
+      }
+    }
+
     // Ask if user wants to re-scan mods
     const { showConfirm } = await import('./confirm');
     const doRescan = await showConfirm(

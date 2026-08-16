@@ -41,6 +41,9 @@ export function navigateTo(tab: AppTab): void {
     if (tab === 'load') {
       import('./loadView').then(m => m.renderLoadView());
     }
+    if (tab === 'db') {
+      import('./dbView').then(m => m.renderDbView());
+    }
   } else {
     // Always hide custom panels first
     const dbPanel = document.getElementById('db-view');

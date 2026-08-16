@@ -333,8 +333,21 @@ export async function handleSaveSettings(): Promise<void> {
       }
     }
 
+    const langSelect = document.getElementById('settings-language-select') as HTMLSelectElement | null;
+    if (langSelect && langSelect.value) {
+      const { setLanguage } = await import('../../api');
+      const settings = await setLanguage(langSelect.value);
+      updateState({ currentSettings: settings });
+    }
+
     closeSettingsModal();
     showToast(t('toasts.settings_saved'), 'success');
+
+    // If db view is currently active, reload snapshot immediately
+    if (state.activeTab === 'db') {
+      const { renderDbView } = await import('../dbView');
+      await renderDbView();
+    }
 
     const { loadGameVersion, loadDependencies, loadMods } = await import('../modsView');
     loadGameVersion();
