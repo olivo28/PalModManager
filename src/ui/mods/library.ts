@@ -147,6 +147,9 @@ export function setupLibraryHandlers(): void {
 
       _activeLibrarySubTab = tab;
 
+      updateState({ selectedLibraryIds: new Set() });
+      updateLibraryBulkBar();
+
       if (searchInput) {
         searchInput.value = '';
         _librarySearchQuery = '';

@@ -308,6 +308,10 @@ export async function toggleFolderMods(profileId: string, folderId: string, enab
   return invoke('toggle_folder_mods_command', { profileId, folderId, enabled });
 }
 
+export async function reorderModFolders(profileId: string, folderIds: string[]): Promise<Profile> {
+  return invoke('reorder_mod_folders_command', { profileId, folderIds });
+}
+
 // Dependencies (UE4SS / PalSchema)
 export async function checkDependencies(): Promise<DependencyStatus> {
   return invoke('check_dependencies');

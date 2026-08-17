@@ -11,6 +11,7 @@
   "app": {
     "windows": [
       {
+        "label": "main",
         "title": "PalModManager",
         "width": 1100,
         "height": 700,
@@ -18,7 +19,9 @@
         "minHeight": 500,
         "resizable": true,
         "decorations": true,
-        "dragDropEnabled": true
+        "dragDropEnabled": true,
+        "visible": false,
+        "backgroundColor": "#1e1e1e"
       }
     ],
     "security": {

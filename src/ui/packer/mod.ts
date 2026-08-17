@@ -180,16 +180,19 @@ function setupPackerEventListeners(): void {
       btn.textContent = '...';
       showToast(t('packer.toast_packing_wait'), 'info');
 
-      const overridesRecord: Record<string, string> = {};
-      targetOverrides.forEach((v, k) => { overridesRecord[k] = v; });
-      backupPaths.forEach((v, k) => { overridesRecord[`__SKIP_ORIGINAL__:${k}`] = v; });
-      virtualFolders.forEach(vf => { overridesRecord[`__VIRTUAL_DIR__:${vf}`] = '__VIRTUAL_DIR__'; });
+      const filesToPack = stagedFiles
+        .filter(f => f.targetPath !== '__SKIP__')
+        .map(f => ({
+          sourcePath: f.sourcePath,
+          relativePath: f.relativePath,
+          size: f.size,
+          targetPath: f.targetPath
+        }));
 
-      const res = await invoke<string>('pack_staged_mod', {
-        destPath,
+      const res = await invoke<string>('pack_mod', {
+        files: filesToPack,
         metadata,
-        sourcePaths,
-        targetPathsOverride: overridesRecord,
+        outputPath: destPath,
         format
       });
 

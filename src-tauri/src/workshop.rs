@@ -268,12 +268,15 @@ pub fn activate_workshop_mod(game_path: &str, workshop_mod: &WorkshopMod, force_
         WorkshopInstallType::PalSchemaMod => {
             let src_schema_dir = src_dir.join("PalSchema");
             let dest_schema_dir = gp.palschema_mods_dir.join(&workshop_mod.package_name);
+            let snapshot = crate::config_merge::snapshot_configs(&dest_schema_dir);
             if src_schema_dir.exists() {
-                let snapshot = crate::config_merge::snapshot_configs(&dest_schema_dir);
                 copy_dir_all(&src_schema_dir, &dest_schema_dir, &mut installed_files, &mut installed_dirs, game_root)
                     .map_err(|e| format!("Failed to copy PalSchemaMod: {}", e))?;
-                crate::config_merge::apply_config_merge(&dest_schema_dir, &snapshot, &[]);
+            } else {
+                copy_dir_all(&src_dir, &dest_schema_dir, &mut installed_files, &mut installed_dirs, game_root)
+                    .map_err(|e| format!("Failed to copy PalSchemaMod: {}", e))?;
             }
+            crate::config_merge::apply_config_merge(&dest_schema_dir, &snapshot, &[]);
         }
         WorkshopInstallType::LuaMod => {
             let dest_mod_dir = gp.ue4ss_mods_dir.join(&workshop_mod.package_name);

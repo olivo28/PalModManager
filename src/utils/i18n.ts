@@ -74,6 +74,34 @@ export function setLocale(locale: SupportedLocale): void {
   document.documentElement.lang = locale;
   updateDOMTranslations();
 
+  // Re-render active view and dynamic components immediately
+  try {
+    import('../state').then(({ getState }) => {
+      const state = getState();
+      // Re-render mods view
+      import('../ui/modsView').then(m => {
+        m.renderModsView();
+        m.renderProfileList();
+        if (state.dependencies) {
+          m.renderDependencyBadges(state.dependencies);
+        }
+      }).catch(() => {});
+
+      // Re-render active tab view
+      if (state.activeTab === 'library') {
+        import('../ui/modsView').then(m => m.renderLibraryView()).catch(() => {});
+      } else if (state.activeTab === 'load') {
+        import('../ui/loadView').then(m => m.renderLoadView()).catch(() => {});
+      } else if (state.activeTab === 'scanner') {
+        import('../ui/scannerView').then(m => m.renderScannerView()).catch(() => {});
+      } else if (state.activeTab === 'db') {
+        import('../ui/dbView').then(m => m.renderDbView()).catch(() => {});
+      }
+    }).catch(() => {});
+  } catch (err) {
+    console.error('Error refreshing views on locale change:', err);
+  }
+
   // Persist to backend DB AppSettings
   import('../api').then(({ setLanguage }) => {
     setLanguage(locale).catch(err => console.error('Failed to persist language to backend DB:', err));

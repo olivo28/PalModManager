@@ -91,8 +91,16 @@ async function init() {
     setupEventListeners();
     setupEditorFsWatcher();
     initPackerView();
+
+    // Reveal the window smoothly once DOM and initial UI are fully ready
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      getCurrentWindow().show().catch(() => {});
+    }).catch(() => {});
   } catch (e) {
     console.error('Error initializing:', e);
+    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+      getCurrentWindow().show().catch(() => {});
+    }).catch(() => {});
   }
   console.timeEnd('init');
   // Defer slow scans so UI renders instantly
@@ -437,9 +445,17 @@ function setupEventListeners() {
     });
   });
 
-  document.querySelectorAll('.sort-btn').forEach((btn) => {
-    btn.addEventListener('click', () => handleSort(btn as HTMLButtonElement));
-  });
+  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+  if (sortSelect) {
+    const current = getState().currentSort;
+    sortSelect.value = `${current.field}:${current.asc ? 'asc' : 'desc'}`;
+    sortSelect.addEventListener('change', () => {
+      const val = sortSelect.value;
+      const [field, dir] = val.split(':');
+      updateState({ currentSort: { field, asc: dir === 'asc' } });
+      renderModsView();
+    });
+  }
 
   // Layout Toggle
   const gridBtn = document.getElementById('layout-grid-btn');

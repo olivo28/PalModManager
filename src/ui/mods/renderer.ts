@@ -222,6 +222,10 @@ export function renderModsView(): void {
           asc = !currentSort.asc;
         }
         updateState({ currentSort: { field: sortField, asc } });
+        const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+        if (sortSelect) {
+          sortSelect.value = `${sortField}:${asc ? 'asc' : 'desc'}`;
+        }
         renderModsView();
       });
     });

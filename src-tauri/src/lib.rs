@@ -172,6 +172,7 @@ pub fn run() {
             profile_commands::rename_mod_folder_command,
             profile_commands::add_mod_to_folder_command,
             profile_commands::toggle_folder_mods_command,
+            profile_commands::reorder_mod_folders_command,
             dependency_commands::check_dependencies,
             dependency_commands::clean_conflict_dlls,
             dependency_commands::reset_workshop_cache,
@@ -227,6 +228,7 @@ pub fn run() {
                 if let Some(true) = settings.window_maximized {
                     let _ = window.maximize();
                 }
+                let _ = window.show();
             }
 
             // Spawn background thread to watch the Steam Workshop mods folder for changes

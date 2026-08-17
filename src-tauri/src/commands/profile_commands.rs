@@ -442,3 +442,56 @@ pub fn clear_profile_command(
     Ok(data.profiles.clone())
 }
 
+#[tauri::command]
+pub fn reorder_mod_folders_command(
+    profile_id: String,
+    folder_ids: Vec<String>,
+    state: State<AppState>,
+) -> Result<Profile, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let profile = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_idx = data.profiles.iter().position(|p| p.id == profile_id)
+            .ok_or_else(|| "Profile not found".to_string())?;
+
+        let current_folders = std::mem::take(&mut data.profiles[p_idx].mod_folders);
+        let mut reordered: Vec<crate::models::ModFolder> = Vec::new();
+
+        // Place matching folders in requested order
+        for fid in &folder_ids {
+            if let Some(pos) = current_folders.iter().position(|f| &f.id == fid) {
+                if !reordered.iter().any(|f| &f.id == fid) {
+                    reordered.push(current_folders[pos].clone());
+                }
+            }
+        }
+
+        // Append any remaining folders not specified in folder_ids
+        for folder in current_folders {
+            if !reordered.iter().any(|f| f.id == folder.id) {
+                reordered.push(folder);
+            }
+        }
+
+        data.profiles[p_idx].mod_folders = reordered;
+
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &profile_id);
+        if let Ok(json) = serde_json::to_string_pretty(&data.profiles[p_idx]) {
+            let _ = std::fs::write(p_dir.join("profile.json"), json);
+        }
+        data.profiles[p_idx].clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
+
+    Ok(profile)
+}
+

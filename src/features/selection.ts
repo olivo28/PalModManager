@@ -68,9 +68,8 @@ export function setupSelection(): void {
     if (card) {
       if (isLibrary) {
         handleLibraryCardClick(card, e);
-      } else {
-        handleCardClick(card, e);
       }
+      // For modsContainer, let pointerdown and click handle selection without blocking drag
       return;
     }
 
@@ -128,7 +127,8 @@ export function setupSelection(): void {
 
     cards.forEach((cardEl) => {
       const card = cardEl as HTMLElement;
-      const id = card.dataset.id!;
+      const id = card.dataset.id;
+      if (!id) return;
       const rect = card.getBoundingClientRect();
       const cardRect = {
         left: rect.left + window.scrollX,
@@ -156,7 +156,8 @@ export function setupSelection(): void {
       const libCards = activeDragTargetContainer.querySelectorAll('.library-card');
       libCards.forEach((cardEl) => {
         const card = cardEl as HTMLElement;
-        const id = card.dataset.id!;
+        const id = card.dataset.id;
+        if (!id) return;
         const isSel = selectedIds.has(id);
         card.classList.toggle('selected', isSel);
         const chk = card.querySelector('.library-card-checkbox') as HTMLInputElement | null;
@@ -186,7 +187,10 @@ export function setupSelection(): void {
 }
 
 function handleLibraryCardClick(card: HTMLElement, e: MouseEvent): void {
-  const id = card.dataset.id!;
+  if (card.classList.contains('workshop-card')) return;
+  const id = card.dataset.id;
+  if (!id) return;
+
   const state = getState();
   const selectedIds = new Set(state.selectedLibraryIds);
 
@@ -206,9 +210,10 @@ function handleLibraryCardClick(card: HTMLElement, e: MouseEvent): void {
   }
 
   updateState({ selectedLibraryIds: selectedIds });
-  const libCards = document.querySelectorAll('.library-card');
+  const libCards = document.querySelectorAll('.library-card:not(.workshop-card)');
   libCards.forEach((cardEl) => {
-    const cId = (cardEl as HTMLElement).dataset.id!;
+    const cId = (cardEl as HTMLElement).dataset.id;
+    if (!cId) return;
     const isSel = selectedIds.has(cId);
     cardEl.classList.toggle('selected', isSel);
     const chk = cardEl.querySelector('.library-card-checkbox') as HTMLInputElement | null;
@@ -219,7 +224,7 @@ function handleLibraryCardClick(card: HTMLElement, e: MouseEvent): void {
   });
 }
 
-function handleCardClick(card: HTMLElement, e: MouseEvent): void {
+export function handleCardClick(card: HTMLElement, e: MouseEvent): void {
   const id = card.dataset.id!;
   const state = getState();
   const selectedIds = new Set(state.selectedModIds);

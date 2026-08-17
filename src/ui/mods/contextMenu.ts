@@ -431,11 +431,26 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
   const toggleLabel = allEnabled ? t('context.folder_disable_all') : t('context.folder_enable_all');
   const toggleIcon = allEnabled ? '⏸' : '▶';
 
+  const folders = currentProfile?.mod_folders || [];
+  const folderIndex = folders.findIndex(f => f.id === folderId);
+  const canMoveUp = folderIndex > 0;
+  const canMoveDown = folderIndex !== -1 && folderIndex < folders.length - 1;
+
   const html = `
     <button type="button" class="context-menu-item" data-action="enter-folder">
       <span class="ctx-icon">📂</span>
       ${escapeHtml(t('context.folder_enter'))}
     </button>
+    ${canMoveUp ? `
+    <button type="button" class="context-menu-item" data-action="move-folder-up">
+      <span class="ctx-icon">▲</span>
+      ${escapeHtml(t('context.folder_move_up'))}
+    </button>` : ''}
+    ${canMoveDown ? `
+    <button type="button" class="context-menu-item" data-action="move-folder-down">
+      <span class="ctx-icon">▼</span>
+      ${escapeHtml(t('context.folder_move_down'))}
+    </button>` : ''}
     <button type="button" class="context-menu-item" data-action="rename-folder">
       <span class="ctx-icon">✏</span>
       ${escapeHtml(t('context.folder_rename'))}
@@ -467,6 +482,24 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
       if (action === 'enter-folder') {
         updateState({ currentFolderId: folderId });
         renderModsView();
+      } else if (action === 'move-folder-up' || action === 'move-folder-down') {
+        const fList = [...folders];
+        const idx = fList.findIndex(f => f.id === folderId);
+        if (idx === -1) return;
+        const targetIdx = action === 'move-folder-up' ? idx - 1 : idx + 1;
+        if (targetIdx < 0 || targetIdx >= fList.length) return;
+        const [moved] = fList.splice(idx, 1);
+        fList.splice(targetIdx, 0, moved);
+        try {
+          const { reorderModFolders } = await import('../../api');
+          const updatedProfile = await reorderModFolders(state.currentProfileId, fList.map(f => f.id));
+          const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
+          updateState({ profiles: updatedProfiles });
+          const { loadMods } = await import('./loader');
+          await loadMods();
+        } catch (err) {
+          showToast(String(err), 'error');
+        }
       } else if (action === 'rename-folder') {
         const renameBtn = document.querySelector(`.folder-card[data-id="${folderId}"] .rename-btn`) as HTMLElement | null;
         renameBtn?.click();

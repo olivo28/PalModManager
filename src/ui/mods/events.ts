@@ -11,12 +11,17 @@ import { t } from '../../utils/i18n';
 
 export function attachCardEvents(container: HTMLElement): void {
   container.querySelectorAll('.mod-card').forEach((card) => {
-    // Single click for folder accordion in list view
+    // Single click for folder accordion in list view & selection
     card.addEventListener('click', (e) => {
-      if ((e.target as HTMLElement).closest('.toggle-switch, .folder-toggle-input, .card-toggle-input, .mod-folder-btn, button, input, a')) return;
+      if ((e.target as HTMLElement).closest('.toggle-switch, .folder-toggle-input, .card-toggle-input, .mod-folder-btn, button, input, a, select, .folder-card-actions')) return;
       const type = (card as HTMLElement).dataset.type;
       const id = (card as HTMLElement).dataset.id!;
       const state = getState();
+
+      // Trigger selection on click
+      import('../../features/selection').then(({ handleCardClick }) => {
+        handleCardClick(card as HTMLElement, e as MouseEvent);
+      }).catch(() => {});
 
       if (type === 'folder' && state.viewLayout === 'list') {
         const collapsed = new Set(state.collapsedFolderIds || []);

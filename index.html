@@ -5,6 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PalModManager</title>
+  <link rel="icon" type="image/png" href="/src/assets/logo.png" />
   <link rel="stylesheet" href="/src/styles/main.css" />
   <style>
     #app-loading {
@@ -22,9 +23,28 @@
       gap: 16px;
     }
 
+    .loading-logo {
+      width: 72px;
+      height: 72px;
+      object-fit: contain;
+      animation: pulse-glow 1.5s ease-in-out infinite alternate;
+      filter: drop-shadow(0 0 16px rgba(0, 120, 212, 0.4));
+    }
+
+    @keyframes pulse-glow {
+      from {
+        transform: scale(0.96);
+        filter: drop-shadow(0 0 8px rgba(0, 120, 212, 0.3));
+      }
+      to {
+        transform: scale(1.04);
+        filter: drop-shadow(0 0 20px rgba(0, 120, 212, 0.6));
+      }
+    }
+
     .loading-spinner {
-      width: 32px;
-      height: 32px;
+      width: 24px;
+      height: 24px;
       border: 2px solid rgba(0, 120, 212, 0.2);
       border-top-color: #0078d4;
       border-radius: 50%;
@@ -48,12 +68,15 @@
 
 <body>
   <div id="app-loading">
+    <img src="/src/assets/logo.png" alt="PalModManager Logo" class="loading-logo" />
     <div class="loading-spinner"></div>
     <div class="loading-text">PalModManager</div>
   </div>
   <div id="app" style="display:none">
     <nav id="sidebar">
-      <div class="sidebar-logo">PMM</div>
+      <div class="sidebar-logo-container">
+        <img id="sidebar-logo-btn" src="/src/assets/logo.png" alt="PMM Logo" class="sidebar-logo-img" title="About PalModManager & Legal Information" data-i18n-title="sidebar.logo_title" />
+      </div>
       <div class="sidebar-tabs">
         <button class="sidebar-tab active" data-tab="mods" title="Mods" data-i18n-title="sidebar.tab_mods_title">
           <span class="sidebar-tab-icon">⊞</span>
@@ -91,7 +114,7 @@
           <span class="sidebar-tab-icon">▶</span>
           <span class="sidebar-tab-label" data-i18n="sidebar.launch_game">Play</span>
         </button>
-        <div id="sidebar-version" class="sidebar-version">V1.5.0</div>
+        <div id="sidebar-version" class="sidebar-version">V1.5.1</div>
         <button id="settings-btn" class="sidebar-btn" title="Settings" data-i18n-title="sidebar.settings_title">⚙</button>
       </div>
     </nav>
@@ -129,10 +152,14 @@
             <input type="text" id="search-input" placeholder="Search mods..." title="Filter mods by name or author" data-i18n-placeholder="mods.search_placeholder" data-i18n-title="mods.search_title" />
           </div>
           <div id="sort-bar">
-            <button class="sort-btn active" data-sort="name" title="Sort by Name (A-Z / Z-A)" data-i18n-title="mods.sort_name_title">N <span class="arrow">▲</span></button>
-            <button class="sort-btn" data-sort="type" title="Sort by Mod Type (UE4SS, PalSchema, Pak, LogicMods)" data-i18n-title="mods.sort_type_title">T <span class="arrow">▲</span></button>
-            <button class="sort-btn" data-sort="date" title="Sort by Installation Date" data-i18n-title="mods.sort_date_title">D <span class="arrow">▼</span></button>
-            <button class="sort-btn" data-sort="status" title="Sort by Status (Enabled / Disabled)" data-i18n-title="mods.sort_status_title">S <span class="arrow">▲</span></button>
+            <select id="sort-select" class="sort-select" title="Select mod sorting order" data-i18n-title="mods.sort_select_title">
+              <option value="name:asc" data-i18n="mods.sort_name_asc">Name (A → Z)</option>
+              <option value="name:desc" data-i18n="mods.sort_name_desc">Name (Z → A)</option>
+              <option value="date:desc" data-i18n="mods.sort_date_desc">Date (Newest First)</option>
+              <option value="date:asc" data-i18n="mods.sort_date_asc">Date (Oldest First)</option>
+              <option value="type:asc" data-i18n="mods.sort_type_asc">Type (UE4SS / Pak / etc.)</option>
+              <option value="status:desc" data-i18n="mods.sort_status_desc">Status (Active First)</option>
+            </select>
           </div>
           <div id="layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
             <button id="layout-grid-btn" class="layout-btn active" title="Grid View (Cards)" data-i18n-title="mods.layout_grid_title">⊞</button>
@@ -612,6 +639,10 @@
               <select id="settings-language-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                 <option value="en">English (US)</option>
                 <option value="es">Español</option>
+                <option value="pt">Português (Brasil)</option>
+                <option value="zh-CN">简体中文 (Chinese Simplified)</option>
+                <option value="ja">日本語 (Japanese)</option>
+                <option value="ko">한국어 (Korean)</option>
               </select>
             </div>
           </div>
@@ -674,6 +705,139 @@
         </div>
         <div class="modal-footer">
           <button id="workshop-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ABOUT & LEGAL MODAL -->
+    <div id="about-modal" class="modal-overlay">
+      <div class="modal" style="width: 720px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
+        <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 16px 20px;">
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <img src="/src/assets/logo.png" alt="PMM" style="width: 32px; height: 32px; object-fit: contain;" />
+            <div>
+              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);" data-i18n="about.title">About PalModManager</h3>
+              <div style="font-size: 11px; color: var(--text-muted);" data-i18n="about.subtitle">Mod Manager & Developer Toolkit for Palworld</div>
+            </div>
+          </div>
+          <button class="modal-close-btn" id="about-modal-close-x">✕</button>
+        </div>
+
+        <div class="about-tabs-bar">
+          <button class="about-tab-btn active" data-about-tab="overview" data-i18n="about.tab_overview">Overview</button>
+          <button class="about-tab-btn" data-about-tab="disclaimer" data-i18n="about.tab_disclaimer">Disclaimer</button>
+          <button class="about-tab-btn" data-about-tab="eula" data-i18n="about.tab_eula">Terms & EULA</button>
+          <button class="about-tab-btn" data-about-tab="license" data-i18n="about.tab_license">License</button>
+          <button class="about-tab-btn" data-about-tab="credits" data-i18n="about.tab_credits">Credits</button>
+        </div>
+
+        <div class="modal-body" id="about-modal-body" style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
+          <!-- OVERVIEW TAB -->
+          <div class="about-tab-pane" id="about-pane-overview">
+            <div style="display: flex; gap: 20px; align-items: center; background: var(--bg-secondary); padding: 18px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
+              <img src="/src/assets/logo.png" alt="PMM" style="width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,188,255,0.35));" />
+              <div style="display: flex; flex-direction: column; gap: 5px;">
+                <div style="font-size: 20px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px;">PalModManager</div>
+                <div style="font-size: 12px; color: var(--accent); font-weight: 700;"><span data-i18n="about.version_label">Version:</span> v1.5.1</div>
+                <div style="font-size: 12px; color: var(--text-primary); font-weight: 600;"><span data-i18n="about.author_label" style="color:var(--text-muted); font-weight:normal;">Developer:</span> Olivo28</div>
+                <div style="font-size: 12px; color: var(--text-muted);"><span data-i18n="about.license_label">License:</span> MIT (Open Source)</div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 12px; margin-top: 14px;">
+              <button id="about-open-github" class="btn-secondary" style="flex: 1; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600;">
+                <span>🐙</span> <span data-i18n="about.github_repo">GitHub Repository</span>
+              </button>
+              <button id="about-open-nexus" class="btn-secondary" style="flex: 1; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600;">
+                <span>🌐</span> <span data-i18n="about.nexus_page">Nexus Mods Page</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- DISCLAIMER TAB -->
+          <div class="about-tab-pane" id="about-pane-disclaimer" style="display: none;">
+            <div style="background: rgba(255, 170, 0, 0.06); border: 1px solid rgba(255, 170, 0, 0.25); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px;">
+              <h4 style="margin: 0 0 8px; color: #ffaa00; font-size: 14px; font-weight: 700;" data-i18n="about.disclaimer_title">Legal Disclaimer & Trademarks</h4>
+              <p style="margin: 0 0 10px;" data-i18n="about.disclaimer_text_1"></p>
+              <p style="margin: 0;" data-i18n="about.disclaimer_text_2"></p>
+            </div>
+            <div style="background: rgba(0, 188, 255, 0.06); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 8px; padding: 14px 16px;">
+              <h4 style="margin: 0 0 8px; color: var(--accent); font-size: 14px; font-weight: 700;" data-i18n="about.nexus_policy_title">Nexus Mods Policy Compliance</h4>
+              <p style="margin: 0;" data-i18n="about.nexus_policy_text"></p>
+            </div>
+          </div>
+
+          <!-- EULA TAB -->
+          <div class="about-tab-pane" id="about-pane-eula" style="display: none;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+              <h4 style="margin: 0 0 10px; color: var(--text-primary); font-size: 14px; font-weight: 700;" data-i18n="about.eula_title">User Responsibility & Usage Terms</h4>
+              <p style="margin: 0 0 12px;" data-i18n="about.eula_text_1"></p>
+              <p style="margin: 0; color: #ffaa00; font-weight: 600;" data-i18n="about.eula_text_2"></p>
+            </div>
+          </div>
+
+          <!-- LICENSE TAB -->
+          <div class="about-tab-pane" id="about-pane-license" style="display: none;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+              <h4 style="margin: 0 0 10px; color: var(--text-primary); font-size: 14px; font-weight: 700;" data-i18n="about.license_title">Software License & Distribution Terms</h4>
+              <p style="margin: 0 0 12px;" data-i18n="about.license_text"></p>
+              <pre style="margin: 0; font-family: monospace; font-size: 11px; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; color: var(--text-muted); line-height: 1.5;">
+PalModManager License
+
+Copyright (c) 2026 Olivo28
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to use,
+run, and share the Software for personal and non-commercial purposes only,
+subject to the following conditions:
+
+1. NON-COMMERCIAL USE: The Software must not be sold, rented, monetized, or
+   included behind paywalls, subscription tiers, or paid bundles.
+2. OFFICIAL DISTRIBUTION: To ensure user safety, integrity, and timely security
+   updates, users are strongly encouraged to obtain and verify releases exclusively
+   through official project channels (GitHub Releases / Nexus Mods).
+3. NO WARRANTY: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</pre>
+            </div>
+          </div>
+
+          <!-- CREDITS TAB -->
+          <div class="about-tab-pane" id="about-pane-credits" style="display: none;">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
+              <h4 style="margin: 0 0 12px; color: var(--text-primary); font-size: 14px; font-weight: 700;" data-i18n="about.credits_title">Credits</h4>
+              <div id="about-credits-list" style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; line-height: 1.6;">
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="color: var(--accent); font-weight: bold;">•</span>
+                  <div><strong style="color: var(--text-primary);">Pocketpair, Inc.:</strong> <span data-i18n="about.credit_pocketpair">Creators and developers of Palworld.</span></div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="color: var(--accent); font-weight: bold;">•</span>
+                  <div><strong style="color: var(--text-primary);">Okaetsu:</strong> <span data-i18n="about.credit_okaetsu">Creator of PalSchema and maintainer of the dedicated UE4SS Palworld fork.</span></div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="color: var(--accent); font-weight: bold;">•</span>
+                  <div><strong style="color: var(--text-primary);">UE4SS Team:</strong> <span data-i18n="about.credit_ue4ss">The original creators and developers of Unreal Engine 4/5 Scripting System.</span></div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="color: var(--accent); font-weight: bold;">•</span>
+                  <div><strong style="color: var(--text-primary);">Valve Corporation:</strong> <span data-i18n="about.credit_valve">Creators of Steam and the Steam Workshop platform.</span></div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="color: var(--accent); font-weight: bold;">•</span>
+                  <div><strong style="color: var(--text-primary);">Nexus Mods:</strong> <span data-i18n="about.credit_nexus">For providing the modding platform and public API for the community.</span></div>
+                </div>
+                <div style="display: flex; gap: 8px; align-items: flex-start;">
+                  <span style="color: var(--accent); font-weight: bold;">•</span>
+                  <div><strong style="color: var(--text-primary);">Palworld Modding Community:</strong> <span data-i18n="about.credit_community">All mod authors, creators, testers, and players supporting the ecosystem.</span></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 12px 20px;">
+          <button id="about-modal-close" class="btn-primary" data-i18n="common.close">Close</button>
         </div>
       </div>
     </div>

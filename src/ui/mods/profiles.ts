@@ -186,18 +186,18 @@ export function showInputModal(title: string, message: string, defaultValue: str
     overlay.className = 'modal-overlay visible';
     overlay.style.zIndex = '1500';
     overlay.innerHTML = `
-      <div class="modal" style="width: 400px; max-width: 90vw;">
-        <div class="modal-header">
-          <h3>${escapeHtml(title)}</h3>
-          <button class="modal-close-btn">✕</button>
+      <div class="modal" style="width: 420px; max-width: 90vw; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
+        <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--bg-primary); display: flex; align-items: center; justify-content: space-between;">
+          <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary);">${escapeHtml(title)}</h3>
+          <button class="modal-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 4px; transition: color 0.15s;">✕</button>
         </div>
-        <div class="modal-body" style="gap:12px;padding:20px;">
-          <label style="font-size:12px;color:var(--text-secondary);">${escapeHtml(message)}</label>
-          <input type="text" class="input-field modal-input" value="${escapeHtml(defaultValue)}" style="width:100%;box-sizing:border-box;" />
+        <div class="modal-body" style="gap: 8px; padding: 18px; display: flex; flex-direction: column;">
+          <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">${escapeHtml(message)}</label>
+          <input type="text" class="modal-input" value="${escapeHtml(defaultValue)}" style="width: 100%; box-sizing: border-box; background: var(--bg-primary); border: 1px solid var(--border); border-radius: var(--radius, 4px); padding: 8px 12px; font-size: 13px; font-weight: 500; color: var(--text-primary); outline: none; transition: border-color 0.2s, box-shadow 0.2s;" />
         </div>
-        <div class="modal-footer" style="padding:16px 20px;">
-          <button class="btn-secondary modal-cancel-btn">${escapeHtml(t('common.cancel'))}</button>
-          <button class="btn-primary modal-confirm-btn">${escapeHtml(t('common.save'))}</button>
+        <div class="modal-footer" style="padding: 12px 18px; border-top: 1px solid var(--border); background: var(--bg-primary); display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="modal-cancel-btn btn-secondary" style="padding: 6px 14px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">${escapeHtml(t('common.cancel'))}</button>
+          <button class="modal-confirm-btn btn-primary" style="padding: 6px 16px; border-radius: 4px; font-size: 12px; font-weight: 600; cursor: pointer;">${escapeHtml(t('common.save'))}</button>
         </div>
       </div>
     `;
@@ -208,6 +208,18 @@ export function showInputModal(title: string, message: string, defaultValue: str
     const confirmBtn = overlay.querySelector('.modal-confirm-btn') as HTMLButtonElement;
     const cancelBtn = overlay.querySelector('.modal-cancel-btn') as HTMLButtonElement;
     const closeBtn = overlay.querySelector('.modal-close-btn') as HTMLButtonElement;
+
+    input.addEventListener('focus', () => {
+      input.style.borderColor = 'var(--accent)';
+      input.style.boxShadow = '0 0 0 1px var(--accent-dim, rgba(0,120,212,0.3))';
+    });
+    input.addEventListener('blur', () => {
+      input.style.borderColor = 'var(--border)';
+      input.style.boxShadow = 'none';
+    });
+
+    closeBtn.addEventListener('mouseenter', () => { closeBtn.style.color = 'var(--text-primary)'; });
+    closeBtn.addEventListener('mouseleave', () => { closeBtn.style.color = 'var(--text-muted)'; });
 
     input.focus();
     input.select();
@@ -225,20 +237,45 @@ export function showInputModal(title: string, message: string, defaultValue: str
       if (e.key === 'Enter') cleanup(input.value);
       if (e.key === 'Escape') cleanup(null);
     });
+
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) cleanup(null);
+    });
   });
 }
+
+let _isSwitchingProfile = false;
 
 export async function handleProfileChange(profileId: string): Promise<void> {
   const { currentProfileId, profiles } = getState();
   if (profileId === currentProfileId) return;
+  if (_isSwitchingProfile) {
+    showToast(t('toasts.profile_switching_busy'), 'warning');
+    return;
+  }
+  _isSwitchingProfile = true;
+
+  // Disable switch buttons while processing
+  document.querySelectorAll<HTMLButtonElement>('.profile-switch-btn, .profile-item').forEach(el => {
+    el.style.pointerEvents = 'none';
+    el.style.opacity = '0.6';
+  });
+
   try {
     const { confirmDiscardOrSave, clearOriginalContent } = await import('../editorView');
     const proceed = await confirmDiscardOrSave();
-    if (!proceed) return;
+    if (!proceed) {
+      _isSwitchingProfile = false;
+      document.querySelectorAll<HTMLButtonElement>('.profile-switch-btn, .profile-item').forEach(el => {
+        el.style.pointerEvents = '';
+        el.style.opacity = '';
+      });
+      return;
+    }
 
     const targetProf = profiles.find(p => p.id === profileId);
     const targetName = targetProf ? targetProf.name : profileId;
-    showToast(t('toasts.profile_switched', { name: targetName }), 'info');
+    showToast(t('toasts.profile_switching', { name: targetName }), 'info');
     const mods = await switchProfile(profileId);
 
     clearOriginalContent();
@@ -273,8 +310,15 @@ export async function handleProfileChange(profileId: string): Promise<void> {
 
     await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
     renderModsView();
+    showToast(t('toasts.profile_switched', { name: targetName }), 'success');
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+  } finally {
+    _isSwitchingProfile = false;
+    document.querySelectorAll<HTMLButtonElement>('.profile-switch-btn, .profile-item').forEach(el => {
+      el.style.pointerEvents = '';
+      el.style.opacity = '';
+    });
   }
 }
 

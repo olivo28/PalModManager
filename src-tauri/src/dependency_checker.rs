@@ -189,12 +189,33 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
             } else {
                 let workshop_dir = game_path_val.join("Mods").join("NativeMods").join("UE4SS");
                 let version_file = workshop_dir.join("ue4ss.version");
-                let ver = if version_file.exists() {
+                let mut ver = if version_file.exists() {
                     fs::read_to_string(&version_file).ok().map(|s| s.trim().to_string())
                 } else {
-                    Some("Workshop".to_string())
+                    None
                 };
-                (true, ver)
+
+                // Fallback: check Info.json in ManagedMods, NativeMods, or Workshop staging
+                if ver.is_none() {
+                    let candidates = [
+                        game_path_val.join("Mods").join("ManagedMods").join("UE4SSExperimentalPW").join("Info.json"),
+                        workshop_dir.join("Info.json"),
+                    ];
+                    for c in candidates {
+                        if c.exists() {
+                            if let Ok(info_str) = fs::read_to_string(&c) {
+                                if let Ok(info) = serde_json::from_str::<crate::workshop::WorkshopInfoJson>(&info_str) {
+                                    if !info.version.is_empty() {
+                                        ver = Some(info.version);
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                (true, ver.or_else(|| Some("Workshop".to_string())))
             }
         }
         UE4SSInstallMode::NotFound => {
@@ -216,15 +237,37 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
             (false, None)
         } else {
             let version_file = profile.ue4ss_mods_dir.join("PalSchema").join("palschema.version");
-            let ver = if version_file.exists() {
+            let mut ver = if version_file.exists() {
                 fs::read_to_string(&version_file).ok().map(|s| s.trim().to_string())
             } else {
-                match profile.ue4ss_install_mode {
-                    UE4SSInstallMode::Workshop => Some("Workshop".to_string()),
-                    _ => None,
-                }
+                None
             };
-            (true, ver)
+
+            // Fallback for Workshop: check Info.json in ManagedMods or PalSchema dir
+            if ver.is_none() {
+                let candidates = [
+                    game_path_val.join("Mods").join("ManagedMods").join("PalSchema").join("Info.json"),
+                    profile.ue4ss_mods_dir.join("PalSchema").join("Info.json"),
+                ];
+                for c in candidates {
+                    if c.exists() {
+                        if let Ok(info_str) = fs::read_to_string(&c) {
+                            if let Ok(info) = serde_json::from_str::<crate::workshop::WorkshopInfoJson>(&info_str) {
+                                if !info.version.is_empty() {
+                                    ver = Some(info.version);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            let final_ver = ver.or_else(|| match profile.ue4ss_install_mode {
+                UE4SSInstallMode::Workshop => Some("Workshop".to_string()),
+                _ => None,
+            });
+            (true, final_ver)
         }
     } else {
         (false, None)

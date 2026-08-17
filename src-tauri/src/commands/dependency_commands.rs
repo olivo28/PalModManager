@@ -49,7 +49,10 @@ pub fn check_dependencies(state: State<AppState>) -> Result<dependency_checker::
             if ue4ss_cache_file.exists() {
                 if let Ok(prev) = fs::read_to_string(&ue4ss_cache_file) {
                     let prev_clean = prev.trim();
-                    if !prev_clean.is_empty() && prev_clean != cur_ue4ss && prev_clean != "unknown" && prev_clean != "Workshop" && cur_ue4ss != "Workshop" {
+                    let is_prev_date = prev_clean.contains('.');
+                    let is_cur_date = cur_ue4ss.contains('.');
+                    // Only trigger if both are dates or neither is a date, avoiding false update toast on mode switch
+                    if !prev_clean.is_empty() && prev_clean != cur_ue4ss && prev_clean != "unknown" && prev_clean != "Workshop" && cur_ue4ss != "Workshop" && (is_prev_date == is_cur_date) {
                         status.ue4ss_updated_from = Some(prev_clean.to_string());
                     }
                 }
@@ -61,7 +64,9 @@ pub fn check_dependencies(state: State<AppState>) -> Result<dependency_checker::
             if palschema_cache_file.exists() {
                 if let Ok(prev) = fs::read_to_string(&palschema_cache_file) {
                     let prev_clean = prev.trim();
-                    if !prev_clean.is_empty() && prev_clean != cur_schema && prev_clean != "unknown" && prev_clean != "Workshop" && cur_schema != "Workshop" {
+                    let is_prev_date = prev_clean.contains('.');
+                    let is_cur_date = cur_schema.contains('.');
+                    if !prev_clean.is_empty() && prev_clean != cur_schema && prev_clean != "unknown" && prev_clean != "Workshop" && cur_schema != "Workshop" && (is_prev_date == is_cur_date) {
                         status.palschema_updated_from = Some(prev_clean.to_string());
                     }
                 }
@@ -196,37 +201,63 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
 
     let mut status = dependency_checker::check_dependencies(&game_path);
 
+    let is_workshop = status.ue4ss_install_mode == "Workshop";
+
     if let Ok((ue4ss_tag, ue4ss_date)) = dependency_checker::check_ue4ss_latest().await {
         status.ue4ss_latest_tag = Some(ue4ss_tag);
         status.ue4ss_latest_date = Some(ue4ss_date.clone());
-        // Both local and remote are DD.MM.YYYY dates. Compare as dates.
-        status.ue4ss_needs_update = match &status.ue4ss_version {
-            Some(local) if local == "Workshop" => false,
-            Some(local) => {
-                match (parse_dmy(local.trim()), parse_dmy(ue4ss_date.trim())) {
-                    (Some(l), Some(r)) => l < r,
-                    // Local version is not a date (old install) → assume needs update
-                    _ => true,
+        if is_workshop {
+            // Check if Workshop staging has a pending update for UE4SS
+            let w_state = crate::workshop::scan_workshop_mods(&game_path);
+            if let Some(w_mod) = w_state.iter().find(|m| m.is_framework && (m.package_name.to_lowercase().contains("ue4ss") || m.package_name == "UE4SSExperimentalPW")) {
+                status.ue4ss_needs_update = w_mod.has_pending_update || (w_mod.is_installed && w_mod.installed_version.is_some() && w_mod.installed_version.as_ref() != Some(&w_mod.version));
+                if status.ue4ss_needs_update {
+                    status.ue4ss_latest_tag = Some(format!("v{}", w_mod.version));
                 }
+            } else {
+                status.ue4ss_needs_update = false;
             }
-            None => true,
-        };
+        } else {
+            status.ue4ss_needs_update = match &status.ue4ss_version {
+                Some(local) if local == "Workshop" => false,
+                Some(local) => {
+                    match (parse_dmy(local.trim()), parse_dmy(ue4ss_date.trim())) {
+                        (Some(l), Some(r)) => l < r,
+                        _ => true,
+                    }
+                }
+                None => true,
+            };
+        }
     }
 
     if let Ok(ps_version) = dependency_checker::check_palschema_latest().await {
         status.palschema_latest_version = Some(ps_version.clone());
-        status.palschema_needs_update = match &status.palschema_version {
-            Some(local) if local == "Workshop" => false,
-            Some(local) => {
-                let eq = compare_versions(local, &ps_version);
-                crate::logger::log(&format!("PalSchema check: local='{}', remote='{}', match={}", local, ps_version, eq));
-                !eq
+        if is_workshop {
+            // Check if Workshop staging has a pending update for PalSchema
+            let w_state = crate::workshop::scan_workshop_mods(&game_path);
+            if let Some(w_mod) = w_state.iter().find(|m| m.package_name.eq_ignore_ascii_case("PalSchema")) {
+                status.palschema_needs_update = w_mod.has_pending_update || (w_mod.is_installed && w_mod.installed_version.is_some() && w_mod.installed_version.as_ref() != Some(&w_mod.version));
+                if status.palschema_needs_update {
+                    status.palschema_latest_version = Some(w_mod.version.clone());
+                }
+            } else {
+                status.palschema_needs_update = false;
             }
-            None => {
-                crate::logger::log("PalSchema check: local is None (not installed or version not read)");
-                true
-            }
-        };
+        } else {
+            status.palschema_needs_update = match &status.palschema_version {
+                Some(local) if local == "Workshop" => false,
+                Some(local) => {
+                    let eq = compare_versions(local, &ps_version);
+                    crate::logger::log(&format!("PalSchema check: local='{}', remote='{}', match={}", local, ps_version, eq));
+                    !eq
+                }
+                None => {
+                    crate::logger::log("PalSchema check: local is None (not installed or version not read)");
+                    true
+                }
+            };
+        }
     }
 
     Ok(status)
