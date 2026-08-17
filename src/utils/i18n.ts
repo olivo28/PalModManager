@@ -5,14 +5,22 @@
 
 import en from '../locales/en.json';
 import es from '../locales/es.json';
+import pt from '../locales/pt.json';
+import zhCN from '../locales/zh-CN.json';
+import ja from '../locales/ja.json';
+import ko from '../locales/ko.json';
 
-export type SupportedLocale = 'en' | 'es';
+export type SupportedLocale = 'en' | 'es' | 'pt' | 'zh-CN' | 'ja' | 'ko';
 
 type TranslationTree = Record<string, any>;
 
 const localeDictionaries: Record<string, TranslationTree> = {
   en,
   es,
+  pt,
+  'zh-CN': zhCN,
+  ja,
+  ko,
 };
 
 let currentLocale: SupportedLocale = 'en';
@@ -25,9 +33,18 @@ export function initI18n(preferredLocale?: string | null): void {
   if (saved && localeDictionaries[saved]) {
     currentLocale = saved;
   } else {
-    const navLang = navigator.language?.split('-')[0]?.toLowerCase();
+    const fullLang = navigator.language?.toLowerCase();
+    const navLang = fullLang?.split('-')[0];
     if (navLang === 'es') {
       currentLocale = 'es';
+    } else if (navLang === 'pt') {
+      currentLocale = 'pt';
+    } else if (navLang === 'zh') {
+      currentLocale = 'zh-CN';
+    } else if (navLang === 'ja') {
+      currentLocale = 'ja';
+    } else if (navLang === 'ko') {
+      currentLocale = 'ko';
     } else {
       currentLocale = 'en';
     }

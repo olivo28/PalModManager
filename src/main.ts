@@ -2,7 +2,7 @@ import 'highlight.js/styles/github-dark.css';
 import { initI18n, t } from './utils/i18n';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
 import { getState, updateState } from './state';
-import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal } from './ui/modal';
+import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal, openAboutModal, closeAboutModal, setupAboutModal } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailOpenExtraFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers, setupEditorFsWatcher } from './ui/editorView';
@@ -130,6 +130,8 @@ function setupEventListeners() {
   safeEl('settings-save')?.addEventListener('click', handleSaveSettings);
   safeEl('settings-browse-btn')?.addEventListener('click', handleSettingsBrowse);
   safeEl('settings-data-path-select')?.addEventListener('change', handleDataPathChange);
+  
+  setupAboutModal();
 
   const registerOpenFolderBtn = (id: string, type: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile') => {
     safeEl(id)?.addEventListener('click', async () => {
@@ -516,12 +518,16 @@ function setupEventListeners() {
       const installModal = document.getElementById('install-modal');
       if (installModal?.classList.contains('visible')) closeInstallModal();
 
+      const aboutModal = document.getElementById('about-modal');
+      if (aboutModal?.classList.contains('visible')) closeAboutModal();
+
       // Clear mod selection on ESC if no modals are open
       const hasOpenModal = 
         (detailOverlay && detailOverlay.classList.contains('visible')) ||
         (settingsModal && settingsModal.classList.contains('visible')) ||
         (profileModal && profileModal.classList.contains('visible')) ||
-        (installModal && installModal.classList.contains('visible'));
+        (installModal && installModal.classList.contains('visible')) ||
+        (aboutModal && aboutModal.classList.contains('visible'));
       if (!hasOpenModal) {
         import('./features/selection').then(({ clearSelection }) => clearSelection());
       }

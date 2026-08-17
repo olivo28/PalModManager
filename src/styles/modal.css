@@ -367,3 +367,45 @@
   font-size: 11px !important;
   font-weight: 500 !important;
 }
+
+/* ===== ABOUT MODAL STYLING ===== */
+.about-tabs-bar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 20px 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-primary);
+}
+
+.about-tab-btn {
+  background: transparent;
+  color: var(--text-secondary);
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border-radius: 4px 4px 0 0;
+}
+
+.about-tab-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.about-tab-btn.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  background: rgba(0, 188, 255, 0.06);
+}
+
+.about-tab-pane {
+  animation: fadeIn 0.15s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(3px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -1,13 +1,17 @@
 import { openSettingsModal, closeSettingsModal, handleDataPathChange, handleSettingsBrowse, handleSaveSettings } from './settings';
 import { handleInstall, closeInstallModal, handleInstallConfirm } from './installer';
 import { openConsoleModal } from './console';
+import { openAboutModal, closeAboutModal, setupAboutModal } from './about';
 
 export { openSettingsModal, closeSettingsModal, handleDataPathChange, handleSettingsBrowse, handleSaveSettings, _tempCustomDataPath } from './settings';
 export { showInstallModal, closeInstallModal, setModalStatus, getCleanNameFromFilename, showFileTreeModal, renderInstallPreview, renderBatchInstallPreview, handleInstallConfirm as handleConfirmInstall, handleInstall, _pendingUpdateModId, _pendingBatchPaths } from './installer';
 export { openWorkshopModal, refreshWorkshopUI } from './workshop';
 export { openConsoleModal, pushToLogBuffer, _logBuffer } from './console';
+export { openAboutModal, closeAboutModal, setupAboutModal } from './about';
 
 export function setupModalListeners(): void {
+  setupAboutModal();
+
   // Global buttons & click handlers
   const settingsBtn = document.getElementById('settings-btn');
   if (settingsBtn) {
