@@ -317,12 +317,29 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
         let _ = fs::create_dir_all(&palschema_mods_dir);
     }
 
-    // 1. First, purge ALL existing junctions and links in PalSchema/mods/
+    let map_file_path = palschema_mods_dir.parent().unwrap().join("FLOPalSchema.json");
+
+    // 1. Delete all junctions tracked in previous FLOPalSchema.json mapping file
+    if map_file_path.exists() {
+        if let Ok(content) = fs::read_to_string(&map_file_path) {
+            if let Ok(old_map) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(items) = old_map.get("items").and_then(|v| v.as_array()) {
+                    for it in items {
+                        if let Some(link_path_str) = it.get("link_path").and_then(|v| v.as_str()) {
+                            let p = Path::new(link_path_str);
+                            let _ = crate::profiles::remove_junction_or_symlink(p);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 2. Fallback scan purge: remove ANY existing junctions or numbered directories in PalSchema/mods/
     if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-            // Don't delete the Storage directory itself
             if name.eq_ignore_ascii_case("Storage") {
                 continue;
             }
@@ -330,7 +347,6 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
             if junction::exists(&path).unwrap_or(false) {
                 let _ = crate::profiles::remove_junction_or_symlink(&path);
             } else if path.is_dir() {
-                // If it's a regular directory that has a numbered prefix, it might be an unlinked copy
                 let is_prefixed = name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_');
                 if is_prefixed {
                     let _ = crate::profiles::remove_junction_or_symlink(&path);
@@ -345,7 +361,9 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
     let current_profile_id = data.current_profile_id.clone();
     let program_path = data.settings.program_path.clone();
 
-    // 2. Process and recreate junctions according to the new order
+    let mut new_map_items = Vec::new();
+
+    // 3. Process and recreate junctions according to the new order
     for (idx, (id, enabled)) in ordered_items.iter().enumerate() {
         let mut folder_name_opt = None;
         let mut mod_name_opt = None;
@@ -382,6 +400,16 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
                             m.game_path = link_path.to_string_lossy().to_string();
                             m.disabled_path = String::new();
                         }
+                        new_map_items.push(serde_json::json!({
+                            "order": idx,
+                            "mod_id": id,
+                            "mod_name": m.name,
+                            "original_folder": folder_name,
+                            "storage_path": target_storage.to_string_lossy().to_string(),
+                            "link_name": link_name,
+                            "link_path": link_path.to_string_lossy().to_string(),
+                            "enabled": true
+                        }));
                     }
                 } else {
                     let direct_mods_path = palschema_mods_dir.join(&folder_name);
@@ -430,6 +458,19 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
                 }
             }
         }
+    }
+
+    // 4. Save the FLOPalSchema.json mapping file for future tracking
+    if force_order {
+        let mapping_json = serde_json::json!({
+            "version": "1.0",
+            "updated_at": chrono::Utc::now().to_rfc3339(),
+            "profile_id": current_profile_id,
+            "items": new_map_items
+        });
+        let _ = fs::write(&map_file_path, serde_json::to_string_pretty(&mapping_json).unwrap_or_default());
+    } else if map_file_path.exists() {
+        let _ = fs::remove_file(&map_file_path);
     }
 
     let data_clone = data.clone();

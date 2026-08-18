@@ -17,6 +17,17 @@ pub fn create_junction_or_symlink(target: &Path, link: &Path) -> Result<(), Stri
 
 /// Safely removes a junction or directory link without deleting the contents of the target folder
 pub fn remove_junction_or_symlink(link: &Path) -> Result<(), String> {
+    #[cfg(windows)]
+    {
+        if junction::exists(link).unwrap_or(false) {
+            if let Err(e) = junction::delete(link) {
+                // Fallback to remove_dir if delete fails
+                let _ = fs::remove_dir(link);
+            }
+            return Ok(());
+        }
+    }
+
     if let Ok(meta) = fs::symlink_metadata(link) {
         if meta.is_dir() {
             fs::remove_dir(link).map_err(|e| format!("Failed to remove directory link: {}", e))

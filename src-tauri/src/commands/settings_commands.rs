@@ -266,6 +266,23 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
             }
 
             if !enabled {
+                let map_file_path = palschema_mods_dir.parent().unwrap().join("FLOPalSchema.json");
+                if map_file_path.exists() {
+                    if let Ok(content) = fs::read_to_string(&map_file_path) {
+                        if let Ok(old_map) = serde_json::from_str::<serde_json::Value>(&content) {
+                            if let Some(items) = old_map.get("items").and_then(|v| v.as_array()) {
+                                for it in items {
+                                    if let Some(link_path_str) = it.get("link_path").and_then(|v| v.as_str()) {
+                                        let p = Path::new(link_path_str);
+                                        let _ = crate::profiles::remove_junction_or_symlink(p);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                    let _ = fs::remove_file(&map_file_path);
+                }
+
                 if palschema_mods_dir.exists() {
                     if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
                         for entry in entries.flatten() {
@@ -274,16 +291,11 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
                             if name.eq_ignore_ascii_case("Storage") {
                                 continue;
                             }
-                            if junction::exists(&path).unwrap_or(false) {
-                                let _ = crate::profiles::remove_junction_or_symlink(&path);
-                            } else if path.is_dir() {
-                                let is_prefixed = name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_');
-                                if is_prefixed {
-                                    let _ = crate::profiles::remove_junction_or_symlink(&path);
-                                    if path.exists() {
-                                        let _ = fs::remove_dir_all(&path);
-                                    }
-                                }
+                            // Delete any junction or prefixed folder unconditionally
+                            let _ = crate::profiles::remove_junction_or_symlink(&path);
+                            let is_prefixed = name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_');
+                            if is_prefixed && path.exists() {
+                                let _ = fs::remove_dir_all(&path);
                             }
                         }
                     }
@@ -316,6 +328,7 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
             }
             } else {
                 let mut idx = 0;
+                let mut new_map_items = Vec::new();
                 for mod_info in &mut data.mods {
                     if mod_info.mod_type == crate::models::ModType::PalSchema || mod_info.mod_type == crate::models::ModType::Hybrid {
                         let folder_name = crate::profiles::get_mod_folder_name(mod_info);
@@ -350,11 +363,32 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
                                     mod_info.game_path = link_path.to_string_lossy().to_string();
                                 }
                                 mod_info.mods_txt_order = Some(idx);
+
+                                new_map_items.push(serde_json::json!({
+                                    "order": idx,
+                                    "mod_id": mod_info.id,
+                                    "mod_name": mod_info.name,
+                                    "original_folder": folder_name,
+                                    "storage_path": storage_dest.to_string_lossy().to_string(),
+                                    "link_name": link_name,
+                                    "link_path": link_path.to_string_lossy().to_string(),
+                                    "enabled": true
+                                }));
+
                                 idx += 1;
                             }
                         }
                     }
                 }
+
+                let map_file_path = palschema_mods_dir.parent().unwrap().join("FLOPalSchema.json");
+                let mapping_json = serde_json::json!({
+                    "version": "1.0",
+                    "updated_at": chrono::Utc::now().to_rfc3339(),
+                    "profile_id": current_profile_id,
+                    "items": new_map_items
+                });
+                let _ = fs::write(&map_file_path, serde_json::to_string_pretty(&mapping_json).unwrap_or_default());
             }
         }
         let settings = get_overridden_settings(&data);
