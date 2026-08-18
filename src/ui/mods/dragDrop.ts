@@ -1,7 +1,7 @@
 import { getState, updateState } from '../../state';
 import { loadMods } from './loader';
 import { showToast } from '../toast';
-import { handleAddModToFolder } from './events';
+import { handleAddMultipleModsToFolder } from './events';
 import { reorderModFolders } from '../../api';
 
 export function setupCardDragToFolder(container: HTMLElement): void {
@@ -13,6 +13,7 @@ export function setupCardDragToFolder(container: HTMLElement): void {
 
   let draggingId: string | null = null;
   let draggingType: 'mod' | 'folder' | null = null;
+  let draggingIds: string[] = [];
   let ghost: HTMLElement | null = null;
   let pendingEl: HTMLElement | null = null;
   let dragActive = false;
@@ -50,8 +51,16 @@ export function setupCardDragToFolder(container: HTMLElement): void {
       pendingEl.classList.remove('dragging');
       pendingEl = null;
     }
+    const state = getState();
+    if (draggingIds.length > 1) {
+      state.selectedModIds.forEach(id => {
+        const el = container.querySelector(`.mod-card[data-id="${id}"]`);
+        if (el) el.classList.remove('dragging');
+      });
+    }
     draggingId = null;
     draggingType = null;
+    draggingIds = [];
     dragActive = false;
     document.body.removeAttribute('data-card-dragging');
   }
@@ -77,28 +86,45 @@ export function setupCardDragToFolder(container: HTMLElement): void {
       pendingEl = card;
       draggingId = id;
       draggingType = card.dataset.type === 'folder' ? 'folder' : 'mod';
+
+      const state = getState();
+      if (draggingType === 'mod' && state.selectedModIds.has(id)) {
+        draggingIds = Array.from(state.selectedModIds);
+      } else {
+        draggingIds = [id];
+      }
+
+      try { card.setPointerCapture(e.pointerId); } catch { }
     });
   });
 
-  // ─── Container Pointer Move ───
-  container.addEventListener('pointermove', (e: PointerEvent) => {
+  // ─── Window Pointer Move ───
+  const onPointerMove = (e: PointerEvent) => {
     if (!pendingEl || !draggingId || !draggingType) return;
 
     const dx = e.clientX - pointerDownX;
     const dy = e.clientY - pointerDownY;
     const dist = Math.sqrt(dx * dx + dy * dy);
-    console.log(`Dragging points: ${dist}`)
-
 
     if (!dragActive) {
       if (dist < DRAG_THRESHOLD) return;
-      console.log(`Dragging started: ${draggingId}`)
       dragActive = true;
-      try { container.setPointerCapture(e.pointerId); } catch { }
       document.body.setAttribute('data-card-dragging', 'true');
       pendingEl.classList.add('dragging');
 
-      const name = pendingEl.querySelector('.mod-card-name')?.textContent?.trim() || (draggingType === 'folder' ? 'Folder' : 'Mod');
+      if (draggingIds.length > 1) {
+        draggingIds.forEach(id => {
+          const el = container.querySelector(`.mod-card[data-id="${id}"]`);
+          if (el) el.classList.add('dragging');
+        });
+      }
+
+      const state = getState();
+      const isMulti = draggingIds.length > 1;
+      const ghostLabel = isMulti
+        ? `${draggingIds.length} mods`
+        : (pendingEl.querySelector('.mod-card-name')?.textContent?.trim() || (draggingType === 'folder' ? 'Folder' : 'Mod'));
+
       ghost = document.createElement('div');
       ghost.style.cssText = `
         position: fixed; pointer-events: none; z-index: 99999;
@@ -106,9 +132,14 @@ export function setupCardDragToFolder(container: HTMLElement): void {
         color: var(--text-primary); font-size: 12px; padding: 6px 14px;
         border-radius: 6px; backdrop-filter: blur(8px); white-space: nowrap;
         box-shadow: 0 8px 24px rgba(0,0,0,0.6);
-        font-weight: 600;
+        font-weight: 600; display: flex; align-items: center; gap: 6px;
       `;
-      ghost.textContent = `${draggingType === 'folder' ? '📁' : '📦'} ${name}`;
+      
+      const countBadge = isMulti
+        ? `<span style="background: var(--accent); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${draggingIds.length}</span>` 
+        : '';
+
+      ghost.innerHTML = `${draggingType === 'folder' ? '📁' : '📦'} <span>${escapeHtml(ghostLabel)}</span> ${isMulti ? '' : countBadge}`;
       document.body.appendChild(ghost);
     }
 
@@ -131,6 +162,9 @@ export function setupCardDragToFolder(container: HTMLElement): void {
     }
 
     // 2. Check Folder Targets
+    const state = getState();
+    const isGrid = state.viewLayout === 'grid';
+
     for (const fc of folderCards) {
       const rect = fc.getBoundingClientRect();
       if (e.clientX >= rect.left && e.clientX <= rect.right &&
@@ -146,8 +180,10 @@ export function setupCardDragToFolder(container: HTMLElement): void {
 
         // Folder dragged over Folder (Reorder folders)
         if (draggingType === 'folder' && targetFolderId !== draggingId) {
-          const midY = rect.top + rect.height / 2;
-          const isBefore = e.clientY < midY;
+          const isBefore = isGrid 
+            ? e.clientX < (rect.left + rect.width / 2)
+            : e.clientY < (rect.top + rect.height / 2);
+
           if (isBefore) {
             fc.classList.add('drag-reorder-before');
           } else {
@@ -158,31 +194,30 @@ export function setupCardDragToFolder(container: HTMLElement): void {
         }
       }
     }
-  });
+  };
 
-  // ─── Container Pointer Up (Drop Action) ───
-  container.addEventListener('pointerup', async (e: PointerEvent) => {
+  // ─── Window Pointer Up (Drop Action) ───
+  const onPointerUp = async (e: PointerEvent) => {
     if (!pendingEl) return;
 
     const wasDragging = dragActive;
     const capturedId = draggingId;
+    const capturedIds = [...draggingIds];
     const capturedType = draggingType;
     const capturedFolderTarget = activeFolderTarget;
     const capturedReorderTarget = activeReorderTarget;
     const capturedRootTarget = activeRootTarget;
 
-    if (wasDragging) {
-      e.preventDefault();
-      try { container.releasePointerCapture(e.pointerId); } catch { }
-    }
+    try { pendingEl.releasePointerCapture(e.pointerId); } catch { }
 
     cleanup();
 
     if (!wasDragging || !capturedId || !capturedType) return;
+    e.preventDefault();
 
     // Action A: Mod dropped into Root Drop Zone (remove from current folder)
     if (capturedType === 'mod' && capturedRootTarget) {
-      await handleAddModToFolder(null, capturedId);
+      await handleAddMultipleModsToFolder(null, capturedIds);
       return;
     }
 
@@ -190,7 +225,7 @@ export function setupCardDragToFolder(container: HTMLElement): void {
     if (capturedType === 'mod' && capturedFolderTarget) {
       const targetFolderId = capturedFolderTarget.dataset.id;
       if (targetFolderId) {
-        await handleAddModToFolder(targetFolderId, capturedId);
+        await handleAddMultipleModsToFolder(targetFolderId, capturedIds);
       }
       return;
     }
@@ -225,10 +260,19 @@ export function setupCardDragToFolder(container: HTMLElement): void {
         showToast(String(err), 'error');
       }
     }
-  });
+  };
 
-  // ─── Pointer Cancel ───
-  container.addEventListener('pointercancel', () => {
-    cleanup();
-  });
+  function escapeHtml(str: string): string {
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  window.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  window.addEventListener('pointercancel', () => cleanup());
 }
+

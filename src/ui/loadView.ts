@@ -13,9 +13,19 @@ export async function renderLoadView(): Promise<void> {
   const container = document.getElementById('load-list-container');
   if (!container) return;
 
-  const state = getState();
-  const showUe4ss = !!state.currentSettings?.forceLoadOrderUe4ss;
-  const showPalschema = !!state.currentSettings?.forceLoadOrderPalschema;
+  let state = getState();
+  let settings = state.currentSettings;
+  if (!settings) {
+    try {
+      const { getSettings } = await import('../api');
+      settings = await getSettings();
+      const { updateState } = await import('../state');
+      updateState({ currentSettings: settings });
+    } catch { }
+  }
+
+  const showUe4ss = !!settings?.forceLoadOrderUe4ss;
+  const showPalschema = !!settings?.forceLoadOrderPalschema;
 
   container.innerHTML = `
     <!-- UE4SS Section -->

@@ -127,7 +127,11 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
             return;
         }
         let p = Path::new(path_str);
-        if p.exists() {
+        
+        // Handle junction/symlink cleanup safely first
+        if junction::exists(p).unwrap_or(false) {
+            let _ = crate::profiles::remove_junction_or_symlink(p);
+        } else if p.exists() {
             if p.is_dir() {
                 let _ = fs::remove_dir_all(p);
             } else {
@@ -152,11 +156,48 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         delete_path_and_sidecar(extra);
     }
 
+    // Clean up PalSchema storage and junction artifacts if PalSchema/Hybrid
     if !game_path_str.is_empty() {
         let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path_str));
+        let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+        let storage_dir = palschema_mods_dir.join("Storage");
+
+        // 1. Remove physical folder from Storage
+        let folder_name = crate::profiles::get_mod_folder_name(&mod_info);
+        if storage_dir.exists() {
+            let mod_storage = storage_dir.join(&folder_name);
+            if mod_storage.exists() {
+                let _ = fs::remove_dir_all(&mod_storage);
+            }
+            let mod_storage_name = storage_dir.join(&mod_info.name);
+            if mod_storage_name.exists() {
+                let _ = fs::remove_dir_all(&mod_storage_name);
+            }
+        }
+
+        // 2. Scan and remove any junctions/symlinks in PalSchema/mods
+        if palschema_mods_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                for entry in entries.filter_map(|e| e.ok()) {
+                    let path = entry.path();
+                    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                    let clean_name = if name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_') {
+                        &name[4..]
+                    } else {
+                        &name
+                    };
+                    if clean_name.eq_ignore_ascii_case(&folder_name) || clean_name.eq_ignore_ascii_case(&mod_info.name) {
+                        let _ = crate::profiles::remove_junction_or_symlink(&path);
+                        if path.exists() {
+                            let _ = fs::remove_dir_all(&path);
+                        }
+                    }
+                }
+            }
+        }
+
         let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
         if mods_txt.exists() {
-            let folder_name = crate::profiles::get_mod_folder_name(&mod_info);
             let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &folder_name);
             let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &mod_info.name);
             

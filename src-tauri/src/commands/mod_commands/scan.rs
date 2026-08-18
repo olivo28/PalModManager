@@ -666,9 +666,22 @@ fn merge_scan_with_db(
             if merged.config_path.is_none() {
                 merged.config_path = fs_mod.config_path.clone();
             }
-            if fs_mod.extra_files.len() > merged.extra_files.len() {
-                merged.extra_files = fs_mod.extra_files.clone();
+
+            // Filter extra_files to only keep those that physically exist or belong to the active tree
+            let mut valid_extras = Vec::new();
+            for extra in &db_mod.extra_files {
+                let extra_p = Path::new(extra);
+                if extra_p.exists() {
+                    valid_extras.push(extra.clone());
+                }
             }
+            for extra in &fs_mod.extra_files {
+                if !valid_extras.contains(extra) {
+                    valid_extras.push(extra.clone());
+                }
+            }
+            merged.extra_files = valid_extras;
+
             merged.enabled = fs_mod.enabled;
             if fs_mod.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod")) {
                 merged.nexus_summary = fs_mod.nexus_summary.clone();

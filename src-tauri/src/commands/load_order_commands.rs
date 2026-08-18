@@ -307,7 +307,7 @@ pub fn get_palschema_load_order(state: State<AppState>) -> Result<Vec<ModInfo>, 
 pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: State<AppState>) -> Result<(), String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let game_path = data.settings.game_path.clone();
-    let force_order = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data);
+    let force_order = crate::profiles::effective_force_palschema(&data);
 
     let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
     let palschema_mods_dir = gp.palschema_mods_dir.clone();
@@ -317,20 +317,35 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
         let _ = fs::create_dir_all(&palschema_mods_dir);
     }
 
-    // Get current list of links in PalSchema/mods/
-    let mut current_mods_links = Vec::new();
+    // 1. First, purge ALL existing junctions and links in PalSchema/mods/
     if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            let name = path.file_name().unwrap().to_string_lossy().to_string();
-            current_mods_links.push((path, name));
+            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            // Don't delete the Storage directory itself
+            if name.eq_ignore_ascii_case("Storage") {
+                continue;
+            }
+
+            if junction::exists(&path).unwrap_or(false) {
+                let _ = crate::profiles::remove_junction_or_symlink(&path);
+            } else if path.is_dir() {
+                // If it's a regular directory that has a numbered prefix, it might be an unlinked copy
+                let is_prefixed = name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_');
+                if is_prefixed {
+                    let _ = crate::profiles::remove_junction_or_symlink(&path);
+                    if path.exists() {
+                        let _ = fs::remove_dir_all(&path);
+                    }
+                }
+            }
         }
     }
 
     let current_profile_id = data.current_profile_id.clone();
     let program_path = data.settings.program_path.clone();
 
-    // Process and rename/recreate junctions according to the new order
+    // 2. Process and recreate junctions according to the new order
     for (idx, (id, enabled)) in ordered_items.iter().enumerate() {
         let mut folder_name_opt = None;
         let mut mod_name_opt = None;
@@ -342,15 +357,11 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
             folder_name_opt = Some(folder_name.clone());
             mod_name_opt = Some(m.name.clone());
 
-            // Remove any existing links/folders matching this mod (numbered prefix or clean)
-            for (path, name) in &current_mods_links {
-                if name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name) {
-                    let _ = crate::profiles::remove_junction_or_symlink(path);
-                }
-            }
-
             if *enabled {
-                let target_storage = palschema_storage_dir.join(&folder_name);
+                let mut target_storage = palschema_storage_dir.join(&folder_name);
+                if !target_storage.exists() && palschema_storage_dir.join(&m.name).exists() {
+                    target_storage = palschema_storage_dir.join(&m.name);
+                }
 
                 if force_order {
                     let _ = fs::create_dir_all(&palschema_storage_dir);

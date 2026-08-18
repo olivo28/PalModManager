@@ -459,14 +459,24 @@ export function attachFolderEvents(container: HTMLElement): void {
 }
 
 export async function handleAddModToFolder(folderId: string | null, modId: string): Promise<void> {
+  await handleAddMultipleModsToFolder(folderId, [modId]);
+}
+
+export async function handleAddMultipleModsToFolder(folderId: string | null, modIds: string[]): Promise<void> {
+  if (!modIds || modIds.length === 0) return;
   const { currentProfileId } = getState();
   try {
     const { addModToFolder } = await import('../../api');
-    const updatedProfile = await addModToFolder(currentProfileId, folderId, modId);
+    let updatedProfile;
+    for (const id of modIds) {
+      updatedProfile = await addModToFolder(currentProfileId, folderId, id);
+    }
 
-    const state = getState();
-    const profiles = state.profiles.map(p => p.id === currentProfileId ? updatedProfile : p);
-    updateState({ profiles });
+    if (updatedProfile) {
+      const state = getState();
+      const profiles = state.profiles.map(p => p.id === currentProfileId ? updatedProfile : p);
+      updateState({ profiles });
+    }
 
     await loadMods();
     showToast(folderId ? t('toasts.mod_grouped_success') : t('toasts.mod_ungrouped_success'), 'success');

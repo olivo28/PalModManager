@@ -1098,10 +1098,10 @@ export async function handleInstallConfirm(): Promise<void> {
   cancelBtn.disabled = true;
 
   const logs: string[] = [];
-  const resultsContainer = document.getElementById('install-results-container')!;
-  const resultsList = document.getElementById('install-results-list')!;
-  resultsContainer.style.display = 'block';
-  resultsList.innerHTML = logs.join('');
+  const resultsList = contentEl.querySelector('.batch-results-list') as HTMLElement;
+  if (resultsList) {
+    resultsList.innerHTML = logs.join('');
+  }
 
   const depStatus = await checkDependencies();
   const ue4ssRequired = ['ue4ss', 'palschema', 'hybrid'].includes(customType);

@@ -266,8 +266,27 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
             }
 
             if !enabled {
-                for (path, _) in &current_mods_links {
-                    let _ = crate::profiles::remove_junction_or_symlink(path);
+                if palschema_mods_dir.exists() {
+                    if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                        for entry in entries.flatten() {
+                            let path = entry.path();
+                            let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                            if name.eq_ignore_ascii_case("Storage") {
+                                continue;
+                            }
+                            if junction::exists(&path).unwrap_or(false) {
+                                let _ = crate::profiles::remove_junction_or_symlink(&path);
+                            } else if path.is_dir() {
+                                let is_prefixed = name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_');
+                                if is_prefixed {
+                                    let _ = crate::profiles::remove_junction_or_symlink(&path);
+                                    if path.exists() {
+                                        let _ = fs::remove_dir_all(&path);
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
                 if palschema_storage_dir.exists() {
                     if let Ok(entries) = fs::read_dir(&palschema_storage_dir) {
@@ -277,6 +296,9 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
                                 let folder_name = src_path.file_name().unwrap().to_string_lossy().to_string();
                                 let dest_path = palschema_mods_dir.join(&folder_name);
                                 let _ = fs::create_dir_all(&palschema_mods_dir);
+                                if dest_path.exists() {
+                                    let _ = fs::remove_dir_all(&dest_path);
+                                }
                                 let _ = crate::profiles::move_path(&src_path, &dest_path);
                             }
                         }

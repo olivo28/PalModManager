@@ -6,10 +6,9 @@
   transition: all 0.15s;
   display: flex;
   flex-direction: column;
-  -webkit-user-drag: element;
-  user-drag: element;
-  -webkit-user-select: auto !important;
-  user-select: auto !important;
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
 }
 
 .mod-card:hover {
@@ -45,6 +44,9 @@
   overflow: hidden;
   background: var(--bg-primary);
   flex-shrink: 0;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .mod-card-image {
@@ -52,6 +54,9 @@
   height: 100%;
   object-fit: cover;
   display: block;
+  pointer-events: none;
+  -webkit-user-drag: none;
+  user-select: none;
 }
 
 .mod-card-image-placeholder {
@@ -401,13 +406,15 @@
 }
 
 .mod-card.folder-card.drag-reorder-before {
-  border-top: 2px solid var(--accent) !important;
-  box-shadow: 0 -3px 8px rgba(0, 188, 255, 0.3) !important;
+  border-left: 3px solid var(--accent) !important;
+  border-top: 3px solid var(--accent) !important;
+  box-shadow: -3px 0 10px rgba(0, 188, 255, 0.4) !important;
 }
 
 .mod-card.folder-card.drag-reorder-after {
-  border-bottom: 2px solid var(--accent) !important;
-  box-shadow: 0 3px 8px rgba(0, 188, 255, 0.3) !important;
+  border-right: 3px solid var(--accent) !important;
+  border-bottom: 3px solid var(--accent) !important;
+  box-shadow: 3px 0 10px rgba(0, 188, 255, 0.4) !important;
 }
 
 .folder-breadcrumb.drag-target-hover {

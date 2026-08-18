@@ -87,7 +87,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     const folderAttr = isChild ? `data-folder-id="${folderId}"` : '';
 
     return `
-    <div class="mod-card list-row-card ${childClass} ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" draggable="true" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}" ${folderAttr}>
+    <div class="mod-card list-row-card ${childClass} ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}" ${folderAttr}>
       <div class="cell name-cell">
         ${childIndent}
         <label class="toggle-switch">
@@ -156,7 +156,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
   const isSelected = state.selectedModIds.has(mod.id);
 
   return `
-  <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" draggable="true" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}">
+  <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}">
     ${imageHtml}
     <div class="mod-card-body">
       <div class="mod-card-body-top">
@@ -201,7 +201,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
       : t('card.folder_mods_count', { count: modsInFolder.length });
 
     let rowsHtml = `
-    <div class="mod-card folder-card list-row-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'selected' : ''}" draggable="true" data-id="${folder.id}" data-type="folder" data-is-expanded="${isExpanded}">
+    <div class="mod-card folder-card list-row-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" data-is-expanded="${isExpanded}">
       <div class="cell name-cell">
         ${chevron}
         <span style="margin-right: 4px;">📁</span>
@@ -251,7 +251,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
     : t('card.folder_mods_count', { count: modsInFolder.length });
 
   return `
-  <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" draggable="true" data-id="${folder.id}" data-type="folder" style="position:relative;">
+  <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" style="position:relative;">
     <div class="folder-card-actions" style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; z-index: 10;" onclick="event.stopPropagation()">
       <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✏</button>
       <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✕</button>
