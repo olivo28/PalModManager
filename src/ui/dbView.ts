@@ -221,26 +221,32 @@ function renderModsTable(mods: ModInfo[]): string {
   `;
 }
 
-function renderProfilesTable(profiles: Profile[], currentId: string): string {
+function renderProfilesTable(profiles: any[], currentId: string): string {
   if (!profiles.length) return `<div class="db-empty">${escapeHtml(t('db.empty_profiles'))}</div>`;
 
-  const rows = profiles.map(p => `
+  const rows = profiles.map(p => {
+    const installed = p.installed_mod_ids ?? p.installedModIds ?? [];
+    const enabled = p.enabled_mod_ids ?? p.enabledModIds ?? [];
+    const created = p.created_at ?? p.createdAt ?? '';
+
+    return `
     <tr class="db-row ${p.id === currentId ? 'db-row-active' : ''}" data-id="${escapeHtml(p.id)}" title="${escapeHtml(p.id)}">
       <td class="db-cell db-cell-name">
         ${escapeHtml(p.name)}
         ${p.id === currentId ? `<span class="db-active-badge">${escapeHtml(t('profiles.active_badge'))}</span>` : ''}
       </td>
-      <td class="db-cell db-cell-mono">${p.installedModIds?.length ?? 0} ${escapeHtml(t('detail.installed_label')).toLowerCase()}</td>
-      <td class="db-cell db-cell-mono">${p.enabledModIds?.length ?? 0} ${escapeHtml(t('common.enabled')).toLowerCase()}</td>
-      <td class="db-cell db-cell-date">${escapeHtml(p.createdAt?.split('T')[0] ?? '')}</td>
+      <td class="db-cell db-cell-mono">${installed.length} ${escapeHtml(t('detail.installed_label')).toLowerCase()}</td>
+      <td class="db-cell db-cell-mono">${enabled.length} ${escapeHtml(t('common.enabled')).toLowerCase()}</td>
+      <td class="db-cell db-cell-date">${escapeHtml(created.split('T')[0] ?? '')}</td>
     </tr>
-  `).join('');
+  `;
+  }).join('');
 
   return `
     <table class="db-grid-table">
       <thead>
         <tr>
-          <th>${escapeHtml(t('card.table_col_name'))}</th>
+          <th>${escapeHtml(t('db.col_profile_name'))}</th>
           <th>${escapeHtml(t('detail.installed_label'))}</th>
           <th>${escapeHtml(t('common.enabled'))}</th>
           <th>${escapeHtml(t('db.col_created'))}</th>
