@@ -344,3 +344,48 @@ pub async fn copy_to_library_command(
     Ok(serde_json::to_value(&entry).map_err(|e| e.to_string())?)
 }
 
+#[tauri::command]
+pub async fn check_library_updates(state: State<'_, AppState>) -> Result<Vec<crate::commands::nexus_commands::UpdateCheckResult>, String> {
+    let (program_path, installed_mods) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (data.settings.program_path.clone(), data.mods.clone())
+    };
+
+    let entries = library::list_library(&program_path, &installed_mods)?;
+    let mut results = Vec::new();
+
+    // Collect unique Nexus IDs from library
+    let mut checked_nexus_ids = std::collections::HashSet::new();
+
+    for entry in entries {
+        if let Some(nexus_id) = entry.nexus_mod_id {
+            if !checked_nexus_ids.insert(nexus_id) {
+                continue;
+            }
+
+            let local_ver = entry.version.as_deref().unwrap_or("0.0.0");
+            let name = entry.nexus_name.as_deref().unwrap_or(&entry.mod_id);
+
+            crate::logger::log(&format!("check_library_updates: Checking Library mod '{}' (NexusID {})", name, nexus_id));
+
+            if let Ok(info) = crate::nexus::fetch_mod_info(nexus_id).await {
+                let norm_local = local_ver.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
+                let norm_latest = info.version.trim_start_matches(|c| c == 'v' || c == 'V').trim().to_lowercase();
+
+                if norm_latest != "unknown" && norm_local != "unknown" && crate::commands::nexus_commands::is_version_newer(&norm_local, &norm_latest) {
+                    results.push(crate::commands::nexus_commands::UpdateCheckResult {
+                        mod_id: entry.mod_id.clone(),
+                        name: name.to_string(),
+                        current_version: local_ver.to_string(),
+                        latest_version: info.version,
+                        nexus_mod_id: nexus_id,
+                    });
+                }
+            }
+        }
+    }
+
+    Ok(results)
+}
+
+

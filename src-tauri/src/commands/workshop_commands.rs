@@ -115,3 +115,28 @@ pub fn prepare_workshop_update_zip(package_name: String, state: State<'_, AppSta
 
     Ok(temp_zip_path.to_string_lossy().to_string())
 }
+
+#[tauri::command]
+pub async fn check_workshop_updates_online_cmd(state: State<'_, AppState>) -> Result<crate::models::WorkshopOnlineCheckResult, String> {
+    let game_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.game_path.clone()
+    };
+    if game_path.is_empty() {
+        return Ok(crate::models::WorkshopOnlineCheckResult::default());
+    }
+    crate::workshop::check_workshop_online_updates(&game_path).await
+}
+
+#[tauri::command]
+pub fn trigger_steam_validation_cmd(state: State<'_, AppState>) -> Result<(), String> {
+    let game_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.game_path.clone()
+    };
+    if game_path.is_empty() {
+        return Err("Game path not set".to_string());
+    }
+    crate::workshop::trigger_steam_validation(&game_path)
+}
+

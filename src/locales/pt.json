@@ -40,7 +40,8 @@
     "files_count": "+{count} arquivos",
     "file_single": "+1 arquivo",
     "folder": "Pasta",
-    "installed": "Instalado"
+    "installed": "Instalado",
+    "checking_updates": "Verificando atualizações..."
   },
   "sidebar": {
     "tab_mods": "Mods",
@@ -398,9 +399,25 @@
     "badge_new_count": "+{count} NOVO",
     "missing_deps_warning": "Dependências ausentes: {deps}",
     "new_mod_subscribed": "Steam Workshop: Novo mod inscrito — \"{name}\"",
-    "confirm_remove_version": "Tem certeza de que deseja remover a versão \"{zip}\" da sua biblioteca?\n\n(Outras versões deste mod na sua biblioteca não serão excluídas)",
-    "confirm_remove_bulk": "Tem certeza de que deseja remover {count} mod(s) da sua biblioteca?",
-    "workshop_open_folder_title": "Abrir pasta local do Workshop"
+    "confirm_remove_version": "Tem certeza de que deseja remover a versão \"{zip}\" da sua biblioteca?\n\n(Outras versões deste mod na biblioteca não serão afetadas)",
+    "confirm_remove_bulk": "Tem certeza de que deseja excluir {count} mod(s) da sua biblioteca?",
+    "workshop_open_folder_title": "Abrir pasta local do Workshop",
+    "btn_check_workshop_updates": "Verificar Atualizações",
+    "btn_check_workshop_updates_title": "Verificar atualizações de mods do Steam Workshop online",
+    "btn_force_steam_validation": "Forçar Validação / Download no Steam",
+    "btn_open_in_steam": "Abrir no Cliente Steam",
+    "checking_workshop_updates": "Verificando atualizações do Steam Workshop...",
+    "toast_workshop_up_to_date": "Todos os mods do Steam Workshop estão atualizados",
+    "toast_updates_ready_to_install": "Foram encontradas {count} atualização(ões) do Workshop prontas para aplicar!",
+    "confirm_force_steam_validation": "O Steam possui atualização(ões) disponíveis para {count} mod(s) ({names}) que ainda não foram baixadas no seu PC.\n\nDeseja forçar o Steam a verificar os arquivos do jogo e baixar as atualizações agora?\n\n(Nota: O botão PLAY será bloqueado por segurança durante 2 minutos enquanto o Steam valida e baixa os arquivos em segundo plano)",
+    "confirm_direct_steam_validation": "Tem certeza de que deseja forçar a verificação de arquivos do Palworld no Steam?\n\nIsso iniciará a verificação de integridade no cliente Steam e baixará as atualizações pendentes da Oficina.\n\n(Nota: O botão PLAY será bloqueado por segurança durante 2 minutos enquanto esta operação é executada)",
+    "toast_starting_steam_validation": "Iniciando verificação do Steam (botão PLAY bloqueado por 2 minutos)...",
+    "toast_steam_validation_completed": "Período de verificação do Steam concluído! Botão PLAY desbloqueado.",
+    "steam_validating_tooltip": "O Steam está verificando / baixando arquivos em segundo plano (botão PLAY bloqueado por segurança: restam {time}s)...",
+    "btn_check_nexus_updates": "Verificar atualizações do Nexus",
+    "btn_open_library_folder": "Abrir pasta da biblioteca",
+    "checking_library_nexus_updates": "Verificando atualizações do Nexus Mods para a biblioteca...",
+    "toast_local_library_up_to_date": "Todos os mods da biblioteca local estão atualizados com o Nexus Mods"
   },
   "packer": {
     "hub_title": "Espaço de Trabalho do Empacotador de Mods",
@@ -708,8 +725,11 @@
     "export_failed": "Falha ao exportar: {error}",
     "profile_created": "Perfil \"{name}\" criado",
     "profile_switched": "Alterado para o perfil \"{name}\"",
+    "profile_switching": "Alternando para o perfil \"{name}\" e sincronizando arquivos...",
+    "profile_switching_busy": "A troca de perfil já está em andamento, por favor aguarde...",
     "profile_cleared": "Perfil \"{name}\" limpo",
     "profile_deleted": "Perfil \"{name}\" excluído",
+    "profile_renamed": "Perfil renomeado para \"{name}\"",
     "nexus_id_updated": "ID do NexusMods atualizado",
     "pak_dest_changed": "Destino Pak alterado para {dest}",
     "folder_assigned": "Pasta do mod atualizada",
@@ -733,6 +753,7 @@
     "fetching_nexus_count": "Consultando NexusMods para {count} mod(s)...",
     "updated_nexus_count": "Informações do NexusMods atualizadas para {count} mod(s)",
     "file_modified_externally": "O arquivo \"{file}\" foi modificado fora do aplicativo",
+    "file_deleted_externally": "O arquivo \"{file}\" foi excluído fora do aplicativo",
     "skipped_unsupported_files": "{count} arquivo(s) não suportado(s) ignorado(s)",
     "added_to_library": "{count} mod(s) adicionado(s) à biblioteca",
     "clean_conflict_dlls_failed": "Falha ao limpar as DLLs em conflito: {error}"

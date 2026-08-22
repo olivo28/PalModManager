@@ -1,7 +1,7 @@
 [size=5][b]PalModManager (PMM) - Next-Gen Mod Manager & Config Editor for Palworld[/b][/size]
 
 [line]
-Latest version: 1.4.0
+Latest version: 1.5.1
 
 Changelog: You can find the latest update notes in the pinned comments section or check the full history on [url=https://github.com/olivo28/PalModManager]GitHub[/url].
 
@@ -32,6 +32,7 @@ Built with [b]Tauri v2[/b] and [b]Rust[/b], PalModManager launches instantly and
 [*][b]Smart Mod Auto-Detection[/b]: Automatically identifies and categorizes UE4SS, PalSchema, Pak, LogicMods, and Hybrids.[/*]
 [*][b]Interactive ZIP File Tree Preview (New!)[/b]: Open a collapsible tree previewer in both single and batch mod installers to inspect ZIP contents and projected targets in real-time before installing.[/*]
 [*][b]Dynamic UE4SS Load Order Manager (New!)[/b]: Manage loading sequences interactively with a drag-and-drop ordering interface in the sidebar, syncing state transitions between `enabled.txt` and `mods.txt` dynamically.[/*]
+[*][b]Exclusive PalSchema Load Order Manager (Unique Feature! - Windows Only)[/b]: Control the load order of PalSchema mods! PalSchema natively reads files without any sorting logic. PMM solves this by isolating mods in a `/Storage` directory and creating zero-padded NTFS Junctions (e.g. `001_ModName`, `002_ModName`) inside `/mods` that do *not* require Administrator/UAC permissions. Side-by-side flex layout panel lets you manage both lists independently with their own scrollbars.[/*]
 [*][b]Integrated Mod Packer & Manifesting (New!)[/b]: Package mods with custom target routing, author/version tags, and Nexus IDs. Saves layout manifests into a dedicated `modinfo.pmm.json` file inside the ZIP, enabling instant, heuristic-free native installation on client machines.[/*]
 [*][b]Pre-installed Mod Scanner (New!)[/b]: Scans local game directories and parses `modinfo.pmm.json` to load rich mod descriptions, versions, and authors automatically.[/*]
 [*][b]Mod Conflict & Compatibility Scanner[/b]: Analyzes enabled mods to identify table row overlaps (PalSchema overrides) and hook overlaps (multiple mods hooking the same engine function in Lua) in a side-by-side split view.[/*]
@@ -96,6 +97,19 @@ Because this is an independent community project without a commercial Code Signi
   - UE4SS (PalModManager can install this for you automatically).
   - PalSchema (PalModManager can install this for you automatically).[/*]
 [/list]
+
+[line]
+
+[size=4][b]🙏 Credits & Acknowledgements[/b][/size]
+[list]
+[*][b]HalRiveria[/b] — Community tester and bug reporter. Has consistently tracked down and reported hard-to-catch edge cases (mod update regressions, FLO corner cases, batch installer failures, and more) that have directly shaped the stability and polish of PalModManager across multiple releases. Thank you for all the feedback and patience!
+[/list]
+
+[line]
+
+[size=4][b]💬 Community & Support[/b][/size]
+Need help, want to report a bug, or suggest a new feature? Join our official Discord community:
+[url=https://discord.gg/AHTDAUwm77]Join Discord Server (AHTDAUwm77)[/url]
 
 [line]
 

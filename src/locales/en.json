@@ -40,7 +40,8 @@
     "files_count": "+{count} files",
     "file_single": "+1 file",
     "folder": "Folder",
-    "installed": "Installed"
+    "installed": "Installed",
+    "checking_updates": "Checking for updates..."
   },
   "sidebar": {
     "tab_mods": "Mods",
@@ -356,6 +357,7 @@
     "status_modified": "Unsaved changes",
     "status_invalid_json": "Invalid JSON: {error}",
     "status_formatted": "Formatted",
+    "status_formatted_clean": "Formatted (comments stripped)",
     "no_content_available": "No content available",
     "find_placeholder": "Find...",
     "find_prev_title": "Previous match",
@@ -399,7 +401,23 @@
     "new_mod_subscribed": "Steam Workshop: New mod subscribed — \"{name}\"",
     "confirm_remove_version": "Are you sure you want to remove version \"{zip}\" from your library?\n\n(Other versions of this mod in your library will NOT be deleted)",
     "confirm_remove_bulk": "Are you sure you want to delete {count} mod(s) from your library?",
-    "workshop_open_folder_title": "Open local Workshop folder"
+    "workshop_open_folder_title": "Open local Workshop folder",
+    "btn_check_workshop_updates": "Check Updates",
+    "btn_check_workshop_updates_title": "Check for Steam Workshop mod updates online",
+    "btn_force_steam_validation": "Force Steam Validation / Download",
+    "btn_open_in_steam": "Open in Steam Client",
+    "checking_workshop_updates": "Checking Steam Workshop updates...",
+    "toast_workshop_up_to_date": "All Steam Workshop mods are up to date",
+    "toast_updates_ready_to_install": "Found {count} workshop update(s) ready to apply!",
+    "confirm_force_steam_validation": "Steam has update(s) available for {count} mod(s) ({names}) that have not downloaded to your PC yet.\n\nDo you want to force Steam to verify game files and download the updates now?\n\n(Note: The Play button will be safely locked for 2 minutes while Steam validates and downloads files in the background)",
+    "confirm_direct_steam_validation": "Are you sure you want to force Steam to verify Palworld game files?\n\nThis will trigger file integrity verification in Steam and download pending Workshop updates.\n\n(Note: The Play button will be safely locked for 2 minutes while Steam performs this operation)",
+    "toast_starting_steam_validation": "Triggering Steam file verification (Play button locked for 2 minutes)...",
+    "toast_steam_validation_completed": "Steam verification period completed! Play button unlocked.",
+    "steam_validating_tooltip": "Steam is verifying / downloading files in background (Play button locked for safety: {time}s left)...",
+    "btn_check_nexus_updates": "Check Nexus Updates",
+    "btn_open_library_folder": "Open Library Folder",
+    "checking_library_nexus_updates": "Checking Nexus Mods updates for library...",
+    "toast_local_library_up_to_date": "All Local Library mods are up to date with Nexus Mods"
   },
   "packer": {
     "hub_title": "Mod Packer Workspace",
@@ -716,10 +734,6 @@
     "folder_unassigned": "Mod removed from folder",
     "export_success": "Exported to {path}",
     "export_failed": "Export failed: {error}",
-    "nexus_id_updated": "NexusMods ID updated",
-    "pak_dest_changed": "Pak destination changed to {dest}",
-    "folder_assigned": "Mod folder updated",
-    "folder_unassigned": "Mod removed from folder",
     "refreshing": "Refreshing...",
     "refresh_info": "Refresh info",
     "dlls_cleaned": "Cleaned {count} conflicting DLL(s). Files moved to quarantine.",
@@ -739,6 +753,7 @@
     "fetching_nexus_count": "Fetching Nexus info for {count} mod(s)...",
     "updated_nexus_count": "Updated Nexus info for {count} mod(s)",
     "file_modified_externally": "File \"{file}\" was modified externally",
+    "file_deleted_externally": "File \"{file}\" was deleted externally",
     "skipped_unsupported_files": "Skipped {count} non-supported file(s)",
     "added_to_library": "Added {count} mod(s) to library",
     "clean_conflict_dlls_failed": "Failed to clean conflict DLLs: {error}"

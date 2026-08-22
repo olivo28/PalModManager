@@ -4,7 +4,11 @@ dist/
 dist-ssr/
 *.local
 .env
-.env.*.local
+.env.*
+*.env
+src-tauri/.env
+!.env.example
+!src-tauri/.env.example
 
 # --- Rust & Tauri ---
 src-tauri/target/
@@ -82,8 +86,10 @@ CHANGELOG_BBCODE v1.5.txt
 src-tauri/profiles/
 
 altermatic_integration_plan.md
+Altermatic Integration Proposal.md
 
 v1.5.1_safety_backup_plan.md
 i18n_multilanguage_proposal.md
 extracted_i18n_strings.md
+drag_and_drop_architecture.md
 

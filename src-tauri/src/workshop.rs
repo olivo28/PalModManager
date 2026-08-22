@@ -1,6 +1,6 @@
 use crate::models::{PalModSettings, WorkshopMod, WorkshopInstallType};
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 const WORKSHOP_FRAMEWORK_IDS: &[u64] = &[3625223587, 3625280368];
@@ -541,3 +541,110 @@ pub fn zip_dir(src_dir: &Path, dst_file: &Path) -> Result<(), String> {
     zip.finish().map_err(|e| e.to_string())?;
     Ok(())
 }
+
+pub async fn check_workshop_online_updates(game_path: &str) -> Result<crate::models::WorkshopOnlineCheckResult, String> {
+    let wmods = scan_workshop_mods(game_path);
+    if wmods.is_empty() {
+        return Ok(crate::models::WorkshopOnlineCheckResult::default());
+    }
+
+    let settings = read_pal_mod_settings(game_path);
+    let workshop_root = Path::new(&settings.workshop_root);
+
+    let client = reqwest::Client::new();
+    let url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
+
+    let mut params = Vec::new();
+    params.push(("itemcount".to_string(), wmods.len().to_string()));
+    for (i, m) in wmods.iter().enumerate() {
+        params.push((format!("publishedfileids[{}]", i), m.workshop_id.to_string()));
+    }
+
+    let resp = client.post(url)
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to query Steam Web API: {}", e))?;
+
+    let json: serde_json::Value = resp.json()
+        .await
+        .map_err(|e| format!("Failed to parse Steam response: {}", e))?;
+
+    let details_list = json.get("response")
+        .and_then(|r| r.get("publishedfiledetails"))
+        .and_then(|d| d.as_array())
+        .ok_or_else(|| "Invalid response from Steam Web API".to_string())?;
+
+    let mut result = crate::models::WorkshopOnlineCheckResult {
+        total_checked: wmods.len(),
+        pending_steam_downloads: Vec::new(),
+        ready_to_install_updates: Vec::new(),
+    };
+
+    for m in &wmods {
+        let wid_str = m.workshop_id.to_string();
+        let detail = details_list.iter().find(|d| {
+            d.get("publishedfileid").and_then(|id| id.as_str()) == Some(&wid_str)
+        });
+
+        if let Some(d) = detail {
+            let remote_time = d.get("time_updated").and_then(|t| t.as_u64()).unwrap_or(0);
+            
+            // Get local disk timestamp from folder modified time or Info.json
+            let mut local_time: u64 = 0;
+            let mod_dir = workshop_root.join(&wid_str);
+            if mod_dir.exists() {
+                if let Ok(meta) = fs::metadata(&mod_dir) {
+                    if let Ok(modified) = meta.modified() {
+                        if let Ok(dur) = modified.duration_since(std::time::UNIX_EPOCH) {
+                            local_time = dur.as_secs();
+                        }
+                    }
+                }
+            }
+
+            let has_remote_update = remote_time > local_time && (remote_time - local_time > 120); // 2 minute threshold to avoid timezone skew
+            let is_downloaded = !has_remote_update;
+
+            let online_item = crate::models::WorkshopOnlineModItem {
+                workshop_id: m.workshop_id,
+                mod_name: m.mod_name.clone(),
+                package_name: m.package_name.clone(),
+                local_time_updated: local_time,
+                remote_time_updated: remote_time,
+                has_remote_update,
+                is_downloaded_to_disk: is_downloaded,
+            };
+
+            if has_remote_update {
+                result.pending_steam_downloads.push(online_item);
+            } else if m.has_pending_update || (m.is_installed && m.installed_version.is_some() && m.installed_version.as_ref() != Some(&m.version)) {
+                result.ready_to_install_updates.push(online_item);
+            }
+        }
+    }
+
+    Ok(result)
+}
+
+pub fn trigger_steam_validation(game_path: &str) -> Result<(), String> {
+    // Launch steam://validate/1623730
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        let _ = std::process::Command::new("cmd")
+            .args(&["/C", "start", "", "steam://validate/1623730"])
+            .creation_flags(0x08000000)
+            .spawn();
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        let _ = std::process::Command::new("xdg-open")
+            .arg("steam://validate/1623730")
+            .spawn();
+    }
+    crate::logger::log(&format!("Dispatched steam://validate/1623730 for game at {}", game_path));
+    Ok(())
+}
+
+

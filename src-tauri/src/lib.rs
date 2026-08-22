@@ -158,6 +158,7 @@ pub fn run() {
             library_commands::remove_from_library,
             library_commands::get_library_zip_path,
             library_commands::copy_to_library_command,
+            library_commands::check_library_updates,
             profile_commands::get_profiles,
             profile_commands::get_current_profile,
             profile_commands::switch_profile_command,
@@ -213,6 +214,8 @@ pub fn run() {
             workshop_commands::deactivate_workshop_mod_cmd,
             workshop_commands::set_workshop_global_enabled,
             workshop_commands::prepare_workshop_update_zip,
+            workshop_commands::check_workshop_updates_online_cmd,
+            workshop_commands::trigger_steam_validation_cmd,
             launch_commands::launch_game,
         ])
         .setup(move |app| {
@@ -291,15 +294,32 @@ pub fn run() {
             let mut watch_paths = Vec::new();
             if !game_dir.is_empty() {
                 let gp = std::path::Path::new(&game_dir);
-                let win64_mods = gp.join("Pal").join("Binaries").join("Win64").join("Mods");
-                if win64_mods.exists() {
-                    watch_paths.push(win64_mods);
-                } else {
-                    watch_paths.push(gp.join("Pal").join("Binaries").join("Win64"));
+                let game_profile = crate::dependency_checker::build_game_profile(gp);
+
+                // Watch standard / detected UE4SS mods directory (and its mods.txt)
+                if game_profile.ue4ss_mods_dir.exists() {
+                    watch_paths.push(game_profile.ue4ss_mods_dir.clone());
+                } else if game_profile.binaries_dir.exists() {
+                    watch_paths.push(game_profile.binaries_dir.clone());
                 }
-                watch_paths.push(gp.join("Pal").join("Content").join("Paks"));
-                watch_paths.push(gp.join("Pal").join("Binaries").join("Win64").join("PalSchema"));
-                watch_paths.push(gp.join("Mods").join("NativeMods"));
+
+                // Also ensure standard win64 ue4ss folder is watched if present
+                let win64_ue4ss = gp.join("Pal").join("Binaries").join("Win64").join("ue4ss");
+                if win64_ue4ss.exists() && !watch_paths.contains(&win64_ue4ss) {
+                    watch_paths.push(win64_ue4ss);
+                }
+
+                // Watch Paks (~mods, LogicMods)
+                let paks_dir = gp.join("Pal").join("Content").join("Paks");
+                if paks_dir.exists() {
+                    watch_paths.push(paks_dir);
+                }
+
+                // Watch NativeMods
+                let native_mods = gp.join("Mods").join("NativeMods");
+                if native_mods.exists() {
+                    watch_paths.push(native_mods);
+                }
 
                 // Native Steam Workshop content directory (steamapps/workshop/content/1623730)
                 let ws_settings = crate::workshop::read_pal_mod_settings(&game_dir);

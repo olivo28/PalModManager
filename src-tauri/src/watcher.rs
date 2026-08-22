@@ -14,7 +14,7 @@ pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
                     let _ = tx.send(event);
                 }
             },
-            Config::default().with_poll_interval(Duration::from_millis(500)),
+            Config::default(),
         ) {
             Ok(w) => w,
             Err(e) => {
@@ -37,11 +37,11 @@ pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
         let mut last_event_time = std::time::Instant::now();
 
         loop {
-            match rx.recv_timeout(Duration::from_millis(200)) {
+            match rx.recv_timeout(Duration::from_millis(150)) {
                 Ok(event) => {
                     let should_track = match event.kind {
-                        EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) => true,
-                        _ => false,
+                        EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) | EventKind::Any => true,
+                        _ => true, // Track all FS events for safety
                     };
                     if should_track {
                         for p in event.paths {
@@ -56,10 +56,11 @@ pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
                     }
                 }
                 Err(_) => {
-                    if !pending_paths.is_empty() && last_event_time.elapsed() >= Duration::from_millis(150) {
+                    if !pending_paths.is_empty() && last_event_time.elapsed() >= Duration::from_millis(100) {
                         let payload = serde_json::json!({
                             "paths": pending_paths.clone(),
                         });
+                        crate::logger::log(&format!("Emitting fs:file-changed for {} paths", pending_paths.len()));
                         let _ = app_handle.emit("fs:file-changed", payload);
                         pending_paths.clear();
                     }

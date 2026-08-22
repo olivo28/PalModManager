@@ -1088,11 +1088,38 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
       </button>
     `;
   } else {
-    hideContextMenu();
-    return;
+    // Empty space in Local Library
+    menu.innerHTML = `
+      <button type="button" class="context-menu-item" id="lib-ctx-check-updates" style="display:flex;align-items:center;width:100%;">
+        <span class="ctx-icon">🔍</span> ${escapeHtml(t('library.btn_check_nexus_updates'))}
+      </button>
+      <button type="button" class="context-menu-item" id="lib-ctx-open-folder" style="display:flex;align-items:center;width:100%;">
+        <span class="ctx-icon">📁</span> ${escapeHtml(t('library.btn_open_library_folder'))}
+      </button>
+    `;
   }
 
   positionContextMenu(x, y);
+
+  document.getElementById('lib-ctx-check-updates')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    const { handleCheckLocalLibraryOnlineUpdates } = await import('./library');
+    handleCheckLocalLibraryOnlineUpdates();
+  });
+
+  document.getElementById('lib-ctx-open-folder')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    const { openUrl, getSettings } = await import('../../api');
+    try {
+      const settings = await getSettings();
+      const libPath = `${settings.programPath}/mods-library`;
+      await openUrl(libPath);
+    } catch (err) {
+      showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+    }
+  });
 
   document.getElementById('lib-ctx-install')?.addEventListener('click', (e) => {
     e.stopPropagation();
@@ -1134,6 +1161,50 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
   });
 }
 
+export function showWorkshopContextMenu(packageName: string | null, workshopId: string | null, x: number, y: number): void {
+  const menu = document.getElementById('context-menu')!;
+  
+  menu.innerHTML = `
+    <button type="button" class="context-menu-item" id="ws-ctx-check-updates" style="display:flex;align-items:center;width:100%;">
+      <span class="ctx-icon">🔍</span> ${escapeHtml(t('library.btn_check_workshop_updates'))}
+    </button>
+    <button type="button" class="context-menu-item" id="ws-ctx-force-verify" style="display:flex;align-items:center;width:100%;">
+      <span class="ctx-icon">⚡</span> ${escapeHtml(t('library.btn_force_steam_validation'))}
+    </button>
+    ${workshopId ? `
+      <div class="context-menu-sep"></div>
+      <button type="button" class="context-menu-item" id="ws-ctx-open-steam" style="display:flex;align-items:center;width:100%;">
+        <span class="ctx-icon">🌐</span> ${escapeHtml(t('library.btn_open_in_steam'))}
+      </button>
+    ` : ''}
+  `;
+
+  positionContextMenu(x, y);
+
+  document.getElementById('ws-ctx-check-updates')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    const { handleCheckWorkshopOnlineUpdates } = await import('./library');
+    handleCheckWorkshopOnlineUpdates();
+  });
+
+  document.getElementById('ws-ctx-force-verify')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    hideContextMenu();
+    const { handleTriggerSteamValidation } = await import('./library');
+    handleTriggerSteamValidation();
+  });
+
+  if (workshopId) {
+    document.getElementById('ws-ctx-open-steam')?.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      hideContextMenu();
+      const { openUrl } = await import('../../api');
+      openUrl(`steam://url/CommunityFilePage/${workshopId}`);
+    });
+  }
+}
+
 function isAnyModalActive(): boolean {
   const visibleOverlay = document.querySelector('.modal-overlay.visible, .detail-overlay.visible, .confirm-overlay, .detail-overlay[style*="display: flex"]');
   return !!visibleOverlay;
@@ -1159,7 +1230,17 @@ export function setupContextMenu(): void {
     }
 
     const isLibraryView = target.closest('#library-view');
-    const libCard = target.closest('.library-card') as HTMLElement | null;
+    const workshopCard = target.closest('.workshop-card') as HTMLElement | null;
+    const libCard = target.closest('.library-card:not(.workshop-card)') as HTMLElement | null;
+
+    if (workshopCard) {
+      e.preventDefault();
+      hideContextMenu();
+      const pkg = workshopCard.dataset.package || null;
+      const wid = workshopCard.querySelector('.workshop-item-folder-btn')?.getAttribute('data-path')?.split('/').pop() || null;
+      showWorkshopContextMenu(pkg, wid, e.clientX, e.clientY);
+      return;
+    }
 
     if (isLibraryView || libCard) {
       e.preventDefault();
@@ -1168,6 +1249,14 @@ export function setupContextMenu(): void {
       const zip = libCard?.querySelector('.library-item-delete')?.getAttribute('data-zip') || null;
       if (id) {
         showLibraryContextMenu(id, zip, e.clientX, e.clientY);
+      } else if (isLibraryView) {
+        import('./library').then(({ _activeLibrarySubTab }) => {
+          if (_activeLibrarySubTab === 'workshop') {
+            showWorkshopContextMenu(null, null, e.clientX, e.clientY);
+          } else {
+            showLibraryContextMenu(null, null, e.clientX, e.clientY);
+          }
+        });
       }
       return;
     }

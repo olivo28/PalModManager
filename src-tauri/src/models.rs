@@ -273,4 +273,25 @@ pub struct PalModSettings {
     pub active_mod_list: Vec<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkshopOnlineModItem {
+    pub workshop_id: u64,
+    pub mod_name: String,
+    pub package_name: String,
+    pub local_time_updated: u64,
+    pub remote_time_updated: u64,
+    pub has_remote_update: bool,
+    pub is_downloaded_to_disk: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct WorkshopOnlineCheckResult {
+    pub total_checked: usize,
+    pub pending_steam_downloads: Vec<WorkshopOnlineModItem>,
+    pub ready_to_install_updates: Vec<WorkshopOnlineModItem>,
+}
+
+
 

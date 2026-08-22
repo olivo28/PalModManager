@@ -40,7 +40,8 @@
     "files_count": "+{count} archivos",
     "file_single": "+1 archivo",
     "folder": "Carpeta",
-    "installed": "Instalado"
+    "installed": "Instalado",
+    "checking_updates": "Buscando actualizaciones..."
   },
   "sidebar": {
     "tab_mods": "Mods",
@@ -400,7 +401,23 @@
     "new_mod_subscribed": "Steam Workshop: Nuevo mod suscrito — \"{name}\"",
     "confirm_remove_version": "¿Estás seguro de que deseas eliminar la versión \"{zip}\" de tu biblioteca?\n\n(Las demás versiones de este mod no se verán afectadas)",
     "confirm_remove_bulk": "¿Estás seguro de que deseas eliminar {count} mod(s) de tu biblioteca?",
-    "workshop_open_folder_title": "Abrir carpeta local de Workshop"
+    "workshop_open_folder_title": "Abrir carpeta local de Workshop",
+    "btn_check_workshop_updates": "Buscar Actualizaciones",
+    "btn_check_workshop_updates_title": "Buscar actualizaciones de mods de Steam Workshop en línea",
+    "btn_force_steam_validation": "Forzar Validación / Descarga en Steam",
+    "btn_open_in_steam": "Abrir en el Cliente de Steam",
+    "checking_workshop_updates": "Buscando actualizaciones de Steam Workshop...",
+    "toast_workshop_up_to_date": "Todos los mods de Steam Workshop están actualizados",
+    "toast_updates_ready_to_install": "¡Se encontraron {count} actualización(es) de Workshop listas para aplicar!",
+    "confirm_force_steam_validation": "Steam tiene actualización(es) disponibles para {count} mod(s) ({names}) que aún no se han descargado a tu equipo.\n\n¿Deseas forzar a Steam a verificar los archivos del juego y descargar las actualizaciones ahora?\n\n(Nota: El botón PLAY se bloqueará por seguridad durante 2 minutos mientras Steam valida y descarga los archivos en segundo plano)",
+    "confirm_direct_steam_validation": "¿Estás seguro de que deseas forzar la verificación de archivos de Palworld en Steam?\n\nEsto iniciará la comprobación de integridad en el cliente de Steam y descargará las actualizaciones pendientes de Workshop.\n\n(Nota: El botón PLAY se bloqueará por seguridad durante 2 minutos mientras se realiza este proceso)",
+    "toast_starting_steam_validation": "Iniciando verificación de Steam (botón PLAY bloqueado por 2 minutos)...",
+    "toast_steam_validation_completed": "¡Período de verificación de Steam completado! Botón PLAY desbloqueado.",
+    "steam_validating_tooltip": "Steam está verificando / descargando archivos en segundo plano (botón PLAY bloqueado por seguridad: restan {time}s)...",
+    "btn_check_nexus_updates": "Buscar actualizaciones de Nexus",
+    "btn_open_library_folder": "Abrir carpeta de la biblioteca",
+    "checking_library_nexus_updates": "Buscando actualizaciones de Nexus Mods para la biblioteca...",
+    "toast_local_library_up_to_date": "Todos los mods de la biblioteca local están actualizados con Nexus Mods"
   },
   "packer": {
     "hub_title": "Espacio de Trabajo del Empaquetador de Mods",
@@ -736,7 +753,8 @@
     "fetching_nexus_count": "Consultando NexusMods para {count} mod(s)...",
     "updated_nexus_count": "Se actualizó la información de NexusMods para {count} mod(s)",
     "file_modified_externally": "El archivo \"{file}\" fue modificado fuera de la aplicación",
-    "skipped_unsupported_files": "Se omitieron {count} archivo(s) no compatibles",
+    "file_deleted_externally": "El archivo \"{file}\" fue eliminado fuera de la aplicación",
+    "skipped_unsupported_files": "Se omitieron {count} archivo(s) no admitidos",
     "added_to_library": "Se añadieron {count} mod(s) a la biblioteca",
     "clean_conflict_dlls_failed": "Error al limpiar las DLLs en conflicto: {error}"
   },

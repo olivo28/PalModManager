@@ -246,6 +246,10 @@ export async function getLibrary(): Promise<LibraryEntry[]> {
   return invoke('get_library');
 }
 
+export async function checkLibraryUpdates(): Promise<UpdateCheckResult[]> {
+  return invoke('check_library_updates');
+}
+
 export async function installModFromLibrary(modId: string): Promise<ModInfo> {
   return invoke('install_mod_from_library', { modId });
 }
@@ -480,6 +484,31 @@ export async function getPalschemaLoadOrder(): Promise<any[]> {
 export async function savePalschemaLoadOrder(order: any[]): Promise<void> {
   return invoke('save_palschema_load_order', { order });
 }
+
+export interface WorkshopOnlineModItem {
+  workshopId: number;
+  modName: string;
+  packageName: string;
+  localTimeUpdated: number;
+  remoteTimeUpdated: number;
+  hasRemoteUpdate: boolean;
+  isDownloadedToDisk: boolean;
+}
+
+export interface WorkshopOnlineCheckResult {
+  totalChecked: number;
+  pendingSteamDownloads: WorkshopOnlineModItem[];
+  readyToInstallUpdates: WorkshopOnlineModItem[];
+}
+
+export async function checkWorkshopUpdatesOnline(): Promise<WorkshopOnlineCheckResult> {
+  return invoke('check_workshop_updates_online_cmd');
+}
+
+export async function triggerSteamValidation(): Promise<void> {
+  return invoke('trigger_steam_validation_cmd');
+}
+
 
 
 

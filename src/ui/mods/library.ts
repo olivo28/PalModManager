@@ -8,6 +8,7 @@ import { listen } from '@tauri-apps/api/event';
 
 export let _librarySearchQuery = '';
 export let _activeLibrarySubTab: 'local' | 'workshop' = 'local';
+export const _libraryOnlineUpdatesMap: Map<string, string> = new Map();
 
 const WORKSHOP_TIMESTAMPS_KEY = 'pmm_workshop_mod_timestamps';
 const NEW_MOD_DURATION_MS = 10 * 60 * 1000; // 10 minutes
@@ -121,6 +122,7 @@ export function setupLibraryHandlers(): void {
     }
   });
 
+  document.getElementById('workshop-check-updates-btn')?.addEventListener('click', handleCheckWorkshopOnlineUpdates);
   document.getElementById('library-bulk-install-btn')?.addEventListener('click', handleLibraryBulkInstall);
   document.getElementById('library-bulk-remove-btn')?.addEventListener('click', handleLibraryBulkRemove);
   document.getElementById('library-bulk-clear-btn')?.addEventListener('click', () => {
@@ -218,9 +220,11 @@ export async function renderLibraryView(): Promise<void> {
 
   const masterToggleWrap = document.getElementById('library-workshop-master-wrap');
   const bulkBar = document.getElementById('library-bulk-actions-bar');
+  const wsCheckUpdatesBtn = document.getElementById('workshop-check-updates-btn');
 
   if (_activeLibrarySubTab === 'local') {
     if (masterToggleWrap) masterToggleWrap.style.display = 'none';
+    if (wsCheckUpdatesBtn) wsCheckUpdatesBtn.style.display = 'none';
 
     let entries = getState().libraryEntries;
     const state = getState();
@@ -359,6 +363,12 @@ function compareVersions(a: string, b: string): number {
         installBtnText = group.versions.length > 1 ? t('library.btn_install_ver', { version: latestVersion }) : t('common.install');
       }
 
+      // Check if there is an online Nexus update for this library card
+      const onlineNexusVer = _libraryOnlineUpdatesMap.get(group.modId);
+      const onlineUpdateBadge = onlineNexusVer
+        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: onlineNexusVer }))}</span>`
+        : '';
+
       let imageHtml = `<div style="font-size:32px;text-align:center;color:var(--text-muted);opacity:0.8;margin:8px 0;">📦</div>`;
       let resolvedSrc = group.nexusPictureUrl;
       if (resolvedSrc) {
@@ -423,7 +433,10 @@ function compareVersions(a: string, b: string): number {
             <div class="card-checkbox-container" style="display:flex;align-items:center;">
               <input type="checkbox" class="library-card-checkbox" data-id="${group.modId}" ${isSelected ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;" />
             </div>
-            ${statusBadgeHtml}
+            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+              ${statusBadgeHtml}
+              ${onlineUpdateBadge}
+            </div>
           </div>
           
           <div style="display:flex;flex-direction:column;gap:6px;height:100%;justify-content:space-between;">
@@ -546,6 +559,7 @@ function compareVersions(a: string, b: string): number {
     updateLibraryBulkBar();
   } else if (_activeLibrarySubTab === 'workshop') {
     if (masterToggleWrap) masterToggleWrap.style.display = 'flex';
+    if (wsCheckUpdatesBtn) wsCheckUpdatesBtn.style.display = 'inline-flex';
     if (bulkBar) bulkBar.style.display = 'none';
 
     try {
@@ -817,3 +831,138 @@ function formatSize(bytes: number): string {
   if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(0) + ' KB';
   return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
 }
+
+export async function handleCheckWorkshopOnlineUpdates(): Promise<void> {
+  const btn = document.getElementById('workshop-check-updates-btn') as HTMLButtonElement | null;
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = t('library.checking_workshop_updates');
+  }
+
+  showToast(t('library.checking_workshop_updates'), 'info');
+
+  try {
+    const { checkWorkshopUpdatesOnline } = await import('../../api');
+    const result = await checkWorkshopUpdatesOnline();
+
+    if (result.totalChecked === 0) {
+      showToast(t('library.empty_workshop'), 'info');
+      return;
+    }
+
+    if (result.readyToInstallUpdates.length > 0) {
+      showToast(t('library.toast_updates_ready_to_install', { count: result.readyToInstallUpdates.length }), 'success');
+      await renderLibraryView();
+      return;
+    }
+
+    if (result.pendingSteamDownloads.length > 0) {
+      const { showConfirm } = await import('../confirm');
+      const modNames = result.pendingSteamDownloads.map(m => m.modName).join(', ');
+      const confirmed = await showConfirm(
+        t('library.confirm_force_steam_validation', { count: result.pendingSteamDownloads.length, names: modNames })
+      );
+      if (confirmed) {
+        await handleTriggerSteamValidation(true);
+      }
+      return;
+    }
+
+    showToast(t('library.toast_workshop_up_to_date'), 'success');
+  } catch (err) {
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = t('library.btn_check_workshop_updates');
+    }
+  }
+}
+
+export async function handleTriggerSteamValidation(bypassConfirm: boolean = false): Promise<void> {
+  try {
+    if (!bypassConfirm) {
+      const { showConfirm } = await import('../confirm');
+      const confirmed = await showConfirm(t('library.confirm_direct_steam_validation'));
+      if (!confirmed) return;
+    }
+
+    const { triggerSteamValidation } = await import('../../api');
+    showToast(t('library.toast_starting_steam_validation'), 'info');
+    await triggerSteamValidation();
+
+    // Lock Play button safely for 2 minutes (120 seconds) while Steam downloads updates
+    const playBtn = document.getElementById('launch-game-btn') as HTMLButtonElement | null;
+    const playLabel = playBtn?.querySelector('.sidebar-tab-label') as HTMLElement | null;
+
+    if (playBtn) {
+      playBtn.disabled = true;
+      playBtn.style.opacity = '0.6';
+      playBtn.style.cursor = 'not-allowed';
+    }
+
+    let remainingSeconds = 120;
+    const intervalId = setInterval(async () => {
+      remainingSeconds--;
+      if (playBtn) {
+        playBtn.title = t('library.steam_validating_tooltip', { time: remainingSeconds });
+      }
+      if (playLabel) {
+        const mins = Math.floor(remainingSeconds / 60);
+        const secs = remainingSeconds % 60;
+        playLabel.textContent = `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+      }
+
+      if (remainingSeconds <= 0) {
+        clearInterval(intervalId);
+        if (playBtn) {
+          playBtn.disabled = false;
+          playBtn.style.opacity = '1';
+          playBtn.style.cursor = 'pointer';
+          playBtn.title = t('sidebar.launch_game_title');
+        }
+        if (playLabel) {
+          playLabel.textContent = t('sidebar.launch_game');
+        }
+
+        showToast(t('library.toast_steam_validation_completed'), 'success');
+
+        const { loadLibrary } = await import('./library');
+        const { loadMods } = await import('../modsView');
+        await loadLibrary();
+        await loadMods();
+      }
+    }, 1000);
+  } catch (err) {
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+  }
+}
+
+export async function handleCheckLocalLibraryOnlineUpdates(): Promise<void> {
+  showToast(t('library.checking_library_nexus_updates'), 'info');
+
+  try {
+    const { checkLibraryUpdates } = await import('../../api');
+    const updates = await checkLibraryUpdates();
+
+    _libraryOnlineUpdatesMap.clear();
+    for (const u of updates) {
+      _libraryOnlineUpdatesMap.set(u.modId, u.latestVersion);
+    }
+
+    if (updates.length === 0) {
+      showToast(t('library.toast_local_library_up_to_date'), 'success');
+    } else {
+      showToast(t('toasts.found_updates_count', { count: updates.length }), 'success');
+      for (const u of updates) {
+        showToast(`${u.name}: ${u.currentVersion} → ${u.latestVersion}`, 'info');
+      }
+    }
+
+    await renderLibraryView();
+  } catch (err) {
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+  }
+}
+
+

@@ -32,10 +32,48 @@ export async function setupEditorFsWatcher(): Promise<void> {
 
       // 1. If currently in Config Editor or viewing a mod
       if (state.editorModId) {
-        // If the open file itself changed on disk
+        // Refresh mod files from disk and re-render file tree
+        const { listModFiles } = await import('../../api');
+        const { renderFileTree } = await import('./tree');
+        try {
+          const latestFiles = await listModFiles(state.editorModId);
+          updateState({ editorFiles: latestFiles });
+          renderFileTree(latestFiles);
+
+          // Restore selection highlight on file tree if selected file still exists
+          if (state.editorSelectedFile) {
+            const currentSelected = state.editorSelectedFile;
+            if (!latestFiles.includes(currentSelected)) {
+              // File was deleted on disk!
+              updateState({ editorSelectedFile: null });
+              const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+              const editorPath = document.getElementById('editor-file-path');
+              const editorStatus = document.getElementById('editor-status');
+              const codeEl = document.getElementById('editor-highlight-code');
+              if (editorContent) { editorContent.value = ''; editorContent.disabled = true; }
+              if (editorPath) editorPath.textContent = '';
+              if (editorStatus) editorStatus.textContent = '';
+              if (codeEl) codeEl.innerHTML = '';
+              showToast(t('toasts.file_deleted_externally', { file: currentSelected }) || `File "${currentSelected}" was deleted on disk`, 'info');
+            } else {
+              const item = document.querySelector(`.editor-file-item[data-path="${CSS.escape(currentSelected)}"]`) as HTMLElement | null;
+              if (item) item.classList.add('selected');
+            }
+          }
+        } catch (e) {
+          console.error('Failed to refresh editor file tree on change:', e);
+        }
+
+        // If the open file itself changed on disk, reload its content
         if (state.editorSelectedFile) {
-          const selectedNorm = norm(state.editorSelectedFile);
-          const isCurrentFileChanged = normChanged.some(p => p.endsWith('/' + selectedNorm) || p.endsWith(selectedNorm) || selectedNorm.endsWith(p));
+          let selectedNorm = norm(state.editorSelectedFile);
+          // Strip [UE4SS] folder/ or [PalSchema] folder/ prefix if present
+          selectedNorm = selectedNorm.replace(/^\[(ue4ss|palschema)\]\s*[^/]+\//, '');
+
+          const isCurrentFileChanged = normChanged.some(p => {
+            const cleanP = p.replace(/^\[(ue4ss|palschema)\]\s*[^/]+\//, '');
+            return cleanP.endsWith('/' + selectedNorm) || cleanP.endsWith(selectedNorm) || selectedNorm.endsWith(cleanP) || cleanP === selectedNorm;
+          });
 
           if (isCurrentFileChanged) {
             const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
@@ -56,7 +94,7 @@ export async function setupEditorFsWatcher(): Promise<void> {
           }
         }
 
-        // Refresh file tree in editor
+        // Refresh left mod sidebar in editor
         renderEditorModTree();
       }
 

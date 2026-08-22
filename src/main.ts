@@ -561,7 +561,7 @@ function setupEventListeners() {
         loadMods().catch(err => console.error("Auto-scanning mods failed:", err));
       });
     });
-  }).catch(err => console.error("Failed to register focus listener:", err));
+  }).catch(err => console.error("Failed to register event listeners:", err));
 }
 
 

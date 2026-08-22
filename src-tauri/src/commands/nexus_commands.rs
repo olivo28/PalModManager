@@ -148,7 +148,7 @@ pub async fn set_nexus_mod_id(mod_id_str: String, nexus_id: u32, state: State<'_
     Ok(result)
 }
 
-fn is_version_newer(local: &str, remote: &str) -> bool {
+pub(crate) fn is_version_newer(local: &str, remote: &str) -> bool {
     let local_parts: Vec<u32> = local.split('.')
         .map(|p| p.chars().filter(|c| c.is_ascii_digit()).collect::<String>().parse().unwrap_or(0))
         .collect();
@@ -174,7 +174,17 @@ fn is_version_newer(local: &str, remote: &str) -> bool {
 pub async fn check_for_updates(state: State<'_, AppState>) -> Result<Vec<UpdateCheckResult>, String> {
     let mods_to_check: Vec<(String, String, String, u32, Option<String>)> = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
+        let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let installed_ids = current_profile.map(|p| &p.installed_mod_ids);
+
         data.mods.iter()
+            .filter(|m| {
+                if let Some(ids) = installed_ids {
+                    ids.iter().any(|id| crate::profiles::mod_matches_profile_entry(m, id))
+                } else {
+                    true
+                }
+            })
             .filter_map(|m| {
                 if let Some(nid) = m.nexus_mod_id {
                     Some((m.id.clone(), m.name.clone(), m.version.clone(), nid, m.ignored_version.clone()))

@@ -1,7 +1,7 @@
 # PalModManager (PMM) - Mod Manager & Editor for Palworld
 
 ---
-Latest version: 1.3.0
+Latest version: 1.5.1
 
 Changelog: You can find the latest update notes in the pinned comments section or check the full history on [GitHub](https://github.com/olivo28/PalModManager).
 
@@ -88,6 +88,12 @@ Because this is an independent community project without a commercial Code Signi
 
 ## 🙏 Credits & Acknowledgements
 - **HalRiveria** — Community tester and dedicated bug reporter. Has consistently tracked down and reported hard-to-catch edge cases across multiple releases — including mod update regressions, Force Load Order installation bugs, batch installer failures, and more. His feedback has directly shaped the stability and polish of PalModManager. Thank you!
+
+---
+
+## 💬 Community & Support
+Need help, want to report a bug, or suggest a new feature? Join our official Discord community:
+* **Discord Community:** [Join Discord Server (AHTDAUwm77)](https://discord.gg/AHTDAUwm77)
 
 ---
 

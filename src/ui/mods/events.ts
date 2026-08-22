@@ -282,7 +282,7 @@ export async function handleCheckUpdates(): Promise<void> {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
     btn.disabled = false;
-    btn.innerHTML = `<span class="btn-icon-text">&#8634;</span> ${escapeHtml(t('mods.btn_updates_title'))}`;
+    btn.innerHTML = `<span class="btn-icon-text">&#8634;</span> ${escapeHtml(t('mods.btn_updates_label'))}`;
   }
 }
 

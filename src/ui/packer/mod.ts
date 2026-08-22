@@ -12,6 +12,7 @@ export interface ModMetadata {
   author: string;
   modType: string;
   nexusModId?: number | null;
+  routes?: Array<{ zipPath: string; routeType: string }>;
 }
 
 export interface PackerProject {
@@ -156,13 +157,62 @@ function setupPackerEventListeners(): void {
     const metaNexusIdStr = (document.getElementById('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
     const metaNexusId = metaNexusIdStr ? parseInt(metaNexusIdStr, 10) : null;
 
-    const metadata = metaName ? {
+    // Compute routes based on staged files
+    const activeFiles = stagedFiles.filter(f => f.targetPath !== '__SKIP__');
+    const computedRoutes: Array<{ zipPath: string; routeType: string }> = [];
+
+    activeFiles.forEach(f => {
+      const cleanTarget = f.targetPath.replace(/\\/g, '/');
+      const lower = cleanTarget.toLowerCase();
+      let routeType = 'passthrough';
+
+      if (
+        lower.startsWith('palschema/') ||
+        lower.startsWith('mods/palschema/') ||
+        lower.includes('/palschema/') ||
+        lower.includes('/blueprints/') ||
+        lower.includes('/items/') ||
+        lower.includes('/raw/') ||
+        lower.includes('/translations/')
+      ) {
+        routeType = 'palschema';
+      } else if (
+        lower.startsWith('ue4ss/') ||
+        lower.startsWith('mods/') ||
+        lower.includes('/scripts/') ||
+        lower.endsWith('.lua') ||
+        lower.endsWith('enabled.txt')
+      ) {
+        routeType = 'ue4ss';
+      } else if (
+        lower.startsWith('pal/content/paks/logicmods/') ||
+        lower.includes('/logicmods/')
+      ) {
+        routeType = 'logicmods';
+      } else if (
+        lower.startsWith('pal/content/paks/~mods/') ||
+        lower.startsWith('pal/content/paks/') ||
+        lower.endsWith('.pak') ||
+        lower.endsWith('.ucas') ||
+        lower.endsWith('.utoc')
+      ) {
+        routeType = 'pak';
+      }
+
+      computedRoutes.push({
+        zipPath: cleanTarget,
+        routeType
+      });
+    });
+
+    const metadata: ModMetadata | null = metaName ? {
       name: metaName,
       version: metaVersion,
       author: metaAuthor,
       modType: metaType,
       description: metaDesc,
-      nexusModId: isNaN(metaNexusId as any) ? null : metaNexusId
+      nexusModId: isNaN(metaNexusId as any) ? null : metaNexusId,
+      routes: computedRoutes.length > 0 ? computedRoutes : undefined
     } : null;
 
     try {
@@ -180,14 +230,12 @@ function setupPackerEventListeners(): void {
       btn.textContent = '...';
       showToast(t('packer.toast_packing_wait'), 'info');
 
-      const filesToPack = stagedFiles
-        .filter(f => f.targetPath !== '__SKIP__')
-        .map(f => ({
-          sourcePath: f.sourcePath,
-          relativePath: f.relativePath,
-          size: f.size,
-          targetPath: f.targetPath
-        }));
+      const filesToPack = activeFiles.map(f => ({
+        sourcePath: f.sourcePath,
+        relativePath: f.relativePath,
+        size: f.size,
+        targetPath: f.targetPath
+      }));
 
       const res = await invoke<string>('pack_mod', {
         files: filesToPack,
