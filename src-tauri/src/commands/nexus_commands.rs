@@ -252,3 +252,418 @@ pub fn ignore_mod_version(
     let _ = db::save_db(&program_path, &data_clone);
     Ok(())
 }
+
+#[tauri::command]
+pub fn start_nexus_oauth() -> Result<String, String> {
+    crate::nexus_oauth::start_oauth_flow()
+}
+
+#[tauri::command]
+pub async fn handle_nexus_oauth_callback(
+    callback_url: String,
+    state: State<'_, AppState>,
+) -> Result<crate::models::NexusAccountInfo, String> {
+    let account = crate::nexus_oauth::handle_oauth_callback(&callback_url).await?;
+
+    let program_path = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_account = Some(account.clone());
+        data.settings.program_path.clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    let _ = db::save_db(&program_path, &data_clone);
+
+    Ok(account)
+}
+
+#[tauri::command]
+pub async fn get_nexus_account_status(
+    state: State<'_, AppState>,
+) -> Result<Option<crate::models::NexusAccountInfo>, String> {
+    let current_account = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_account.clone()
+    };
+
+    let mut account = match current_account {
+        Some(a) => a,
+        None => return Ok(None),
+    };
+
+    // Check if OAuth token needs refresh
+    if let (Some(expires_at), Some(ref refresh_tok)) = (account.token_expires_at, &account.refresh_token) {
+        let now = chrono::Utc::now().timestamp();
+        // If token expires in less than 5 minutes
+        if now + 300 >= expires_at {
+            crate::logger::log("get_nexus_account_status: Access token expiring soon, refreshing...");
+            match crate::nexus_oauth::refresh_access_token(refresh_tok).await {
+                Ok(new_tokens) => {
+                    let exp_in = new_tokens.expires_in.unwrap_or(3600);
+                    account.access_token = Some(new_tokens.access_token.clone());
+                    if let Some(rt) = new_tokens.refresh_token {
+                        account.refresh_token = Some(rt);
+                    }
+                    account.token_expires_at = Some(now + exp_in);
+
+                    // Save updated tokens
+                    let program_path = {
+                        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+                        data.settings.nexus_account = Some(account.clone());
+                        data.settings.program_path.clone()
+                    };
+                    let data_clone = {
+                        let data = state.data.lock().map_err(|e| e.to_string())?;
+                        data.clone()
+                    };
+                    let _ = db::save_db(&program_path, &data_clone);
+                }
+                Err(e) => {
+                    crate::logger::log(&format!("get_nexus_account_status: Refresh token failed: {}", e));
+                }
+            }
+        }
+    }
+
+    Ok(Some(account))
+}
+
+#[tauri::command]
+pub fn logout_nexus_account(state: State<'_, AppState>) -> Result<(), String> {
+    let program_path = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_account = None;
+        data.settings.program_path.clone()
+    };
+
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    let _ = db::save_db(&program_path, &data_clone);
+    crate::logger::log("logout_nexus_account: Cleared Nexus account from settings");
+    Ok(())
+}
+
+#[tauri::command]
+pub async fn refresh_nexus_account_profile(state: State<'_, AppState>) -> Result<Option<crate::models::NexusAccountInfo>, String> {
+    let (access_tok_opt, program_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (
+            data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone()),
+            data.settings.program_path.clone()
+        )
+    };
+
+    let token = match access_tok_opt {
+        Some(t) if !t.is_empty() => t,
+        _ => return Ok(None),
+    };
+
+    let profile = crate::nexus_oauth::fetch_user_profile(&token).await?;
+
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    if let Some(ref mut account) = data.settings.nexus_account {
+        account.username = Some(profile.username);
+        account.user_id = profile.user_id;
+        account.avatar_url = profile.avatar_url;
+        account.kudos = profile.kudos;
+        account.profile_views = profile.profile_views;
+        account.endorsements_given = profile.endorsements_given;
+        account.joined_date = profile.joined_date;
+        account.last_active_date = profile.last_active_date;
+        account.about_me = profile.about_me;
+        account.mod_count = profile.mod_count;
+        account.roles = profile.roles.clone();
+        account.is_premium = profile.roles.iter().any(|r| {
+            let lr = r.to_lowercase();
+            lr == "premium" || lr == "lifetimepremium"
+        });
+        account.is_supporter = profile.roles.iter().any(|r| r.to_lowercase() == "supporter");
+    }
+
+    let updated_account = data.settings.nexus_account.clone();
+    let data_clone = data.clone();
+    drop(data);
+
+    let _ = db::save_db(&program_path, &data_clone);
+    Ok(updated_account)
+}
+
+#[tauri::command]
+pub fn check_nexus_protocol_status() -> Result<crate::protocol_handler::DetailedProtocolInfo, String> {
+    Ok(crate::protocol_handler::get_detailed_protocol_info())
+}
+
+#[tauri::command]
+pub fn register_nexus_protocol(scheme: Option<String>) -> Result<String, String> {
+    let s = scheme.as_deref().unwrap_or("all");
+    crate::protocol_handler::register_specific_scheme(s)
+}
+
+#[tauri::command]
+pub fn unregister_nexus_protocol(scheme: Option<String>) -> Result<(), String> {
+    let s = scheme.as_deref().unwrap_or("all");
+    crate::protocol_handler::unregister_specific_scheme(s)
+}
+
+#[tauri::command]
+pub async fn get_nexus_user_endorsements(
+    state: State<'_, AppState>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<crate::models::NexusUserEndorsement>, String> {
+    let now = chrono::Utc::now().timestamp();
+    let is_forced = force_refresh.unwrap_or(false);
+
+    // 1. Check local cache (valid for 24h)
+    if !is_forced {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if let (Some(cache), Some(ts)) = (&data.settings.nexus_endorsements_cache, data.settings.nexus_cache_timestamp) {
+            if now - ts < 86400 && !cache.is_empty() {
+                return Ok(cache.clone());
+            }
+        }
+    }
+
+    let (access_token, program_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let token = data.settings.nexus_account.as_ref()
+            .and_then(|a| a.access_token.clone())
+            .ok_or("No active Nexus Mods session. Please log in first.")?;
+        (token, data.settings.program_path.clone())
+    };
+
+    let mut endorsements = crate::nexus_oauth::fetch_user_endorsements(&access_token).await?;
+
+    let local_mods = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.mods.clone()
+    };
+
+    let mut missing_tuples = Vec::new();
+    for item in &mut endorsements {
+        if let Some(m) = local_mods.iter().find(|m| m.nexus_mod_id == Some(item.mod_id)) {
+            item.mod_title = Some(m.name.clone());
+        } else {
+            missing_tuples.push((item.domain_name.as_str(), item.mod_id));
+        }
+    }
+
+    if !missing_tuples.is_empty() {
+        let fetched = crate::nexus_oauth::batch_fetch_legacy_mods_info(&missing_tuples, Some(&access_token)).await;
+        for item in &mut endorsements {
+            let key = (item.domain_name.to_lowercase(), item.mod_id);
+            if let Some(info) = fetched.get(&key) {
+                if !info.name.is_empty() {
+                    item.mod_title = Some(info.name.clone());
+                }
+                item.picture_url = info.picture_url.clone();
+                item.summary = info.summary.clone();
+            }
+        }
+    }
+
+    // Persist to local database
+    {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_endorsements_cache = Some(endorsements.clone());
+        data.settings.nexus_cache_timestamp = Some(now);
+        let data_clone = data.clone();
+        drop(data);
+        let _ = crate::db::save_db(&program_path, &data_clone);
+    }
+
+    Ok(endorsements)
+}
+
+#[tauri::command]
+pub async fn get_nexus_user_tracked_mods(
+    state: State<'_, AppState>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<crate::models::NexusUserTrackedMod>, String> {
+    let now = chrono::Utc::now().timestamp();
+    let is_forced = force_refresh.unwrap_or(false);
+
+    // 1. Check local cache (valid for 24h)
+    if !is_forced {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if let (Some(cache), Some(ts)) = (&data.settings.nexus_tracked_cache, data.settings.nexus_cache_timestamp) {
+            if now - ts < 86400 && !cache.is_empty() {
+                return Ok(cache.clone());
+            }
+        }
+    }
+
+    let (access_token, program_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let token = data.settings.nexus_account.as_ref()
+            .and_then(|a| a.access_token.clone())
+            .ok_or("No active Nexus Mods session. Please log in first.")?;
+        (token, data.settings.program_path.clone())
+    };
+
+    let mut tracked = crate::nexus_oauth::fetch_user_tracked_mods(&access_token).await?;
+
+    let local_mods = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.mods.clone()
+    };
+
+    let mut missing_tuples = Vec::new();
+    for item in &mut tracked {
+        if let Some(m) = local_mods.iter().find(|m| m.nexus_mod_id == Some(item.mod_id)) {
+            item.mod_title = Some(m.name.clone());
+        } else {
+            missing_tuples.push((item.domain_name.as_str(), item.mod_id));
+        }
+    }
+
+    if !missing_tuples.is_empty() {
+        let fetched = crate::nexus_oauth::batch_fetch_legacy_mods_info(&missing_tuples, Some(&access_token)).await;
+        for item in &mut tracked {
+            let key = (item.domain_name.to_lowercase(), item.mod_id);
+            if let Some(info) = fetched.get(&key) {
+                if !info.name.is_empty() {
+                    item.mod_title = Some(info.name.clone());
+                }
+                item.picture_url = info.picture_url.clone();
+                item.summary = info.summary.clone();
+            }
+        }
+    }
+
+    // Persist to local database
+    {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_tracked_cache = Some(tracked.clone());
+        data.settings.nexus_cache_timestamp = Some(now);
+        let data_clone = data.clone();
+        drop(data);
+        let _ = crate::db::save_db(&program_path, &data_clone);
+    }
+
+    Ok(tracked)
+}
+
+#[tauri::command]
+pub async fn get_nexus_user_authored_mods(
+    state: State<'_, AppState>,
+    force_refresh: Option<bool>,
+) -> Result<Vec<crate::models::NexusUserAuthoredMod>, String> {
+    let now = chrono::Utc::now().timestamp();
+    let is_forced = force_refresh.unwrap_or(false);
+
+    // 1. Check local cache (valid for 24h)
+    if !is_forced {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if let (Some(cache), Some(ts)) = (&data.settings.nexus_authored_cache, data.settings.nexus_cache_timestamp) {
+            if now - ts < 86400 && !cache.is_empty() {
+                return Ok(cache.clone());
+            }
+        }
+    }
+
+    let (access_token, user_id, program_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let acc = data.settings.nexus_account.as_ref().ok_or("No active Nexus Mods session. Please log in first.")?;
+        let token = acc.access_token.clone().ok_or("Missing access token.")?;
+        let uid = acc.user_id.ok_or("Missing user ID.")?;
+        (token, uid, data.settings.program_path.clone())
+    };
+
+    let authored = crate::nexus_oauth::fetch_user_authored_mods(&access_token, user_id).await?;
+
+    // Persist to local database
+    {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_authored_cache = Some(authored.clone());
+        data.settings.nexus_cache_timestamp = Some(now);
+        let data_clone = data.clone();
+        drop(data);
+        let _ = crate::db::save_db(&program_path, &data_clone);
+    }
+
+    Ok(authored)
+}
+
+#[tauri::command]
+pub fn parse_nxm_link(nxm_url: String) -> Result<crate::nexus_oauth::NxmLinkInfo, String> {
+    crate::nexus_oauth::parse_nxm_url(&nxm_url)
+}
+
+#[tauri::command]
+pub async fn get_nxm_mod_metadata(
+    game_domain: String,
+    mod_id: u32,
+    state: State<'_, AppState>,
+) -> Result<crate::nexus_oauth::NxmModMetadata, String> {
+    let access_token = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_account.as_ref()
+            .and_then(|a| a.access_token.clone())
+            .ok_or("No active Nexus Mods session.")?
+    };
+
+    crate::nexus_oauth::fetch_nxm_mod_metadata(&access_token, &game_domain, mod_id).await
+}
+
+#[tauri::command]
+pub async fn download_nxm_file(
+    nxm_url: String,
+    download_id: String,
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    crate::logger::log(&format!("download_nxm_file: Processing URL: {} (id: {})", nxm_url, download_id));
+
+    let nxm = crate::nexus_oauth::parse_nxm_url(&nxm_url)?;
+
+    let access_token = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.nexus_account.as_ref()
+            .and_then(|a| a.access_token.clone())
+            .ok_or("No active Nexus Mods session. Please connect your Nexus Mods account in Settings / Profile first.")?
+    };
+
+    // 1. Get CDN download URL from Nexus API
+    let cdn_url = crate::nexus_oauth::fetch_nxm_direct_download_url(&access_token, &nxm).await?;
+
+    // 2. Stream download file to temp directory with progress events
+    let temp_zip = crate::nexus_oauth::download_file_to_temp_with_progress(
+        &app_handle,
+        &cdn_url,
+        nxm.file_id,
+        &download_id,
+    ).await?;
+
+    Ok(temp_zip.to_string_lossy().to_string())
+}
+
+#[tauri::command]
+pub async fn handle_nxm_download(
+    nxm_url: String,
+    app_handle: tauri::AppHandle,
+    state: State<'_, AppState>,
+) -> Result<serde_json::Value, String> {
+    let download_id = uuid::Uuid::new_v4().to_string();
+    let zip_str = download_nxm_file(nxm_url, download_id, app_handle, state.clone()).await?;
+    let temp_path = std::path::PathBuf::from(&zip_str);
+
+    let install_res = crate::commands::install_commands::install_mod_command(
+        zip_str,
+        None,
+        None,
+        None,
+        state,
+    ).await;
+
+    let _ = std::fs::remove_file(&temp_path);
+    install_res
+}
+
+
+
+

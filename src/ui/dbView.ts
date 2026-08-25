@@ -257,11 +257,62 @@ function renderProfilesTable(profiles: any[], currentId: string): string {
   `;
 }
 
+function formatSettingValue(key: string, val: unknown): string {
+  if (val === null || val === undefined) return 'null';
+  if (typeof val === 'boolean' || typeof val === 'number') return String(val);
+  if (typeof val === 'string') {
+    const lower = key.toLowerCase();
+    if (lower.includes('token') || lower.includes('secret') || lower === 'apikey') {
+      return '•••••••••••••••• (Encrypted)';
+    }
+    return val;
+  }
+  if (Array.isArray(val)) {
+    if (val.length === 0) return '[]';
+    return `[ ${val.length} item${val.length === 1 ? '' : 's'} ]`;
+  }
+  if (typeof val === 'object') {
+    const acc = val as any;
+    if (acc.name || acc.username) {
+      return `{ user: "${acc.name || acc.username}", id: ${acc.userId || acc.user_id || '?'}, ... }`;
+    }
+    const keys = Object.keys(val as object);
+    if (keys.length === 0) return '{}';
+    return `{ ${keys.length} field${keys.length === 1 ? '' : 's'} }`;
+  }
+  return String(val);
+}
+
+function maskSensitiveData(data: unknown): unknown {
+  if (!data || typeof data !== 'object') return data;
+  const clone = JSON.parse(JSON.stringify(data));
+
+  function recurse(o: any) {
+    if (!o || typeof o !== 'object') return;
+    for (const k of Object.keys(o)) {
+      const lower = k.toLowerCase();
+      if (typeof o[k] === 'string' && (lower.includes('token') || lower.includes('secret') || lower === 'apikey')) {
+        const val = o[k];
+        if (val.length > 10) {
+          o[k] = `[ENCRYPTED: ${val.slice(0, 4)}••••••••${val.slice(-4)}]`;
+        } else {
+          o[k] = '••••••••••••••••';
+        }
+      } else if (typeof o[k] === 'object') {
+        recurse(o[k]);
+      }
+    }
+  }
+
+  recurse(clone);
+  return clone;
+}
+
 function renderSettingsTable(settings: AppSettings): string {
   const rows = Object.entries(settings).map(([key, val]) => `
     <tr class="db-row db-row-settings" title="${escapeHtml(t('db.click_to_edit'))}">
       <td class="db-cell db-cell-key">${escapeHtml(key)}</td>
-      <td class="db-cell db-cell-mono db-cell-val">${escapeHtml(val === null || val === undefined ? 'null' : String(val))}</td>
+      <td class="db-cell db-cell-mono db-cell-val">${escapeHtml(formatSettingValue(key, val))}</td>
     </tr>
   `).join('');
 
@@ -280,9 +331,10 @@ function selectRecord(type: 'mod' | 'profile' | 'settings', id: string, data: un
   _selectedRecordType = type;
   _selectedRecordId = id;
 
+  const maskedData = maskSensitiveData(data);
   const editor = document.getElementById('db-json-editor') as HTMLTextAreaElement | null;
   if (editor) {
-    editor.value = JSON.stringify(data, null, 2);
+    editor.value = JSON.stringify(maskedData, null, 2);
     editor.disabled = false;
   }
   updateJsonStatus(true);

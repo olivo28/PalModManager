@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::path::Path;
 
-const APP_VERSION: &str = "1.5.1";
+const APP_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NexusModInfo {
@@ -98,8 +98,13 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| filename.to_string());
 
+    if stem.to_lowercase().starts_with("nexus_") || stem.to_lowercase().starts_with("nexus-") {
+        return ParsedModInfo { name: None, nexus_id: None, nexus_file_id: None, version: None, date: None };
+    }
+
     // 1. Detect hyphen-separated pattern: Name-ID-Version-Timestamp
     let hyphen_parts: Vec<&str> = stem.split('-').collect();
+
     if hyphen_parts.len() >= 4 {
         let mut nexus_id_idx = None;
         for i in 1..hyphen_parts.len() - 2 {

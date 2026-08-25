@@ -163,10 +163,32 @@ export function setupLibraryHandlers(): void {
   });
 }
 
+export function updateWorkshopTabVisibility(): void {
+  const wsTabBtn = document.querySelector<HTMLButtonElement>('.library-sub-tab[data-tab="workshop"]');
+  if (!wsTabBtn) return;
+
+  const state = getState();
+  const activeProfile = state.currentProfile || state.profiles?.find(p => p.id === state.currentProfileId);
+  const isProfileWorkshop = activeProfile?.dependency_mode === 'workshop';
+
+  if (!isProfileWorkshop) {
+    wsTabBtn.style.display = 'none';
+    if (_activeLibrarySubTab === 'workshop') {
+      const localTabBtn = document.querySelector<HTMLButtonElement>('.library-sub-tab[data-tab="local"]');
+      if (localTabBtn) {
+        localTabBtn.click();
+      }
+    }
+  } else {
+    wsTabBtn.style.display = 'flex';
+  }
+}
+
 export async function loadLibrary(): Promise<void> {
   try {
     const entries = await getLibrary();
     updateState({ libraryEntries: entries });
+    updateWorkshopTabVisibility();
     renderLibraryView();
 
     // Check workshop mods timestamps for badges (10 minute window)
@@ -218,6 +240,8 @@ export async function renderLibraryView(): Promise<void> {
   const container = document.getElementById('library-container');
   if (!container) return;
 
+  updateWorkshopTabVisibility();
+
   const masterToggleWrap = document.getElementById('library-workshop-master-wrap');
   const bulkBar = document.getElementById('library-bulk-actions-bar');
   const wsCheckUpdatesBtn = document.getElementById('workshop-check-updates-btn');
@@ -265,9 +289,18 @@ export async function renderLibraryView(): Promise<void> {
     }>();
 
     for (const e of entries) {
+      // Ignore temporary nexus_*.zip if a properly named zip exists for this mod
+      const hasProperZip = entries.some(o => o.modId === e.modId && !o.zipName.toLowerCase().startsWith('nexus_'));
+      if (hasProperZip && e.zipName.toLowerCase().startsWith('nexus_')) {
+        continue;
+      }
+
       const parsed = parseModFilename(e.zipName);
       const cleanName = e.nexusName || parsed.name || e.modId || e.zipName;
-      const ver = e.version || (parsed.version ? `${parsed.version}` : (e.nexusVersion ? `${e.nexusVersion}` : '1.0'));
+      let ver = e.version || (parsed.version ? `${parsed.version}` : (e.nexusVersion ? `${e.nexusVersion}` : '1.0'));
+      if (ver.toLowerCase().startsWith('v')) {
+        ver = ver.substring(1);
+      }
 
       const groupKey = e.modId;
       let group = groupsMap.get(groupKey);
@@ -296,13 +329,21 @@ export async function renderLibraryView(): Promise<void> {
         if (e.installedVersion) group.installedVersion = e.installedVersion;
       }
 
-      if (!group.versions.some(v => v.zipName === e.zipName)) {
+      const existingVerIdx = group.versions.findIndex(v => v.zipName === e.zipName || v.version === ver);
+      if (existingVerIdx === -1) {
         group.versions.push({
           zipName: e.zipName,
           zipSize: e.zipSize,
           version: ver,
           installedAt: e.installedAt,
         });
+      } else if (!e.zipName.toLowerCase().startsWith('nexus_') && group.versions[existingVerIdx].zipName.toLowerCase().startsWith('nexus_')) {
+        group.versions[existingVerIdx] = {
+          zipName: e.zipName,
+          zipSize: e.zipSize,
+          version: ver,
+          installedAt: e.installedAt,
+        };
       }
     }
 
@@ -412,17 +453,20 @@ function compareVersions(a: string, b: string): number {
       const versionControlsHtml = group.versions.length > 1 ? `
         <div style="display:flex;align-items:center;gap:6px;width:100%;margin-top:auto;border-top:1px solid var(--border);padding-top:6px;">
           <select class="library-version-select form-select" data-id="${group.modId}" style="flex:1;padding:4px 6px;font-size:11px;font-weight:600;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;">
-            ${group.versions.map((v, idx) => `
-              <option value="${escapeHtml(v.zipName)}" data-version="${escapeHtml(v.version)}" data-size="${formatSize(v.zipSize)}">
-                v${escapeHtml(v.version)} ${idx === 0 ? escapeHtml(t('library.badge_latest')) : ''}
-              </option>
-            `).join('')}
+            ${group.versions.map((v, idx) => {
+              const displayVer = v.version.startsWith('v') || v.version.startsWith('V') ? v.version : `v${v.version}`;
+              return `
+                <option value="${escapeHtml(v.zipName)}" data-version="${escapeHtml(v.version)}" data-size="${formatSize(v.zipSize)}">
+                  ${escapeHtml(displayVer)} ${idx === 0 ? escapeHtml(t('library.badge_latest')) : ''}
+                </option>
+              `;
+            }).join('')}
           </select>
           <span class="library-card-size" style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${formatSize(latestVerObj.zipSize)}</span>
         </div>
       ` : `
         <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;margin-top:auto;">
-          <span style="font-weight:600;color:var(--text-primary);">v${escapeHtml(latestVersion)}</span>
+          <span style="font-weight:600;color:var(--text-primary);">${latestVersion.startsWith('v') || latestVersion.startsWith('V') ? escapeHtml(latestVersion) : 'v' + escapeHtml(latestVersion)}</span>
           <span class="library-card-size">${formatSize(latestVerObj.zipSize)}</span>
         </div>
       `;

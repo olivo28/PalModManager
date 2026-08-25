@@ -286,7 +286,7 @@ pub fn create_initial_safety_backup(game_path: &str, program_path: &str, force: 
     // Create manifest
     let manifest = SnapshotManifest {
         timestamp: chrono::Utc::now().to_rfc3339(),
-        pmm_version: "1.5.1".to_string(),
+        pmm_version: env!("CARGO_PKG_VERSION").to_string(),
         game_root: game_path.to_string(),
         ue4ss_mode: ue4ss_mode_str.to_string(),
         entries,

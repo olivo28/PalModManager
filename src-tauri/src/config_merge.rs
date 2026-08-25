@@ -24,10 +24,14 @@ pub fn snapshot_configs(mod_dir: &Path) -> ConfigSnapshot {
                 } else if path.is_file() {
                     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                         let ext_lower = ext.to_lowercase();
-                        if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" {
-                            if let Ok(content) = fs::read_to_string(&path) {
-                                if let Ok(rel) = path.strip_prefix(base) {
-                                    entries.push((rel.to_path_buf(), content));
+                        if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" || ext_lower == "lua" {
+                            let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+                            // For .lua, snapshot if it looks like a config (e.g. config.lua, settings.lua) or if in a config folder
+                            if ext_lower != "lua" || file_stem.contains("config") || file_stem.contains("setting") || file_stem.contains("cfg") {
+                                if let Ok(content) = fs::read_to_string(&path) {
+                                    if let Ok(rel) = path.strip_prefix(base) {
+                                        entries.push((rel.to_path_buf(), content));
+                                    }
                                 }
                             }
                         }
@@ -54,6 +58,7 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_key
             let merged = match ext.as_str() {
                 "json" | "jsonc" => merge_json(old_content, &new_content, ignored_keys),
                 "ini" | "cfg" | "txt" => merge_kv(old_content, &new_content, ignored_keys),
+                "lua" => merge_lua(old_content, &new_content, ignored_keys),
                 _ => None,
             };
             if let Some(result) = merged {
@@ -162,6 +167,76 @@ fn merge_kv(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
     Some(result_lines.join("\r\n"))
 }
 
+/// Merge Lua table / config settings flatly.
+/// Preserves comments, indentation, and structure of the new file, replacing values of matching keys unless ignored.
+fn merge_lua(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
+    let old_map = parse_lua_map(old);
+    let mut result_lines = Vec::new();
+
+    for line in new.lines() {
+        let line_trimmed = line.trim();
+        if line_trimmed.is_empty() || line_trimmed.starts_with("--") {
+            result_lines.push(line.to_string());
+            continue;
+        }
+
+        if let Some(pos) = line.find('=') {
+            let raw_key = line[..pos].trim();
+            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
+
+            if ignored_keys.contains(&key) {
+                result_lines.push(line.to_string());
+                continue;
+            }
+
+            if let Some(old_val) = old_map.get(&key) {
+                let leading_ws = &line[..line.len() - line.trim_start().len()];
+                let mut after_eq = line[pos + 1..].trim_start();
+                let mut comment = "";
+                if let Some(c_pos) = after_eq.find("--") {
+                    comment = &after_eq[c_pos..];
+                    after_eq = after_eq[..c_pos].trim_end();
+                }
+                let has_comma = after_eq.ends_with(',');
+                let comma_str = if has_comma { "," } else { "" };
+                let comment_prefix = if !comment.is_empty() { " " } else { "" };
+
+                result_lines.push(format!("{}{}{} {}{}{}{}", leading_ws, raw_key, "=", old_val, comma_str, comment_prefix, comment));
+                continue;
+            }
+        }
+
+        result_lines.push(line.to_string());
+    }
+
+    Some(result_lines.join("\r\n"))
+}
+
+fn parse_lua_map(content: &str) -> std::collections::HashMap<String, String> {
+    let mut map = std::collections::HashMap::new();
+    for line in content.lines() {
+        let line_trimmed = line.trim();
+        if line_trimmed.is_empty() || line_trimmed.starts_with("--") {
+            continue;
+        }
+        if let Some(pos) = line_trimmed.find('=') {
+            let raw_key = line_trimmed[..pos].trim();
+            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
+            let mut val = line_trimmed[pos + 1..].trim();
+            if let Some(comment_pos) = val.find("--") {
+                val = val[..comment_pos].trim();
+            }
+            if val.ends_with(',') {
+                val = val[..val.len() - 1].trim();
+            }
+            if !key.is_empty() {
+                map.insert(key, val.to_string());
+            }
+        }
+    }
+    map
+}
+
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChangedKeyDetail {
     pub key: String,
@@ -186,6 +261,28 @@ pub fn generate_config_diff(old_content: &str, new_content: &str, ext: &str) -> 
     } else if ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" {
         let old_map = parse_kv_map(old_content);
         let new_map = parse_kv_map(new_content);
+        
+        for (k, new_v) in &new_map {
+            if let Some(old_v) = old_map.get(k) {
+                if old_v != new_v {
+                    keys_user_changed.push(ChangedKeyDetail {
+                        key: k.clone(),
+                        old_value: old_v.clone(),
+                        new_value: new_v.clone(),
+                    });
+                }
+            } else {
+                keys_added_by_author.push(k.clone());
+            }
+        }
+        for (k, _) in &old_map {
+            if !new_map.contains_key(k) {
+                keys_removed_by_author.push(k.clone());
+            }
+        }
+    } else if ext_lower == "lua" {
+        let old_map = parse_lua_map(old_content);
+        let new_map = parse_lua_map(new_content);
         
         for (k, new_v) in &new_map {
             if let Some(old_v) = old_map.get(k) {

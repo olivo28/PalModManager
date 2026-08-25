@@ -1,8 +1,8 @@
 import { getState, updateState } from '../../state';
-import { disableMod, enableMod, removeMod, openModFolder, openExtraFolder, openUrl, uninstallUe4ss, uninstallPalschema, openFolderByType } from '../../api';
+import { disableMod, enableMod, removeMod, openModFolder, openExtraFolder, openPath, openUrl, uninstallUe4ss, uninstallPalschema, openFolderByType } from '../../api';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
-import { openDetailPanel, closeDetailPanel } from '../detailPanel';
+import { openDetailPanel, closeDetailPanel, getModComponentFolders } from '../detailPanel';
 import { openConfigEditor } from '../editorView';
 import { openWorkshopModal } from '../modal';
 import { loadMods } from './loader';
@@ -244,17 +244,26 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="toggle">
       <span class="ctx-icon">${mod.enabled ? '◌' : '●'}</span>
       ${escapeHtml(mod.enabled ? t('context.disable_mod') : t('context.enable_mod'))}
-    </button>
+    </button>`;
+
+  const compFolders = getModComponentFolders(mod);
+  if (compFolders.length > 1) {
+    for (const comp of compFolders) {
+      html += `
+      <button type="button" class="context-menu-item" data-action="open-comp-path" data-path="${escapeHtml(comp.path)}">
+        <span class="ctx-icon">📁</span>
+        ${escapeHtml(comp.buttonLabel)}
+      </button>`;
+    }
+  } else {
+    html += `
     <button type="button" class="context-menu-item" data-action="open-folder">
       <span class="ctx-icon">📁</span>
       ${escapeHtml(t('context.open_folder'))}
-    </button>
-    ${mod.extraFiles && mod.extraFiles.length > 0 ? `
-    <button type="button" class="context-menu-item" data-action="open-extras">
-      <span class="ctx-icon">📂</span>
-      ${escapeHtml(t('context.open_extra_folder'))}
-    </button>
-    ` : ''}
+    </button>`;
+  }
+
+  html += `
     <button type="button" class="context-menu-item" data-action="edit-config">
       <span class="ctx-icon">⚙</span>
       ${escapeHtml(t('context.edit_config'))}
@@ -363,8 +372,13 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       e.stopPropagation();
       e.preventDefault();
       const action = (btn as HTMLElement).dataset.action!;
+      const path = (btn as HTMLElement).dataset.path;
       hideContextMenu();
-      runContextAction(action, modId);
+      if (action === 'open-comp-path' && path) {
+        openPath(path).catch(err => showToast(t('toasts.export_failed', { error: String(err) }), 'error'));
+      } else {
+        runContextAction(action, modId);
+      }
     });
   });
 

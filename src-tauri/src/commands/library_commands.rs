@@ -295,7 +295,7 @@ pub async fn copy_to_library_command(
         .or(matched_folder)
         .unwrap_or(clean_stem);
 
-    let mut entry = library::copy_to_library(&zip_path, &program_path, &folder_name)?;
+    let mut entry = library::copy_to_library(&zip_path, &program_path, &folder_name, None)?;
 
     if let Some(ref info) = matched_nexus_info {
         let lib_path = library::get_library_path(&program_path, &folder_name);

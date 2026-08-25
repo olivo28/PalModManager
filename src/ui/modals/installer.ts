@@ -39,6 +39,14 @@ interface BatchItem {
 
 export let _batchItems: BatchItem[] = [];
 
+let _onInstallCompleteCallback: ((success: boolean) => void) | null = null;
+let _lastInstallSuccess = false;
+
+export function setInstallModalCallback(cb: ((success: boolean) => void) | null): void {
+  _onInstallCompleteCallback = cb;
+  _lastInstallSuccess = false;
+}
+
 export function showInstallModal(): void {
   document.getElementById('install-modal')!.classList.add('visible');
 }
@@ -73,12 +81,20 @@ export function closeInstallModal(): void {
   if (modalEl) {
     modalEl.style.width = '750px';
   }
+
+  if (_onInstallCompleteCallback) {
+    const cb = _onInstallCompleteCallback;
+    _onInstallCompleteCallback = null;
+    cb(_lastInstallSuccess);
+  }
+  _lastInstallSuccess = false;
 }
 
 export function setModalStatus(status: string): void {
   const statusEl = document.getElementById('modal-status');
   if (statusEl) statusEl.textContent = status;
 }
+
 
 export function getCleanNameFromFilename(filename: string): string {
   const stem = filename.substring(0, filename.lastIndexOf('.')) || filename;
@@ -307,9 +323,18 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     }).catch(() => { });
   }
 
-  let cleanName = getCleanNameFromFilename(analysis.zipPath.split(/[/\\]/).pop() || '');
-  if (!analysis.nexusInfo && analysis.modinfo?.name) {
+  let cleanName = (analysis as any).preferredName || '';
+  if (!cleanName && analysis.nexusInfo?.name) {
+    cleanName = analysis.nexusInfo.name;
+  }
+  if (!cleanName && analysis.modinfo?.name) {
     cleanName = analysis.modinfo.name;
+  }
+  if (!cleanName) {
+    const filename = analysis.zipPath.split(/[/\\]/).pop() || '';
+    if (!filename.toLowerCase().startsWith('nexus_')) {
+      cleanName = getCleanNameFromFilename(filename);
+    }
   }
 
   let manifest: InstallManifest;
@@ -318,11 +343,20 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
       analysis.zipPath,
       getState().currentSettings?.gamePath || '',
       analysis.detectedType === 'logicmods' ? 'logicmods' : '~mods',
-      cleanName
+      cleanName || null
     );
   } catch (err) {
     content.innerHTML = `<div style="padding:20px;color:#ff4a4a;font-weight:bold;">Error analyzing manifest: ${escapeHtml(String(err))}</div>`;
     return;
+  }
+
+  if (!cleanName || cleanName.toLowerCase().startsWith('nexus_') || /^[0-9a-fA-F-]{8,}$/.test(cleanName)) {
+    if (manifest.folderName && manifest.folderName !== 'unknown' && !manifest.folderName.toLowerCase().startsWith('nexus_')) {
+      cleanName = manifest.folderName;
+    } else {
+      const rawStem = analysis.zipPath.split(/[/\\]/).pop() || '';
+      cleanName = getCleanNameFromFilename(rawStem);
+    }
   }
 
   confirmBtn.disabled = false;
@@ -349,10 +383,14 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   }
 
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
-  let versionVal = analysis.detectedVersion || analysis.nexusInfo?.version || '1.0';
-  if (!analysis.nexusInfo && analysis.modinfo?.version) {
-    versionVal = analysis.modinfo.version;
+  let versionVal = analysis.nexusInfo?.version || analysis.modinfo?.version || '';
+  if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim())) {
+    versionVal = analysis.detectedVersion;
   }
+  if (!versionVal) {
+    versionVal = '1.0.0';
+  }
+
 
   const displayType = manifest.modType === 'hybrid' ? `Hybrid (${[manifest.hasUe4ss ? 'UE4SS' : '', manifest.hasPalschema ? 'PalSchema' : '', manifest.hasPak ? 'Pak' : ''].filter(Boolean).join(' + ')})` : manifest.modType.toUpperCase();
 
@@ -1214,11 +1252,32 @@ async function executeModInstallation(
       customName
     );
 
+    if (customName) {
+      manifest.displayName = customName;
+    }
+    const versionInput = document.getElementById('mod-version-input') as HTMLInputElement | null;
+    const inputVer = versionInput?.value.trim();
+    if (inputVer && !/^[0-9a-fA-F-]{6,}$/.test(inputVer)) {
+      manifest.version = inputVer;
+    } else if (state.currentAnalysis.nexusInfo?.version) {
+      manifest.version = state.currentAnalysis.nexusInfo.version;
+    } else if (state.currentAnalysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(state.currentAnalysis.detectedVersion)) {
+      manifest.version = state.currentAnalysis.detectedVersion;
+    } else {
+      manifest.version = '1.0.0';
+    }
+
+    if (state.currentAnalysis.nexusModId) {
+      manifest.nexusModId = state.currentAnalysis.nexusModId;
+    }
+
     if (_pendingUpdateModId) {
       await updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId);
     } else {
       await installModWithManifest(manifest, state.currentAnalysis.zipPath);
     }
+    _lastInstallSuccess = true;
+
     logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] Mod installed successfully!</div>`);
 
     resultsList.innerHTML = logs.join('');
@@ -1232,6 +1291,7 @@ async function executeModInstallation(
       await loadLibrary();
     }, 1500);
   } catch (e) {
+    _lastInstallSuccess = false;
     logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Installation failed: ${escapeHtml(String(e))}</div>`);
     resultsList.innerHTML = logs.join('');
     resultsList.scrollTop = resultsList.scrollHeight;
@@ -1241,6 +1301,39 @@ async function executeModInstallation(
     confirmBtn.textContent = _pendingUpdateModId ? t('installer.btn_update') : t('installer.btn_install');
   }
 }
+
+export async function openInstallModalForZip(
+  zipPath: string,
+  preferredName?: string,
+  preferredNexusId?: number,
+  preferredVersion?: string
+): Promise<void> {
+  _lastInstallSuccess = false;
+  showInstallModal();
+  setModalStatus(t('modal.status_analyzing'));
+
+  const analysis = await analyzeZip(zipPath);
+  if (preferredNexusId) {
+    analysis.nexusModId = preferredNexusId;
+  }
+  if (preferredName) {
+    (analysis as any).preferredName = preferredName;
+  }
+  if (preferredVersion) {
+    analysis.detectedVersion = preferredVersion;
+  }
+
+  let existingMod: { id: string; name: string, version: string } | null = null;
+  try {
+    const checkResult = await checkModExistsCommand(zipPath);
+    if (checkResult.exists && checkResult.modInfo) {
+      existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name, version: checkResult.modInfo.version };
+    }
+  } catch { }
+
+  renderInstallPreview(analysis, existingMod);
+}
+
 
 export async function handleInstall(): Promise<void> {
   try {
@@ -1256,21 +1349,7 @@ export async function handleInstall(): Promise<void> {
     const paths = Array.isArray(selected) ? selected : [selected];
 
     if (paths.length === 1) {
-      const zipPath = paths[0];
-      showInstallModal();
-      setModalStatus(t('modal.status_analyzing'));
-
-      const analysis = await analyzeZip(zipPath);
-
-      let existingMod: { id: string; name: string, version: string } | null = null;
-      try {
-        const checkResult = await checkModExistsCommand(zipPath);
-        if (checkResult.exists && checkResult.modInfo) {
-          existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name, version: checkResult.modInfo.version };
-        }
-      } catch { }
-
-      renderInstallPreview(analysis, existingMod);
+      await openInstallModalForZip(paths[0]);
     } else {
       renderBatchInstallPreview(paths);
     }
@@ -1280,3 +1359,4 @@ export async function handleInstall(): Promise<void> {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   }
 }
+

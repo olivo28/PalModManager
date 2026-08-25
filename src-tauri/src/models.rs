@@ -73,6 +73,77 @@ pub struct ModInfo {
     pub origin_load_method: Option<String>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct NexusAccountInfo {
+    pub user_id: Option<u64>,
+    pub username: Option<String>,
+    pub avatar_url: Option<String>,
+    pub is_premium: bool,
+    pub is_supporter: bool,
+    #[serde(default)]
+    pub roles: Vec<String>,
+    pub access_token: Option<String>,
+    pub refresh_token: Option<String>,
+    pub token_expires_at: Option<i64>,
+    pub kudos: Option<u32>,
+    pub profile_views: Option<u32>,
+    pub endorsements_given: Option<u32>,
+    pub joined_date: Option<String>,
+    pub last_active_date: Option<String>,
+    pub about_me: Option<String>,
+    pub mod_count: Option<u32>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NexusUserEndorsement {
+    #[serde(alias = "mod_id")]
+    pub mod_id: u32,
+    #[serde(alias = "domain_name")]
+    pub domain_name: String,
+    pub date: Option<String>,
+    pub version: Option<String>,
+    pub status: Option<String>,
+    #[serde(default)]
+    pub mod_title: Option<String>,
+    #[serde(default)]
+    pub picture_url: Option<String>,
+    #[serde(default)]
+    pub summary: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NexusUserTrackedMod {
+    #[serde(alias = "mod_id")]
+    pub mod_id: u32,
+    #[serde(alias = "domain_name")]
+    pub domain_name: String,
+    #[serde(default)]
+    pub mod_title: Option<String>,
+    #[serde(default)]
+    pub picture_url: Option<String>,
+    #[serde(default)]
+    pub summary: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct NexusUserAuthoredMod {
+    pub mod_id: u32,
+    pub name: String,
+    pub summary: Option<String>,
+    pub version: Option<String>,
+    pub downloads: Option<u32>,
+    pub endorsements: Option<u32>,
+    pub picture_url: Option<String>,
+    pub game_name: Option<String>,
+    pub domain_name: Option<String>,
+    pub created_at: Option<String>,
+    pub updated_at: Option<String>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
@@ -100,6 +171,16 @@ pub struct AppSettings {
     pub toolbar_scale: Option<f64>,
     #[serde(default)]
     pub language: Option<String>,
+    #[serde(default)]
+    pub nexus_account: Option<NexusAccountInfo>,
+    #[serde(default)]
+    pub nexus_endorsements_cache: Option<Vec<NexusUserEndorsement>>,
+    #[serde(default)]
+    pub nexus_tracked_cache: Option<Vec<NexusUserTrackedMod>>,
+    #[serde(default)]
+    pub nexus_authored_cache: Option<Vec<NexusUserAuthoredMod>>,
+    #[serde(default)]
+    pub nexus_cache_timestamp: Option<i64>,
 }
 
 
@@ -183,6 +264,11 @@ impl Default for AppData {
                 window_maximized: None,
                 toolbar_scale: Some(1.0),
                 language: None,
+                nexus_account: None,
+                nexus_endorsements_cache: None,
+                nexus_tracked_cache: None,
+                nexus_authored_cache: None,
+                nexus_cache_timestamp: None,
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

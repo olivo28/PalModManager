@@ -59,8 +59,26 @@ pub async fn db_write_record(
                 data.profiles[pos] = updated;
             }
             "settings" => {
-                let updated: AppSettings = serde_json::from_str(&json)
+                let mut updated: AppSettings = serde_json::from_str(&json)
                     .map_err(|e| format!("Invalid settings JSON: {}", e))?;
+
+                // Preserve existing sensitive tokens if they were masked on the frontend
+                if let (Some(orig_acc), Some(new_acc)) = (
+                    data.settings.nexus_account.as_ref(),
+                    updated.nexus_account.as_mut(),
+                ) {
+                    if let Some(ref token) = new_acc.access_token {
+                        if token.contains('•') || token.starts_with("[ENCRYPTED") {
+                            new_acc.access_token = orig_acc.access_token.clone();
+                        }
+                    }
+                    if let Some(ref token) = new_acc.refresh_token {
+                        if token.contains('•') || token.starts_with("[ENCRYPTED") {
+                            new_acc.refresh_token = orig_acc.refresh_token.clone();
+                        }
+                    }
+                }
+
                 data.settings = updated;
             }
             _ => return Err(format!("Unknown record_type '{}'", record_type)),

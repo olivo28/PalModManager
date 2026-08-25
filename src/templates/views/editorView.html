@@ -1,0 +1,44 @@
+<!-- EDITOR TAB -->
+<div id="editor-view" class="tab-content">
+  <div id="editor-toolbar">
+    <select id="editor-mod-select" style="display:none">
+      <option value="" data-i18n="editor.select_mod_placeholder">Select a mod...</option>
+    </select>
+    <span id="editor-current-mod-name" style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 8px;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></span>
+    <span class="editor-sep"></span>
+    <button id="editor-format-btn" class="btn-editor" title="Format JSON" data-i18n-title="editor.btn_format_title" data-i18n="common.format">Format</button>
+    <button id="editor-preview-btn" class="btn-editor" title="Toggle preview" data-i18n-title="editor.btn_preview_title" data-i18n="common.preview" style="display:none">Preview</button>
+    <button id="editor-save-btn" class="btn-editor primary" data-i18n="common.save">Save</button>
+    <div style="flex:1"></div>
+    <span id="editor-status"></span>
+  </div>
+  <div id="editor-body">
+    <!-- Left: mod tree panel -->
+    <div id="editor-mod-panel">
+      <div class="editor-mod-panel-header" data-i18n="editor.panel_explorer">Explorer</div>
+      <div id="editor-mod-tree">
+        <!-- Populated by renderEditorModTree() -->
+      </div>
+    </div>
+    <!-- Middle: file tree -->
+    <div id="editor-file-tree">
+      <div class="editor-file-empty" data-i18n="editor.file_empty">Select a mod to view files</div>
+    </div>
+    <div id="editor-content-area">
+      <div id="editor-file-path"></div>
+      <div id="editor-input-wrap">
+        <div id="editor-gutter" style="display:none"></div>
+        <pre id="editor-highlight"><code id="editor-highlight-code"></code></pre>
+        <textarea id="editor-content" spellcheck="false" disabled></textarea>
+        <div id="editor-preview" style="display:none"></div>
+      </div>
+      <div id="editor-find-bar" style="display:none">
+        <input id="editor-find-input" type="text" placeholder="Find..." data-i18n-placeholder="editor.find_placeholder" />
+        <span id="editor-find-count"></span>
+        <button id="editor-find-prev" class="btn-find" title="Previous match" data-i18n-title="editor.find_prev_title">&uarr;</button>
+        <button id="editor-find-next" class="btn-find" title="Next match" data-i18n-title="editor.find_next_title">&darr;</button>
+        <button id="editor-find-close" class="btn-find" title="Close (Esc)" data-i18n-title="editor.find_close_title">&times;</button>
+      </div>
+    </div>
+  </div>
+</div>

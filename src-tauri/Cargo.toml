@@ -1,6 +1,6 @@
 [package]
 name = "palmodmanager"
-version = "1.5.1"
+version = "1.6.0"
 edition = "2021"
 default-run = "palmodmanager"
 
@@ -24,7 +24,7 @@ zip = "2"
 chrono = { version = "0.4", features = ["serde"] }
 uuid = { version = "1", features = ["v4"] }
 walkdir = "2"
-reqwest = { version = "0.12", features = ["json"] }
+reqwest = { version = "0.12", features = ["json", "gzip", "brotli"] }
 aes-gcm = "0.10"
 rand = "0.8"
 base64 = "0.22"
@@ -32,5 +32,10 @@ hostname = "0.4"
 junction = "1.0.0"
 pathdiff = "0.2"
 notify = "6.1.1"
+sha2 = "0.10"
+url = "2"
+winreg = "0.52"
+open = "5"
+regex = "1"
 
 

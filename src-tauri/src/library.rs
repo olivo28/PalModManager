@@ -37,18 +37,37 @@ pub fn copy_to_library(
     source_zip: &str,
     program_path: &str,
     mod_id: &str,
+    target_filename: Option<&str>,
 ) -> Result<LibraryEntry, String> {
     let lib_path = get_library_path(program_path, mod_id);
     fs::create_dir_all(&lib_path).map_err(|e| format!("Cannot create library dir: {}", e))?;
 
     let zip_path = Path::new(source_zip);
-    let zip_name = zip_path
+    let original_name = zip_path
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown.zip".to_string());
+    
+    let zip_name = target_filename.unwrap_or(&original_name).to_string();
     let dest = lib_path.join(&zip_name);
 
     fs::copy(source_zip, &dest).map_err(|e| format!("Cannot copy to library: {}", e))?;
+
+    // If there were temporary nexus_*.zip in this library folder, clean them up
+    if let Ok(entries) = fs::read_dir(&lib_path) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if let Some(fname) = p.file_name().and_then(|n| n.to_str()) {
+                if fname.starts_with("nexus_") && p != dest {
+                    let _ = fs::remove_file(&p);
+                    let sidecar = PathBuf::from(format!("{}.pmm.json", p.to_string_lossy()));
+                    if sidecar.exists() {
+                        let _ = fs::remove_file(sidecar);
+                    }
+                }
+            }
+        }
+    }
 
     // Copy source sidecar if present
     let src_sidecar = PathBuf::from(format!("{}.pmm.json", source_zip));

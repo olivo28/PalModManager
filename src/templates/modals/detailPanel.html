@@ -1,0 +1,70 @@
+<!-- DETAIL MODAL / PANEL -->
+<div id="detail-overlay" class="detail-overlay">
+  <div id="detail-panel" data-id="">
+    <div id="detail-header">
+      <h3 id="detail-name-header" data-i18n="detail.title">Mod Details</h3>
+      <button id="detail-rename-btn" class="btn-tiny" title="Rename mod" data-i18n-title="detail.btn_rename_title" data-i18n="common.rename">Rename</button>
+      <div style="flex:1"></div>
+      <button id="detail-close" class="detail-close-btn">✕</button>
+    </div>
+    <div id="detail-body">
+      <div id="detail-tabs">
+        <button class="detail-tab active" data-tab="info" data-i18n="detail.tab_info">Info</button>
+        <button class="detail-tab" data-tab="tech" data-i18n="detail.tab_technical">Technical</button>
+      </div>
+      <div id="detail-info-tab" class="detail-tab-content">
+        <div id="detail-image-container">
+          <img id="detail-image" src="" alt="" />
+        </div>
+        <div class="detail-row" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+          <span class="detail-label" data-i18n="detail.folder_label">Folder:</span>
+          <select id="detail-folder-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; flex: 1;">
+            <option value="" data-i18n="detail.folder_none">(None / Ungrouped)</option>
+          </select>
+        </div>
+        <div id="detail-description" class="detail-description"></div>
+        <div id="detail-nexus" class="detail-section"></div>
+        <div id="detail-github" class="detail-section"></div>
+      </div>
+      <div id="detail-tech-tab" class="detail-tab-content" style="display:none">
+        <div class="detail-row-group">
+          <div class="detail-row"><span class="detail-label" data-i18n="detail.type_label">Type</span> <span id="detail-type" class="mod-type-badge"></span></div>
+          <div class="detail-row"><span class="detail-label" data-i18n="detail.version_label">Version</span> <span id="detail-version"></span></div>
+          <div class="detail-row"><span class="detail-label" data-i18n="detail.status_label">Status</span> <span id="detail-status" class="detail-status"></span></div>
+          <div class="detail-row" id="detail-pak-destination-row" style="display:none;">
+            <span class="detail-label" data-i18n="detail.pak_target_label">Pak Target</span>
+            <select id="detail-pak-destination-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 2px 6px; font-size: 12px; outline: none; margin-left: 8px;">
+              <option value="~mods">~mods</option>
+              <option value="LogicMods">LogicMods</option>
+            </select>
+          </div>
+        </div>
+        <div class="detail-row-group">
+          <div class="detail-row"><span class="detail-label" data-i18n="detail.installed_label">Installed</span> <span id="detail-install-date"></span></div>
+          <div class="detail-row"><span class="detail-label" data-i18n="detail.source_label">Source</span> <span id="detail-source-zip"></span></div>
+          <div id="detail-components-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
+          <div class="detail-row" id="detail-duplicate-row" style="display:none;">
+            <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span> <span id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
+          </div>
+          <div class="detail-row" style="display: flex; align-items: center; gap: 8px;">
+            <span class="detail-label" data-i18n="detail.config_label">Config</span>
+            <span id="detail-config-path" style="flex: 1; word-break: break-all; font-size: 11px; font-family: monospace; overflow: hidden; text-overflow: ellipsis;"></span>
+            <div style="display: flex; gap: 4px; flex-shrink: 0;">
+              <button id="detail-set-config" class="btn-tiny" data-i18n="detail.btn_set_config" style="white-space: nowrap; padding: 2px 8px; font-size: 11px;">Set</button>
+              <button id="detail-clear-config" class="btn-tiny" data-i18n="detail.btn_clear_config" style="white-space: nowrap; padding: 2px 8px; font-size: 11px;">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="detail-actions" style="display: flex; flex-direction: column; gap: 6px;">
+        <div id="detail-folder-buttons" style="display: flex; gap: 6px; width: 100%;"></div>
+        <div style="display: flex; gap: 6px; width: 100%;">
+          <button id="detail-toggle" class="btn-action" data-i18n="common.disabled" style="flex: 1;">Disable</button>
+          <button id="detail-config" class="btn-action" data-i18n="detail.btn_edit_config" style="flex: 1;">Edit config</button>
+          <button id="detail-refresh" class="btn-action" data-i18n="common.refresh" style="flex: 1;">Refresh</button>
+          <button id="detail-remove" class="btn-action btn-action-danger" data-i18n="common.remove" style="flex: 1;">Remove</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

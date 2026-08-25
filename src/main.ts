@@ -48,6 +48,9 @@ function showApp(): void {
   if (app) app.style.display = 'flex';
 }
 
+import { loadAppTemplates } from './ui/templateLoader';
+
+loadAppTemplates();
 initI18n();
 showApp();
 
@@ -91,6 +94,11 @@ async function init() {
     setupEventListeners();
     setupEditorFsWatcher();
     initPackerView();
+
+    // Initialize Nexus OAuth & deep link listener
+    import('./features/nexus_auth').then(({ initNexusAuth }) => {
+      initNexusAuth();
+    }).catch(err => console.warn('Failed to init Nexus Auth:', err));
 
     // Reveal the window smoothly once DOM and initial UI are fully ready
     import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
@@ -522,6 +530,18 @@ function setupEventListeners() {
         return;
       }
 
+      const nexusProfileModal = document.getElementById('nexus-profile-modal');
+      if (nexusProfileModal?.classList.contains('visible')) {
+        nexusProfileModal.classList.remove('visible');
+        return;
+      }
+
+      const workshopModal = document.getElementById('workshop-modal');
+      if (workshopModal?.classList.contains('visible')) {
+        workshopModal.classList.remove('visible');
+        return;
+      }
+
       const detailOverlay = document.getElementById('detail-overlay');
       if (detailOverlay?.classList.contains('visible')) closeDetailPanel();
       
@@ -543,7 +563,9 @@ function setupEventListeners() {
         (settingsModal && settingsModal.classList.contains('visible')) ||
         (profileModal && profileModal.classList.contains('visible')) ||
         (installModal && installModal.classList.contains('visible')) ||
-        (aboutModal && aboutModal.classList.contains('visible'));
+        (aboutModal && aboutModal.classList.contains('visible')) ||
+        (nexusProfileModal && nexusProfileModal.classList.contains('visible')) ||
+        (workshopModal && workshopModal.classList.contains('visible'));
       if (!hasOpenModal) {
         import('./features/selection').then(({ clearSelection }) => clearSelection());
       }
@@ -552,6 +574,9 @@ function setupEventListeners() {
 
   setupSelection();
   setupLibraryHandlers();
+
+  // Initialize NXM Download Queue
+  import('./features/nxm_queue').then(({ initNxmQueue }) => initNxmQueue()).catch(err => console.error("Failed to init NXM queue:", err));
 
   // Reactively check and update dependencies & mods when the manager window regains focus
   import('@tauri-apps/api/event').then(({ listen }) => {
@@ -566,3 +591,4 @@ function setupEventListeners() {
 
 
 init();
+

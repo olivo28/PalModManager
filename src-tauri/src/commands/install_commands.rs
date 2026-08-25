@@ -245,7 +245,7 @@ pub async fn install_mod_command(
     let lib_folder_name = final_mod.name.clone();
     let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
     if !is_already_in_lib {
-        let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name);
+        let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, None);
 
         if let Some(ref info) = nexus_info {
             let lib_dir = library::get_library_path(&program_path, &lib_folder_name);
@@ -461,7 +461,7 @@ pub async fn update_mod_command(
         let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
         if !is_already_in_lib {
             let lib_folder_name = updated_mod.name.clone();
-            let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name);
+            let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, None);
         }
         let final_m = if let Some(existing) = data.mods.iter_mut().find(|m| m.id == mod_id) {
             existing.update_date = Some(now.clone());
@@ -592,10 +592,15 @@ pub async fn install_mod_with_manifest(
         force_load_order_palschema,
     )?;
 
-    final_mod.source_zip = Path::new(&zip_path).file_name().unwrap().to_string_lossy().to_string();
+    let raw_source_name = Path::new(&zip_path).file_name().unwrap_or_default().to_string_lossy().to_string();
+    if raw_source_name.to_lowercase().starts_with("nexus_") || (raw_source_name.contains('-') && raw_source_name.len() > 30) {
+        final_mod.source_zip = format!("{}.zip", manifest.display_name);
+    } else {
+        final_mod.source_zip = raw_source_name;
+    }
 
     if let Some(ref info) = nexus_info {
-        if final_mod.version == "unknown" || final_mod.version.is_empty() {
+        if final_mod.version == "unknown" || final_mod.version.is_empty() || final_mod.version.contains('-') {
             final_mod.version = info.version.clone();
         }
         final_mod.nexus_description = if info.description.is_empty() { None } else { Some(info.description.clone()) };
@@ -631,7 +636,7 @@ pub async fn install_mod_with_manifest(
     let lib_folder_name = final_mod.name.clone();
     let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
     if !is_already_in_lib {
-        let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name);
+        let _ = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, Some(&final_mod.source_zip));
 
         if let Some(ref info) = nexus_info {
             let lib_dir = library::get_library_path(&program_path, &lib_folder_name);

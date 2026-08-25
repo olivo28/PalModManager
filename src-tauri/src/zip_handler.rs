@@ -652,9 +652,22 @@ pub fn build_manifest_from_files(
             }
         }
 
-        let folder_idx = segments.iter().rposition(|s| s.to_lowercase() == folder_name_lower);
+        // Find the folder_name marker.
+        // It must be an ancestor root wrapper, NOT an internal child folder inside "scripts", "dlls", "palschema", etc.
+        let folder_idx = segments.iter().position(|s| s.to_lowercase() == folder_name_lower);
+        let is_valid_root_folder = if let Some(idx) = folder_idx {
+            let prior_segments = &segments[..idx];
+            let is_inside_subfolder = prior_segments.iter().any(|s| {
+                let sl = s.to_lowercase();
+                sl == "scripts" || sl == "dlls" || sl == "mods" || sl == "palschema" || PALSCHEMA_FOLDERS.contains(&sl.as_str())
+            });
+            !is_inside_subfolder
+        } else {
+            false
+        };
 
-        let mut relative_path = if let Some(idx) = folder_idx {
+        let mut relative_path = if is_valid_root_folder {
+            let idx = folder_idx.unwrap();
             segments[idx + 1..].join("/")
         } else {
             // Strip any platform wrapper if present in the first segment
@@ -682,12 +695,30 @@ pub fn build_manifest_from_files(
                 let schema_subpath = &normalized_clean[pos + "palschema/mods/".len()..];
                 relative_path = schema_subpath.to_string();
             }
+        } else if lower_clean.contains("ue4ss/mods/") {
+            if let Some(pos) = lower_clean.find("ue4ss/mods/") {
+                let ue4ss_subpath = &normalized_clean[pos + "ue4ss/mods/".len()..];
+                let sub_lower = ue4ss_subpath.to_lowercase();
+                if sub_lower.starts_with(&format!("{}/", folder_name_lower)) {
+                    relative_path = ue4ss_subpath[folder_name_lower.len() + 1..].to_string();
+                } else {
+                    relative_path = ue4ss_subpath.to_string();
+                }
+            }
         } else {
             let rel_lower_check = relative_path.to_lowercase();
             if rel_lower_check.starts_with("ue4ss/mods/") {
                 relative_path = relative_path["ue4ss/mods/".len()..].to_string();
+                let sub_lower = relative_path.to_lowercase();
+                if sub_lower.starts_with(&format!("{}/", folder_name_lower)) {
+                    relative_path = relative_path[folder_name_lower.len() + 1..].to_string();
+                }
             } else if rel_lower_check.starts_with("mods/") {
                 relative_path = relative_path["mods/".len()..].to_string();
+                let sub_lower = relative_path.to_lowercase();
+                if sub_lower.starts_with(&format!("{}/", folder_name_lower)) {
+                    relative_path = relative_path[folder_name_lower.len() + 1..].to_string();
+                }
             } else if rel_lower_check.starts_with("ue4ss/") {
                 relative_path = relative_path["ue4ss/".len()..].to_string();
             } else if rel_lower_check.starts_with("palschema/mods/") {
@@ -838,12 +869,16 @@ pub fn build_manifest_from_files(
                     ue4ss_mods_dest.join(&folder_name).join(final_rel)
                 }
                 RouteType::PalSchema => {
-                    let rel_path_lower = relative_path.to_lowercase();
-                    let folder_lower = folder_name.to_lowercase();
-                    if rel_path_lower.starts_with(&folder_lower) || rel_path_lower.starts_with(&format!("{}_", folder_lower)) || rel_path_lower.starts_with(&format!("{}schema", folder_lower)) {
-                        palschema_mods_dest.join(&relative_path)
-                    } else {
+                    let rel_segments: Vec<&str> = relative_path.split('/').collect();
+                    let first_seg_lower = rel_segments.first().map(|s| s.to_lowercase()).unwrap_or_default();
+                    
+                    // If the relative path starts directly with a PalSchema loader folder (e.g. items/, raw/, pals/), 
+                    // it needs the mod folder prepended.
+                    // Otherwise, the first segment is ALREADY the mod's specific PalSchema folder (e.g. 000_PassiveTraitExtraction/)!
+                    if PALSCHEMA_FOLDERS.contains(&first_seg_lower.as_str()) {
                         palschema_mods_dest.join(&folder_name).join(&relative_path)
+                    } else {
+                        palschema_mods_dest.join(&relative_path)
                     }
                 }
                 RouteType::Pak => {

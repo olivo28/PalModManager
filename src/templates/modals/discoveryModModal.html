@@ -1,0 +1,105 @@
+<!-- DISCOVERY MOD DETAILS MODAL -->
+<div id="discovery-mod-modal" class="modal-overlay">
+  <div class="discovery-modal-container">
+    <!-- MODAL HEADER -->
+    <div class="discovery-modal-header">
+      <div class="discovery-modal-cover-wrap">
+        <img id="discovery-modal-img" src="" alt="Mod Preview" class="discovery-modal-cover cursor-zoom" />
+        <div class="discovery-modal-gradient"></div>
+        <button id="discovery-modal-close" class="discovery-modal-close-btn" title="Close" data-i18n-title="common.close">✕</button>
+      </div>
+
+      <div class="discovery-modal-header-info">
+        <div class="discovery-modal-badges">
+          <span id="discovery-modal-category" class="discovery-badge-category"></span>
+          <span id="discovery-modal-version" class="discovery-badge-version"></span>
+        </div>
+        <h2 id="discovery-modal-title" class="discovery-modal-title"></h2>
+        <div class="discovery-modal-author-row">
+          <span data-i18n="discovery.by_author">By</span> <strong id="discovery-modal-author"></strong>
+          <span class="discovery-dot-sep">•</span>
+          <span id="discovery-modal-updated"></span>
+        </div>
+
+        <div class="discovery-modal-stats-bar">
+          <div class="discovery-stat-item">
+            <span class="discovery-stat-icon">👍</span>
+            <span id="discovery-modal-endorsements" class="discovery-stat-val">0</span>
+            <span class="discovery-stat-lbl" data-i18n="detail.endorsements_label">Endorsements</span>
+          </div>
+          <div class="discovery-stat-item">
+            <span class="discovery-stat-icon">📥</span>
+            <span id="discovery-modal-downloads" class="discovery-stat-val">0</span>
+            <span class="discovery-stat-lbl" data-i18n="discovery.downloads_label">Downloads</span>
+          </div>
+          <div class="discovery-modal-quick-actions">
+            <button id="discovery-modal-endorse-btn" class="btn-discovery-action" title="Endorse mod" data-i18n-title="discovery.endorse_title">
+              <span>👍</span> <span id="discovery-modal-endorse-text" data-i18n="discovery.endorse_btn">Endorse</span>
+            </button>
+            <button id="discovery-modal-track-btn" class="btn-discovery-action" title="Track mod updates" data-i18n-title="discovery.track_title">
+              <span>⭐</span> <span id="discovery-modal-track-text" data-i18n="discovery.track_btn">Track</span>
+            </button>
+            <button id="discovery-modal-community-btn" class="btn-discovery-action" title="Open Nexus Discussion & Comments" data-i18n-title="discovery.community_title">
+              <span>💬</span> <span data-i18n="discovery.community_btn">Community</span>
+            </button>
+            <button id="discovery-modal-bugs-btn" class="btn-discovery-action" title="Open Bugs & Issues on Nexus" data-i18n-title="discovery.bugs_title">
+              <span>🐛</span> <span data-i18n="discovery.bugs_btn">Bugs</span>
+            </button>
+            <button id="discovery-modal-nexus-link-btn" class="btn-discovery-action" title="Open on NexusMods.com" data-i18n-title="discovery.view_nexus_title">
+              <span>🔗</span> <span data-i18n="discovery.nexus_btn">NexusMods</span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- MODAL TABS -->
+    <div class="discovery-modal-tabs">
+      <button class="discovery-modal-tab active" data-tab="desc" data-i18n="discovery.tab_description">Description</button>
+      <button class="discovery-modal-tab" data-tab="files" data-i18n="discovery.tab_files">Files & Install</button>
+      <button class="discovery-modal-tab" data-tab="changelog" data-i18n="discovery.tab_changelog">Changelog</button>
+      <button class="discovery-modal-tab" data-tab="media" data-i18n="discovery.tab_media">Media Gallery</button>
+    </div>
+
+    <!-- MODAL TAB PANELS -->
+    <div class="discovery-modal-body">
+      <!-- TAB: DESCRIPTION -->
+      <div id="discovery-tab-desc" class="discovery-tab-pane active">
+        <div id="discovery-modal-description" class="discovery-description-content"></div>
+      </div>
+
+      <!-- TAB: FILES & INSTALL -->
+      <div id="discovery-tab-files" class="discovery-tab-pane" style="display:none">
+        <div class="discovery-files-header">
+          <p id="discovery-files-instruction-text" data-i18n="discovery.files_instruction">Select a file below to install directly into Palworld with 1 click.</p>
+        </div>
+        <div id="discovery-files-list" class="discovery-files-list"></div>
+      </div>
+
+      <!-- TAB: CHANGELOG -->
+      <div id="discovery-tab-changelog" class="discovery-tab-pane" style="display:none">
+        <div id="discovery-modal-changelogs" class="discovery-changelogs-list"></div>
+      </div>
+
+      <!-- TAB: MEDIA GALLERY -->
+      <div id="discovery-tab-media" class="discovery-tab-pane" style="display:none">
+        <div id="discovery-media-gallery" class="discovery-media-gallery"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- DISCOVERY IMAGE LIGHTBOX MODAL -->
+<div id="discovery-image-modal" class="modal-overlay discovery-lightbox-overlay" style="display:none">
+  <div class="discovery-lightbox-container">
+    <button id="discovery-lightbox-close" class="discovery-lightbox-close" title="Close" data-i18n-title="common.close">✕</button>
+    <div class="discovery-lightbox-img-wrap" id="discovery-lightbox-img-wrap">
+      <img id="discovery-lightbox-img" src="" alt="Full preview" class="discovery-lightbox-img" draggable="false" />
+    </div>
+    <div class="discovery-lightbox-toolbar">
+      <button id="discovery-lightbox-zoom-out" class="btn-lightbox-tool" title="Zoom Out">－</button>
+      <button id="discovery-lightbox-zoom-reset" class="btn-lightbox-tool" title="Reset Zoom">100%</button>
+      <button id="discovery-lightbox-zoom-in" class="btn-lightbox-tool" title="Zoom In">＋</button>
+    </div>
+  </div>
+</div>

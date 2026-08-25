@@ -6,6 +6,8 @@ mod installer;
 mod library;
 mod models;
 pub mod nexus;
+pub mod nexus_oauth;
+pub mod protocol_handler;
 mod state;
 mod zip_handler;
 mod logger;
@@ -29,6 +31,7 @@ use commands::scanner_commands;
 use commands::db_commands;
 use commands::load_order_commands;
 use commands::workshop_commands;
+use commands::discovery_commands;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -96,15 +99,36 @@ pub fn run() {
     logger::log("Initializing Tauri builder...");
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            if let Some(window) = app.get_webview_window("main") {
+                let _ = window.unminimize();
+                let _ = window.show();
+                let _ = window.set_focus();
+            }
+            for arg in args {
+                if arg.starts_with("palmodmanager://") {
+                    crate::logger::log(&format!("single_instance: Captured deep link: {}", arg));
+                    let _ = app.emit("nexus-oauth-deep-link", arg);
+                }
+            }
+        }))
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
+            crate::logger::log(&format!("Single instance invoked with args: {:?}", args));
+            for arg in args {
+                if arg.starts_with("palmodmanager://") {
+                    let _ = app.emit("nexus-oauth-deep-link", arg.clone());
+                } else if arg.starts_with("nxm://") {
+                    let _ = app.emit("nexus-nxm-download", arg.clone());
+                }
+            }
             if let Some(window) = app.get_webview_window("main") {
                 let _ = window.unminimize();
                 let _ = window.show();
                 let _ = window.set_focus();
             }
         }))
-        .plugin(tauri_plugin_dialog::init())
-        .plugin(tauri_plugin_fs::init())
         .manage(state)
         .invoke_handler(tauri::generate_handler![
             settings_commands::get_settings,
@@ -128,6 +152,7 @@ pub fn run() {
             mod_commands::open_folder,
             mod_commands::open_extra_folder,
             mod_commands::open_folder_by_type,
+            mod_commands::open_path,
             mod_commands::rename_mod,
             mod_commands::set_mod_version,
             mod_commands::set_mod_ignored_keys,
@@ -153,6 +178,22 @@ pub fn run() {
             nexus_commands::set_nexus_mod_id,
             nexus_commands::check_for_updates,
             nexus_commands::ignore_mod_version,
+            nexus_commands::start_nexus_oauth,
+            nexus_commands::handle_nexus_oauth_callback,
+            nexus_commands::get_nexus_account_status,
+            nexus_commands::refresh_nexus_account_profile,
+            nexus_commands::logout_nexus_account,
+            nexus_commands::check_nexus_protocol_status,
+            nexus_commands::register_nexus_protocol,
+            nexus_commands::unregister_nexus_protocol,
+            nexus_commands::get_nexus_user_endorsements,
+            nexus_commands::get_nexus_user_tracked_mods,
+            nexus_commands::get_nexus_user_authored_mods,
+            nexus_commands::parse_nxm_link,
+            nexus_commands::get_nxm_mod_metadata,
+            nexus_commands::download_nxm_file,
+            nexus_commands::handle_nxm_download,
+            settings_commands::open_url,
             library_commands::get_library,
             library_commands::install_mod_from_library,
             library_commands::remove_from_library,
@@ -217,6 +258,14 @@ pub fn run() {
             workshop_commands::check_workshop_updates_online_cmd,
             workshop_commands::trigger_steam_validation_cmd,
             launch_commands::launch_game,
+            discovery_commands::get_discovery_categories,
+            discovery_commands::get_discovery_mods,
+            discovery_commands::get_discovery_mod_details,
+            discovery_commands::endorse_nexus_mod,
+            discovery_commands::abstain_nexus_mod,
+            discovery_commands::track_nexus_mod,
+            discovery_commands::untrack_nexus_mod,
+            discovery_commands::install_discovery_file,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();
@@ -232,6 +281,27 @@ pub fn run() {
                     let _ = window.maximize();
                 }
                 let _ = window.show();
+            }
+
+            // Check if launched directly with palmodmanager:// or nxm:// deep link
+            for arg in std::env::args() {
+                if arg.starts_with("palmodmanager://") {
+                    crate::logger::log(&format!("setup: Application launched directly with deep link: {}", arg));
+                    let app_handle = app.handle().clone();
+                    let url_clone = arg.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(1200));
+                        let _ = app_handle.emit("nexus-oauth-deep-link", url_clone);
+                    });
+                } else if arg.starts_with("nxm://") {
+                    crate::logger::log(&format!("setup: Application launched directly with NXM link: {}", arg));
+                    let app_handle = app.handle().clone();
+                    let url_clone = arg.clone();
+                    std::thread::spawn(move || {
+                        std::thread::sleep(std::time::Duration::from_millis(1200));
+                        let _ = app_handle.emit("nexus-nxm-download", url_clone);
+                    });
+                }
             }
 
             // Spawn background thread to watch the Steam Workshop mods folder for changes

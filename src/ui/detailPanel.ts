@@ -10,6 +10,103 @@ import { t } from '../utils/i18n';
 import { descriptionToHtml } from '../utils/bbcode';
 import type { ModInfo } from '../types';
 
+export interface ModComponentFolder {
+  type: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other';
+  label: string;
+  buttonLabel: string;
+  path: string;
+}
+
+export function formatDisplayPath(fullPath: string): string {
+  if (!fullPath) return '';
+  const normalized = fullPath.replace(/\//g, '\\');
+  const lower = normalized.toLowerCase();
+  const palIdx = lower.lastIndexOf('\\pal\\');
+  if (palIdx !== -1) {
+    return normalized.substring(palIdx + 1);
+  }
+  if (lower.startsWith('pal\\')) {
+    return normalized;
+  }
+  return normalized;
+}
+
+export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
+  const allPaths: string[] = [];
+  const primaryPath = mod.enabled ? mod.gamePath : mod.disabledPath;
+  if (primaryPath) allPaths.push(primaryPath);
+  if (mod.extraFiles && Array.isArray(mod.extraFiles)) {
+    for (const f of mod.extraFiles) {
+      if (f && !allPaths.includes(f)) {
+        allPaths.push(f);
+      }
+    }
+  }
+
+  const components: ModComponentFolder[] = [];
+
+  for (const p of allPaths) {
+    const lower = p.toLowerCase().replace(/\\/g, '/');
+    let compType: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other' = 'other';
+    let label = t('detail.comp_other_folder');
+    let buttonLabel = t('detail.btn_open_folder');
+
+    if (lower.includes('palschema/mods') || (lower.includes('palschema') && !lower.endsWith('.pak'))) {
+      compType = 'palschema';
+      label = t('detail.comp_palschema_folder');
+      buttonLabel = t('detail.comp_palschema_folder');
+    } else if (lower.includes('ue4ss/mods') || (lower.includes('ue4ss') && !lower.endsWith('.pak'))) {
+      compType = 'ue4ss';
+      label = t('detail.comp_ue4ss_folder');
+      buttonLabel = t('detail.comp_ue4ss_folder');
+    } else if (lower.includes('logicmods') || (lower.endsWith('.pak') && lower.includes('logicmods'))) {
+      compType = 'logicmods';
+      label = t('detail.comp_logicmods_folder');
+      buttonLabel = t('detail.comp_logicmods_folder');
+    } else if (lower.endsWith('.pak') || lower.includes('content/paks') || lower.includes('~mods')) {
+      compType = 'pak';
+      label = t('detail.comp_pak_folder');
+      buttonLabel = t('detail.comp_pak_folder');
+    } else if (mod.type === 'ue4ss') {
+      compType = 'ue4ss';
+      label = t('detail.comp_ue4ss_folder');
+      buttonLabel = t('detail.btn_open_folder');
+    } else if (mod.type === 'palschema') {
+      compType = 'palschema';
+      label = t('detail.comp_palschema_folder');
+      buttonLabel = t('detail.btn_open_folder');
+    } else if (mod.type === 'pak') {
+      compType = 'pak';
+      label = t('detail.comp_pak_folder');
+      buttonLabel = t('detail.btn_open_folder');
+    } else if (mod.type === 'logicmods') {
+      compType = 'logicmods';
+      label = t('detail.comp_logicmods_folder');
+      buttonLabel = t('detail.btn_open_folder');
+    }
+
+    if (!components.some(c => c.path === p)) {
+      components.push({ type: compType, label, buttonLabel, path: p });
+    }
+  }
+
+  const typeOrder: Record<string, number> = {
+    ue4ss: 1,
+    palschema: 2,
+    pak: 3,
+    logicmods: 4,
+    other: 5,
+  };
+
+  components.sort((a, b) => (typeOrder[a.type] ?? 99) - (typeOrder[b.type] ?? 99));
+
+  if (components.length === 1) {
+    components[0].buttonLabel = t('detail.btn_open_folder');
+  }
+
+  return components;
+}
+
 export function openDetailPanel(modId: string): void {
   const state = getState();
   const mod = state.allMods.find(m => m.id === modId);
@@ -131,21 +228,55 @@ export function openDetailPanel(modId: string): void {
   document.getElementById('detail-install-date')!.textContent = formattedInstallDate;
   document.getElementById('detail-source-zip')!.textContent = mod.sourceZip || t('common.none');
 
-  // Root folder
-  const gamePath = mod.enabled ? mod.gamePath : mod.disabledPath;
-  document.getElementById('detail-root-folder')!.textContent = gamePath || t('common.none');
+  // Technical Component rows & Dynamic Action Buttons
+  const componentsContainer = document.getElementById('detail-components-container');
+  const folderButtonsContainer = document.getElementById('detail-folder-buttons');
+  const compFolders = getModComponentFolders(mod);
 
-  // Extra companion files/folders
-  const extraFilesRow = document.getElementById('detail-extra-files-row')!;
-  const extraFilesEl = document.getElementById('detail-extra-files')!;
-  const openExtraFolderBtn = document.getElementById('detail-open-extra-folder')!;
-  if (mod.extraFiles && mod.extraFiles.length > 0) {
-    extraFilesEl.innerHTML = mod.extraFiles.map(f => `<div style="margin-bottom:2px;">${f}</div>`).join('');
-    extraFilesRow.style.display = '';
-    openExtraFolderBtn.style.display = '';
-  } else {
-    extraFilesRow.style.display = 'none';
-    openExtraFolderBtn.style.display = 'none';
+  if (componentsContainer) {
+    if (compFolders.length > 0) {
+      componentsContainer.innerHTML = compFolders.map(c => `
+        <div class="detail-row" style="display: flex; align-items: flex-start; gap: 8px;">
+          <span class="detail-label" style="min-width: 115px; font-weight: 600;">${escapeHtml(c.label)}</span>
+          <span style="word-break: break-all; font-size: 11px; flex: 1; color: var(--text-primary); font-family: monospace;" title="${escapeHtml(c.path)}">${escapeHtml(formatDisplayPath(c.path))}</span>
+        </div>
+      `).join('');
+    } else {
+      componentsContainer.innerHTML = `
+        <div class="detail-row">
+          <span class="detail-label">${escapeHtml(t('detail.root_label'))}</span>
+          <span style="color: var(--text-muted);">${escapeHtml(t('common.none'))}</span>
+        </div>
+      `;
+    }
+  }
+
+  if (folderButtonsContainer) {
+    if (compFolders.length > 0) {
+      folderButtonsContainer.style.display = 'flex';
+      folderButtonsContainer.innerHTML = compFolders.map(c => `
+        <button class="btn-action detail-open-comp-folder" data-path="${escapeHtml(c.path)}" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; font-size: 11px; font-weight: 600; white-space: nowrap;" title="${escapeHtml(c.path)}">
+          <span style="font-size: 13px;">📁</span>
+          <span>${escapeHtml(c.buttonLabel)}</span>
+        </button>
+      `).join('');
+
+      folderButtonsContainer.querySelectorAll<HTMLButtonElement>('.detail-open-comp-folder').forEach(btn => {
+        btn.addEventListener('click', async () => {
+          const path = btn.dataset.path;
+          if (!path) return;
+          try {
+            const { openPath } = await import('../api');
+            await openPath(path);
+          } catch (err) {
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+          }
+        });
+      });
+    } else {
+      folderButtonsContainer.style.display = 'none';
+      folderButtonsContainer.innerHTML = '';
+    }
   }
 
   // Duplicate detection
@@ -172,6 +303,7 @@ export function openDetailPanel(modId: string): void {
 
   if (isPakType) {
     configPathEl.textContent = 'N/A';
+    configPathEl.title = '';
     configRow.style.display = 'none';
     
     pakDestRow.style.display = '';
@@ -201,7 +333,8 @@ export function openDetailPanel(modId: string): void {
       }
     });
   } else {
-    configPathEl.textContent = mod.configPath || t('common.none');
+    configPathEl.textContent = mod.configPath ? formatDisplayPath(mod.configPath) : t('common.none');
+    configPathEl.title = mod.configPath || '';
     configRow.style.display = '';
     pakDestRow.style.display = 'none';
   }

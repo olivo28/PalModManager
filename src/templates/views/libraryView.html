@@ -1,0 +1,39 @@
+<!-- LIBRARY TAB -->
+<div id="library-view" class="tab-content" style="display:none">
+  <div id="library-toolbar" style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
+    <span style="font-size:13px;font-weight:700;color:var(--text-primary)" data-i18n="library.title">Mod Library</span>
+
+    <div class="library-sub-tabs" style="display:flex;gap:4px;background:rgba(0,0,0,0.2);padding:2px;border-radius:6px;border:1px solid var(--border);margin-left:8px;">
+      <button class="library-sub-tab active" data-tab="local" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;transition:all 0.2s;" data-i18n="library.tab_local">Local Library</button>
+      <button class="library-sub-tab" data-tab="workshop" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
+        <span data-i18n="library.tab_workshop">Steam Workshop</span>
+        <span id="workshop-subtab-badge" style="display:none;font-size:8px;background:#00bcff;color:#fff;padding:1px 5px;border-radius:10px;font-weight:bold;">NEW</span>
+      </button>
+    </div>
+
+    <div id="library-workshop-master-wrap" style="display:none; align-items:center; gap:8px; margin-left:12px;">
+      <span style="font-size:11px;color:var(--text-muted);font-weight:600;" data-i18n="library.workshop_enable_label">Enable Workshop:</span>
+      <label class="toggle-switch">
+        <input type="checkbox" id="library-workshop-master-toggle" />
+        <span class="toggle-slider"></span>
+      </label>
+    </div>
+
+    <div id="library-search-wrap" style="position:relative;width:240px;margin-left:auto;">
+      <input type="text" id="library-search-input" placeholder="Search library..." data-i18n-placeholder="library.search_placeholder" style="width:100%;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;" />
+    </div>
+    <button id="workshop-check-updates-btn" class="toolbar-btn-sm" style="display:none;align-items:center;gap:4px;background:rgba(0,188,255,0.15);color:#00bcff;border:1px solid rgba(0,188,255,0.3);" title="Check for Workshop updates on Steam" data-i18n-title="library.btn_check_workshop_updates_title" data-i18n="library.btn_check_workshop_updates">🔍 Check Updates</button>
+    <button id="library-refresh-btn" class="toolbar-btn-sm" data-i18n="common.refresh">Refresh</button>
+  </div>
+  <div id="library-bulk-actions-bar" class="bulk-actions-bar" style="display:none;margin:12px 16px 0 16px;">
+    <div class="bulk-actions-info"><span id="library-bulk-selected-count">0</span> mods selected</div>
+    <div class="bulk-actions-buttons">
+      <button id="library-bulk-install-btn" class="bulk-btn primary" data-i18n="library.btn_install_selected">Install Selected</button>
+      <button id="library-bulk-remove-btn" class="bulk-btn danger" data-i18n="library.btn_remove_selected">Remove Selected</button>
+      <button id="library-bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
+    </div>
+  </div>
+  <div id="library-container" style="flex:1;padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:16px;align-content:start;">
+    <div id="library-empty" data-i18n="library.empty_local">No mods in library. Mods are automatically copied here when installed.</div>
+  </div>
+</div>

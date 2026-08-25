@@ -157,6 +157,100 @@
   transform: scale(0.95);
 }
 
+/* ===== SIDEBAR NEXUS PROFILE WIDGET ===== */
+.sidebar-nexus-widget {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 48px;
+  padding: 6px 2px;
+  border-radius: 8px;
+  background: rgba(218, 142, 53, 0.08);
+  border: 1px solid rgba(218, 142, 53, 0.25);
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  margin-bottom: 6px;
+  user-select: none;
+}
+
+.sidebar-nexus-widget:hover {
+  background: rgba(218, 142, 53, 0.18);
+  border-color: rgba(218, 142, 53, 0.5);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(218, 142, 53, 0.2);
+}
+
+.sidebar-nexus-avatar-wrap {
+  position: relative;
+  width: 32px;
+  height: 32px;
+}
+
+.sidebar-nexus-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid #da8e35;
+}
+
+.sidebar-nexus-dot {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 8px;
+  height: 8px;
+  background: #2ed573;
+  border: 1.5px solid var(--bg-primary);
+  border-radius: 50%;
+}
+
+.sidebar-nexus-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  overflow: hidden;
+}
+
+.sidebar-nexus-name {
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--text-primary);
+  max-width: 44px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.sidebar-nexus-tier {
+  font-size: 7.5px;
+  font-weight: 800;
+  padding: 1px 3px;
+  border-radius: 3px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  line-height: 1;
+}
+
+.sidebar-nexus-tier.premium {
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #000;
+}
+
+.sidebar-nexus-tier.supporter {
+  background: linear-gradient(135deg, #06b6d4, #0891b2);
+  color: #fff;
+}
+
+.sidebar-nexus-tier.free {
+  background: var(--bg-tertiary);
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+}
+
 /* ===== MAIN ===== */
 main {
   flex: 1;

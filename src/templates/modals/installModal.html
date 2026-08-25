@@ -1,0 +1,18 @@
+<!-- INSTALL MODAL -->
+<div id="install-modal" class="modal-overlay">
+  <div class="modal" style="width: 750px; max-width: 90vw;">
+    <div class="modal-header">
+      <h3 id="install-modal-title" data-i18n="installer.modal_title_install">Install Mod</h3>
+      <button class="modal-close-btn" onclick="document.getElementById('install-modal').classList.remove('visible')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden;">
+      <div id="modal-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
+      <div id="modal-status" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;"></div>
+    </div>
+    <div class="modal-footer" style="padding:16px 20px;">
+      <button id="modal-cancel" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
+      <button id="modal-install-deps-retry" class="btn-primary" style="display:none;background:#e0af68;color:#000;" data-i18n="installer.btn_retry_deps">Install Deps & Retry</button>
+      <button id="modal-confirm" class="btn-primary" disabled data-i18n="common.install">Install</button>
+    </div>
+  </div>
+</div>

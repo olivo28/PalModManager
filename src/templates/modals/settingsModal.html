@@ -1,0 +1,238 @@
+<!-- SETTINGS MODAL -->
+<div id="settings-modal" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3 data-i18n="settings.title">Settings</h3>
+      <button class="modal-close-btn" onclick="document.getElementById('settings-modal').classList.remove('visible')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-modal-layout">
+        <!-- Sidebar Navigation -->
+        <nav class="settings-sidebar-nav">
+          <button type="button" class="settings-tab-button active" data-settings-tab="game">
+            <span class="tab-icon">🎮</span>
+            <span data-i18n="settings.tab_game">Game & Storage</span>
+          </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="nexus">
+            <span class="tab-icon">🔗</span>
+            <span data-i18n="settings.tab_nexus">Nexus Mods</span>
+          </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="mods">
+            <span class="tab-icon">⚡</span>
+            <span data-i18n="settings.tab_mods">Mod Behavior</span>
+          </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="interface">
+            <span class="tab-icon">🌐</span>
+            <span data-i18n="settings.tab_interface">Interface</span>
+          </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="safety">
+            <span class="tab-icon">🛡️</span>
+            <span data-i18n="settings.tab_safety">Safety & Backup</span>
+          </button>
+        </nav>
+
+        <!-- Content Viewport -->
+        <div class="settings-content-viewport">
+          <!-- TAB 1: GAME & STORAGE -->
+          <div class="settings-tab-pane active" id="settings-pane-game">
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.game_path_label">Game Path</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.game_path_hint">Path to your Palworld installation directory</div>
+              <div class="settings-path-row">
+                <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" data-i18n-placeholder="settings.game_path_placeholder" readonly />
+                <button type="button" id="settings-browse-btn" class="btn-secondary" data-i18n="common.browse">Browse</button>
+              </div>
+              <div id="settings-path-status" class="settings-path-status"></div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.data_location_label">Data Storage Location</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.data_location_hint">Choose where your database and profile backups are stored. Mod files will be migrated automatically.</div>
+              <div class="settings-path-row" style="margin-top: 4px;">
+                <select id="settings-data-path-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                  <option value="default" data-i18n="settings.opt_storage_default">Default (AppData)</option>
+                  <option value="portable" data-i18n="settings.opt_storage_portable">Portable (Executable Folder)</option>
+                  <option value="custom" data-i18n="settings.opt_storage_custom">Custom Folder...</option>
+                </select>
+              </div>
+              <div id="settings-custom-data-path-display" class="settings-hint" style="margin-top: 4px; font-family: monospace; display: none; word-break: break-all;"></div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.quick_access_label">Quick Access Folders</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.quick_access_hint">Open game or app data folders directly in system file explorer</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+                <button type="button" id="open-folder-paks" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_paks">📂 Paks (~mods)</button>
+                <button type="button" id="open-folder-ue4ss" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_ue4ss">📂 UE4SS Mods</button>
+                <button type="button" id="open-folder-palschema" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_palschema">📂 PalSchema Mods</button>
+                <button type="button" id="open-folder-appdata" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_appdata">📂 App Storage</button>
+                <button type="button" id="open-folder-profile" class="btn-secondary" style="font-size:11px;padding:6px 8px;grid-column: span 2;" data-i18n="settings.folder_profile">📂 Active Profile Folder</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 2: NEXUS MODS -->
+          <div class="settings-tab-pane" id="settings-pane-nexus">
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.nexus_account_title">Nexus Mods Account</span>
+              </div>
+              <div id="settings-nexus-account-card" style="margin-top: 6px;"></div>
+            </div>
+
+            <!-- NXM 1-CLICK DOWNLOADS -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:14px;">⚡</span>
+                  <span class="settings-card-title" data-i18n="settings.nexus_nxm_title">1-Click Downloads (nxm://)</span>
+                </div>
+                <span id="nexus-nxm-status-badge" class="badge badge-secondary" style="font-size:10px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.nexus_nxm_hint">Captures "Mod Manager Download" buttons on Nexus Mods to download Palworld mods directly into PalModManager.</div>
+              <div id="nexus-nxm-current-handler" style="font-size:11px; margin-top:6px; font-weight:600; color:var(--text-secondary);"></div>
+              <div id="nexus-nxm-actions" style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"></div>
+            </div>
+
+            <!-- LOGIN OAUTH PROTOCOL -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; gap:6px;">
+                  <span style="font-size:14px;">🔑</span>
+                  <span class="settings-card-title" data-i18n="settings.nexus_proto_title">Login Protocol (palmodmanager://)</span>
+                </div>
+                <span id="nexus-protocol-status-badge" class="badge badge-secondary" style="font-size:10px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.nexus_proto_hint">Enables 1-click browser login redirect for SSO OAuth authentication.</div>
+              <div id="nexus-protocol-actions" style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"></div>
+            </div>
+
+            <div class="settings-section-card">
+              <details style="font-size:12px; color:var(--text-muted); cursor:pointer;">
+                <summary data-i18n="settings.nexus_manual_callback_title" style="font-weight:600;">Manual Authorization Code / URL (Fallback)</summary>
+                <div style="margin-top:8px;">
+                  <label style="font-size:11px;" data-i18n="settings.nexus_manual_callback_label">Paste Redirect URL or Authorization Code from Nexus:</label>
+                  <div class="settings-key-row" style="margin-top:6px;">
+                    <input type="text" id="nexus-manual-callback-input" placeholder="Paste URL (palmodmanager://...) or code (eyJ...)" style="font-size:11px; padding:6px 10px;" />
+                    <button type="button" id="btn-nexus-manual-callback" class="btn btn-secondary btn-sm" style="font-size:11px; padding:6px 12px; height:auto;" data-i18n="common.apply">Apply</button>
+                  </div>
+                </div>
+              </details>
+            </div>
+          </div>
+
+          <!-- TAB 3: MOD BEHAVIOR & LOAD ORDER -->
+          <div class="settings-tab-pane" id="settings-pane-mods">
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.hide_native_label">Hide UE4SS native mods</span>
+              </div>
+              <label class="settings-toggle-row">
+                <input type="checkbox" id="settings-hide-native-mods" />
+                <div class="settings-hint" data-i18n="settings.hide_native_hint">Hide pre-installed mods that come with UE4SS (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
+              </label>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.flo_title">Force Load Order (Experimental)</span>
+              </div>
+              <div class="settings-hint" style="margin-bottom:6px;" data-i18n="settings.flo_hint">Select which load order system components you want to enforce:</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <label class="settings-toggle-row">
+                  <input type="checkbox" id="settings-force-load-order-ue4ss" />
+                  <div>
+                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.flo_ue4ss_label">Enforce UE4SS Load Order (via mods.txt)</span>
+                  </div>
+                </label>
+                <label class="settings-toggle-row">
+                  <input type="checkbox" id="settings-force-load-order-palschema" />
+                  <div>
+                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.flo_palschema_label">Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.debug_console_label">Debug Console</span>
+              </div>
+              <label class="settings-toggle-row">
+                <input type="checkbox" id="settings-debug-console" />
+                <div class="settings-hint" data-i18n="settings.debug_console_hint">Show terminal output window in real-time for live debugging logs.</div>
+              </label>
+            </div>
+          </div>
+
+          <!-- TAB 4: INTERFACE & THEME -->
+          <div class="settings-tab-pane" id="settings-pane-interface">
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.language_label">Language</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.language_hint">Select your preferred application interface language</div>
+              <div class="settings-path-row" style="margin-top: 4px;">
+                <select id="settings-language-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                  <option value="en">English (US)</option>
+                  <option value="es">Español</option>
+                  <option value="pt">Português (Brasil)</option>
+                  <option value="zh-CN">简体中文 (Chinese Simplified)</option>
+                  <option value="ja">日本語 (Japanese)</option>
+                  <option value="ko">한국어 (Korean)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.theme_label">Theme</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.theme_hint">Switch between dark and light appearance</div>
+              <button type="button" id="theme-toggle-btn" class="btn-secondary" style="width:100%; margin-top:4px;" data-i18n="settings.btn_theme_light">Switch to Light Theme</button>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.toolbar_scale_label">Toolbar Scale</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.toolbar_scale_hint">Adjust the size of the top toolbar icons and buttons</div>
+              <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+                <input type="range" id="settings-toolbar-scale" min="0.8" max="1.8" step="0.05" style="flex:1;" />
+                <span id="settings-toolbar-scale-value" style="font-size:12px;font-weight:bold;width:40px;text-align:right;">100%</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 5: SAFETY & BACKUP -->
+          <div class="settings-tab-pane" id="settings-pane-safety">
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.safety_title">🛡️ Safety Backup & Troubleshooting</span>
+              </div>
+              <div class="settings-hint" style="margin-bottom:6px;" data-i18n="settings.safety_hint">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
+              <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: 8px; font-family: monospace; font-size: 11px;" data-i18n="settings.safety_checking">Checking backup status...</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; gap:8px;">
+                  <button type="button" id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:8px; border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
+                  <button type="button" id="safety-backup-now-btn" class="btn-secondary" style="font-size:11px; padding:8px;" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
+                </div>
+                <button type="button" id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="settings-cancel" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
+      <button id="settings-save" class="btn-primary" data-i18n="common.save">Save</button>
+    </div>
+  </div>
+</div>

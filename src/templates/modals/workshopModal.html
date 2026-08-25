@@ -1,0 +1,27 @@
+<!-- WORKSHOP MODAL -->
+<div id="workshop-modal" class="modal-overlay">
+  <div class="modal" style="max-width: 640px;">
+    <div class="modal-header">
+      <h3 data-i18n="workshop.title">Steam Workshop Mods</h3>
+      <button class="modal-close-btn" id="workshop-modal-close-x">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="settings-group" style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); padding:10px 14px; border-radius:6px; border:1px solid var(--border);">
+        <div>
+          <span style="font-weight:bold; font-size:13px; color:var(--text-primary);" data-i18n="workshop.enable_master_label">Enable Workshop Mods</span>
+          <div class="settings-hint" style="margin-top:2px; font-size:11px;" data-i18n="workshop.enable_master_hint">Toggles Master bGlobalEnableMod state</div>
+        </div>
+        <label class="toggle-switch">
+          <input type="checkbox" id="workshop-master-toggle" />
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      <div id="workshop-list-container" style="display:flex; flex-direction:column; gap:8px; max-height: 380px; overflow-y:auto; padding-right:4px;">
+        <!-- Dynamically populated subscribed mods list -->
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button id="workshop-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
+    </div>
+  </div>
+</div>

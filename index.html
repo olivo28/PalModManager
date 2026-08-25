@@ -33,19 +33,20 @@
 
     @keyframes pulse-glow {
       from {
+        opacity: 0.6;
         transform: scale(0.96);
-        filter: drop-shadow(0 0 8px rgba(0, 120, 212, 0.3));
       }
+
       to {
+        opacity: 1;
         transform: scale(1.04);
-        filter: drop-shadow(0 0 20px rgba(0, 120, 212, 0.6));
       }
     }
 
     .loading-spinner {
-      width: 24px;
-      height: 24px;
-      border: 2px solid rgba(0, 120, 212, 0.2);
+      width: 28px;
+      height: 28px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
       border-top-color: #0078d4;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
@@ -58,26 +59,47 @@
     }
 
     .loading-text {
-      font-size: 14px;
-      font-weight: 700;
-      color: #0078d4;
-      letter-spacing: 2px;
+      color: #888;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>
 
 <body>
+  <!-- LOADING SPLASH SCREEN -->
   <div id="app-loading">
     <img src="/src/assets/logo.png" alt="PalModManager Logo" class="loading-logo" />
     <div class="loading-spinner"></div>
     <div class="loading-text">PalModManager</div>
   </div>
+
+  <!-- MAIN APP CONTAINER -->
   <div id="app" style="display:none">
     <nav id="sidebar">
       <div class="sidebar-logo-container">
         <img id="sidebar-logo-btn" src="/src/assets/logo.png" alt="PMM Logo" class="sidebar-logo-img" title="About PalModManager & Legal Information" data-i18n-title="sidebar.logo_title" />
       </div>
       <div class="sidebar-tabs">
+        <button id="sidebar-tab-discovery" class="sidebar-tab" data-tab="discovery" title="Discover" data-i18n-title="sidebar.tab_discovery_title" style="display:none">
+          <span class="sidebar-tab-icon" style="display:inline-flex;align-items:center;justify-content:center;">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 162.5 162.5" style="width: 18px; height: 18px;">
+              <path fill="#da8e35" d="M44.4,162.5c-0.6,0-1.3,0-1.9-0.1c-1.5-0.2-2.9-0.5-4.5-1c-2.8-0.9-5.2-2.2-6.9-3.2c-3.8-2.2-7.7-4.9-11.8-8.3 c-1.8-1.5-3.6-3.1-5.3-4.7l-1.4-1.4c-1-0.9-1.9-1.9-2.6-3c-1.3-2-2.4-4.6-2.5-8c-0.1-1.1-0.2-2.2-0.2-3.4c0-2.4,0.1-5,0.5-7.5 c0.7-5.2,2.4-9.8,3.7-13.3c0.1-0.3,0.2-0.6,0.3-0.9c-0.4-0.9-0.7-1.9-1.1-2.9C8.9,99.6,7.7,93.8,7.1,88 c-0.6-6.1-0.4-12.3,0.5-18.4c0.2-1.3,0.4-2.6,0.7-3.8C5.9,62.3,2.9,57.3,1,51.5l0-0.1c-0.4-1.2-1.4-4.2-0.8-8 c0.2-1.4,0.5-2.8,1-4.3c0.9-2.8,2.2-5.1,3.2-6.8c2.2-3.8,4.9-7.6,8.2-11.7c1.5-1.8,3-3.6,4.6-5.2l1.4-1.4 c0.7-0.8,1.5-1.5,2.4-2.1c2-1.5,4.8-2.8,8.6-2.9c1.2-0.1,2.5-0.2,3.8-0.2h0.1c2.5,0,5.2,0.2,7.8,0.6c4,0.6,7.6,1.7,10.8,2.9 c2.1-0.9,4.3-1.7,6.6-2.5C64.1,8,69.9,6.8,75.7,6.4C81.8,5.9,88,6.2,93.9,7.2c1.4,0.2,2.8,0.5,4.2,0.8c4.7-3.2,9-5.5,13.5-6.9 l0.1,0c1-0.4,3.2-1.1,6.1-1.1c0.6,0,1.3,0,1.9,0.1c1.5,0.2,2.9,0.5,4.5,1c2.8,0.9,5.2,2.2,6.9,3.2c3.8,2.2,7.7,4.9,11.8,8.3 c1.8,1.5,3.6,3.1,5.3,4.7l1.4,1.4c0.7,0.6,1.4,1.3,1.9,2.1c1.8,2.3,3.2,5.6,3.3,10.2c0.1,1.6,0.1,3.3,0,5 c-0.2,3.7-0.7,7.2-1.6,10.4c-0.7,2.4-1.5,4.8-2.4,7.2c1.8,4.5,3.1,9.1,4,13.8c1.8,9.9,1.6,20.1-0.6,29.9c1.3,1.9,2.5,3.7,3.5,5.5 c1.7,3,3.1,6.1,4.1,9.3c0.4,1.2,1.3,4.2,0.7,8.2c-0.2,1.4-0.6,2.7-1.1,4.2c-1.8,5.1-4.6,9.3-7.1,12.8c-2.7,3.8-5.8,7.5-9,10.9 l-1.2,1.2c-0.7,0.8-1.5,1.5-2.4,2.2c-2,1.5-4.8,2.7-8.6,2.9c-1.2,0.1-2.5,0.2-3.8,0.2h-0.1c-2.7,0-5.4-0.2-8.2-0.7 c-4.5-0.7-8.5-2.1-12.1-3.5c-1.9,0.8-3.9,1.5-5.8,2.1c-5.6,1.7-11.5,2.8-17.4,3.1c-6.1,0.4-12.3-0.1-18.3-1.2 c-0.7-0.1-1.5-0.3-2.2-0.4c-5.2,3.7-9.8,6.1-14.6,7.7l-0.1,0C49.5,161.7,47.3,162.5,44.4,162.5L44.4,162.5z M24.6,134.1l10.6,3.7 c0.9-2.6,1-5.4,0.4-8c0,0.2,0,0.5,0.1,0.7c0,0.3,0.1,0.7,0.1,1.1c-0.1-2-0.8-4.6-2.6-7c-0.7-0.9-1.5-1.7-2.4-2.4l0.5,0.4l0.9,0.9 c-0.8-0.8-1.7-1.6-2.7-2.3L24.6,134.1L24.6,134.1z M123.7,129.4c-0.8,0.8-1.6,1.6-2.3,2.7l11.9,4.6l0-11.1c0,0,0,0,0,0 c-1.1,0-2.2,0.1-3.2,0.4c0.2,0,0.4,0,0.6,0c0.3,0,0.7-0.1,1.1-0.1c-1.8,0.1-4.2,0.7-6.4,2.1c-1.2,0.8-2.2,1.7-3.1,2.9l0.4-0.5 L123.7,129.4L123.7,129.4z M35.8,126.8c0.5,0.4,1,0.8,1.5,1.3c2.6,2.2,5,3.9,7.2,5.2c1.4-0.7,3-1.7,4.7-3 c0.5-0.3,0.9-0.7,1.4-1.1c0.3-0.2,0.5-0.5,0.8-0.7c0.1-0.1,0.3-0.3,0.4-0.4l6.2-6.3l8.4,2.9c0.3,0.1,0.6,0.2,0.8,0.3 c1.8,0.6,3.6,1,5.4,1.4c3.7,0.7,7.6,1,11.4,0.7c3.6-0.2,7.3-0.9,10.7-1.9c1.7-0.5,3.4-1.1,5-1.9c0.8-0.3,1.6-0.7,2.3-1.1 c2-1,4.3-1.6,6.6-1.6c3.6,0,6.3,1.3,7.6,2c0.4,0.2,0.8,0.4,1.3,0.5c2.5,1,5.4,2.2,8,2.6c0.4,0.1,0.9,0.1,1.3,0.2 c1.5-1.7,2.9-3.5,4.2-5.3c0.8-1.1,1.6-2.2,2.3-3.3c-0.1-0.2-0.2-0.4-0.4-0.7c-0.7-1.2-1.5-2.4-2.5-3.9c-0.3-0.5-0.7-0.9-1.1-1.4 c-0.2-0.2-0.3-0.4-0.5-0.6c-4.1-4-5.5-9.7-3.6-15.1c0.1-0.3,0.2-0.6,0.3-0.8c2.3-7.2,2.7-14.9,1.4-22.3c-0.7-3.5-1.7-7-3.2-10.3 c-0.1-0.3-0.3-0.6-0.4-0.9c-3.3-6.1-1.9-11.3-0.7-13.8c0.5-1,0.9-2.1,1.3-3.1c0.8-1.9,1.4-3.9,2-5.7c0.2-0.9,0.4-1.8,0.5-2.9 c-0.5-0.4-1-0.8-1.5-1.3c-2.7-2.2-5-3.9-7.2-5.2c-1.4,0.8-3,1.8-4.8,3c-0.5,0.4-1,0.8-1.5,1.2c-0.1,0.1-0.3,0.2-0.4,0.4 c-2.7,2.6-6.3,4-10,4c-1.8,0-3.5-0.3-5.2-1c-0.4-0.1-0.8-0.3-1.2-0.4c-1.8-0.5-3.6-1-5.5-1.3c-3.7-0.6-7.6-0.8-11.4-0.5 c-3.6,0.3-7.2,1-10.6,2.1c-1.7,0.5-3.3,1.2-4.9,1.9c-0.8,0.3-1.5,0.7-2.3,1.1L59.5,40c-2.1,1.2-4.6,1.8-7,1.8 c-2.2,0-4.4-0.5-6.5-1.5c-0.5-0.2-0.9-0.4-1.4-0.6c-2.4-1-5.3-2.1-7.8-2.4c-0.4-0.1-0.8-0.1-1.1-0.2c-0.4,0.5-0.8,1-1.2,1.4 c-2.2,2.7-3.9,5-5.2,7.3c0.7,1.4,1.7,2.9,2.9,4.7c0.3,0.5,0.7,1,1.1,1.4c0.2,0.3,0.5,0.5,0.7,0.8l5.8,6.1l-2.5,8 c-0.2,0.5-0.3,1-0.5,1.5c-0.5,1.8-0.9,3.7-1.2,5.6c-0.6,3.8-0.7,7.6-0.3,11.5c0.3,3.6,1.1,7.2,2.3,10.6c0.6,1.7,1.3,3.3,2,4.9 c0.1,0.2,0.2,0.4,0.3,0.6c2.1,4.3,2.1,9.1-0.1,13.4c-0.2,0.4-0.4,0.8-0.5,1.2c-0.4,1-0.9,2-1.3,3c-0.8,2.2-1.8,4.8-2.1,7.1 C35.9,126.3,35.8,126.6,35.8,126.8L35.8,126.8z M129.9,38.8c0.8,0.8,1.7,1.6,2.8,2.4l4.9-12.9L127,24.6c-0.9,2.6-1,5.4-0.4,8 c0-0.1,0-0.2,0-0.3c0-0.3,0-0.8,0-1.3v-0.1c0,1.5,0.5,4,2.1,6.4c0.8,1.1,1.7,2.1,2.8,3l-0.5-0.4L129.9,38.8L129.9,38.8z M29.3,26.3l0,11.1c1.1,0,2.2-0.1,3.2-0.4c-0.2,0-0.4,0-0.6,0c-0.3,0-0.7,0.1-1.1,0.1c1.8-0.1,4.2-0.7,6.4-2.1 c1.2-0.8,2.2-1.7,3.1-2.9l-0.4,0.5l-0.9,1c0.8-0.8,1.6-1.7,2.3-2.7L29.3,26.3L29.3,26.3z"/>
+              <path fill="#da8e35" d="M56.3,88.4l0.7,28.3l-7-5.7c-7.8,12.7-10.3,25-6.6,34.1l1.3,3.2l-3.2-1.4c-7.3-3.2-13.9-7.7-19.4-13.5 l-0.3-0.3l-0.1-0.5c-0.4-3.5-0.2-7.3,0.7-11.2l0-0.1c1.3-4.9,3.2-9.8,5.6-14.7c1.5-3.1,3.3-6.2,5.3-9.2l-6.1-5L56.3,88.4z"/>
+              <path fill="#da8e35" d="M105.9,74.1l-0.7-28.3l7,5.7c7.8-12.7,10.3-25,6.6-34.1l-1.3-3.2l3.2,1.4c7.3,3.2,13.9,7.7,19.4,13.5 l0.3,0.3l0.1,0.5c0.4,3.5,0.2,7.3-0.7,11.2l0,0.1c-1.3,4.9-3.2,9.8-5.6,14.7c-1.5,3.1-3.3,6.2-5.3,9.2l6.1,5L105.9,74.1z"/>
+              <path fill="#da8e35" d="M88.5,105.4l28.3-0.7l-5.7,7c12.7,7.8,25,10.3,34.1,6.6l3.2-1.3l-1.4,3.2c-3.2,7.3-7.7,13.9-13.5,19.4 l-0.3,0.3l-0.5,0.1c-3.5,0.4-7.3,0.2-11.2-0.7l-0.1,0c-4.9-1.3-9.8-3.2-14.7-5.6c-3.1-1.5-6.2-3.3-9.2-5.3l-5,6.1L88.5,105.4z"/>
+              <path fill="#da8e35" d="M74.1,57.6l-28.3,0.7l5.7-7c-12.7-7.8-25-10.3-34.1-6.6L14.3,46l1.4-3.2c3.2-7.3,7.7-13.9,13.5-19.4 l0.3-0.3L30,23c3.5-0.4,7.3-0.2,11.2,0.7l0.1,0c4.9,1.3,9.8,3.2,14.7,5.6c3.1,1.5,6.2,3.3,9.2,5.3l5-6.1L74.1,57.6z"/>
+              <circle fill="#da8e35" cx="81.4" cy="80.8" r="60.5"/>
+              <path fill="#ffffff" d="M59.3,59.5c-3.5-1.6-6.1-3.2-8.7-5.1c-4-2.8-7.7-5.9-10.8-9.2c-7.6-7.7-11.6-15.6-10.5-22.1L27,25.6 c-5.5,5.8-12.8,16-12.9,20.4c0.1,0.5,0.1,0.5,0.1,0.5c1,3.4,2.6,6.8,4.9,10.1l0,0.1c3,4.8,8.9,12.7,29.9,21.9l-3.7,7l28.3-7.6 L63.5,51.5L59.3,59.5z"/>
+              <path fill="#ffffff" d="M103.3,103.5c3.5,1.6,6.1,3.2,8.7,5.1c4,2.8,7.7,5.9,10.8,9.2c7.6,7.7,11.6,15.6,10.5,22.1l2.3-2.4 c5.5-5.8,12.8-16,12.9-20.4c-0.1-0.5-0.1-0.5-0.1-0.5c-1-3.4-2.6-6.8-4.9-10.1l0-0.1c-3-4.8-8.9-12.7-29.9-21.9l3.7-7l-28.3,7.6 l10.2,26.2L103.3,103.5z"/>
+              <path fill="#ffffff" d="M104,59.3c1.6-3.5,3.2-6.1,5.1-8.7c2.8-4,5.9-7.7,9.2-10.8c7.7-7.6,15.6-11.6,22.1-10.5L138,27 c-5.8-5.5-16-12.8-20.4-12.9c-0.5,0.1-0.5,0.1-0.5,0.1c-3.4,1-6.8,2.6-10.1,4.9l-0.1,0c-4.8,3-12.7,8.9-21.9,29.9l-7-3.7 l7.6,28.3L112,63.6L104,59.3z"/>
+              <path fill="#ffffff" d="M58.2,103.2c-1.6,3.5-3.2,6.1-5.1,8.7c-2.8,4-5.9,7.7-9.2,10.8c-7.7,7.6-15.6,11.6-22.1,10.5l2.4,2.3 c5.8,5.5,16,12.8,20.4,12.9c0.5-0.1,0.5-0.1,0.5-0.1c3.4-1,6.8-2.6,10.1-4.9l0.1,0c4.8-3,12.7-8.9,21.9-29.9l7,3.7l-7.6-28.3 L50.3,98.9L58.2,103.2z"/>
+            </svg>
+          </span>
+          <span class="sidebar-tab-label" data-i18n="sidebar.tab_discovery">Discover</span>
+        </button>
         <button class="sidebar-tab active" data-tab="mods" title="Mods" data-i18n-title="sidebar.tab_mods_title">
           <span class="sidebar-tab-icon">⊞</span>
           <span class="sidebar-tab-label" data-i18n="sidebar.tab_mods">Mods</span>
@@ -110,746 +132,49 @@
       </div>
 
       <div class="sidebar-footer">
+        <!-- NEXUS PROFILE WIDGET (ABOVE PLAY BUTTON) -->
+        <div id="sidebar-nexus-widget" class="sidebar-nexus-widget" style="display:none;" title="Nexus Mods Profile" data-i18n-title="nexus_profile.sidebar_title">
+          <div class="sidebar-nexus-avatar-wrap">
+            <img id="sidebar-nexus-avatar" src="" alt="Nexus Avatar" class="sidebar-nexus-avatar" />
+            <span id="sidebar-nexus-dot" class="sidebar-nexus-dot"></span>
+          </div>
+          <div class="sidebar-nexus-info">
+            <span id="sidebar-nexus-name" class="sidebar-nexus-name"></span>
+            <span id="sidebar-nexus-tier" class="sidebar-nexus-tier"></span>
+          </div>
+        </div>
+
         <button id="launch-game-btn" class="sidebar-play-btn" title="Launch Palworld" data-i18n-title="sidebar.launch_game_title">
           <span class="sidebar-tab-icon">▶</span>
           <span class="sidebar-tab-label" data-i18n="sidebar.launch_game">Play</span>
         </button>
-        <div id="sidebar-version" class="sidebar-version">V1.5.1</div>
+        <div id="sidebar-version" class="sidebar-version">V1.6.0</div>
         <button id="settings-btn" class="sidebar-btn" title="Settings" data-i18n-title="sidebar.settings_title">⚙</button>
       </div>
     </nav>
 
-    <main>
-      <!-- MODS TAB -->
-      <div id="mods-view" class="tab-content">
-        <div id="toolbar">
-          <span id="game-platform-badge" class="game-platform-badge" style="display:none"></span>
-          <span id="game-version-badge" class="game-version-badge"></span>
-          <span id="ue4ss-badge" class="dep-badge" style="display:none"></span>
-          <span id="palschema-badge" class="dep-badge" style="display:none"></span>
-          <div id="quick-filter-bar">
-            <button class="quick-filter-btn active" data-filter="ue4ss" data-i18n="mods.quick_filter_ue4ss">UE4SS</button>
-            <button class="quick-filter-btn active" data-filter="palschema" data-i18n="mods.quick_filter_palschema">PalSchema</button>
-            <button class="quick-filter-btn active" data-filter="pak" data-i18n="mods.quick_filter_pak">Pak</button>
-            <button class="quick-filter-btn active" data-filter="logicmods" data-i18n="mods.quick_filter_logicmods">LogicMods</button>
-            <button class="quick-filter-btn active" data-filter="hybrid" data-i18n="mods.quick_filter_hybrid">Hybrid</button>
-            <span class="quick-filter-sep"></span>
-            <button id="advanced-filter-btn" class="quick-filter-btn advanced" title="Advanced filters" data-i18n-title="mods.filter_advanced_title">▼</button>
-            <div id="advanced-filter-dropdown" class="filter-dropdown" style="display:none;">
-              <div class="filter-dropdown-header" data-i18n="mods.filter_tags_header">Tags</div>
-              <div id="filter-tags-list"></div>
-              <div class="filter-dropdown-header" style="margin-top:8px" data-i18n="mods.filter_categories_header">Categories</div>
-              <div id="filter-cats-list"></div>
-            </div>
-            <span class="quick-filter-sep"></span>
-            <div id="status-filter-bar">
-              <button class="status-filter-btn active" data-status="all" title="Show All Mods" data-i18n-title="mods.status_all_title" data-i18n="common.all">All</button>
-              <button class="status-filter-btn" data-status="enabled" title="Show Enabled Mods Only" data-i18n-title="mods.status_on_title" data-i18n="common.on">On</button>
-              <button class="status-filter-btn" data-status="disabled" title="Show Disabled Mods Only" data-i18n-title="mods.status_off_title" data-i18n="common.off">Off</button>
-            </div>
-          </div>
-          <div id="search-wrap">
-            <input type="text" id="search-input" placeholder="Search mods..." title="Filter mods by name or author" data-i18n-placeholder="mods.search_placeholder" data-i18n-title="mods.search_title" />
-          </div>
-          <div id="sort-bar">
-            <select id="sort-select" class="sort-select" title="Select mod sorting order" data-i18n-title="mods.sort_select_title">
-              <option value="name:asc" data-i18n="mods.sort_name_asc">Name (A → Z)</option>
-              <option value="name:desc" data-i18n="mods.sort_name_desc">Name (Z → A)</option>
-              <option value="date:desc" data-i18n="mods.sort_date_desc">Date (Newest First)</option>
-              <option value="date:asc" data-i18n="mods.sort_date_asc">Date (Oldest First)</option>
-              <option value="type:asc" data-i18n="mods.sort_type_asc">Type (UE4SS / Pak / etc.)</option>
-              <option value="status:desc" data-i18n="mods.sort_status_desc">Status (Active First)</option>
-            </select>
-          </div>
-          <div id="layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
-            <button id="layout-grid-btn" class="layout-btn active" title="Grid View (Cards)" data-i18n-title="mods.layout_grid_title">⊞</button>
-            <button id="layout-list-btn" class="layout-btn" title="List View (Details Table)" data-i18n-title="mods.layout_list_title">☰</button>
-          </div>
-          <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile:
-            Default</span>
-          <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles (create, switch, duplicate)" data-i18n-title="mods.btn_profiles_title" data-i18n="mods.btn_profiles">Profiles</button>
-          <button id="new-folder-btn" class="toolbar-btn-sm" title="Create virtual group folder" data-i18n-title="mods.btn_new_folder_title" data-i18n="mods.btn_new_folder">New Folder</button>
-          <div id="toolbar-actions">
-            <button id="scan-btn" class="toolbar-btn" title="Rescan mod directories and game files" data-i18n-title="mods.btn_scan_title">↻</button>
-            <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip archive" data-i18n-title="mods.btn_install_title">+</button>
-            <button id="check-updates-btn" class="toolbar-btn" title="Check for mod updates" data-i18n-title="mods.btn_check_updates_title">↑</button>
-            <button id="open-all-updates-btn" class="toolbar-btn" title="Open all Nexus update pages in browser" data-i18n-title="mods.btn_open_all_updates_title" style="display:none;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);" data-i18n="mods.btn_open_all_updates">🌐 Open Updates</button>
-            <span class="quick-filter-sep"></span>
-            <button id="disable-all-btn" class="toolbar-btn-sm" title="Disable all active mods in current profile" data-i18n-title="mods.btn_disable_all_title" data-i18n="mods.btn_disable_all">All Off</button>
-            <button id="enable-all-btn" class="toolbar-btn-sm" title="Enable all mods in current profile" data-i18n-title="mods.btn_enable_all_title" data-i18n="mods.btn_enable_all">All On</button>
-            <span class="quick-filter-sep"></span>
-            <button id="export-json-btn" class="toolbar-btn-sm" title="Export all mod data as JSON" data-i18n-title="mods.btn_export_json_title" data-i18n="mods.btn_export_json">Export JSON</button>
-            <button id="backup-btn" class="toolbar-btn-sm" title="Backup all mods to a ZIP archive" data-i18n-title="mods.btn_backup_title" data-i18n="mods.btn_backup">Backup</button>
-            <button id="restore-backup-btn" class="toolbar-btn-sm"
-              title="Restore all mods from a PMM Backup ZIP" data-i18n-title="mods.btn_restore_backup_title" data-i18n="mods.btn_restore_backup">Restore Backup</button>
-          </div>
-        </div>
-        <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none">
-          <div class="bulk-actions-info"><span id="bulk-selected-count">0</span> mods selected</div>
-          <div class="bulk-actions-buttons">
-            <button id="bulk-enable-btn" class="bulk-btn primary" data-i18n="mods.bulk_enable">Enable All</button>
-            <button id="bulk-disable-btn" class="bulk-btn" data-i18n="mods.bulk_disable">Disable All</button>
-            <button id="bulk-remove-btn" class="bulk-btn danger" data-i18n="mods.bulk_remove">Remove Selected</button>
-            <button id="bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
-          </div>
-        </div>
-        <div id="mods-container">
-          <div id="empty-state" data-i18n="mods.empty_state">No mods found. Install a mod or configure your game path in Settings.</div>
-        </div>
-      </div>
-      
-      <!-- LOAD TAB -->
-      <!-- LOAD TAB -->
-      <div id="load-view" class="tab-content" style="display:none; flex-direction:column; height: 100%; overflow: hidden;">
-        <div id="load-toolbar" style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;flex-shrink:0;">
-          <span style="font-size:13px;font-weight:700;color:var(--text-primary)" data-i18n="load.title">Mods Load Order</span>
-          <div class="settings-hint" style="margin-left:8px; font-size:11px; color:var(--text-muted);" data-i18n="load.hint">
-            Drag and drop mods in their respective columns to reorder. Toggles enable or disable them.
-          </div>
-        </div>
-        <div id="load-list-container" style="flex:1; display:flex; flex-direction:row; gap:20px; padding:16px; min-height:0; overflow:hidden; width:100%;">
-          <!-- Dynamically populated list of draggable cards -->
-        </div>
-      </div>
-
-      <!-- LIBRARY TAB -->
-      <div id="library-view" class="tab-content" style="display:none">
-        <div id="library-toolbar"
-          style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
-          <span style="font-size:13px;font-weight:700;color:var(--text-primary)" data-i18n="library.title">Mod Library</span>
-
-          <div class="library-sub-tabs" style="display:flex;gap:4px;background:rgba(0,0,0,0.2);padding:2px;border-radius:6px;border:1px solid var(--border);margin-left:8px;">
-            <button class="library-sub-tab active" data-tab="local" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;transition:all 0.2s;" data-i18n="library.tab_local">Local Library</button>
-            <button class="library-sub-tab" data-tab="workshop" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
-              <span data-i18n="library.tab_workshop">Steam Workshop</span>
-              <span id="workshop-subtab-badge" style="display:none;font-size:8px;background:#00bcff;color:#fff;padding:1px 5px;border-radius:10px;font-weight:bold;">NEW</span>
-            </button>
-          </div>
-
-          <div id="library-workshop-master-wrap" style="display:none; align-items:center; gap:8px; margin-left:12px;">
-            <span style="font-size:11px;color:var(--text-muted);font-weight:600;" data-i18n="library.workshop_enable_label">Enable Workshop:</span>
-            <label class="toggle-switch">
-              <input type="checkbox" id="library-workshop-master-toggle" />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-
-          <div id="library-search-wrap" style="position:relative;width:240px;margin-left:auto;">
-            <input type="text" id="library-search-input" placeholder="Search library..."
-              data-i18n-placeholder="library.search_placeholder"
-              style="width:100%;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;" />
-          </div>
-          <button id="workshop-check-updates-btn" class="toolbar-btn-sm" style="display:none;align-items:center;gap:4px;background:rgba(0,188,255,0.15);color:#00bcff;border:1px solid rgba(0,188,255,0.3);" title="Check for Workshop updates on Steam" data-i18n-title="library.btn_check_workshop_updates_title" data-i18n="library.btn_check_workshop_updates">🔍 Check Updates</button>
-          <button id="library-refresh-btn" class="toolbar-btn-sm" data-i18n="common.refresh">Refresh</button>
-        </div>
-        <div id="library-bulk-actions-bar" class="bulk-actions-bar" style="display:none;margin:12px 16px 0 16px;">
-          <div class="bulk-actions-info"><span id="library-bulk-selected-count">0</span> mods selected</div>
-          <div class="bulk-actions-buttons">
-            <button id="library-bulk-install-btn" class="bulk-btn primary" data-i18n="library.btn_install_selected">Install Selected</button>
-            <button id="library-bulk-remove-btn" class="bulk-btn danger" data-i18n="library.btn_remove_selected">Remove Selected</button>
-            <button id="library-bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
-          </div>
-        </div>
-        <div id="library-container"
-          style="flex:1;padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:16px;align-content:start;">
-          <div id="library-empty" data-i18n="library.empty_local">No mods in library. Mods are automatically copied here when installed.</div>
-        </div>
-      </div>
-
-
-      <!-- EDITOR TAB -->
-      <div id="editor-view" class="tab-content">
-        <div id="editor-toolbar">
-          <select id="editor-mod-select" style="display:none">
-            <option value="" data-i18n="editor.select_mod_placeholder">Select a mod...</option>
-          </select>
-          <span id="editor-current-mod-name"
-            style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 8px;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></span>
-          <span class="editor-sep"></span>
-          <button id="editor-format-btn" class="btn-editor" title="Format JSON" data-i18n-title="editor.btn_format_title" data-i18n="common.format">Format</button>
-          <button id="editor-preview-btn" class="btn-editor" title="Toggle preview" data-i18n-title="editor.btn_preview_title" data-i18n="common.preview"
-            style="display:none">Preview</button>
-          <button id="editor-save-btn" class="btn-editor primary" data-i18n="common.save">Save</button>
-          <div style="flex:1"></div>
-          <span id="editor-status"></span>
-        </div>
-        <div id="editor-body">
-          <!-- Left: mod tree panel -->
-          <div id="editor-mod-panel">
-            <div class="editor-mod-panel-header" data-i18n="editor.panel_explorer">Explorer</div>
-            <div id="editor-mod-tree">
-              <!-- Populated by renderEditorModTree() -->
-            </div>
-          </div>
-          <!-- Middle: file tree -->
-          <div id="editor-file-tree">
-            <div class="editor-file-empty" data-i18n="editor.file_empty">Select a mod to view files</div>
-          </div>
-          <div id="editor-content-area">
-            <div id="editor-file-path"></div>
-            <div id="editor-input-wrap">
-              <div id="editor-gutter" style="display:none"></div>
-              <pre id="editor-highlight"><code id="editor-highlight-code"></code></pre>
-              <textarea id="editor-content" spellcheck="false" disabled></textarea>
-              <div id="editor-preview" style="display:none"></div>
-            </div>
-            <div id="editor-find-bar" style="display:none">
-              <input id="editor-find-input" type="text" placeholder="Find..." data-i18n-placeholder="editor.find_placeholder" />
-              <span id="editor-find-count"></span>
-              <button id="editor-find-prev" class="btn-find" title="Previous match" data-i18n-title="editor.find_prev_title">&uarr;</button>
-              <button id="editor-find-next" class="btn-find" title="Next match" data-i18n-title="editor.find_next_title">&darr;</button>
-              <button id="editor-find-close" class="btn-find" title="Close (Esc)" data-i18n-title="editor.find_close_title">&times;</button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- BUILD / PACKER TAB -->
-      <div id="build-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%;">
-        <!-- View 1: Projects Hub (Grid/Dashboard) -->
-        <div id="packer-projects-hub" style="display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
-          <div class="packer-toolbar">
-            <span class="packer-toolbar-title" data-i18n="packer.hub_title">Mod Packer Workspace</span>
-            <button id="packer-hub-new-btn" class="toolbar-btn toolbar-btn-primary" style="font-size: 12px; padding: 6px 12px; line-height: 1;" data-i18n="packer.btn_new_project">+ Create New Project</button>
-          </div>
-          <div id="packer-projects-grid" class="packer-projects-grid" style="flex: 1; padding: 24px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; align-content: start;">
-            <!-- Project folder cards populated dynamically -->
-          </div>
-        </div>
-
-        <!-- View 2: Active Workspace (Staging Area) -->
-        <div id="packer-workspace-view" style="display: none; flex-direction: row; width: 100%; height: 100%; overflow: hidden;">
-          <div class="packer-left">
-            <div class="packer-toolbar">
-              <button id="packer-workspace-back-btn" class="toolbar-btn-sm" style="margin-right: 8px;" data-i18n="packer.btn_back_projects">← Projects</button>
-              <span id="packer-workspace-title" class="packer-toolbar-title" data-i18n="packer.workspace_title">Staged Files</span>
-              <div id="packer-layout-toggle-bar" style="display:flex;align-items:center;gap:4px;margin-right:8px;">
-                <button id="packer-view-list-btn" class="layout-btn active" title="List View" data-i18n-title="packer.view_list_title">☰</button>
-                <button id="packer-view-tree-btn" class="layout-btn" title="Tree View" data-i18n-title="packer.view_tree_title">⊞</button>
-              </div>
-              <button id="packer-add-files-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_files">+ Add Files</button>
-              <button id="packer-add-folder-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_folder">📁 Add Folder</button>
-              <button id="packer-new-virtual-folder-btn" class="toolbar-btn-sm" style="display:none;" data-i18n="packer.btn_new_virtual_folder">➕ New Folder</button>
-              <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;" data-i18n="packer.btn_auto_struct">Auto-Structure</button>
-              <button id="packer-clear-btn" class="toolbar-btn-sm" data-i18n="packer.btn_clear_all">Clear All</button>
-            </div>
-            <div id="packer-files-container" class="packer-files-container">
-              <table id="packer-list-table" class="packer-table">
-                <thead>
-                  <tr>
-                    <th data-i18n="packer.col_source_file">Source File</th>
-                    <th data-i18n="packer.col_size">Size</th>
-                    <th data-i18n="packer.col_target_path">Archive Target Path</th>
-                    <th style="width: 40px;"></th>
-                  </tr>
-                </thead>
-                <tbody id="packer-files-body">
-                  <!-- Staged files populated dynamically -->
-                </tbody>
-              </table>
-              <div id="packer-tree-view" style="display:none; padding: 12px; height: 100%; overflow-y: auto;">
-                <!-- Hierarchical files tree populated dynamically -->
-              </div>
-              <div id="packer-empty-state" class="packer-empty-state">
-                <span class="packer-empty-icon">🛠</span>
-                <strong data-i18n="packer.empty_state_title">Workspace is Empty</strong>
-                <span data-i18n="packer.empty_state_desc">Drag & drop files or folders here, or use the "Add Files" button to begin staging.</span>
-              </div>
-            </div>
-            <div id="packer-drag-overlay" class="packer-drop-overlay">
-              <div class="packer-drop-overlay-content" data-i18n="packer.drop_overlay">📥 Drop files here to stage</div>
-            </div>
-          </div>
-          <div class="packer-right">
-            <div class="packer-form-header" style="display:flex;align-items:center;justify-content:space-between;">
-              <span data-i18n="packer.save_options_title">Project Save Options</span>
-              <button id="packer-workspace-delete-btn" class="btn-tiny" style="background:var(--danger-dim);color:var(--danger);border:none;padding: 2px 6px;" title="Delete Project" data-i18n-title="packer.btn_delete_project_title" data-i18n="common.delete">Delete</button>
-            </div>
-            <div class="packer-form-group" style="margin-bottom: 12px; display: flex; flex-direction: row; gap: 6px;">
-              <input type="text" id="packer-project-name" class="packer-form-input" style="flex: 1; padding: 4px 8px; font-size: 11px; height:28px;" placeholder="Project Name..." data-i18n-placeholder="packer.project_name_placeholder" />
-              <button id="packer-project-save-btn" class="toolbar-btn-sm" style="padding: 4px 10px; height:28px;" data-i18n="common.save">Save</button>
-            </div>
-
-            <div class="packer-form-header" data-i18n="packer.metadata_title">Mod Metadata</div>
-            <div class="packer-form-group">
-              <label for="packer-meta-name" data-i18n="packer.label_mod_name">Mod Name</label>
-              <input type="text" id="packer-meta-name" class="packer-form-input" placeholder="e.g. MyAmazingMod" data-i18n-placeholder="packer.placeholder_mod_name" />
-            </div>
-            <div class="packer-form-group">
-              <label for="packer-meta-version" data-i18n="packer.label_version">Version</label>
-              <input type="text" id="packer-meta-version" class="packer-form-input" placeholder="e.g. 1.0.0" value="1.0.0" data-i18n-placeholder="packer.placeholder_version" />
-            </div>
-            <div class="packer-form-group">
-              <label for="packer-meta-author" data-i18n="packer.label_author">Author</label>
-              <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName" data-i18n-placeholder="packer.placeholder_author" />
-            </div>
-            <div class="packer-form-group">
-              <label for="packer-meta-nexus-id" data-i18n="packer.label_nexus_id">Nexus ID</label>
-              <input type="number" id="packer-meta-nexus-id" class="packer-form-input" placeholder="e.g. 1234 (Optional)" min="1" step="1" data-i18n-placeholder="packer.placeholder_nexus_id" />
-            </div>
-            <div class="packer-form-group">
-              <label for="packer-meta-type" data-i18n="packer.label_mod_type">Mod Type</label>
-              <select id="packer-meta-type" class="packer-form-select">
-                <option value="" data-i18n="packer.select_type_placeholder">Select type...</option>
-                <option value="ue4ss" data-i18n="packer.type_opt_ue4ss">UE4SS Mod</option>
-                <option value="palschema" data-i18n="packer.type_opt_palschema">PalSchema Mod</option>
-                <option value="pak" data-i18n="packer.type_opt_pak">Pak Mod (~mods)</option>
-                <option value="logicmods" data-i18n="packer.type_opt_logicmods">LogicMods (~mods/LogicMods)</option>
-                <option value="hybrid" data-i18n="packer.type_opt_hybrid">Hybrid Mod</option>
-              </select>
-            </div>
-            <div class="packer-form-group">
-              <label for="packer-meta-desc" data-i18n="packer.label_description">Description</label>
-              <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..." data-i18n-placeholder="packer.placeholder_desc"></textarea>
-            </div>
-            <div class="packer-format-row">
-              <select id="packer-format-select" class="packer-select-format">
-                <option value="zip">.zip</option>
-                <option value="7z">.7z</option>
-                <option value="rar">.rar</option>
-              </select>
-              <button id="packer-build-btn" class="packer-btn-build" disabled data-i18n="packer.btn_build">
-                📦 Package Mod
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <!-- CONFLICT SCANNER TAB -->
-      <div id="scanner-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
-        <!-- View rendered dynamically by scannerView.ts -->
-      </div>
-
-      <!-- DB INSPECTOR TAB -->
-      <div id="db-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
-        <!-- View rendered dynamically by dbView.ts -->
-      </div>
-    </main>
-
+    <!-- VIEWS MOUNT POINT -->
+    <main id="main-content"></main>
   </div>
 
-  <!-- DETAIL MODAL -->
-  <div id="detail-overlay" class="detail-overlay">
-    <div id="detail-panel" data-id="">
-      <div id="detail-header">
-        <h3 id="detail-name-header" data-i18n="detail.title">Mod Details</h3>
-        <button id="detail-rename-btn" class="btn-tiny" title="Rename mod" data-i18n-title="detail.btn_rename_title" data-i18n="common.rename">Rename</button>
-        <div style="flex:1"></div>
-        <button id="detail-close" class="detail-close-btn">✕</button>
-      </div>
-      <div id="detail-body">
-        <div id="detail-tabs">
-          <button class="detail-tab active" data-tab="info" data-i18n="detail.tab_info">Info</button>
-          <button class="detail-tab" data-tab="tech" data-i18n="detail.tab_technical">Technical</button>
-        </div>
-        <div id="detail-info-tab" class="detail-tab-content">
-          <div id="detail-image-container">
-            <img id="detail-image" src="" alt="" />
-          </div>
-          <div class="detail-row" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
-            <span class="detail-label" data-i18n="detail.folder_label">Folder:</span>
-            <select id="detail-folder-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; flex: 1;">
-              <option value="" data-i18n="detail.folder_none">(None / Ungrouped)</option>
-            </select>
-          </div>
-          <div id="detail-description" class="detail-description"></div>
-          <div id="detail-nexus" class="detail-section"></div>
-          <div id="detail-github" class="detail-section"></div>
-        </div>
-        <div id="detail-tech-tab" class="detail-tab-content" style="display:none">
-          <div class="detail-row-group">
-            <div class="detail-row"><span class="detail-label" data-i18n="detail.type_label">Type</span> <span id="detail-type"
-                class="mod-type-badge"></span></div>
-            <div class="detail-row"><span class="detail-label" data-i18n="detail.version_label">Version</span> <span id="detail-version"></span></div>
-            <div class="detail-row"><span class="detail-label" data-i18n="detail.status_label">Status</span> <span id="detail-status"
-                class="detail-status"></span></div>
-            <div class="detail-row" id="detail-pak-destination-row" style="display:none;">
-              <span class="detail-label" data-i18n="detail.pak_target_label">Pak Target</span>
-              <select id="detail-pak-destination-select" style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 2px 6px; font-size: 12px; outline: none; margin-left: 8px;">
-                <option value="~mods">~mods</option>
-                <option value="LogicMods">LogicMods</option>
-              </select>
-            </div>
-          </div>
-          <div class="detail-row-group">
-            <div class="detail-row"><span class="detail-label" data-i18n="detail.installed_label">Installed</span> <span id="detail-install-date"></span>
-            </div>
-            <div class="detail-row"><span class="detail-label" data-i18n="detail.source_label">Source</span> <span id="detail-source-zip"></span></div>
-            <div class="detail-row"><span class="detail-label" data-i18n="detail.root_label">Root</span> <span id="detail-root-folder"></span></div>
-            <div class="detail-row" id="detail-extra-files-row" style="display:none;">
-              <span class="detail-label" data-i18n="detail.extras_label">Extras</span> <span id="detail-extra-files"
-                style="word-break:break-all;font-size:11px;"></span>
-            </div>
-            <div class="detail-row" id="detail-duplicate-row" style="display:none;">
-              <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span> <span
-                id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label" data-i18n="detail.config_label">Config</span> <span id="detail-config-path"></span>
-              <button id="detail-set-config" class="btn-tiny" data-i18n="detail.btn_set_config">Set</button>
-              <button id="detail-clear-config" class="btn-tiny" data-i18n="detail.btn_clear_config">Clear</button>
-            </div>
-          </div>
-        </div>
-        <div class="detail-actions">
-          <button id="detail-toggle" class="btn-action" data-i18n="common.disabled">Disable</button>
-          <button id="detail-open-folder" class="btn-action" data-i18n="detail.btn_open_folder">Open folder</button>
-          <button id="detail-open-extra-folder" class="btn-action" style="display: none;" data-i18n="detail.btn_open_extra_folder">Open extra folder</button>
-          <button id="detail-config" class="btn-action" data-i18n="detail.btn_edit_config">Edit config</button>
-          <button id="detail-refresh" class="btn-action" data-i18n="common.refresh">Refresh</button>
-          <button id="detail-remove" class="btn-action btn-action-danger" data-i18n="common.remove">Remove</button>
-        </div>
-      </div>
+  <!-- MODALS & OVERLAYS MOUNT POINT -->
+  <div id="modals-root"></div>
+
+  <!-- DROP OVERLAY -->
+  <div id="drop-overlay">
+    <div id="drop-zone">
+      <div class="drop-icon">⊞</div>
+      <div class="drop-text" data-i18n="mods.drop_overlay_text">Drop .zip/.rar/.7z to install</div>
     </div>
+  </div>
 
-    <!-- DROP OVERLAY -->
-    <div id="drop-overlay">
-      <div id="drop-zone">
-        <div class="drop-icon">⊞</div>
-        <div class="drop-text" data-i18n="mods.drop_overlay_text">Drop .zip/.rar/.7z to install</div>
-      </div>
-    </div>
+  <!-- CONTEXT MENU OVERLAY -->
+  <div id="context-overlay" class="context-overlay">
+    <div id="context-menu" class="context-menu" tabindex="-1"></div>
+  </div>
 
-    <!-- INSTALL MODAL -->
-    <div id="install-modal" class="modal-overlay">
-      <div class="modal" style="width: 750px; max-width: 90vw;">
-        <div class="modal-header">
-          <h3 id="install-modal-title" data-i18n="installer.modal_title_install">Install Mod</h3>
-          <button class="modal-close-btn"
-            onclick="document.getElementById('install-modal').classList.remove('visible')">✕</button>
-        </div>
-        <div class="modal-body" style="display:flex;flex-direction:column;gap:12px;padding:20px;overflow:hidden;">
-          <div id="modal-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
-          <div id="modal-status" style="font-size:12px;font-weight:600;color:var(--text-muted);margin-top:6px;"></div>
-        </div>
-        <div class="modal-footer" style="padding:16px 20px;">
-          <button id="modal-cancel" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
-          <button id="modal-install-deps-retry" class="btn-primary"
-            style="display:none;background:#e0af68;color:#000;" data-i18n="installer.btn_retry_deps">Install Deps & Retry</button>
-          <button id="modal-confirm" class="btn-primary" disabled data-i18n="common.install">Install</button>
-        </div>
-      </div>
-    </div>
-
-
-    <!-- SETTINGS MODAL -->
-    <div id="settings-modal" class="modal-overlay">
-      <div class="modal">
-        <div class="modal-header">
-          <h3 data-i18n="settings.title">Settings</h3>
-          <button class="modal-close-btn"
-            onclick="document.getElementById('settings-modal').classList.remove('visible')">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="settings-group">
-            <label data-i18n="settings.game_path_label">Game Path</label>
-            <div class="settings-hint" data-i18n="settings.game_path_hint">Path to your Palworld installation directory</div>
-            <div class="settings-path-row">
-              <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" data-i18n-placeholder="settings.game_path_placeholder" readonly />
-              <button id="settings-browse-btn" class="btn-secondary" data-i18n="common.browse">Browse</button>
-            </div>
-            <div id="settings-path-status" class="settings-path-status"></div>
-          </div>
-
-          <div class="settings-divider"></div>
-          <div class="settings-group">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" id="settings-hide-native-mods" />
-              <span data-i18n="settings.hide_native_label">Hide UE4SS native mods</span>
-            </label>
-            <div class="settings-hint" style="margin-left:22px;" data-i18n="settings.hide_native_hint">Hide pre-installed mods that come with UE4SS
-              (CheatManager, ConsoleCommands, BPModLoader, etc.)</div>
-          </div>
-          <div class="settings-group">
-            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;" data-i18n="settings.flo_title">Force Load Order (Experimental)</div>
-            <div class="settings-hint" style="margin-bottom:10px;" data-i18n="settings.flo_hint">Select which load order system components you want to enforce:</div>
-            
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" id="settings-force-load-order-ue4ss" />
-                <span data-i18n="settings.flo_ue4ss_label">Enforce UE4SS Load Order (via mods.txt)</span>
-              </label>
-              
-              <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-                <input type="checkbox" id="settings-force-load-order-palschema" />
-                <span data-i18n="settings.flo_palschema_label">Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
-              </label>
-            </div>
-          </div>
-          <div class="settings-divider"></div>
-          <div class="settings-group">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
-              <input type="checkbox" id="settings-debug-console" />
-              <span data-i18n="settings.debug_console_label">Enable Debug Console</span>
-            </label>
-            <div class="settings-hint" style="margin-left:22px;" data-i18n="settings.debug_console_hint">Show terminal output window in real-time for live
-              debugging logs.</div>
-          </div>
-          <div class="settings-divider"></div>
-          <div class="settings-group">
-            <label data-i18n="settings.data_location_label">Data Storage Location</label>
-            <div class="settings-hint" data-i18n="settings.data_location_hint">Choose where your database and profile backups are stored. Mod files will be migrated automatically.</div>
-            <div class="settings-path-row" style="margin-top: 6px;">
-              <select id="settings-data-path-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
-                <option value="default" data-i18n="settings.opt_storage_default">Default (AppData)</option>
-                <option value="portable" data-i18n="settings.opt_storage_portable">Portable (Executable Folder)</option>
-                <option value="custom" data-i18n="settings.opt_storage_custom">Custom Folder...</option>
-              </select>
-            </div>
-            <div id="settings-custom-data-path-display" class="settings-hint" style="margin-top: 6px; font-family: monospace; display: none; word-break: break-all;"></div>
-          </div>
-          <div class="settings-divider"></div>
-          <div class="settings-group">
-            <div style="font-weight:bold; font-size: 14px; margin-bottom: 4px;" data-i18n="settings.safety_title">🛡️ Safety Backup & Troubleshooting</div>
-            <div class="settings-hint" style="margin-bottom:10px;" data-i18n="settings.safety_hint">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
-            <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: 8px; font-family: monospace; font-size: 11px;" data-i18n="settings.safety_checking">Checking backup status...</div>
-            <div style="display:flex; flex-direction:column; gap:8px;">
-              <div style="display:flex; gap:8px;">
-                <button id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:6px 8px; border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
-                <button id="safety-backup-now-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
-              </div>
-              <button id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:6px 8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
-            </div>
-          </div>
-          <div class="settings-divider"></div>
-          <div class="settings-group">
-            <label data-i18n="settings.quick_access_label">Quick Access Folders</label>
-            <div class="settings-hint font-size-11" data-i18n="settings.quick_access_hint">Open game or app data folders directly in system file explorer</div>
-            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">
-              <button id="open-folder-paks" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_paks">📂 Paks (~mods)</button>
-              <button id="open-folder-ue4ss" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_ue4ss">📂 UE4SS Mods</button>
-              <button id="open-folder-palschema" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_palschema">📂 PalSchema Mods</button>
-              <button id="open-folder-appdata" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_appdata">📂 App Storage</button>
-              <button id="open-folder-profile" class="btn-secondary" style="font-size:11px;padding:6px 8px;grid-column: span 2;" data-i18n="settings.folder_profile">📂 Active Profile Folder</button>
-            </div>
-          </div>
-          <div class="settings-group">
-            <label data-i18n="settings.toolbar_scale_label">Toolbar Scale</label>
-            <div class="settings-hint" data-i18n="settings.toolbar_scale_hint">Adjust the size of the top toolbar icons and buttons</div>
-            <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
-              <input type="range" id="settings-toolbar-scale" min="0.8" max="1.8" step="0.05" style="flex:1;" />
-              <span id="settings-toolbar-scale-value" style="font-size:12px;font-weight:bold;width:40px;text-align:right;">100%</span>
-            </div>
-          </div>
-          <div class="settings-divider"></div>
-          <div class="settings-group">
-            <label data-i18n="settings.language_label">Language</label>
-            <div class="settings-hint" data-i18n="settings.language_hint">Select your preferred application interface language</div>
-            <div class="settings-path-row" style="margin-top: 6px;">
-              <select id="settings-language-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
-                <option value="en">English (US)</option>
-                <option value="es">Español</option>
-                <option value="pt">Português (Brasil)</option>
-                <option value="zh-CN">简体中文 (Chinese Simplified)</option>
-                <option value="ja">日本語 (Japanese)</option>
-                <option value="ko">한국어 (Korean)</option>
-              </select>
-            </div>
-          </div>
-          <div class="settings-divider"></div>
-
-          <div class="settings-group">
-            <label data-i18n="settings.theme_label">Theme</label>
-            <div class="settings-hint" data-i18n="settings.theme_hint">Switch between dark and light appearance</div>
-            <button id="theme-toggle-btn" class="btn-secondary" style="width:100%" data-i18n="settings.btn_theme_light">Switch to Light Theme</button>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button id="settings-cancel" class="btn-secondary" data-i18n="common.cancel">Cancel</button>
-          <button id="settings-save" class="btn-primary" data-i18n="common.save">Save</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- PROFILE MANAGER MODAL -->
-    <div id="profile-modal" class="modal-overlay">
-      <div class="modal" style="max-width:560px">
-        <div class="modal-header">
-          <h3 data-i18n="profiles.title">Manage Profiles</h3>
-          <button class="modal-close-btn" id="profile-modal-close-x">✕</button>
-        </div>
-        <div class="modal-body">
-          <div id="profile-list"></div>
-          <div class="profile-add-row">
-            <input type="text" id="profile-new-name" placeholder="New profile name..." data-i18n-placeholder="profiles.new_placeholder" />
-            <button id="profile-create-btn" class="btn-primary" data-i18n="profiles.btn_create">Create</button>
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button id="profile-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- WORKSHOP MODAL -->
-    <div id="workshop-modal" class="modal-overlay">
-      <div class="modal" style="max-width: 640px;">
-        <div class="modal-header">
-          <h3 data-i18n="workshop.title">Steam Workshop Mods</h3>
-          <button class="modal-close-btn" id="workshop-modal-close-x">✕</button>
-        </div>
-        <div class="modal-body">
-          <div class="settings-group" style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); padding:10px 14px; border-radius:6px; border:1px solid var(--border);">
-            <div>
-              <span style="font-weight:bold; font-size:13px; color:var(--text-primary);" data-i18n="workshop.enable_master_label">Enable Workshop Mods</span>
-              <div class="settings-hint" style="margin-top:2px; font-size:11px;" data-i18n="workshop.enable_master_hint">Toggles Master bGlobalEnableMod state</div>
-            </div>
-            <label class="toggle-switch">
-              <input type="checkbox" id="workshop-master-toggle" />
-              <span class="toggle-slider"></span>
-            </label>
-          </div>
-          <div id="workshop-list-container" style="display:flex; flex-direction:column; gap:8px; max-height: 380px; overflow-y:auto; padding-right:4px;">
-            <!-- Dynamically populated subscribed mods list -->
-          </div>
-        </div>
-        <div class="modal-footer">
-          <button id="workshop-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- ABOUT & LEGAL MODAL -->
-    <div id="about-modal" class="modal-overlay">
-      <div class="modal" style="width: 720px; max-width: 92vw; max-height: 88vh; display: flex; flex-direction: column;">
-        <div class="modal-header" style="border-bottom: 1px solid var(--border); padding: 16px 20px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <img src="/src/assets/logo.png" alt="PMM" style="width: 32px; height: 32px; object-fit: contain;" />
-            <div>
-              <h3 style="margin: 0; font-size: 16px; font-weight: 700; color: var(--text-primary);" data-i18n="about.title">About PalModManager</h3>
-              <div style="font-size: 11px; color: var(--text-muted);" data-i18n="about.subtitle">Mod Manager & Developer Toolkit for Palworld</div>
-            </div>
-          </div>
-          <button class="modal-close-btn" id="about-modal-close-x">✕</button>
-        </div>
-
-        <div class="about-tabs-bar">
-          <button class="about-tab-btn active" data-about-tab="overview" data-i18n="about.tab_overview">Overview</button>
-          <button class="about-tab-btn" data-about-tab="disclaimer" data-i18n="about.tab_disclaimer">Disclaimer</button>
-          <button class="about-tab-btn" data-about-tab="eula" data-i18n="about.tab_eula">Terms & EULA</button>
-          <button class="about-tab-btn" data-about-tab="license" data-i18n="about.tab_license">License</button>
-          <button class="about-tab-btn" data-about-tab="credits" data-i18n="about.tab_credits">Credits</button>
-        </div>
-
-        <div class="modal-body" id="about-modal-body" style="padding: 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 16px; font-size: 13px; line-height: 1.6; color: var(--text-secondary);">
-          <!-- OVERVIEW TAB -->
-          <div class="about-tab-pane" id="about-pane-overview">
-            <div style="display: flex; gap: 20px; align-items: center; background: var(--bg-secondary); padding: 18px; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 4px 15px rgba(0,0,0,0.25);">
-              <img src="/src/assets/logo.png" alt="PMM" style="width: 72px; height: 72px; object-fit: contain; filter: drop-shadow(0 4px 14px rgba(0,188,255,0.35));" />
-              <div style="display: flex; flex-direction: column; gap: 5px;">
-                <div style="font-size: 20px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.5px;">PalModManager</div>
-                <div style="font-size: 12px; color: var(--accent); font-weight: 700;"><span data-i18n="about.version_label">Version:</span> v1.5.1</div>
-                <div style="font-size: 12px; color: var(--text-primary); font-weight: 600;"><span data-i18n="about.author_label" style="color:var(--text-muted); font-weight:normal;">Developer:</span> Olivo28</div>
-                <div style="font-size: 12px; color: var(--text-muted);"><span data-i18n="about.license_label">License:</span> MIT (Open Source)</div>
-              </div>
-            </div>
-
-            <div style="display: flex; gap: 12px; margin-top: 14px;">
-              <button id="about-open-github" class="btn-secondary" style="flex: 1; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600;">
-                <span>🐙</span> <span data-i18n="about.github_repo">GitHub Repository</span>
-              </button>
-              <button id="about-open-nexus" class="btn-secondary" style="flex: 1; padding: 8px 12px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 12px; font-weight: 600;">
-                <span>🌐</span> <span data-i18n="about.nexus_page">Nexus Mods Page</span>
-              </button>
-            </div>
-          </div>
-
-          <!-- DISCLAIMER TAB -->
-          <div class="about-tab-pane" id="about-pane-disclaimer" style="display: none;">
-            <div style="background: rgba(255, 170, 0, 0.06); border: 1px solid rgba(255, 170, 0, 0.25); border-radius: 8px; padding: 14px 16px; margin-bottom: 12px;">
-              <h4 style="margin: 0 0 8px; color: #ffaa00; font-size: 14px; font-weight: 700;" data-i18n="about.disclaimer_title">Legal Disclaimer & Trademarks</h4>
-              <p style="margin: 0 0 10px;" data-i18n="about.disclaimer_text_1"></p>
-              <p style="margin: 0;" data-i18n="about.disclaimer_text_2"></p>
-            </div>
-            <div style="background: rgba(0, 188, 255, 0.06); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 8px; padding: 14px 16px;">
-              <h4 style="margin: 0 0 8px; color: var(--accent); font-size: 14px; font-weight: 700;" data-i18n="about.nexus_policy_title">Nexus Mods Policy Compliance</h4>
-              <p style="margin: 0;" data-i18n="about.nexus_policy_text"></p>
-            </div>
-          </div>
-
-          <!-- EULA TAB -->
-          <div class="about-tab-pane" id="about-pane-eula" style="display: none;">
-            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-              <h4 style="margin: 0 0 10px; color: var(--text-primary); font-size: 14px; font-weight: 700;" data-i18n="about.eula_title">User Responsibility & Usage Terms</h4>
-              <p style="margin: 0 0 12px;" data-i18n="about.eula_text_1"></p>
-              <p style="margin: 0; color: #ffaa00; font-weight: 600;" data-i18n="about.eula_text_2"></p>
-            </div>
-          </div>
-
-          <!-- LICENSE TAB -->
-          <div class="about-tab-pane" id="about-pane-license" style="display: none;">
-            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-              <h4 style="margin: 0 0 10px; color: var(--text-primary); font-size: 14px; font-weight: 700;" data-i18n="about.license_title">Software License & Distribution Terms</h4>
-              <p style="margin: 0 0 12px;" data-i18n="about.license_text"></p>
-              <pre style="margin: 0; font-family: monospace; font-size: 11px; padding: 10px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 4px; overflow-x: auto; color: var(--text-muted); line-height: 1.5;">
-PalModManager License
-
-Copyright (c) 2026 Olivo28
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to use,
-run, and share the Software for personal and non-commercial purposes only,
-subject to the following conditions:
-
-1. NON-COMMERCIAL USE: The Software must not be sold, rented, monetized, or
-   included behind paywalls, subscription tiers, or paid bundles.
-2. OFFICIAL DISTRIBUTION: To ensure user safety, integrity, and timely security
-   updates, users are strongly encouraged to obtain and verify releases exclusively
-   through official project channels (GitHub Releases / Nexus Mods).
-3. NO WARRANTY: THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-   EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-   MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.</pre>
-            </div>
-          </div>
-
-          <!-- CREDITS TAB -->
-          <div class="about-tab-pane" id="about-pane-credits" style="display: none;">
-            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 16px;">
-              <h4 style="margin: 0 0 12px; color: var(--text-primary); font-size: 14px; font-weight: 700;" data-i18n="about.credits_title">Credits</h4>
-              <div id="about-credits-list" style="display: flex; flex-direction: column; gap: 10px; font-size: 12.5px; line-height: 1.6;">
-                <div style="display: flex; gap: 8px; align-items: flex-start;">
-                  <span style="color: var(--accent); font-weight: bold;">•</span>
-                  <div><strong style="color: var(--text-primary);">Pocketpair, Inc.:</strong> <span data-i18n="about.credit_pocketpair">Creators and developers of Palworld.</span></div>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: flex-start;">
-                  <span style="color: var(--accent); font-weight: bold;">•</span>
-                  <div><strong style="color: var(--text-primary);">Okaetsu:</strong> <span data-i18n="about.credit_okaetsu">Creator of PalSchema and maintainer of the dedicated UE4SS Palworld fork.</span></div>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: flex-start;">
-                  <span style="color: var(--accent); font-weight: bold;">•</span>
-                  <div><strong style="color: var(--text-primary);">UE4SS Team:</strong> <span data-i18n="about.credit_ue4ss">The original creators and developers of Unreal Engine 4/5 Scripting System.</span></div>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: flex-start;">
-                  <span style="color: var(--accent); font-weight: bold;">•</span>
-                  <div><strong style="color: var(--text-primary);">Valve Corporation:</strong> <span data-i18n="about.credit_valve">Creators of Steam and the Steam Workshop platform.</span></div>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: flex-start;">
-                  <span style="color: var(--accent); font-weight: bold;">•</span>
-                  <div><strong style="color: var(--text-primary);">Nexus Mods:</strong> <span data-i18n="about.credit_nexus">For providing the modding platform and public API for the community.</span></div>
-                </div>
-                <div style="display: flex; gap: 8px; align-items: flex-start;">
-                  <span style="color: var(--accent); font-weight: bold;">•</span>
-                  <div><strong style="color: var(--text-primary);">Palworld Modding Community:</strong> <span data-i18n="about.credit_community">All mod authors, creators, testers, and players supporting the ecosystem.</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div class="modal-footer" style="border-top: 1px solid var(--border); padding: 12px 20px;">
-          <button id="about-modal-close" class="btn-primary" data-i18n="common.close">Close</button>
-        </div>
-      </div>
-    </div>
-
-    <!-- CONTEXT MENU -->
-    <div id="context-overlay" class="context-overlay">
-      <div id="context-menu" class="context-menu" tabindex="-1"></div>
-    </div>
-
-    <div id="drag-select-box" class="drag-select-box"></div>
-    <script type="module" src="/src/main.ts"></script>
+  <div id="drag-select-box" class="drag-select-box"></div>
+  <script type="module" src="/src/main.ts"></script>
 </body>
 
 </html>

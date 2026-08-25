@@ -15,6 +15,14 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 
 ## ✨ Core Features
 
+### 🌐 Full Nexus Mods SSO & Discovery Browser (Discover Tab)
+- **1-Click OAuth 2.0 SSO Authentication**: Securely log into Nexus Mods with a single click. Displays your profile avatar, tier status, and persistent metrics (*Endorsements, Tracked Mods, Published Mods*).
+- **Interactive Mod Discovery Hub**: Browse and search the entire Nexus Mods Palworld catalog natively within the application.
+- **Advanced Filtering**: Filter by 13 official Palworld categories (*Gameplay, Pals, Characters, Visuals, Scripts, etc.*), interactive Tag multi-select (*Includes / Excludes* with quick remove chips), search parameters (*Title, Description, Author, Uploader*), language checkboxes (*with Hide Translations*), and adult content toggles.
+- **Rich Mod Details & Media Lightbox**: View formatted mod descriptions with BBCode/HTML parsing, image galleries with mouse-wheel zoom and drag-to-pan lightbox, changelogs, virus scan safety badges (*Verified, Manual, Quarantine*), and categorized downloadable files (*Main, Updates, Optionals, Archived*).
+- **Social Actions & Author Recognition**: Endorse, track/untrack, and access Community/Bugs with automatic author detection (`👑 Author`) to protect against self-endorsement errors.
+- **Native `nxm://` Protocol Integration**: Associate PalModManager with the `nxm://` protocol for direct 1-click browser downloads, complete with a live download queue tray and automated installation.
+
 ### 📦 Smart Multi-Type Mod Installer & Dynamic Previews
 - **Auto-Detection**: Recognizes mod structures automatically (`UE4SS`, `PalSchema`, `Pak`, `LogicMods`, `Hybrid`).
 - **Interactive File Preview Tree**: Open a collapsible tree viewer in both single and batch mod installers to inspect ZIP contents and installation targets in real-time before deploying.
@@ -23,6 +31,7 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **Batch Installation**: Drag and drop single or multiple ZIP, `.rar`, or `.7z` files to preview mod details, check versions, and install in bulk.
 - **Pak Destination Selector**: Choose between standard `~mods` and `LogicMods` targets for Paks in both single/batch installers and the mod details tab.
 - **Installed Version Comparison**: Displays your currently installed version side-by-side with the ZIP file version when updating existing mods.
+- **Smart Lua & JSON Config Merging**: Automatically snapshot and merge custom configurations (`config.lua`, `settings.lua`, `config.jsonc`, `settings.json`) across updates, preserving your custom keybindings and settings.
 
 ### 🔀 Dynamic UE4SS Load Order Manager
 - **Sidebar Load Tab**: Manage mod loading sequences interactively with a drag-and-drop ordering interface.
@@ -34,10 +43,8 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **NTFS Junction Points**: Keeps the physical mod directories isolated in `PalSchema/Storage/` and creates zero-padded NTFS Junctions (e.g. `001_ModName`, `002_ModName`) inside `/mods`. Junctions do *not* require Administrator/UAC permissions.
 - **Dual Side-by-Side Panels**: Manage both UE4SS and PalSchema load orders simultaneously in a redone side-by-side flex layout inside the sidebar's **Load** tab, featuring independent scrollable panels.
 
-
-
 ### 🛠️ Dedicated Mod Packer & Builder (Build Tab)
-- **Visual Projects Hub**: Create, rename, delete, and stashing mod packaging projects as folders.
+- **Visual Projects Hub**: Create, rename, delete, and stash mod packaging projects as folders.
 - **Route Manifesting (`modinfo.pmm.json`)**: Package your mods with custom target routing, versioning, author tags, and Nexus IDs. Saves layout manifests into a dedicated `modinfo.pmm.json` file inside the ZIP.
 - **Staging Tree Drag & Drop**: Drag and drop files to stashed workspace nodes to re-arrange their destination paths inside the archive.
 - **Pre-installed Mod Metadata Scan**: Scanned pre-installed mods automatically parse `modinfo.pmm.json` if available to retrieve rich metadata (Version, Author, Description, Nexus ID) without manual input.
@@ -63,7 +70,7 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **Custom Data Storage Redirection**: Redirection of app storage files (profiles, library, backups) to custom folders or portable executable directories with automated migration.
 - **Tauri Window Persistence**: Remembers and restores window size, position, and maximized state across runs.
 - **Toolbar UI Scaling**: Resize main workspace toolbars from 80% to 180% via settings range slider.
-- **Database Grid Inspector (DB Tab)**: Advanced database inspector to view and edit Mods, Profiles, and Settings tables with raw JSON record validation.
+- **Database Grid Inspector (DB Tab)**: Advanced database inspector to view and edit Mods, Profiles, and Settings tables with raw JSON record validation and secure credential masking.
 
 ---
 
@@ -108,7 +115,7 @@ If you are running PalModManager on Linux (native compiled or AppImage) and enco
 
 ### Prerequisites
 - [Node.js](https://nodejs.org/) (v18+ recommended)
-- [pnpm` or `npm`
+- [pnpm](https://pnpm.io/)
 - [Rust & Cargo](https://rustup.rs/) (latest stable)
 
 ### Build Steps
@@ -119,13 +126,13 @@ git clone https://github.com/olivo28/PalModManager.git
 cd PalModManager
 
 # Install frontend dependencies
-npm install
+pnpm install
 
 # Run in Development Mode
-npm run tauri dev
+pnpm tauri dev
 
 # Build Production Release (.exe & Installer)
-npm run tauri build
+pnpm tauri build
 ```
 
 The compiled binaries will be generated at:

@@ -1,0 +1,19 @@
+PalModManager - Version 1.6.0 Changelog (2026-24-08)
+
+Added
+- Nexus Mods Discovery Tab: In-app browser with live search, categories, tag filtering, and 1-click mod installation.
+- Rich Mod Details Modal: Formatted BBCode/HTML descriptions, file categories, virus scan badges, and changelogs.
+- Full Nexus SSO Integration: 1-click OAuth login with avatar display and persistent synced metrics.
+- Native NXM Download Handler: Direct 1-click downloads from Nexus Mods with a real-time download queue tray.
+- Lua Config Smart Merging: Preserves custom user keybindings and settings in .lua configs during mod updates.
+- Protocol Association: Register and toggle nxm:// protocol handling directly from settings.
+
+Changed
+- Improved zip extraction and layout sanitizer to prevent flattening internal mod folders.
+- Enhanced multi-component mod directory quick-access buttons (UE4SS, PalSchema, Pak, LogicMods).
+
+Fixed
+- Fixed PalSchema zip extraction to preserve 000_ load-order folder prefixes correctly.
+- Resolved UE4SS nested path duplicates on full game directory archives.
+- Masked sensitive OAuth tokens in the Database Inspector.
+- General UI contrast, scrollbar visibility, and theme alignment improvements.

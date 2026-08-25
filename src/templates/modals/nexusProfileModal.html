@@ -1,0 +1,174 @@
+<!-- NEXUS PROFILE DETAIL MODAL -->
+<div id="nexus-profile-modal" class="modal-overlay">
+  <div class="modal" style="max-width: 580px; width: 94vw; border-radius: 14px; overflow: hidden; background: var(--bg-primary); border: 1px solid var(--border); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); display: flex; flex-direction: column; max-height: 85vh;">
+    <div class="modal-header" style="background: linear-gradient(135deg, rgba(218, 142, 53, 0.18), rgba(20, 20, 25, 0.6)); border-bottom: 1px solid rgba(218, 142, 53, 0.25); padding: 14px 18px;">
+      <div style="display: flex; align-items: center; gap: 12px;">
+        <span style="font-size: 22px;">👤</span>
+        <div>
+          <h3 style="margin: 0; font-size: 16px; font-weight: 800; color: var(--text-primary); letter-spacing: 0.3px;" data-i18n="nexus_profile.modal_title">Nexus Mods Profile</h3>
+          <div style="font-size: 11px; color: var(--text-muted);" data-i18n="nexus_profile.modal_subtitle">Connected Account Details & Activity</div>
+        </div>
+      </div>
+      <button class="modal-close-btn" id="nexus-profile-modal-close-x">✕</button>
+    </div>
+
+    <!-- Main Profile Banner -->
+    <div style="padding: 14px 18px 0 18px;">
+      <div id="nexus-profile-modal-banner" style="display: flex; align-items: center; gap: 14px; background: var(--bg-secondary); padding: 12px 14px; border-radius: 10px; border: 1px solid var(--border); cursor: pointer;" title="Open on Nexus Mods">
+        <div style="position: relative; width: 52px; height: 52px; flex-shrink: 0;">
+          <img id="nexus-profile-modal-avatar" src="" alt="Avatar" style="width: 52px; height: 52px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent); background: var(--bg-primary); display: block;" />
+          <div style="position: absolute; bottom: 0; right: 0; width: 12px; height: 12px; background: #2ed573; border: 2px solid var(--bg-secondary); border-radius: 50%;"></div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 3px; flex: 1; min-width: 0;">
+          <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+            <span id="nexus-profile-modal-name" style="font-size: 16px; font-weight: 800; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;"></span>
+            <span id="nexus-profile-modal-badge" class="nexus-tier-badge"></span>
+          </div>
+          <div style="font-size: 11px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+            <span data-i18n="nexus_profile.user_id_label">User ID:</span>
+            <span id="nexus-profile-modal-id" style="font-family: monospace; color: var(--text-primary); font-weight: 600;"></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div style="display: flex; border-bottom: 1px solid var(--border); padding: 0 18px; gap: 6px; margin-top: 12px; background: rgba(0,0,0,0.15);">
+      <button type="button" class="nexus-modal-tab active" data-tab="overview" style="padding: 8px 12px; background: transparent; border: none; border-bottom: 2px solid var(--accent); color: var(--text-primary); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+        <span>📊</span> <span data-i18n="nexus_profile.tab_overview">Overview</span>
+      </button>
+      <button type="button" class="nexus-modal-tab" data-tab="endorsements" style="padding: 8px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+        <span>👍</span> <span data-i18n="nexus_profile.tab_endorsements">Endorsements</span> <span id="nexus-tab-endorsements-count" style="font-size: 10px; padding: 1px 5px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-secondary);">0</span>
+      </button>
+      <button type="button" class="nexus-modal-tab" data-tab="tracked" style="padding: 8px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+        <span>⭐</span> <span data-i18n="nexus_profile.tab_tracked">Tracked</span> <span id="nexus-tab-tracked-count" style="font-size: 10px; padding: 1px 5px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-secondary);">0</span>
+      </button>
+      <button type="button" class="nexus-modal-tab" data-tab="my-mods" style="padding: 8px 12px; background: transparent; border: none; border-bottom: 2px solid transparent; color: var(--text-muted); font-size: 11px; font-weight: 700; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+        <span>📦</span> <span data-i18n="nexus_profile.tab_my_mods">My Mods</span> <span id="nexus-tab-authored-count" style="font-size: 10px; padding: 1px 5px; border-radius: 8px; background: var(--bg-tertiary); color: var(--text-secondary);">0</span>
+      </button>
+    </div>
+
+    <!-- Modal Body Content Panels -->
+    <div class="modal-body" style="padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; overflow-y: auto; flex: 1;">
+      
+      <!-- Panel 1: Overview -->
+      <div id="nexus-panel-overview" class="nexus-tab-panel" style="display: flex; flex-direction: column; gap: 12px;">
+        <!-- Stats Grid (Endorsements Given, Profile Views, Kudos) -->
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;">
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+              <span>👍</span> <span data-i18n="nexus_profile.stat_endorsements">Endorsements</span>
+            </div>
+            <div id="nexus-profile-modal-endorsements" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">--</div>
+          </div>
+
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+              <span>👁</span> <span data-i18n="nexus_profile.stat_views">Profile Views</span>
+            </div>
+            <div id="nexus-profile-modal-views" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">--</div>
+          </div>
+
+          <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; gap: 3px;">
+            <div style="display: flex; align-items: center; gap: 5px; font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase;">
+              <span>🤍</span> <span data-i18n="nexus_profile.stat_kudos">Kudos</span>
+            </div>
+            <div id="nexus-profile-modal-kudos" style="font-size: 16px; font-weight: 800; color: var(--text-primary);">--</div>
+          </div>
+        </div>
+
+        <!-- User Timestamps (Joined & Last Active) -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, 0.2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 12px; font-size: 11px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 5px; color: var(--text-muted);">
+            <span>👤</span> <span data-i18n="nexus_profile.last_active_label">Last active:</span>
+            <span id="nexus-profile-modal-last-active" style="color: var(--text-primary); font-weight: 600;">--</span>
+          </div>
+          <div style="display: flex; align-items: center; gap: 5px; color: var(--text-muted);">
+            <span>📅</span> <span data-i18n="nexus_profile.joined_label">Joined:</span>
+            <span id="nexus-profile-modal-joined" style="color: var(--text-primary); font-weight: 600;">--</span>
+          </div>
+        </div>
+
+        <!-- About Me Section -->
+        <div id="nexus-profile-modal-about-box" style="display: flex; flex-direction: column; gap: 6px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border); padding: 10px 12px;">
+          <div style="font-size: 10px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+            <span>📝</span> <span data-i18n="nexus_profile.about_label">About Me</span>
+          </div>
+          <div id="nexus-profile-modal-about" style="font-size: 11px; color: var(--text-primary); line-height: 1.5; white-space: pre-wrap; word-break: break-word; max-height: 90px; overflow-y: auto;"></div>
+        </div>
+
+        <!-- Account Details & Protocols -->
+        <div style="display: flex; flex-direction: column; gap: 6px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border); font-size: 11px;">
+            <span style="color: var(--text-muted);" data-i18n="nexus_profile.auth_status_label">Auth Protocol:</span>
+            <span style="color: var(--success); font-weight: 600;">OAuth 2.0 (PKCE SSO)</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; align-items: center; padding: 6px 10px; background: var(--bg-secondary); border-radius: 6px; border: 1px solid var(--border); font-size: 11px;">
+            <span style="color: var(--text-muted);" data-i18n="nexus_profile.windows_proto_label">Windows Protocol:</span>
+            <span id="nexus-profile-modal-proto" style="font-weight: 600;">Checking...</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Panel 2: Endorsements (Palworld & All) -->
+      <div id="nexus-panel-endorsements" class="nexus-tab-panel" style="display: none; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <input type="text" id="nexus-endorsements-search" placeholder="Search endorsed mods..." data-i18n-placeholder="nexus_profile.search_endorsements_placeholder" class="nexus-search-input" />
+          <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; user-select: none;">
+            <input type="checkbox" id="nexus-endorsements-palworld-only" checked />
+            <span data-i18n="nexus_profile.filter_palworld_only">Palworld Only</span>
+          </label>
+        </div>
+        <div id="nexus-endorsements-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+          <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;" data-i18n="nexus_profile.loading_endorsements">Loading endorsements...</div>
+        </div>
+      </div>
+
+      <!-- Panel 3: Tracked Mods -->
+      <div id="nexus-panel-tracked" class="nexus-tab-panel" style="display: none; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <input type="text" id="nexus-tracked-search" placeholder="Search tracked mods..." data-i18n-placeholder="nexus_profile.search_tracked_placeholder" class="nexus-search-input" />
+          <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; user-select: none;">
+            <input type="checkbox" id="nexus-tracked-palworld-only" checked />
+            <span data-i18n="nexus_profile.filter_palworld_only">Palworld Only</span>
+          </label>
+        </div>
+        <div id="nexus-tracked-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+          <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;" data-i18n="nexus_profile.loading_tracked">Loading tracked mods...</div>
+        </div>
+      </div>
+
+      <!-- Panel 4: My Authored Mods (Published on Nexus) -->
+      <div id="nexus-panel-my-mods" class="nexus-tab-panel" style="display: none; flex-direction: column; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <input type="text" id="nexus-my-mods-search" placeholder="Search my mods..." data-i18n-placeholder="nexus_profile.search_my_mods_placeholder" class="nexus-search-input" />
+          <label style="display: flex; align-items: center; gap: 5px; font-size: 11px; color: var(--text-muted); cursor: pointer; user-select: none;">
+            <input type="checkbox" id="nexus-my-mods-palworld-only" checked />
+            <span data-i18n="nexus_profile.filter_palworld_only">Palworld Only</span>
+          </label>
+        </div>
+        <div id="nexus-my-mods-list" style="display: flex; flex-direction: column; gap: 6px; max-height: 280px; overflow-y: auto; padding-right: 4px;">
+          <div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 12px;" data-i18n="nexus_profile.loading_my_mods">Loading your published mods...</div>
+        </div>
+      </div>
+
+
+      <!-- Action Buttons -->
+      <div style="display: flex; gap: 8px; margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border);">
+        <button type="button" id="nexus-profile-modal-open-web" class="btn-secondary" style="flex: 1; padding: 7px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 5px;">
+          <span>🌐</span> <span data-i18n="nexus_profile.btn_view_on_nexus">View on Nexus</span>
+        </button>
+        <button type="button" id="nexus-profile-modal-refresh" class="btn-secondary" style="padding: 7px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 5px;" title="Refresh Profile Data">
+          <span>🔄</span> <span data-i18n="nexus_profile.btn_refresh">Refresh</span>
+        </button>
+        <button type="button" id="nexus-profile-modal-disconnect" class="btn-secondary" style="color: var(--danger); border-color: rgba(255, 71, 87, 0.3); padding: 7px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 5px;">
+          <span>🚪</span> <span data-i18n="nexus_profile.btn_disconnect">Disconnect</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="modal-footer" style="padding: 10px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+      <button id="nexus-profile-modal-close" class="btn-primary" data-i18n="common.close">Close</button>
+    </div>
+  </div>
+</div>

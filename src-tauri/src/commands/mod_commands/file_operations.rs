@@ -50,6 +50,43 @@ pub fn open_folder(mod_id: String, state: State<AppState>) -> Result<(), String>
 }
 
 #[tauri::command]
+pub fn open_path(path: String) -> Result<(), String> {
+    let mut dir = Path::new(&path);
+    if dir.is_file() {
+        if let Some(parent) = dir.parent() {
+            dir = parent;
+        }
+    }
+    if !dir.exists() {
+        return Err("Directory does not exist".to_string());
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        std::process::Command::new("explorer")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open path: {}", e))?;
+    }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open path: {}", e))?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(dir)
+            .spawn()
+            .map_err(|e| format!("Failed to open path: {}", e))?;
+    }
+
+    Ok(())
+}
+
+#[tauri::command]
 pub fn rename_mod(mod_id: String, new_name: String, state: State<AppState>) -> Result<ModInfo, String> {
     let new_name = new_name.trim().to_string();
     if new_name.is_empty() || new_name.len() > 200 {
@@ -133,7 +170,7 @@ pub fn set_mod_ignored_keys(
 pub async fn check_github_version(repo: String) -> Result<String, String> {
     let url = format!("https://api.github.com/repos/{}/releases/latest", repo);
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.0")
+        .user_agent(format!("PalModManager/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
     let resp = client.get(&url)

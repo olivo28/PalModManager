@@ -40,6 +40,88 @@ export interface ModInfo {
   originLoadMethod?: string | null;
 }
 
+export interface NexusAccountInfo {
+  userId?: number | null;
+  username?: string | null;
+  avatarUrl?: string | null;
+  isPremium: boolean;
+  isSupporter: boolean;
+  roles: string[];
+  accessToken?: string | null;
+  refreshToken?: string | null;
+  tokenExpiresAt?: number | null;
+  kudos?: number | null;
+  profileViews?: number | null;
+  endorsementsGiven?: number | null;
+  joinedDate?: string | null;
+  lastActiveDate?: string | null;
+  aboutMe?: string | null;
+  modCount?: number | null;
+}
+
+export interface NexusUserEndorsement {
+  modId: number;
+  domainName: string;
+  date?: string | null;
+  version?: string | null;
+  status?: string | null;
+  modTitle?: string | null;
+  pictureUrl?: string | null;
+  summary?: string | null;
+}
+
+export interface NexusUserTrackedMod {
+  modId: number;
+  domainName: string;
+  modTitle?: string | null;
+  pictureUrl?: string | null;
+  summary?: string | null;
+}
+
+export interface NexusUserAuthoredMod {
+  modId: number;
+  name: string;
+  summary?: string | null;
+  version?: string | null;
+  downloads?: number | null;
+  endorsements?: number | null;
+  pictureUrl?: string | null;
+  gameName?: string | null;
+  domainName?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
+}
+
+export type ProtocolStatus = 
+  | { status: 'Registered'; data: { path: string } }
+  | { status: 'OutdatedPath'; data: { current_exe: string; registered_path: string } }
+  | { status: 'NotRegistered' };
+
+export interface DetailedProtocolInfo {
+  palmodmanager: ProtocolStatus;
+  nxm: ProtocolStatus;
+  nxmHandlerName?: string | null;
+  nxmHandlerPath?: string | null;
+}
+
+export interface NxmModMetadata {
+  modId: number;
+  name: string;
+  summary?: string | null;
+  pictureUrl?: string | null;
+  version?: string | null;
+  author?: string | null;
+}
+
+export interface NxmDownloadProgressEvent {
+  downloadId: string;
+  bytesDownloaded: number;
+  totalBytes?: number | null;
+  percentage: number;
+}
+
+
+
 export interface AppSettings {
   gamePath: string;
   programPath: string;
@@ -51,6 +133,7 @@ export interface AppSettings {
   customDataPath?: string | null;
   toolbarScale?: number;
   language?: string;
+  nexusAccount?: NexusAccountInfo | null;
 }
 
 export interface ModFolder {
@@ -160,4 +243,74 @@ export interface ConfigDiff {
   keys_added_by_author: string[];
   keys_removed_by_author: string[];
 }
+
+export interface DiscoveryCategory {
+  categoryId: number;
+  name: string;
+}
+
+export interface DiscoveryModItem {
+  modId: number;
+  name: string;
+  summary: string;
+  author: string;
+  version: string;
+  downloads: number;
+  endorsements: number;
+  pictureUrl: string;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  containsAdultContent?: boolean;
+  isEndorsed?: boolean;
+  isTracked?: boolean;
+}
+
+export interface DiscoveryFileItem {
+  fileId: number;
+  name: string;
+  version: string;
+  categoryId: number;
+  categoryName: string;
+  isPrimary: boolean;
+  sizeInBytes: number;
+  sizeFormatted: string;
+  uploadedAt: string;
+  uploadedTimestamp?: number | null;
+  description: string;
+  uniqueDownloads?: number | null;
+  totalDownloads?: number | null;
+  scanStatus?: string | null;
+  changelogEntries?: string[] | null;
+}
+
+export interface DiscoveryModDetails {
+  modId: number;
+  name: string;
+  summary: string;
+  description: string;
+  author: string;
+  version: string;
+  downloads: number;
+  endorsements: number;
+  pictureUrl: string;
+  createdAt: string;
+  updatedAt: string;
+  categoryId?: number | null;
+  categoryName?: string | null;
+  containsAdultContent?: boolean;
+  files: DiscoveryFileItem[];
+  images: string[];
+  isEndorsed?: boolean;
+  isTracked?: boolean;
+}
+
+export interface DiscoveryResponse {
+  mods: DiscoveryModItem[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
 

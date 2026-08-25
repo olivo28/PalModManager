@@ -130,6 +130,26 @@ export function openSettingsModal(): void {
 
   refreshSafetyBackupStatus();
 
+  // Setup Sidebar Tab navigation
+  setupSettingsTabs();
+
+  // Initialize and render Nexus account section
+  import('../../features/nexus_auth').then(({ renderNexusAccountUI, processOAuthCallback }) => {
+    renderNexusAccountUI();
+
+    const manualCallbackBtn = document.getElementById('btn-nexus-manual-callback');
+    const manualCallbackInput = document.getElementById('nexus-manual-callback-input') as HTMLInputElement | null;
+    if (manualCallbackBtn && manualCallbackInput) {
+      manualCallbackBtn.onclick = async () => {
+        const val = manualCallbackInput.value.trim();
+        if (val) {
+          await processOAuthCallback(val);
+          manualCallbackInput.value = '';
+        }
+      };
+    }
+  }).catch(() => {});
+
   const langSelect = document.getElementById('settings-language-select') as HTMLSelectElement | null;
   if (langSelect) {
     import('../../utils/i18n').then(({ getLocale, setLocale }) => {
@@ -144,10 +164,32 @@ export function openSettingsModal(): void {
   modal.classList.add('visible');
 
   requestAnimationFrame(() => {
-    const modalBody = modal.querySelector('.modal-body');
-    if (modalBody) {
-      modalBody.scrollTop = 0;
+    const activePane = modal.querySelector('.settings-tab-pane.active');
+    if (activePane) {
+      activePane.scrollTop = 0;
     }
+  });
+}
+
+function setupSettingsTabs(): void {
+  const tabButtons = document.querySelectorAll<HTMLButtonElement>('.settings-tab-button');
+  const panes = document.querySelectorAll<HTMLElement>('.settings-tab-pane');
+
+  tabButtons.forEach(btn => {
+    btn.onclick = () => {
+      const targetTab = btn.dataset.settingsTab;
+      if (!targetTab) return;
+
+      tabButtons.forEach(b => b.classList.remove('active'));
+      panes.forEach(p => p.classList.remove('active'));
+
+      btn.classList.add('active');
+      const activePane = document.getElementById(`settings-pane-${targetTab}`);
+      if (activePane) {
+        activePane.classList.add('active');
+        activePane.scrollTop = 0;
+      }
+    };
   });
 }
 

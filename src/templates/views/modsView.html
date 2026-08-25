@@ -1,0 +1,75 @@
+<!-- MODS TAB -->
+<div id="mods-view" class="tab-content">
+  <div id="toolbar">
+    <span id="game-platform-badge" class="game-platform-badge" style="display:none"></span>
+    <span id="game-version-badge" class="game-version-badge"></span>
+    <span id="ue4ss-badge" class="dep-badge" style="display:none"></span>
+    <span id="palschema-badge" class="dep-badge" style="display:none"></span>
+    <div id="quick-filter-bar">
+      <button class="quick-filter-btn active" data-filter="ue4ss" data-i18n="mods.quick_filter_ue4ss">UE4SS</button>
+      <button class="quick-filter-btn active" data-filter="palschema" data-i18n="mods.quick_filter_palschema">PalSchema</button>
+      <button class="quick-filter-btn active" data-filter="pak" data-i18n="mods.quick_filter_pak">Pak</button>
+      <button class="quick-filter-btn active" data-filter="logicmods" data-i18n="mods.quick_filter_logicmods">LogicMods</button>
+      <button class="quick-filter-btn active" data-filter="hybrid" data-i18n="mods.quick_filter_hybrid">Hybrid</button>
+      <span class="quick-filter-sep"></span>
+      <button id="advanced-filter-btn" class="quick-filter-btn advanced" title="Advanced filters" data-i18n-title="mods.filter_advanced_title">▼</button>
+      <div id="advanced-filter-dropdown" class="filter-dropdown" style="display:none;">
+        <div class="filter-dropdown-header" data-i18n="mods.filter_tags_header">Tags</div>
+        <div id="filter-tags-list"></div>
+        <div class="filter-dropdown-header" style="margin-top:8px" data-i18n="mods.filter_categories_header">Categories</div>
+        <div id="filter-cats-list"></div>
+      </div>
+      <span class="quick-filter-sep"></span>
+      <div id="status-filter-bar">
+        <button class="status-filter-btn active" data-status="all" title="Show All Mods" data-i18n-title="mods.status_all_title" data-i18n="common.all">All</button>
+        <button class="status-filter-btn" data-status="enabled" title="Show Enabled Mods Only" data-i18n-title="mods.status_on_title" data-i18n="common.on">On</button>
+        <button class="status-filter-btn" data-status="disabled" title="Show Disabled Mods Only" data-i18n-title="mods.status_off_title" data-i18n="common.off">Off</button>
+      </div>
+    </div>
+    <div id="search-wrap">
+      <input type="text" id="search-input" placeholder="Search mods..." title="Filter mods by name or author" data-i18n-placeholder="mods.search_placeholder" data-i18n-title="mods.search_title" />
+    </div>
+    <div id="sort-bar">
+      <select id="sort-select" class="sort-select" title="Select mod sorting order" data-i18n-title="mods.sort_select_title">
+        <option value="name:asc" data-i18n="mods.sort_name_asc">Name (A → Z)</option>
+        <option value="name:desc" data-i18n="mods.sort_name_desc">Name (Z → A)</option>
+        <option value="date:desc" data-i18n="mods.sort_date_desc">Date (Newest First)</option>
+        <option value="date:asc" data-i18n="mods.sort_date_asc">Date (Oldest First)</option>
+        <option value="type:asc" data-i18n="mods.sort_type_asc">Type (UE4SS / Pak / etc.)</option>
+        <option value="status:desc" data-i18n="mods.sort_status_desc">Status (Active First)</option>
+      </select>
+    </div>
+    <div id="layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
+      <button id="layout-grid-btn" class="layout-btn active" title="Grid View (Cards)" data-i18n-title="mods.layout_grid_title">⊞</button>
+      <button id="layout-list-btn" class="layout-btn" title="List View (Details Table)" data-i18n-title="mods.layout_list_title">☰</button>
+    </div>
+    <span id="profile-active-label" class="profile-active-indicator" title="Current active profile">Profile: Default</span>
+    <button id="profile-manager-btn" class="toolbar-btn-sm" title="Manage profiles (create, switch, duplicate)" data-i18n-title="mods.btn_profiles_title" data-i18n="mods.btn_profiles">Profiles</button>
+    <button id="new-folder-btn" class="toolbar-btn-sm" title="Create virtual group folder" data-i18n-title="mods.btn_new_folder_title" data-i18n="mods.btn_new_folder">New Folder</button>
+    <div id="toolbar-actions">
+      <button id="scan-btn" class="toolbar-btn" title="Rescan mod directories and game files" data-i18n-title="mods.btn_scan_title">↻</button>
+      <button id="install-btn" class="toolbar-btn toolbar-btn-primary" title="Install mod from .zip archive" data-i18n-title="mods.btn_install_title">+</button>
+      <button id="check-updates-btn" class="toolbar-btn" title="Check for mod updates" data-i18n-title="mods.btn_check_updates_title">↑</button>
+      <button id="open-all-updates-btn" class="toolbar-btn" title="Open all Nexus update pages in browser" data-i18n-title="mods.btn_open_all_updates_title" style="display:none;background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);" data-i18n="mods.btn_open_all_updates">🌐 Open Updates</button>
+      <span class="quick-filter-sep"></span>
+      <button id="disable-all-btn" class="toolbar-btn-sm" title="Disable all active mods in current profile" data-i18n-title="mods.btn_disable_all_title" data-i18n="mods.btn_disable_all">All Off</button>
+      <button id="enable-all-btn" class="toolbar-btn-sm" title="Enable all mods in current profile" data-i18n-title="mods.btn_enable_all_title" data-i18n="mods.btn_enable_all">All On</button>
+      <span class="quick-filter-sep"></span>
+      <button id="export-json-btn" class="toolbar-btn-sm" title="Export all mod data as JSON" data-i18n-title="mods.btn_export_json_title" data-i18n="mods.btn_export_json">Export JSON</button>
+      <button id="backup-btn" class="toolbar-btn-sm" title="Backup all mods to a ZIP archive" data-i18n-title="mods.btn_backup_title" data-i18n="mods.btn_backup">Backup</button>
+      <button id="restore-backup-btn" class="toolbar-btn-sm" title="Restore all mods from a PMM Backup ZIP" data-i18n-title="mods.btn_restore_backup_title" data-i18n="mods.btn_restore_backup">Restore Backup</button>
+    </div>
+  </div>
+  <div id="bulk-actions-bar" class="bulk-actions-bar" style="display:none">
+    <div class="bulk-actions-info"><span id="bulk-selected-count">0</span> mods selected</div>
+    <div class="bulk-actions-buttons">
+      <button id="bulk-enable-btn" class="bulk-btn primary" data-i18n="mods.bulk_enable">Enable All</button>
+      <button id="bulk-disable-btn" class="bulk-btn" data-i18n="mods.bulk_disable">Disable All</button>
+      <button id="bulk-remove-btn" class="bulk-btn danger" data-i18n="mods.bulk_remove">Remove Selected</button>
+      <button id="bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
+    </div>
+  </div>
+  <div id="mods-container">
+    <div id="empty-state" data-i18n="mods.empty_state">No mods found. Install a mod or configure your game path in Settings.</div>
+  </div>
+</div>
