@@ -1,4 +1,22 @@
-PalModManager - Version 1.6.1 Changelog (2026-25-08)
+PalModManager - Version 1.6.2 Changelog (2026-25-08)
+
+[1.6.2] - 2026-08-25
+
+Added
+- Universal DNS-over-HTTPS (DoH) Image Fallback: Embedded a resilient multi-stage DoH proxy (System DNS -> Cloudflare 1.1.1.1 -> Google 8.8.8.8) across all app views (Discover, Installed Mods, Library, Detail Panel, Installer, and Nexus Profile) to transparently bypass ISP/firewall image blocking on Nexus CDNs (staticdelivery.nexusmods.com), accompanied by disk-backed WebP caching.
+- Network & Sources Settings Tab: Added a dedicated Network & Sources tab featuring DNS resolver selection (Auto, System, Cloudflare, Google), real-time cache size inspection and 1-click purge, and verified transparency links to official dependency repositories (Okaetsu's UE4SS and PalSchema).
+- Library Installation Filter & Multi-Criteria Sorting: Added filtering by installation status (All Mods, Installed Only, Not Installed, Updates Available) and flexible sorting (Name A-Z, Installed First, Not Installed First, Date Added) to both Local and Workshop library views.
+- Native 7-Zip & Multi-Codec Decompression Engine: Embedded pure-Rust sevenz-rust and extended zip codec support (LZMA, LZMA2, Bzip2, Zstd) to read and extract .7z and .zip archives directly without relying on external system tools (tar.exe), eliminating "LZMA codec is unsupported" errors on Windows 10/11.
+- Official PalSchema Visual Branding: Integrated official { p } iconography designed and provided by Okaetsu.
+
+Fixed
+- Fixed "View Source" buttons in Settings failing silently by properly routing URLs through the cross-platform native browser opener.
+- Added keyboard shortcut support (Escape) to instantly dismiss the full-screen image zoom viewer (Lightbox) and details modal.
+- Fixed 401 unauthorized errors in Discover tab after leaving PMM open overnight by auto-refreshing OAuth tokens and providing anonymous fallback.
+- Resolved missing bundled static assets and rapid recursive onerror reload loops that caused broken placeholder icons and flickering on Discover and Library cards.
+- Improved classification heuristics for PalSchema data mods containing internal definition folders.
+
+------------------------------------
 
 [1.6.1] - 2026-08-25
 

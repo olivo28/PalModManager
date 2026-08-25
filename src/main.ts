@@ -1,4 +1,5 @@
 import 'highlight.js/styles/github-dark.css';
+import './utils/imageFallback';
 import { initI18n, t } from './utils/i18n';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
 import { getState, updateState } from './state';
@@ -585,6 +586,10 @@ function setupEventListeners() {
         loadDependencies().catch(err => console.error("Auto-checking dependencies failed:", err));
         loadMods().catch(err => console.error("Auto-scanning mods failed:", err));
       });
+    });
+
+    listen<string>('dns-fallback-triggered', (event) => {
+      showToast(t('toasts.dns_fallback_recovered', { provider: event.payload }), 'info');
     });
   }).catch(err => console.error("Failed to register event listeners:", err));
 }

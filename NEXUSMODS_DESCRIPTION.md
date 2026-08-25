@@ -1,7 +1,7 @@
 # PalModManager (PMM) - Next-Gen Mod Manager & Config Editor for Palworld
 
 ---
-Latest version: 1.6.1
+Latest version: 1.6.2
 
 Changelog: You can find the latest update notes in the pinned comments section or check the full history on [GitHub](https://github.com/olivo28/PalModManager).
 

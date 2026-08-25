@@ -718,6 +718,27 @@ export async function installDiscoveryFile(modId: number, fileId: number): Promi
   return invoke('install_discovery_file', { modId, fileId });
 }
 
+export async function setDnsResolver(dnsMode: string): Promise<AppSettings> {
+  return invoke('set_dns_resolver', { dnsMode });
+}
+
+export async function setCacheRemoteImages(enabled: boolean): Promise<AppSettings> {
+  return invoke('set_cache_remote_images', { enabled });
+}
+
+export async function fetchAndCacheImage(url: string, dnsMode?: string): Promise<string> {
+  return invoke('fetch_and_cache_image', { url, dnsMode: dnsMode || null });
+}
+
+export async function getImageCacheSize(): Promise<number> {
+  return invoke('get_image_cache_size');
+}
+
+export async function purgeImageCache(): Promise<void> {
+  return invoke('purge_image_cache');
+}
+
+
 
 
 

@@ -134,6 +134,8 @@ export interface AppSettings {
   toolbarScale?: number;
   language?: string;
   nexusAccount?: NexusAccountInfo | null;
+  dnsResolver?: string;
+  cacheRemoteImages?: boolean;
 }
 
 export interface ModFolder {

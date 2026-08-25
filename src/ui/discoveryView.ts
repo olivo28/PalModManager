@@ -8,17 +8,42 @@ import {
   trackNexusMod,
   untrackNexusMod,
   openUrl,
+  fetchAndCacheImage,
   type DiscoveryCategory,
   type DiscoveryModItem,
   type DiscoveryModDetails,
   type DiscoveryFileItem,
 } from '../api';
+import { convertFileSrc } from '@tauri-apps/api/core';
 import { enqueueDiscoveryDownload } from '../features/nxm_queue';
 import { getState } from '../state';
 import { showToast } from './toast';
 import { t } from '../utils/i18n';
 import { escapeHtml } from '../utils/helpers';
 import { descriptionToHtml } from '../utils/bbcode';
+import logoUrl from '../assets/logo.png';
+
+export async function handleDiscoveryImageError(img: HTMLImageElement, originalUrl: string): Promise<void> {
+  img.onerror = null;
+  if (!originalUrl || originalUrl === logoUrl || !originalUrl.startsWith('http')) {
+    img.src = logoUrl;
+    return;
+  }
+  try {
+    const cachedPath = await fetchAndCacheImage(originalUrl);
+    if (cachedPath) {
+      img.src = convertFileSrc(cachedPath);
+      return;
+    }
+  } catch (e) {
+    console.error('DoH proxy fetch failed:', e);
+  }
+  img.src = logoUrl;
+}
+
+if (typeof window !== 'undefined') {
+  (window as any).handleDiscoveryImageError = handleDiscoveryImageError;
+}
 
 function isUserPremium(): boolean {
   const account: any = getState().currentSettings?.nexusAccount;
@@ -365,7 +390,7 @@ function setupEventListeners(): void {
   // Cover image click opens lightbox
   document.getElementById('discovery-modal-img')?.addEventListener('click', () => {
     const img = document.getElementById('discovery-modal-img') as HTMLImageElement | null;
-    if (img && img.src && !img.src.includes('logo.png')) {
+    if (img && img.src && !img.src.includes('logo') && img.src !== logoUrl) {
       openLightbox(img.src);
     }
   });
@@ -451,16 +476,20 @@ function setupEventListeners(): void {
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       const lightbox = document.getElementById('discovery-image-modal');
-      if (lightbox && lightbox.classList.contains('visible')) {
+      if (lightbox && (lightbox.classList.contains('visible') || (lightbox.style.display && lightbox.style.display !== 'none'))) {
+        e.preventDefault();
+        e.stopPropagation();
         closeLightbox();
         return;
       }
       const modal = document.getElementById('discovery-mod-modal');
-      if (modal && modal.classList.contains('visible')) {
+      if (modal && (modal.classList.contains('visible') || (modal.style.display && modal.style.display !== 'none'))) {
+        e.preventDefault();
+        e.stopPropagation();
         closeDiscoveryModal();
       }
     }
-  });
+  }, true);
 }
 
 function setupLightboxPanZoom(): void {
@@ -676,7 +705,7 @@ function renderGrid(mods: DiscoveryModItem[]): void {
   const isPremium = isUserPremium();
 
   grid.innerHTML = mods.map((m) => {
-    const pic = m.pictureUrl || '/src/assets/logo.png';
+    const pic = m.pictureUrl && m.pictureUrl.trim() !== '' ? m.pictureUrl : logoUrl;
     const cat = m.categoryName || (m.categoryId ? categories.find((c) => c.categoryId === m.categoryId)?.name : '') || 'Mod';
     const isNsfw = m.containsAdultContent || false;
     const isBlurred = isNsfw && currentNsfwFilter === 'blur';
@@ -691,7 +720,7 @@ function renderGrid(mods: DiscoveryModItem[]): void {
     return `
       <div class="discovery-card ${isBlurred ? 'nsfw-blurred' : ''}" data-mod-id="${m.modId}">
         <div class="discovery-card-cover-wrap">
-          <img src="${pic}" alt="${escapeHtml(m.name)}" class="discovery-card-cover" loading="lazy" onerror="this.src='/src/assets/logo.png'" />
+          <img src="${escapeHtml(pic)}" alt="${escapeHtml(m.name)}" class="discovery-card-cover" loading="lazy" data-original-src="${escapeHtml(pic)}" onerror="window.handleDiscoveryImageError ? window.handleDiscoveryImageError(this, this.dataset.originalSrc || '${escapeHtml(pic)}') : (this.onerror=null, this.src='${logoUrl}');" />
           <div class="discovery-card-badges">
             <span class="discovery-badge-category">${escapeHtml(cat)}</span>
             <div class="discovery-card-right-badges">
@@ -814,9 +843,13 @@ function resetModalUI(previewData?: Partial<DiscoveryModItem>): void {
     if (updated) updated.textContent = previewData.updatedAt ? new Date(previewData.updatedAt).toLocaleDateString() : '';
     if (endorsements) endorsements.textContent = (previewData.endorsements || 0).toLocaleString();
     if (downloads) downloads.textContent = (previewData.downloads || 0).toLocaleString();
-    if (img && previewData.pictureUrl) {
-      img.src = previewData.pictureUrl;
-      img.onerror = () => { img.src = '/src/assets/logo.png'; };
+    if (img) {
+      if (previewData.pictureUrl && previewData.pictureUrl.trim() !== '') {
+        img.src = previewData.pictureUrl;
+        img.onerror = () => { handleDiscoveryImageError(img, previewData.pictureUrl!); };
+      } else {
+        img.src = logoUrl;
+      }
     }
   } else {
     if (title) title.textContent = 'Loading Mod Details...';
@@ -893,9 +926,13 @@ function populateModalData(details: DiscoveryModDetails): void {
   if (endorsements) endorsements.textContent = details.endorsements.toLocaleString();
   if (downloads) downloads.textContent = details.downloads.toLocaleString();
 
-  if (img && details.pictureUrl) {
-    img.src = details.pictureUrl;
-    img.onerror = () => { img.src = '/src/assets/logo.png'; };
+  if (img) {
+    if (details.pictureUrl && details.pictureUrl.trim() !== '') {
+      img.src = details.pictureUrl;
+      img.onerror = () => { handleDiscoveryImageError(img, details.pictureUrl!); };
+    } else {
+      img.src = logoUrl;
+    }
   }
 
   // 1. Description with iterative BBCode parser
@@ -906,6 +943,12 @@ function populateModalData(details: DiscoveryModDetails): void {
     // Attach click-to-zoom on embedded description images
     desc.querySelectorAll('img').forEach((descImg) => {
       descImg.classList.add('cursor-zoom');
+      descImg.setAttribute('data-original-src', descImg.src);
+      descImg.onerror = () => {
+        if ((window as any).handleUniversalImageFallback) {
+          (window as any).handleUniversalImageFallback(descImg);
+        }
+      };
       descImg.addEventListener('click', () => {
         if (descImg.src) openLightbox(descImg.src);
       });
@@ -925,8 +968,9 @@ function populateModalData(details: DiscoveryModDetails): void {
   }
 
   // 2. Files List (Categorized, sorted newest to oldest, with archived toggle and scan badges)
-  if (filesList) {
-    renderFilesList(details, filesList);
+  const filesContainer = document.getElementById('discovery-files-container');
+  if (filesContainer) {
+    renderFilesList(details, filesContainer);
   }
 
   // 3. Changelogs Tab
@@ -935,22 +979,23 @@ function populateModalData(details: DiscoveryModDetails): void {
     renderChangelogsList(details, changelogsContainer);
   }
 
-  // 4. Media Gallery
-  if (gallery) {
+  // 4. Media gallery (screenshots)
+  const galleryContainer = document.getElementById('discovery-media-gallery');
+  if (galleryContainer) {
     const allImages = details.images && details.images.length > 0
       ? details.images
       : details.pictureUrl ? [details.pictureUrl] : [];
 
     if (allImages.length === 0) {
-      gallery.innerHTML = `<p style="color: var(--text-muted); font-size: 12px;">${t('discovery.no_media')}</p>`;
+      galleryContainer.innerHTML = `<p style="color: var(--text-muted); font-size: 12px;">${t('discovery.no_media')}</p>`;
     } else {
-      gallery.innerHTML = allImages.map((src) => `
+      galleryContainer.innerHTML = allImages.map((src) => `
         <div class="discovery-media-item" data-src="${escapeHtml(src)}">
-          <img src="${escapeHtml(src)}" alt="Screenshot" class="discovery-media-img" loading="lazy" onerror="this.parentElement.style.display='none'" />
+          <img src="${escapeHtml(src)}" data-original-src="${escapeHtml(src)}" alt="Screenshot" class="discovery-media-img" loading="lazy" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.parentElement.style.display='none')" />
         </div>
       `).join('');
 
-      gallery.querySelectorAll('.discovery-media-item').forEach((item) => {
+      galleryContainer.querySelectorAll('.discovery-media-item').forEach((item) => {
         item.addEventListener('click', () => {
           const src = (item as HTMLElement).dataset.src;
           if (src) openLightbox(src);
@@ -1351,6 +1396,12 @@ function openLightbox(src: string): void {
   if (!lightbox || !img) return;
 
   img.src = src;
+  img.setAttribute('data-original-src', src);
+  img.onerror = () => {
+    if ((window as any).handleUniversalImageFallback) {
+      (window as any).handleUniversalImageFallback(img);
+    }
+  };
   updateLightboxTransform(1, 0, 0);
 
   lightbox.classList.add('visible');

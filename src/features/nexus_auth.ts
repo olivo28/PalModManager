@@ -177,7 +177,7 @@ export function renderNexusAccountUI(): void {
     container.innerHTML = `
       <div class="nexus-profile-card">
         <div class="nexus-avatar-wrap" style="cursor: pointer; transition: transform 0.2s;" id="btn-nexus-open-modal-avatar" title="${t('nexus_profile.modal_title')}">
-          <img src="${avatar}" alt="${account.username}" class="nexus-avatar-img" onerror="this.src='${DEFAULT_AVATAR}'" />
+          <img src="${avatar}" data-original-src="${avatar}" alt="${account.username}" class="nexus-avatar-img" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this, '${DEFAULT_AVATAR}') : (this.src='${DEFAULT_AVATAR}')" />
         </div>
         <div class="nexus-profile-info" style="cursor: pointer;" id="btn-nexus-open-modal-info" title="${t('nexus_profile.modal_title')}">
           <div class="nexus-profile-header">
@@ -436,7 +436,7 @@ export function openNexusProfileModal(): void {
 
       return `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
-          ${item.pictureUrl ? `<img src="${item.pictureUrl}" alt="${modName}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" />` : ''}
+          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${modName}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
           <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${modName}</span>
@@ -513,7 +513,7 @@ export function openNexusProfileModal(): void {
 
       return `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
-          ${item.pictureUrl ? `<img src="${item.pictureUrl}" alt="${modName}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" />` : ''}
+          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${modName}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
           <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${modName}</span>
@@ -588,7 +588,7 @@ export function openNexusProfileModal(): void {
 
       return `
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
-          ${item.pictureUrl ? `<img src="${item.pictureUrl}" alt="${item.name}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" />` : ''}
+          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${item.name}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
           <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>

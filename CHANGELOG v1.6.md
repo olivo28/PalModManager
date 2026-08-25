@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.2] - 2026-08-25
+
+### Added
+- **Universal DNS-over-HTTPS (DoH) Image Fallback**: Embedded a resilient multi-stage DoH proxy (`System DNS → Cloudflare 1.1.1.1 → Google 8.8.8.8`) across all app views (Discover, Installed Mods, Library, Detail Panel, Installer, and Nexus Profile) to transparently bypass ISP/firewall image blocking on Nexus CDNs (`staticdelivery.nexusmods.com`), accompanied by disk-backed WebP caching.
+- **Network & Sources Settings Tab**: Added a dedicated Network & Sources tab featuring DNS resolver selection (Auto, System, Cloudflare, Google), real-time cache size inspection and 1-click purge, and verified transparency links to official dependency repositories (Okaetsu's UE4SS and PalSchema).
+- **Library Installation Filter & Multi-Criteria Sorting**: Added filtering by installation status (All Mods, Installed Only, Not Installed, Updates Available) and flexible sorting (Name A-Z, Installed First, Not Installed First, Date Added) to both Local and Workshop library views.
+- **Native 7-Zip & Multi-Codec Decompression Engine**: Embedded pure-Rust `sevenz-rust` and extended zip codec support (LZMA, LZMA2, Bzip2, Zstd) to read and extract `.7z` and `.zip` archives directly without relying on external system tools (`tar.exe`), eliminating `LZMA codec is unsupported` errors on Windows 10/11.
+- **Official PalSchema Visual Branding**: Integrated official `{ p }` iconography designed and provided by Okaetsu.
+
+### Fixed
+- **External Links in Settings**: Fixed the "View Source ↗" buttons in Settings failing silently by properly routing URLs through the cross-platform native browser opener (`open_url`).
+- **Discovery Lightbox ESC Key Handling**: Added keyboard shortcut support (`Escape`) to instantly dismiss the full-screen image zoom viewer (Lightbox) and details modal.
+- **Nexus OAuth Auto-Refresh & 401 Expiration Recovery**: Resolved an issue where leaving PMM open for extended periods resulted in 401/402 unauthorized errors in the Discover tab by automatically refreshing tokens on-demand and providing anonymous fallback for public mod queries.
+- **Bundled Asset Resolution & Image Flicker Loop**: Fixed an issue where missing bundled static assets in portable builds triggered rapid recursive `onerror` reload loops, causing flickering and broken placeholder icons in Discover and Library mod cards.
+- **PalSchema Data Mod Detection Priority**: Improved classification heuristics for PalSchema data mods containing internal definition folders.
+
+---
+
 ## [1.6.1] - 2026-08-25
 
 ### Added
@@ -58,4 +76,4 @@ Need help, want to report a bug, or suggest a new feature? Join our official Dis
 You can choose between the portable version or the full installer:
 
 *   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
-*   **Installer Version:** Download `PalModManager_1.6.1_x64-setup.exe` and follow the setup wizard to install the application on your system.
+*   **Installer Version:** Download `PalModManager_1.6.2_x64-setup.exe` and follow the setup wizard to install the application on your system.

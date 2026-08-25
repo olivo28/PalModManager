@@ -448,7 +448,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
        ${analysis.nexusInfo ? `
        <div style="width:260px;min-width:260px;max-width:260px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
           <div style="position:relative;width:100%;height:140px;overflow:hidden;background:#000;">
-             ${picUrl ? `<img src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" />` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>`}
+             ${picUrl ? `<img src="${escapeHtml(picUrl)}" data-original-src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div style="display:none;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>`}
              <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:#00ffcc;font-weight:700;letter-spacing:0.5px;">
                 ${analysis.nexusInfo.downloads.toLocaleString()} DLs
              </div>

@@ -130,6 +130,55 @@ export function openSettingsModal(): void {
 
   refreshSafetyBackupStatus();
   refreshStorageUsageStatus();
+  refreshImageCacheStatus();
+
+  // DNS Resolver Select
+  const dnsSelect = document.getElementById('settings-dns-resolver-select') as HTMLSelectElement | null;
+  if (dnsSelect) {
+    dnsSelect.value = state.currentSettings?.dnsResolver || 'auto';
+  }
+
+  // Purge Image Cache Buttons (in Network and Safety panes)
+  const purgeCacheHandler = async (btn: HTMLButtonElement) => {
+    try {
+      btn.disabled = true;
+      const { purgeImageCache } = await import('../../api');
+      await purgeImageCache();
+      showToast(t('toasts.image_cache_cleared'), 'success');
+      await refreshImageCacheStatus();
+    } catch (err: any) {
+      showToast(String(err), 'error');
+    } finally {
+      btn.disabled = false;
+    }
+  };
+
+  const purgeCacheBtn = document.getElementById('btn-purge-image-cache') as HTMLButtonElement | null;
+  if (purgeCacheBtn) {
+    purgeCacheBtn.onclick = () => purgeCacheHandler(purgeCacheBtn);
+  }
+
+  const storagePurgeImagesBtn = document.getElementById('storage-clear-images-btn') as HTMLButtonElement | null;
+  if (storagePurgeImagesBtn) {
+    storagePurgeImagesBtn.onclick = () => purgeCacheHandler(storagePurgeImagesBtn);
+  }
+
+  // External repository link buttons
+  document.querySelectorAll<HTMLButtonElement>('.open-external-link-btn').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const url = btn.dataset.url;
+      if (url) {
+        try {
+          const { openUrl } = await import('../../api');
+          await openUrl(url);
+        } catch (err) {
+          console.error('Failed to open external link:', err);
+        }
+      }
+    };
+  });
 
   const clearTempBtn = document.getElementById('storage-clear-temp-btn') as HTMLButtonElement | null;
   if (clearTempBtn) {
@@ -234,6 +283,9 @@ function setupSettingsTabs(): void {
       if (targetTab === 'safety') {
         refreshSafetyBackupStatus();
         refreshStorageUsageStatus();
+        refreshImageCacheStatus();
+      } else if (targetTab === 'network') {
+        refreshImageCacheStatus();
       }
     };
   });
@@ -246,6 +298,22 @@ export function formatBytes(bytes: number, decimals = 1): string {
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+export async function refreshImageCacheStatus(): Promise<void> {
+  const badgeNet = document.getElementById('settings-image-cache-badge');
+  const badgeStorage = document.getElementById('storage-images-badge');
+  if (!badgeNet && !badgeStorage) return;
+
+  try {
+    const { getImageCacheSize } = await import('../../api');
+    const bytes = await getImageCacheSize();
+    const formatted = formatBytes(bytes);
+    if (badgeNet) badgeNet.textContent = formatted;
+    if (badgeStorage) badgeStorage.textContent = formatted;
+  } catch (e) {
+    console.error('Failed to get image cache size:', e);
+  }
 }
 
 export async function refreshStorageUsageStatus(): Promise<void> {
@@ -473,6 +541,13 @@ export async function handleSaveSettings(): Promise<void> {
     if (langSelect && langSelect.value) {
       const { setLanguage } = await import('../../api');
       const settings = await setLanguage(langSelect.value);
+      updateState({ currentSettings: settings });
+    }
+
+    const dnsSelect = document.getElementById('settings-dns-resolver-select') as HTMLSelectElement | null;
+    if (dnsSelect && dnsSelect.value && dnsSelect.value !== (state.currentSettings?.dnsResolver || 'auto')) {
+      const { setDnsResolver } = await import('../../api');
+      const settings = await setDnsResolver(dnsSelect.value);
       updateState({ currentSettings: settings });
     }
 

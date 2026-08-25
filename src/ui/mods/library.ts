@@ -8,6 +8,8 @@ import { listen } from '@tauri-apps/api/event';
 
 export let _librarySearchQuery = '';
 export let _activeLibrarySubTab: 'local' | 'workshop' = 'local';
+export let _libraryFilterStatus: 'all' | 'installed' | 'not_installed' | 'updates' = (localStorage.getItem('pmm-library-filter') as any) || 'all';
+export let _librarySortBy: 'name:asc' | 'name:desc' | 'installed:first' | 'not_installed:first' | 'date:desc' = (localStorage.getItem('pmm-library-sort') as any) || 'installed:first';
 export const _libraryOnlineUpdatesMap: Map<string, string> = new Map();
 
 const WORKSHOP_TIMESTAMPS_KEY = 'pmm_workshop_mod_timestamps';
@@ -96,6 +98,26 @@ export function setupLibraryHandlers(): void {
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       _librarySearchQuery = searchInput.value.trim().toLowerCase();
+      renderLibraryView();
+    });
+  }
+
+  const filterSelect = document.getElementById('library-filter-status') as HTMLSelectElement | null;
+  if (filterSelect) {
+    filterSelect.value = _libraryFilterStatus;
+    filterSelect.addEventListener('change', () => {
+      _libraryFilterStatus = filterSelect.value as any;
+      localStorage.setItem('pmm-library-filter', _libraryFilterStatus);
+      renderLibraryView();
+    });
+  }
+
+  const sortSelect = document.getElementById('library-sort-select') as HTMLSelectElement | null;
+  if (sortSelect) {
+    sortSelect.value = _librarySortBy;
+    sortSelect.addEventListener('change', () => {
+      _librarySortBy = sortSelect.value as any;
+      localStorage.setItem('pmm-library-sort', _librarySortBy);
       renderLibraryView();
     });
   }
@@ -347,7 +369,7 @@ export async function renderLibraryView(): Promise<void> {
       }
     }
 
-    const groups = Array.from(groupsMap.values());
+    let groups = Array.from(groupsMap.values());
     for (const g of groups) {
       g.versions.sort((a, b) => {
         const cleanA = a.version.replace(/^[^\d]*/, '').split('.').map(n => parseInt(n, 10) || 0);
@@ -361,17 +383,60 @@ export async function renderLibraryView(): Promise<void> {
       });
     }
 
-function compareVersions(a: string, b: string): number {
-  const parseParts = (v: string) => v.replace(/^[^\d]*/, '').split(/[\.-]/).map(n => parseInt(n, 10) || 0);
-  const partsA = parseParts(a);
-  const partsB = parseParts(b);
-  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
-    const numA = partsA[i] || 0;
-    const numB = partsB[i] || 0;
-    if (numA !== numB) return numA - numB;
-  }
-  return a.localeCompare(b);
-}
+    function compareVersions(a: string, b: string): number {
+      const parseParts = (v: string) => v.replace(/^[^\d]*/, '').split(/[\.-]/).map(n => parseInt(n, 10) || 0);
+      const partsA = parseParts(a);
+      const partsB = parseParts(b);
+      for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+        const numA = partsA[i] || 0;
+        const numB = partsB[i] || 0;
+        if (numA !== numB) return numA - numB;
+      }
+      return a.localeCompare(b);
+    }
+
+    // Filter by installation status
+    if (_libraryFilterStatus === 'installed') {
+      groups = groups.filter(g => g.isInstalled);
+    } else if (_libraryFilterStatus === 'not_installed') {
+      groups = groups.filter(g => !g.isInstalled);
+    } else if (_libraryFilterStatus === 'updates') {
+      groups = groups.filter(g => {
+        const onlineNexusVer = g.nexusModId ? _libraryOnlineUpdatesMap.get(g.nexusModId.toString()) : null;
+        const hasOnlineUpdate = !!(onlineNexusVer && g.installedVersion && compareVersions(onlineNexusVer, g.installedVersion) > 0);
+        const hasLocalUpdate = !!(g.isInstalled && g.installedVersion && g.versions.length > 0 && compareVersions(g.versions[0].version, g.installedVersion) > 0);
+        return hasOnlineUpdate || hasLocalUpdate;
+      });
+    }
+
+    // Sort groups
+    groups.sort((a, b) => {
+      switch (_librarySortBy) {
+        case 'name:asc':
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+        case 'name:desc':
+          return b.name.localeCompare(a.name, undefined, { sensitivity: 'base', numeric: true });
+        case 'installed:first':
+          if (a.isInstalled !== b.isInstalled) return b.isInstalled ? 1 : -1;
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+        case 'not_installed:first':
+          if (a.isInstalled !== b.isInstalled) return a.isInstalled ? 1 : -1;
+          return a.name.localeCompare(b.name, undefined, { sensitivity: 'base', numeric: true });
+        case 'date:desc': {
+          const dateA = a.versions[0]?.installedAt || '';
+          const dateB = b.versions[0]?.installedAt || '';
+          return dateB.localeCompare(dateA);
+        }
+        default:
+          return a.name.localeCompare(b.name);
+      }
+    });
+
+    if (groups.length === 0) {
+      container.innerHTML = `<div id="library-empty">${escapeHtml(t('library.empty_local'))}</div>`;
+      updateLibraryBulkBar();
+      return;
+    }
 
     container.innerHTML = groups.map(group => {
       const isSelected = state.selectedLibraryIds.has(group.modId);
@@ -413,12 +478,14 @@ function compareVersions(a: string, b: string): number {
       let imageHtml = `<div style="font-size:32px;text-align:center;color:var(--text-muted);opacity:0.8;margin:8px 0;">📦</div>`;
       let resolvedSrc = group.nexusPictureUrl;
       if (resolvedSrc) {
+        let displaySrc = resolvedSrc;
         if (!resolvedSrc.startsWith('http://') && !resolvedSrc.startsWith('https://')) {
-          try { resolvedSrc = convertFileSrc(resolvedSrc); } catch (err) { console.error(err); }
+          try { displaySrc = convertFileSrc(resolvedSrc); } catch (err) { console.error(err); }
         }
         imageHtml = `
           <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
-            <img src="${resolvedSrc}" style="width:100%;height:100%;object-fit:cover;" />
+            <img src="${displaySrc}" data-original-src="${resolvedSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='block'));" />
+            <div style="display:none;font-size:28px;opacity:0.6;">📦</div>
             ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
           </div>
         `;
@@ -431,12 +498,14 @@ function compareVersions(a: string, b: string): number {
         });
         if (matchedMod && matchedMod.nexusPictureUrl) {
           let src = matchedMod.nexusPictureUrl;
+          let displaySrc = src;
           if (!src.startsWith('http://') && !src.startsWith('https://')) {
-            try { src = convertFileSrc(src); } catch (err) { console.error(err); }
+            try { displaySrc = convertFileSrc(src); } catch (err) { console.error(err); }
           }
           imageHtml = `
             <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
-              <img src="${src}" style="width:100%;height:100%;object-fit:cover;" />
+              <img src="${displaySrc}" data-original-src="${src}" style="width:100%;height:100%;object-fit:cover;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='block'));" />
+              <div style="display:none;font-size:28px;opacity:0.6;">📦</div>
               ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             </div>
           `;
@@ -627,6 +696,36 @@ function compareVersions(a: string, b: string): number {
         mods = mods.filter((m: any) => m.modName.toLowerCase().includes(_librarySearchQuery) || m.author.toLowerCase().includes(_librarySearchQuery));
       }
 
+      if (_libraryFilterStatus === 'installed') {
+        mods = mods.filter((m: any) => m.isInstalled || wState.activeModList.includes(m.packageName));
+      } else if (_libraryFilterStatus === 'not_installed') {
+        mods = mods.filter((m: any) => !m.isInstalled && !wState.activeModList.includes(m.packageName));
+      } else if (_libraryFilterStatus === 'updates') {
+        mods = mods.filter((m: any) => m.hasPendingUpdate || (m.isInstalled && m.installedVersion && m.installedVersion !== m.version));
+      }
+
+      mods.sort((a: any, b: any) => {
+        const isInstalledA = a.isInstalled || wState.activeModList.includes(a.packageName);
+        const isInstalledB = b.isInstalled || wState.activeModList.includes(b.packageName);
+
+        switch (_librarySortBy) {
+          case 'name:asc':
+            return (a.modName || '').localeCompare(b.modName || '', undefined, { sensitivity: 'base', numeric: true });
+          case 'name:desc':
+            return (b.modName || '').localeCompare(a.modName || '', undefined, { sensitivity: 'base', numeric: true });
+          case 'installed:first':
+            if (isInstalledA !== isInstalledB) return isInstalledB ? 1 : -1;
+            return (a.modName || '').localeCompare(b.modName || '', undefined, { sensitivity: 'base', numeric: true });
+          case 'not_installed:first':
+            if (isInstalledA !== isInstalledB) return isInstalledA ? 1 : -1;
+            return (a.modName || '').localeCompare(b.modName || '', undefined, { sensitivity: 'base', numeric: true });
+          case 'date:desc':
+            return (b.workshopId || 0) - (a.workshopId || 0);
+          default:
+            return (a.modName || '').localeCompare(b.modName || '');
+        }
+      });
+
       if (mods.length === 0) {
         container.innerHTML = `<div id="library-empty">${escapeHtml(t('library.empty_workshop'))}</div>`;
         return;
@@ -640,7 +739,7 @@ function compareVersions(a: string, b: string): number {
           typeLabel = 'PS';
         }
         const thumb = m.thumbnailPath 
-          ? `<img src="${convertFileSrc(m.thumbnailPath)}" style="width:100%;height:100%;object-fit:cover;" />` 
+          ? `<div style="width:100%;height:100%;position:relative;"><img src="${convertFileSrc(m.thumbnailPath)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';" /><div class="mod-card-image-placeholder ${typeClass}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-weight:bold;font-size:24px;color:#fff;">${typeLabel}</div></div>` 
           : `<div class="mod-card-image-placeholder ${typeClass}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:24px;color:#fff;">${typeLabel}</div>`;
         const isDepMissing = m.dependencies.some((dep: string) => !wState.activeModList.includes(dep));
         const depWarning = isDepMissing ? `<div style="color:#ff4a4a; font-size:10px; margin-top:2px; text-align:center;">${escapeHtml(t('library.missing_deps_warning', { deps: m.dependencies.join(', ') }))}</div>` : '';

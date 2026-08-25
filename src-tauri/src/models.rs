@@ -181,6 +181,10 @@ pub struct AppSettings {
     pub nexus_authored_cache: Option<Vec<NexusUserAuthoredMod>>,
     #[serde(default)]
     pub nexus_cache_timestamp: Option<i64>,
+    #[serde(default)]
+    pub dns_resolver: Option<String>,
+    #[serde(default)]
+    pub cache_remote_images: Option<bool>,
 }
 
 
@@ -269,6 +273,8 @@ impl Default for AppData {
                 nexus_tracked_cache: None,
                 nexus_authored_cache: None,
                 nexus_cache_timestamp: None,
+                dns_resolver: Some("auto".to_string()),
+                cache_remote_images: Some(true),
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

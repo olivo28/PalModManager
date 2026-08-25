@@ -3,6 +3,31 @@ import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
+export async function handleCardImageError(img: HTMLImageElement, originalUrl: string): Promise<void> {
+  img.onerror = null;
+  if (!originalUrl || !originalUrl.startsWith('http')) {
+    img.style.display = 'none';
+    if (img.nextElementSibling) (img.nextElementSibling as HTMLElement).style.display = 'flex';
+    return;
+  }
+  try {
+    const { fetchAndCacheImage } = await import('../../api');
+    const cachedPath = await fetchAndCacheImage(originalUrl);
+    if (cachedPath) {
+      img.src = convertFileSrc(cachedPath);
+      return;
+    }
+  } catch (e) {
+    console.error('Failed to proxy fetch card image:', e);
+  }
+  img.style.display = 'none';
+  if (img.nextElementSibling) (img.nextElementSibling as HTMLElement).style.display = 'flex';
+}
+
+if (typeof window !== 'undefined') {
+  (window as any).handleCardImageError = handleCardImageError;
+}
+
 export function isVersionNewer(local: string, remote: string): boolean {
   const localParts = local.split('.').map(p => parseInt(p.replace(/[^0-9]/g, ''), 10) || 0);
   const remoteParts = remote.split('.').map(p => parseInt(p.replace(/[^0-9]/g, ''), 10) || 0);
@@ -135,15 +160,16 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
       try {
         imageSrc = convertFileSrc(mod.nexusPictureUrl);
       } catch (e) {
-        console.error('Failed to convert file src:', e);
+        console.error('Failed to convert file src for nexusPictureUrl:', e);
         imageSrc = '';
       }
     }
   }
 
+  const placeholderLetter = mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM';
   const imageHtml = imageSrc
-    ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(imageSrc)}" alt="" loading="lazy" /></div>`
-    : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${mod.type === 'ue4ss' ? 'U' : mod.type === 'palschema' ? 'PS' : mod.type === 'pak' ? 'PK' : 'LM'}</div></div>`;
+    ? `<div class="mod-card-image-wrap"><img class="mod-card-image" src="${escapeHtml(imageSrc)}" alt="" loading="lazy" data-original-src="${escapeHtml(imageSrc)}" onerror="window.handleCardImageError ? window.handleCardImageError(this, this.dataset.originalSrc || '${escapeHtml(imageSrc)}') : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div class="mod-card-image-placeholder ${mod.type}" style="display:none;">${placeholderLetter}</div></div>`
+    : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${placeholderLetter}</div></div>`;
 
   const updateBadge = updateVer
     ? `<span class="mod-card-update-badge" title="${escapeHtml(t('card.badge_update_available', { version: updateVer }))}">&#9650; ${escapeHtml(t('context.update_mod'))} (v${escapeHtml(updateVer)})</span>`

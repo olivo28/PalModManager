@@ -22,8 +22,12 @@
             <span data-i18n="settings.tab_mods">Mod Behavior</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="interface">
-            <span class="tab-icon">🌐</span>
+            <span class="tab-icon">🎨</span>
             <span data-i18n="settings.tab_interface">Interface</span>
+          </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="network">
+            <span class="tab-icon">🌐</span>
+            <span data-i18n="settings.tab_network">Network & Sources</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="safety">
             <span class="tab-icon">🛡️</span>
@@ -210,7 +214,71 @@
             </div>
           </div>
 
-          <!-- TAB 5: SAFETY & BACKUP -->
+          <!-- TAB 5: NETWORK & SOURCES -->
+          <div class="settings-tab-pane" id="settings-pane-network">
+            <!-- DNS RESOLVER -->
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.dns_resolver_title">Secure DNS & Image Proxy (DoH)</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.dns_resolver_hint">Resolve and fetch remote mod cover images securely using DNS-over-HTTPS (DoH) to prevent ISP or adblocker connection issues.</div>
+              <div class="settings-path-row" style="margin-top: 6px;">
+                <select id="settings-dns-resolver-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                  <option value="auto" data-i18n="settings.dns_opt_auto">Auto (Smart Multi-Stage Fallback: System → Cloudflare → Google)</option>
+                  <option value="cloudflare" data-i18n="settings.dns_opt_cloudflare">Cloudflare DoH (1.1.1.1)</option>
+                  <option value="google" data-i18n="settings.dns_opt_google">Google Public DoH (8.8.8.8)</option>
+                  <option value="system" data-i18n="settings.dns_opt_system">System Default (OS DNS Only)</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- IMAGE CACHE -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.image_cache_title">Offline Thumbnail Cache</span>
+                </div>
+                <span id="settings-image-cache-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="btn-purge-image-cache" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
+              </div>
+            </div>
+
+            <!-- OFFICIAL SOURCES TRANSPARENCY -->
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.sources_title">Official Framework & Dependency Sources</span>
+              </div>
+              <div class="settings-hint font-size-11" style="margin-bottom:8px;" data-i18n="settings.sources_hint">Verified GitHub repositories and upstream sources used by PalModManager:</div>
+              
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <!-- UE4SS -->
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
+                    <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
+                  </div>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                </div>
+
+                <!-- PalSchema -->
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="/palschema.png" alt="PalSchema" style="width:24px; height:24px; object-fit:contain;" />
+                    <div>
+                      <div style="font-size:12px; font-weight:700; color:var(--text-primary);">PalSchema Mod Loader</div>
+                      <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 6: SAFETY & BACKUP -->
           <div class="settings-tab-pane" id="settings-pane-safety">
             <div class="settings-section-card">
               <div class="settings-card-header">
@@ -251,7 +319,7 @@
               </div>
 
               <!-- Row 2: Local Library -->
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; align-items:center; gap:6px;">
                     <span style="font-size:14px;">📦</span>
@@ -262,6 +330,21 @@
                 <div id="storage-library-details" class="settings-hint" style="font-size:11px;">0 mods, 0 zip archives</div>
                 <div style="display:flex; gap:8px; margin-top:2px;">
                   <button type="button" id="storage-open-library-btn" class="btn-secondary" style="width:100%; font-size:11px; padding:6px 10px;" title="Open local mod library folder in explorer" data-i18n-title="settings.btn_open_library_title" data-i18n="settings.btn_open_library">📂 Open Library Folder</button>
+                </div>
+              </div>
+
+              <!-- Row 3: Image Thumbnail Cache -->
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:14px;">🖼️</span>
+                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_image_cache_title">Thumbnail Image Cache</span>
+                  </div>
+                  <span id="storage-images-badge" class="badge" style="background:rgba(155,89,182,0.15); color:#9b59b6; border:1px solid rgba(155,89,182,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                </div>
+                <div id="storage-images-details" class="settings-hint" style="font-size:11px;">WebP cached mod cover images</div>
+                <div style="display:flex; gap:8px; margin-top:2px;">
+                  <button type="button" id="storage-clear-images-btn" class="btn-secondary" style="width:100%; font-size:11px; padding:6px 10px;" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
                 </div>
               </div>
             </div>

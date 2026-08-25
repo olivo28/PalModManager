@@ -428,12 +428,11 @@ pub async fn get_nexus_user_endorsements(
         }
     }
 
-    let (access_token, program_path) = {
+    let access_token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("No active Nexus Mods session. Please log in first.")?;
+    let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        let token = data.settings.nexus_account.as_ref()
-            .and_then(|a| a.access_token.clone())
-            .ok_or("No active Nexus Mods session. Please log in first.")?;
-        (token, data.settings.program_path.clone())
+        data.settings.program_path.clone()
     };
 
     let mut endorsements = crate::nexus_oauth::fetch_user_endorsements(&access_token).await?;
@@ -497,12 +496,11 @@ pub async fn get_nexus_user_tracked_mods(
         }
     }
 
-    let (access_token, program_path) = {
+    let access_token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("No active Nexus Mods session. Please log in first.")?;
+    let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        let token = data.settings.nexus_account.as_ref()
-            .and_then(|a| a.access_token.clone())
-            .ok_or("No active Nexus Mods session. Please log in first.")?;
-        (token, data.settings.program_path.clone())
+        data.settings.program_path.clone()
     };
 
     let mut tracked = crate::nexus_oauth::fetch_user_tracked_mods(&access_token).await?;
@@ -566,12 +564,13 @@ pub async fn get_nexus_user_authored_mods(
         }
     }
 
-    let (access_token, user_id, program_path) = {
+    let access_token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("No active Nexus Mods session. Please log in first.")?;
+    let (user_id, program_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let acc = data.settings.nexus_account.as_ref().ok_or("No active Nexus Mods session. Please log in first.")?;
-        let token = acc.access_token.clone().ok_or("Missing access token.")?;
         let uid = acc.user_id.ok_or("Missing user ID.")?;
-        (token, uid, data.settings.program_path.clone())
+        (uid, data.settings.program_path.clone())
     };
 
     let authored = crate::nexus_oauth::fetch_user_authored_mods(&access_token, user_id).await?;
@@ -600,12 +599,8 @@ pub async fn get_nxm_mod_metadata(
     mod_id: u32,
     state: State<'_, AppState>,
 ) -> Result<crate::nexus_oauth::NxmModMetadata, String> {
-    let access_token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref()
-            .and_then(|a| a.access_token.clone())
-            .ok_or("No active Nexus Mods session.")?
-    };
+    let access_token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("No active Nexus Mods session.")?;
 
     crate::nexus_oauth::fetch_nxm_mod_metadata(&access_token, &game_domain, mod_id).await
 }
@@ -623,12 +618,8 @@ pub async fn download_nxm_file(
         (nxm_url, 0u64)
     } else {
         let nxm = crate::nexus_oauth::parse_nxm_url(&nxm_url)?;
-        let access_token = {
-            let data = state.data.lock().map_err(|e| e.to_string())?;
-            data.settings.nexus_account.as_ref()
-                .and_then(|a| a.access_token.clone())
-                .ok_or("No active Nexus Mods session. Please connect your Nexus Mods account in Settings / Profile first.")?
-        };
+        let access_token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+            .ok_or("No active Nexus Mods session. Please connect your Nexus Mods account in Settings / Profile first.")?;
         let url = crate::nexus_oauth::fetch_nxm_direct_download_url(&access_token, &nxm).await?;
         (url, nxm.file_id)
     };

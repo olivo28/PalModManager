@@ -381,6 +381,61 @@ pub async fn refresh_access_token(refresh_token: &str) -> Result<OAuthTokenRespo
     Ok(token_resp)
 }
 
+/// Automatically ensures the Nexus Mods access token is valid and fresh.
+/// If expired or expiring within 120 seconds, automatically refreshes it via refresh_token,
+/// updates AppState and saves the local database.
+pub async fn ensure_valid_nexus_token(state: &tauri::State<'_, crate::AppState>) -> Option<String> {
+    let current_account = {
+        let data = state.data.lock().ok()?;
+        data.settings.nexus_account.clone()
+    };
+
+    let mut account = current_account?;
+    let now = chrono::Utc::now().timestamp();
+
+    let access_tok = account.access_token.clone();
+    let expires_at = account.token_expires_at;
+    let refresh_tok = account.refresh_token.clone();
+
+    // If token is present and still valid (with 2 min buffer), return it immediately
+    if let (Some(token), Some(exp)) = (&access_tok, expires_at) {
+        if now + 120 < exp {
+            return Some(token.clone());
+        }
+    }
+
+    // Token is expired (or missing expiration) and we have a refresh_token -> perform refresh
+    if let Some(ref rt) = refresh_tok {
+        crate::logger::log("ensure_valid_nexus_token: Token expired or expiring soon, auto-refreshing in background...");
+        match refresh_access_token(rt).await {
+            Ok(new_tokens) => {
+                let exp_in = new_tokens.expires_in.unwrap_or(3600);
+                account.access_token = Some(new_tokens.access_token.clone());
+                if let Some(new_rt) = new_tokens.refresh_token {
+                    account.refresh_token = Some(new_rt);
+                }
+                account.token_expires_at = Some(now + exp_in);
+
+                // Persist new token in State and DB
+                if let Ok(mut data) = state.data.lock() {
+                    data.settings.nexus_account = Some(account.clone());
+                    let prog_path = data.settings.program_path.clone();
+                    let clone = data.clone();
+                    drop(data);
+                    let _ = crate::db::save_db(&prog_path, &clone);
+                }
+                crate::logger::log("ensure_valid_nexus_token: Token auto-refreshed successfully.");
+                return Some(new_tokens.access_token);
+            }
+            Err(e) => {
+                crate::logger::log(&format!("ensure_valid_nexus_token: Auto-refresh failed: {}", e));
+            }
+        }
+    }
+
+    access_tok
+}
+
 /// Decodes the payload segment of a JWT without external cryptography dependencies
 pub fn decode_jwt_payload(token: &str) -> Option<serde_json::Value> {
     let parts: Vec<&str> = token.split('.').collect();

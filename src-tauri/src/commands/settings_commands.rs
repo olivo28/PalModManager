@@ -446,6 +446,20 @@ pub fn open_url(url: String) -> Result<(), String> {
             .spawn()
             .map_err(|e| e.to_string())?;
     }
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("open")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
+    #[cfg(target_os = "linux")]
+    {
+        std::process::Command::new("xdg-open")
+            .arg(&url)
+            .spawn()
+            .map_err(|e| e.to_string())?;
+    }
     Ok(())
 }
 
@@ -540,4 +554,27 @@ pub fn set_language(language: String, state: State<AppState>) -> Result<Value, S
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
     Ok(result)
 }
+
+#[tauri::command]
+pub fn set_dns_resolver(dns_mode: String, state: State<AppState>) -> Result<Value, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    data.settings.dns_resolver = Some(dns_mode);
+    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn set_cache_remote_images(enabled: bool, state: State<AppState>) -> Result<Value, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    data.settings.cache_remote_images = Some(enabled);
+    let result = serde_json::to_value(&data.settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    Ok(result)
+}
+
 

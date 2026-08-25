@@ -143,6 +143,45 @@ pub fn detect_mod_folder(files: &[String]) -> (Option<String>, bool, Option<Stri
     (mod_name, has_game_path, None, content_path)
 }
 
+fn list_7z_files(path: &str) -> Result<Vec<String>, String> {
+    let reader = sevenz_rust::SevenZReader::open(Path::new(path), sevenz_rust::Password::empty())
+        .map_err(|e| format!("Cannot open .7z archive: {}", e))?;
+    let mut files = Vec::new();
+    for entry in reader.archive().files.iter() {
+        if !entry.is_directory() {
+            files.push(entry.name().replace('\\', "/"));
+        }
+    }
+    Ok(files)
+}
+
+fn extract_7z_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
+    fs::create_dir_all(temp_dir).map_err(|e| format!("Cannot create temp dir: {}", e))?;
+    sevenz_rust::decompress_file(Path::new(path), temp_dir)
+        .map_err(|e| format!("Failed to extract .7z archive: {}", e))?;
+    Ok(temp_dir.to_path_buf())
+}
+
+fn read_7z_file(path: &str, target_file: &str) -> Option<String> {
+    let lower_target = target_file.to_lowercase();
+    let mut reader = sevenz_rust::SevenZReader::open(Path::new(path), sevenz_rust::Password::empty()).ok()?;
+    let mut content = None;
+    let _ = reader.for_each_entries(|entry, reader| {
+        let entry_name = entry.name().replace('\\', "/").to_lowercase();
+        if entry_name == lower_target || entry_name.ends_with(&format!("/{}", lower_target)) {
+            let mut buf = Vec::new();
+            if reader.read_to_end(&mut buf).is_ok() {
+                if let Ok(s) = String::from_utf8(buf) {
+                    content = Some(s);
+                    return Ok(false);
+                }
+            }
+        }
+        Ok(true)
+    });
+    content
+}
+
 #[cfg(target_os = "windows")]
 use std::os::windows::process::CommandExt;
 
@@ -155,7 +194,7 @@ fn list_rar_files(path: &str) -> Result<Vec<String>, String> {
     let output = cmd.output().map_err(|e| format!("Failed to run tar: {}", e))?;
     if !output.status.success() {
         let err = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("tar command failed: {}", err));
+        return Err(format!("RAR archive reading failed: {}", err.trim()));
     }
     let stdout = String::from_utf8_lossy(&output.stdout);
     Ok(stdout
@@ -175,14 +214,16 @@ fn extract_rar_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
     let output = cmd.output().map_err(|e| format!("Failed to run tar: {}", e))?;
     if !output.status.success() {
         let err = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("tar extraction failed: {}", err));
+        return Err(format!("RAR extraction failed: {}", err.trim()));
     }
     Ok(temp_dir.to_path_buf())
 }
 
 pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     let lower_path = zip_path.to_lowercase();
-    let files = if lower_path.ends_with(".rar") || lower_path.ends_with(".7z") {
+    let files = if lower_path.ends_with(".7z") {
+        list_7z_files(zip_path)?
+    } else if lower_path.ends_with(".rar") {
         list_rar_files(zip_path)?
     } else {
         let file = fs::File::open(zip_path).map_err(|e| format!("Cannot open zip: {}", e))?;
@@ -254,10 +295,10 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
 
     let detected_type_pre = if is_hybrid {
         DetectedModType::Hybrid
+    } else if has_palschema_folder || has_palschema || has_palschema_json {
+        DetectedModType::PalSchema
     } else if has_lua || has_dll {
         DetectedModType::Ue4ss
-    } else if has_palschema_folder {
-        DetectedModType::PalSchema
     } else if has_pak {
         if in_logicmods {
             DetectedModType::LogicMods
@@ -288,7 +329,10 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
 
 pub fn extract_zip_to_temp(zip_path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
     let lower_path = zip_path.to_lowercase();
-    if lower_path.ends_with(".rar") || lower_path.ends_with(".7z") {
+    if lower_path.ends_with(".7z") {
+        return extract_7z_to_temp(zip_path, temp_dir);
+    }
+    if lower_path.ends_with(".rar") {
         return extract_rar_to_temp(zip_path, temp_dir);
     }
     let file = fs::File::open(zip_path).map_err(|e| format!("Cannot open zip: {}", e))?;
@@ -351,7 +395,10 @@ pub fn find_pak_companions(pak_path: &Path) -> Vec<PathBuf> {
 pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
     let lower_target = target_file.to_lowercase();
     let lower_zip = zip_path.to_lowercase();
-    if lower_zip.ends_with(".rar") || lower_zip.ends_with(".7z") {
+    if lower_zip.ends_with(".7z") {
+        return read_7z_file(zip_path, target_file);
+    }
+    if lower_zip.ends_with(".rar") {
         let timestamp = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .unwrap_or_default()

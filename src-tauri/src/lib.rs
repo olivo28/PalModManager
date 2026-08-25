@@ -15,6 +15,7 @@ pub mod config_merge;
 mod workshop;
 mod watcher;
 pub mod safety_backup;
+pub mod image_proxy;
 
 
 use commands::mod_commands;
@@ -130,6 +131,11 @@ pub fn run() {
             settings_commands::set_custom_data_path,
             settings_commands::set_toolbar_scale,
             settings_commands::set_language,
+            settings_commands::set_dns_resolver,
+            settings_commands::set_cache_remote_images,
+            image_proxy::fetch_and_cache_image,
+            image_proxy::get_image_cache_size,
+            image_proxy::purge_image_cache,
 
             mod_commands::get_mods,
             mod_commands::scan_mods,

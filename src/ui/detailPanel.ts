@@ -203,6 +203,14 @@ export function openDetailPanel(modId: string): void {
       }
     }
     imgEl.src = resolvedSrc;
+    imgEl.setAttribute('data-original-src', mod.nexusPictureUrl);
+    imgEl.onerror = () => {
+      if ((window as any).handleUniversalImageFallback) {
+        (window as any).handleUniversalImageFallback(imgEl);
+      } else {
+        imgContainer.style.display = 'none';
+      }
+    };
     imgContainer.style.display = 'block';
   } else {
     imgContainer.style.display = 'none';
@@ -210,6 +218,14 @@ export function openDetailPanel(modId: string): void {
 
   if (mod.nexusDescription) {
     descSection.innerHTML = descriptionToHtml(mod.nexusDescription);
+    descSection.querySelectorAll('img').forEach((descImg) => {
+      descImg.setAttribute('data-original-src', descImg.src);
+      descImg.onerror = () => {
+        if ((window as any).handleUniversalImageFallback) {
+          (window as any).handleUniversalImageFallback(descImg);
+        }
+      };
+    });
     descSection.style.display = 'block';
   } else if (mod.nexusSummary) {
     descSection.textContent = mod.nexusSummary;

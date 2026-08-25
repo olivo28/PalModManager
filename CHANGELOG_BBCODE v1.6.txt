@@ -1,3 +1,26 @@
+[size=5][b]PalModManager v1.6.2 Changelog[/b][/size]
+[b]Release Date:[/b] 2026-08-25
+
+[size=4][b]Added[/b][/size]
+[list]
+[*] [b]Universal DNS-over-HTTPS (DoH) Image Fallback:[/b] Embedded a resilient multi-stage DoH proxy ([font=monospace]System DNS -> Cloudflare 1.1.1.1 -> Google 8.8.8.8[/font]) across all app views (Discover, Installed Mods, Library, Detail Panel, Installer, and Nexus Profile) to transparently bypass ISP/firewall image blocking on Nexus CDNs ([font=monospace]staticdelivery.nexusmods.com[/font]), accompanied by disk-backed WebP caching.
+[*] [b]Network & Sources Settings Tab:[/b] Added a dedicated Network & Sources tab featuring DNS resolver selection (Auto, System, Cloudflare, Google), real-time cache size inspection and 1-click purge, and verified transparency links to official dependency repositories (Okaetsu's UE4SS and PalSchema).
+[*] [b]Library Installation Filter & Multi-Criteria Sorting:[/b] Added filtering by installation status (All Mods, Installed Only, Not Installed, Updates Available) and flexible sorting (Name A-Z, Installed First, Not Installed First, Date Added) to both Local and Workshop library views.
+[*] [b]Native 7-Zip & Multi-Codec Decompression Engine:[/b] Embedded pure Rust [font=monospace]sevenz-rust[/font] and extended zip codec support (LZMA, LZMA2, Bzip2, Zstd) to read and extract [font=monospace].7z[/font] and [font=monospace].zip[/font] archives directly without relying on external system tools ([font=monospace]tar.exe[/font]), eliminating "LZMA codec is unsupported" errors on Windows 10/11.
+[*] [b]Official PalSchema Visual Branding:[/b] Integrated official { p } iconography designed and provided by Okaetsu.
+[/list]
+
+[size=4][b]Fixed[/b][/size]
+[list]
+[*] [b]External Links in Settings:[/b] Fixed the "View Source" buttons in Settings failing silently by properly routing URLs through the cross-platform native browser opener ([font=monospace]open_url[/font]).
+[*] [b]Discovery Lightbox ESC Key Handling:[/b] Added keyboard shortcut support ([font=monospace]Escape[/font]) to instantly dismiss the full-screen image zoom viewer (Lightbox) and details modal.
+[*] [b]Nexus OAuth Auto-Refresh & 401 Expiration Recovery:[/b] Resolved an issue where leaving PMM open for extended periods resulted in 401/402 unauthorized errors in the Discover tab by automatically refreshing tokens on-demand and providing anonymous fallback for public mod queries.
+[*] [b]Bundled Asset Resolution & Image Flicker Loop:[/b] Fixed an issue where missing bundled static assets in portable builds triggered rapid recursive [font=monospace]onerror[/font] reload loops, causing flickering and broken placeholder icons in Discover and Library mod cards.
+[*] [b]PalSchema Data Mod Detection Priority:[/b] Improved classification heuristics for PalSchema data mods containing internal definition folders.
+[/list]
+
+[hr]
+
 [size=5][b]PalModManager v1.6.1 Changelog[/b][/size]
 [b]Release Date:[/b] 2026-08-25
 
@@ -70,5 +93,5 @@ You can choose between the portable version or the full installer:
 
 [list]
 [*] [b]Portable Version:[/b] Download [font=monospace]palmodmanager.exe[/font]. You can place it in any folder and run it directly without installation.
-[*] [b]Installer Version:[/b] Download [font=monospace]PalModManager_1.6.1_x64-setup.exe[/font] and follow the setup wizard to install the application on your system.
+[*] [b]Installer Version:[/b] Download [font=monospace]PalModManager_1.6.2_x64-setup.exe[/font] and follow the setup wizard to install the application on your system.
 [/list]

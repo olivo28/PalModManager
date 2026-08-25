@@ -1,5 +1,6 @@
 use crate::state::AppState;
 use reqwest::header::{HeaderMap, HeaderValue, AUTHORIZATION, CONTENT_TYPE};
+use reqwest::StatusCode;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 use tauri::State;
@@ -127,14 +128,20 @@ fn format_file_size(bytes: u64) -> String {
 /// Query categories for Palworld
 #[tauri::command]
 pub async fn get_discovery_categories(state: State<'_, AppState>) -> Result<Vec<DiscoveryCategory>, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone())
-    };
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await;
 
     let client = get_client(token.as_deref());
     let url = format!("{}/games/palworld/categories.json", REST_BASE_URL);
-    let resp = client.get(&url).send().await.map_err(|e| format!("Failed to fetch categories: {}", e))?;
+    let mut resp = client.get(&url).send().await;
+
+    if let Ok(ref r) = resp {
+        if r.status() == StatusCode::UNAUTHORIZED || r.status().as_u16() == 402 {
+            let anon_client = get_client(None);
+            resp = anon_client.get(&url).send().await;
+        }
+    }
+
+    let resp = resp.map_err(|e| format!("Failed to fetch categories: {}", e))?;
 
     let full_default_categories = vec![
         DiscoveryCategory { category_id: 1, name: "Animations".to_string() },
@@ -208,11 +215,7 @@ pub async fn get_discovery_mods(
     let sort = sort_by.unwrap_or_else(|| "date_published".to_string());
     let allow_adult = include_adult.unwrap_or(false);
 
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone())
-    };
-
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await;
     let client = get_client(token.as_deref());
 
     // 1. Try GraphQL v2 query
@@ -355,12 +358,24 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
         }
     });
 
-    let resp = client
+    let mut resp = client
         .post(GRAPHQL_ENDPOINT)
         .header(CONTENT_TYPE, "application/json")
         .json(&gql_payload)
         .send()
         .await;
+
+    if let Ok(ref r) = resp {
+        if r.status() == StatusCode::UNAUTHORIZED || r.status().as_u16() == 402 {
+            let anon_client = get_client(None);
+            resp = anon_client
+                .post(GRAPHQL_ENDPOINT)
+                .header(CONTENT_TYPE, "application/json")
+                .json(&gql_payload)
+                .send()
+                .await;
+        }
+    }
 
     if let Ok(response) = resp {
         if response.status().is_success() {
@@ -488,7 +503,16 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
     };
 
     let url = format!("{}/games/palworld/mods/{}", REST_BASE_URL, endpoint);
-    let rest_resp = client.get(&url).send().await.map_err(|e| format!("Failed to fetch discovery mods: {}", e))?;
+    let mut rest_resp = client.get(&url).send().await;
+
+    if let Ok(ref r) = rest_resp {
+        if r.status() == StatusCode::UNAUTHORIZED || r.status().as_u16() == 402 {
+            let anon_client = get_client(None);
+            rest_resp = anon_client.get(&url).send().await;
+        }
+    }
+
+    let rest_resp = rest_resp.map_err(|e| format!("Failed to fetch discovery mods: {}", e))?;
 
     if !rest_resp.status().is_success() {
         return Err(format!("Nexus API returned HTTP {}", rest_resp.status()));
@@ -589,11 +613,7 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
 /// Fetch full details for a single mod in Discovery view
 #[tauri::command]
 pub async fn get_discovery_mod_details(mod_id: u32, state: State<'_, AppState>) -> Result<DiscoveryModDetails, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone())
-    };
-
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await;
     let client = get_client(token.as_deref());
 
     // 1. Fetch Mod Details, Endorsement/Track Status & Files via GraphQL v2
@@ -656,13 +676,26 @@ query GetModFullDetails($modId: ID!) {
     let mut images: Vec<String> = Vec::new();
     let mut files_list: Vec<DiscoveryFileItem> = Vec::new();
 
-    if let Ok(resp) = client
+    let mut gql_resp = client
         .post(GRAPHQL_ENDPOINT)
         .header(CONTENT_TYPE, "application/json")
         .json(&payload)
         .send()
-        .await
-    {
+        .await;
+
+    if let Ok(ref r) = gql_resp {
+        if r.status() == StatusCode::UNAUTHORIZED || r.status().as_u16() == 402 {
+            let anon_client = get_client(None);
+            gql_resp = anon_client
+                .post(GRAPHQL_ENDPOINT)
+                .header(CONTENT_TYPE, "application/json")
+                .json(&payload)
+                .send()
+                .await;
+        }
+    }
+
+    if let Ok(resp) = gql_resp {
         if resp.status().is_success() {
             #[derive(Deserialize)]
             struct GqlFile {
@@ -813,7 +846,16 @@ query GetModFullDetails($modId: ID!) {
     // 2. If files_list is empty, fallback to REST API v1
     if files_list.is_empty() {
         let files_url = format!("{}/games/palworld/mods/{}/files.json", REST_BASE_URL, mod_id);
-        if let Ok(files_resp) = client.get(&files_url).send().await {
+        let mut files_resp = client.get(&files_url).send().await;
+
+        if let Ok(ref r) = files_resp {
+            if r.status() == StatusCode::UNAUTHORIZED || r.status().as_u16() == 402 {
+                let anon_client = get_client(None);
+                files_resp = anon_client.get(&files_url).send().await;
+            }
+        }
+
+        if let Ok(files_resp) = files_resp {
             if files_resp.status().is_success() {
                 #[derive(Deserialize)]
                 struct RestFilesPayload {
@@ -963,10 +1005,8 @@ query GetModFullDetails($modId: ID!) {
 /// Endorse a mod on Nexus Mods
 #[tauri::command]
 pub async fn endorse_nexus_mod(mod_id: u32, version: Option<String>, state: State<'_, AppState>) -> Result<bool, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone()).ok_or("Not authenticated with Nexus Mods")?
-    };
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("Not authenticated with Nexus Mods")?;
 
     let client = get_client(Some(&token));
     let url = format!("{}/games/palworld/mods/{}/endorse.json", REST_BASE_URL, mod_id);
@@ -991,10 +1031,8 @@ pub async fn endorse_nexus_mod(mod_id: u32, version: Option<String>, state: Stat
 /// Abstain / remove endorsement for a mod
 #[tauri::command]
 pub async fn abstain_nexus_mod(mod_id: u32, version: Option<String>, state: State<'_, AppState>) -> Result<bool, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone()).ok_or("Not authenticated with Nexus Mods")?
-    };
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("Not authenticated with Nexus Mods")?;
 
     let client = get_client(Some(&token));
     let url = format!("{}/games/palworld/mods/{}/abstain.json", REST_BASE_URL, mod_id);
@@ -1015,10 +1053,8 @@ pub async fn abstain_nexus_mod(mod_id: u32, version: Option<String>, state: Stat
 /// Track a mod on Nexus Mods
 #[tauri::command]
 pub async fn track_nexus_mod(mod_id: u32, state: State<'_, AppState>) -> Result<bool, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone()).ok_or("Not authenticated with Nexus Mods")?
-    };
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("Not authenticated with Nexus Mods")?;
 
     let client = get_client(Some(&token));
     let url = format!("{}/user/tracked_mods.json?domain_name=palworld", REST_BASE_URL);
@@ -1037,10 +1073,8 @@ pub async fn track_nexus_mod(mod_id: u32, state: State<'_, AppState>) -> Result<
 /// Untrack a mod on Nexus Mods
 #[tauri::command]
 pub async fn untrack_nexus_mod(mod_id: u32, state: State<'_, AppState>) -> Result<bool, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone()).ok_or("Not authenticated with Nexus Mods")?
-    };
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("Not authenticated with Nexus Mods")?;
 
     let client = get_client(Some(&token));
     let url = format!("{}/user/tracked_mods.json?domain_name=palworld&mod_id={}", REST_BASE_URL, mod_id);
@@ -1061,10 +1095,8 @@ pub async fn install_discovery_file(
     file_id: u64,
     state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref().and_then(|a| a.access_token.clone()).ok_or("Not authenticated with Nexus Mods")?
-    };
+    let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await
+        .ok_or("Not authenticated with Nexus Mods")?;
 
     let client = get_client(Some(&token));
     let download_url_endpoint = format!(
