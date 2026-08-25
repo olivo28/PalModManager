@@ -300,6 +300,21 @@ function setupEventListeners(): void {
     });
   }
 
+  // Global Escape key listener for Discovery modals
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      const imgModal = document.getElementById('discovery-image-modal');
+      if (imgModal && imgModal.classList.contains('visible')) {
+        closeLightbox();
+        return;
+      }
+      const modModal = document.getElementById('discovery-mod-modal');
+      if (modModal && modModal.classList.contains('visible')) {
+        closeDiscoveryModal();
+      }
+    }
+  });
+
   // Modal sub-tabs
   document.querySelectorAll('.discovery-modal-tab').forEach((tabBtn) => {
     tabBtn.addEventListener('click', () => {
@@ -736,6 +751,8 @@ export async function openModDetails(
   autoInstallFirstPrimary: boolean = false,
   previewData?: Partial<DiscoveryModItem>
 ): Promise<void> {
+  setupEventListeners();
+
   const modal = document.getElementById('discovery-mod-modal');
   if (!modal) return;
 
@@ -775,6 +792,7 @@ function resetModalUI(previewData?: Partial<DiscoveryModItem>): void {
   const author = document.getElementById('discovery-modal-author');
   const cat = document.getElementById('discovery-modal-category');
   const ver = document.getElementById('discovery-modal-version');
+  const installedBadge = document.getElementById('discovery-modal-installed-badge');
   const updated = document.getElementById('discovery-modal-updated');
   const endorsements = document.getElementById('discovery-modal-endorsements');
   const downloads = document.getElementById('discovery-modal-downloads');
@@ -782,6 +800,11 @@ function resetModalUI(previewData?: Partial<DiscoveryModItem>): void {
   const filesList = document.getElementById('discovery-files-list');
   const gallery = document.getElementById('discovery-media-gallery');
   const img = document.getElementById('discovery-modal-img') as HTMLImageElement | null;
+
+  if (installedBadge) {
+    installedBadge.style.display = 'none';
+    installedBadge.textContent = '';
+  }
 
   if (previewData) {
     if (title) title.textContent = previewData.name || 'Loading...';
@@ -829,6 +852,7 @@ function populateModalData(details: DiscoveryModDetails): void {
   const author = document.getElementById('discovery-modal-author');
   const cat = document.getElementById('discovery-modal-category');
   const ver = document.getElementById('discovery-modal-version');
+  const installedBadge = document.getElementById('discovery-modal-installed-badge');
   const updated = document.getElementById('discovery-modal-updated');
   const endorsements = document.getElementById('discovery-modal-endorsements');
   const downloads = document.getElementById('discovery-modal-downloads');
@@ -841,6 +865,27 @@ function populateModalData(details: DiscoveryModDetails): void {
   if (author) author.textContent = details.author;
   if (cat) cat.textContent = details.categoryName || 'Mod';
   if (ver) ver.textContent = details.version ? `v${details.version}` : '';
+
+  // Check if mod is currently installed in PMM
+  const allMods = getState().allMods || [];
+  const normDetailsName = details.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const installedMod = allMods.find((m) => {
+    if (m.nexusModId && m.nexusModId === details.modId) return true;
+    const normModName = m.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    return normModName !== '' && (normModName === normDetailsName || normModName.includes(normDetailsName) || normDetailsName.includes(normModName));
+  });
+
+  if (installedBadge) {
+    if (installedMod) {
+      const instVer = installedMod.version && installedMod.version !== 'unknown' ? `v${installedMod.version}` : '';
+      installedBadge.style.display = 'inline-flex';
+      installedBadge.textContent = instVer ? `✓ ${t('discovery.status_installed')}: ${instVer}` : `✓ ${t('discovery.status_installed')}`;
+      installedBadge.title = t('discovery.status_installed_title', { name: installedMod.name, version: instVer || 'unknown' });
+    } else {
+      installedBadge.style.display = 'none';
+      installedBadge.textContent = '';
+    }
+  }
   if (updated) {
     const d = details.updatedAt || details.createdAt;
     updated.textContent = d ? new Date(d).toLocaleDateString() : '';
@@ -1272,6 +1317,8 @@ async function executeInstallFile(mod: DiscoveryModDetails, file: DiscoveryFileI
       showToast(t('discovery.download_url_failed'), 'error');
       return;
     }
+
+    closeDiscoveryModal();
 
     await enqueueDiscoveryDownload(
       mod.modId,

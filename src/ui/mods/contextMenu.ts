@@ -99,7 +99,21 @@ export function runContextAction(action: string, modId: string): void {
 
           if (matchingLib) {
             const { triggerInstallFromLibrary } = await import('./library');
+            showToast(t('toasts.updating_from_local_library', { name: mod.name, version: matchingLib.version || updateVer || '' }), 'info');
             await triggerInstallFromLibrary(matchingLib.modId, matchingLib.zipName);
+          } else if (mod.nexusModId) {
+            const hasNexusAccount = !!getState().currentSettings?.nexusAccount?.accessToken;
+            if (hasNexusAccount) {
+              const { openModDetails } = await import('../discoveryView');
+              await openModDetails(mod.nexusModId);
+              const filesTabBtn = document.querySelector('.discovery-modal-tab[data-tab="files"]') as HTMLElement | null;
+              filesTabBtn?.click();
+              showToast(t('toasts.select_update_file_nexus'), 'info');
+            } else {
+              const { openUrl } = await import('../../api');
+              openUrl(`https://www.nexusmods.com/palworld/mods/${mod.nexusModId}?tab=files`);
+              showToast(t('toasts.opening_nexus_files'), 'info');
+            }
           } else {
             const { openDetailPanel } = await import('../detailPanel');
             openDetailPanel(modId);

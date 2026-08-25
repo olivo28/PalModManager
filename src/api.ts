@@ -512,6 +512,32 @@ export async function restoreSafetyBackup(): Promise<void> {
   return invoke('restore_safety_backup_command');
 }
 
+export interface StorageUsageInfo {
+  tempDownloadsSize: number;
+  tempDownloadsCount: number;
+  tempDownloadsPath: string;
+  librarySize: number;
+  libraryModsCount: number;
+  libraryZipsCount: number;
+  libraryPath: string;
+}
+
+export async function getStorageUsage(): Promise<StorageUsageInfo> {
+  return invoke('get_storage_usage_command');
+}
+
+export async function clearTempDownloads(): Promise<number> {
+  return invoke('clear_temp_downloads_command');
+}
+
+export async function openTempFolder(): Promise<void> {
+  return invoke('open_temp_folder_command');
+}
+
+export async function openLibraryFolder(): Promise<void> {
+  return invoke('open_library_folder_command');
+}
+
 export async function prepareWorkshopUpdateZip(packageName: string): Promise<string> {
   return invoke('prepare_workshop_update_zip', { packageName });
 }

@@ -1160,6 +1160,10 @@ pub async fn download_file_to_temp_with_progress(
         });
     }
 
+    // Flush and release file handle before returning
+    file.flush().map_err(|e| format!("Failed to flush temporary file: {}", e))?;
+    drop(file);
+
     // Final 100% event
     let _ = app_handle.emit("nxm-download-progress", NxmDownloadProgressEvent {
         download_id: download_id.to_string(),

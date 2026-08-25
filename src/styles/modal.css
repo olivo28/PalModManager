@@ -33,13 +33,25 @@
   pointer-events: auto !important;
 }
 
+#install-modal {
+  z-index: 3500 !important;
+}
+
 #install-modal .modal {
+  width: 820px !important;
   max-width: 95vw;
+  min-height: 240px;
   transition: width 0.3s ease;
 }
 
 #install-modal .modal-body {
   overflow: hidden;
+  min-height: 180px;
+}
+
+#file-tree-modal,
+#config-diff-modal {
+  z-index: 4500 !important;
 }
 
 @keyframes modalIn {

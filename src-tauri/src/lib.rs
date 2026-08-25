@@ -99,27 +99,16 @@ pub fn run() {
     logger::log("Initializing Tauri builder...");
 
     tauri::Builder::default()
-        .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            if let Some(window) = app.get_webview_window("main") {
-                let _ = window.unminimize();
-                let _ = window.show();
-                let _ = window.set_focus();
-            }
-            for arg in args {
-                if arg.starts_with("palmodmanager://") {
-                    crate::logger::log(&format!("single_instance: Captured deep link: {}", arg));
-                    let _ = app.emit("nexus-oauth-deep-link", arg);
-                }
-            }
-        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_single_instance::init(|app, args, _cwd| {
-            crate::logger::log(&format!("Single instance invoked with args: {:?}", args));
+            crate::logger::log(&format!("single_instance: Captured args: {:?}", args));
             for arg in args {
                 if arg.starts_with("palmodmanager://") {
+                    crate::logger::log(&format!("single_instance: Captured deep link: {}", arg));
                     let _ = app.emit("nexus-oauth-deep-link", arg.clone());
                 } else if arg.starts_with("nxm://") {
+                    crate::logger::log(&format!("single_instance: Captured NXM URL: {}", arg));
                     let _ = app.emit("nexus-nxm-download", arg.clone());
                 }
             }
@@ -228,8 +217,11 @@ pub fn run() {
             dependency_commands::install_palschema,
             dependency_commands::uninstall_ue4ss,
             dependency_commands::uninstall_palschema,
+            dependency_commands::get_storage_usage_command,
+            dependency_commands::clear_temp_downloads_command,
+            dependency_commands::open_temp_folder_command,
+            dependency_commands::open_library_folder_command,
             settings_commands::log_from_js,
-            settings_commands::open_url,
             mod_commands::create_backup,
             mod_commands::change_pak_destination,
 

@@ -2,6 +2,26 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.6.1] - 2026-08-25
+
+### Added
+- **Storage & Cache Management**: Added a dedicated disk storage inspector and cleaner in Settings (under Safety & Backup) to view real-time space used by Temporary Downloads (`PalModManager_Downloads`) and the Local Mod Library (`mods-library`), with 1-click cache purge and folder quick-access.
+- **Installed Status Badge in Mod Details**: Added an active `Installed (vX.Y.Z)` badge to the Discovery mod details view when inspecting a mod that is already installed in your manager.
+- **Complete Storage Localization**: Full translation coverage across all 6 supported languages (English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean) for all storage management controls and toast notifications.
+
+### Changed
+- **Direct CDN HTTP Download Stream Handling**: Extended the native download pipeline to support direct HTTP/HTTPS CDN endpoints alongside `nxm://` protocol URLs for 1-click Premium downloads.
+- **Windows File Lock Release on Downloads**: Added immediate file flushing and handle release upon download completion to prevent OS file write locks during extraction and inspection.
+- **Optimized Update Modal Dimensions**: Expanded and balanced the modal width to comfortably fit update notes and config diff tools without visual clutter.
+
+### Fixed
+- **Mod Update Hanging on Analysis**: Fixed a runtime `ReferenceError` during version comparison that caused the installation modal to hang indefinitely on "Analyzing mod structure..." during updates.
+- **App Startup Self-Termination**: Resolved a duplicate single-instance plugin initialization that was falsely detecting active instances and causing unexpected app closures.
+- **Update Modal Preview Card Squishing**: Fixed flexbox shrink behavior on the left-side preview card, preserving its unconstrained layout and image proportions when config merge options are displayed.
+- **Discovery Modal Auto-Dismiss on Download**: Ensured the Discovery details view cleanly dismisses when triggering an in-app download and opening the installer.
+
+---
+
 ## [1.6.0] - 2026-08-24
 
 ### Added
@@ -38,4 +58,4 @@ Need help, want to report a bug, or suggest a new feature? Join our official Dis
 You can choose between the portable version or the full installer:
 
 *   **Portable Version:** Download `palmodmanager.exe`. You can place it in any folder and run it directly without installation.
-*   **Installer Version:** Download `PalModManager_1.6.0_x64-setup.exe` and follow the setup wizard to install the application on your system.
+*   **Installer Version:** Download `PalModManager_1.6.1_x64-setup.exe` and follow the setup wizard to install the application on your system.

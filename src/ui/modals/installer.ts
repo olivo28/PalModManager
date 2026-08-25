@@ -48,7 +48,17 @@ export function setInstallModalCallback(cb: ((success: boolean) => void) | null)
 }
 
 export function showInstallModal(): void {
-  document.getElementById('install-modal')!.classList.add('visible');
+  const modal = document.getElementById('install-modal');
+  if (modal) modal.classList.add('visible');
+  const content = document.getElementById('modal-content');
+  if (content && (!content.innerHTML.trim() || content.innerHTML.includes('loading-spinner'))) {
+    content.innerHTML = `
+      <div style="padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; gap: 12px;">
+        <div class="loading-spinner"></div>
+        <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">${escapeHtml(t('installer.status_analyzing'))}</span>
+      </div>
+    `;
+  }
 }
 
 export function closeInstallModal(): void {
@@ -247,8 +257,9 @@ export function showFileTreeModal(routes: any[], modName: string): void {
   compactFileTree(rootNode);
 
   const container = document.createElement('div');
+  container.id = 'file-tree-modal';
   container.className = 'modal-overlay visible';
-  container.style.zIndex = '2500';
+  container.style.zIndex = '4500';
   container.style.position = 'fixed';
   container.style.top = '0';
   container.style.left = '0';
@@ -366,10 +377,26 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   let updateHtml = '';
   if (existingMod) {
     _pendingUpdateModId = existingMod.id;
-    const existingVerStr = (existingMod.version && existingMod.version !== 'unknown') ? 'v' + existingMod.version : t('installer.unknown_version');
+    const existingVerStr = existingMod.version && existingMod.version !== 'unknown' ? `v${existingMod.version}` : '';
+    const normPath = analysis.zipPath.replace(/\\/g, '/').toLowerCase();
+    const isFromLibrary = normPath.includes('/pmm_library/') || normPath.includes('/library/');
+    const isFromNexusDownload = normPath.includes('nexus_') || normPath.includes('temp') || normPath.includes('palmodmanager_');
+
+    let sourceBadge = '';
+    if (isFromLibrary) {
+      sourceBadge = `<span class="update-source-badge local" style="background:rgba(46, 204, 113, 0.15);color:#2ecc71;border:1px solid rgba(46, 204, 113, 0.35);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">📦 ${escapeHtml(t('installer.source_local_library'))}</span>`;
+    } else if (isFromNexusDownload || analysis.nexusModId) {
+      sourceBadge = `<span class="update-source-badge remote" style="background:rgba(0, 188, 255, 0.15);color:#00bcff;border:1px solid rgba(0, 188, 255, 0.35);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">⚡ ${escapeHtml(t('installer.source_nexus_download'))}</span>`;
+    } else {
+      sourceBadge = `<span class="update-source-badge custom" style="background:rgba(255, 255, 255, 0.08);color:var(--text-muted);border:1px solid var(--border);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">📁 ${escapeHtml(t('installer.source_custom_file'))}</span>`;
+    }
+
     updateHtml = `
       <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}">${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}</span>
+        <div style="display:flex;flex-direction:column;gap:4px;flex:1;overflow:hidden;">
+          <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}">${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}</span>
+          <div>${sourceBadge}</div>
+        </div>
         <div style="display:flex;gap:4px;background:var(--bg-primary);padding:2px;border-radius:5px;border:1px solid var(--border);flex-shrink:0;">
           <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 8px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_update'))}</button>
           <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 8px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_new'))}</button>
@@ -383,9 +410,12 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   }
 
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
-  let versionVal = analysis.nexusInfo?.version || analysis.modinfo?.version || '';
+  let versionVal = analysis.modinfo?.version || '';
   if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim())) {
     versionVal = analysis.detectedVersion;
+  }
+  if (!versionVal && analysis.nexusInfo?.version) {
+    versionVal = analysis.nexusInfo.version;
   }
   if (!versionVal) {
     versionVal = '1.0.0';
@@ -413,43 +443,43 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   `;
 
   content.innerHTML = `
-    <div style="display:flex;gap:24px;align-items:stretch;padding:4px 0;">
+    <div style="display:flex;gap:20px;align-items:stretch;padding:2px 0;">
        <!-- Left Column: Card Preview (Nexus Info or Local Modinfo) -->
        ${analysis.nexusInfo ? `
-       <div style="width:260px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+       <div style="width:260px;min-width:260px;max-width:260px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
           <div style="position:relative;width:100%;height:140px;overflow:hidden;background:#000;">
              ${picUrl ? `<img src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" />` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>`}
              <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:#00ffcc;font-weight:700;letter-spacing:0.5px;">
                 ${analysis.nexusInfo.downloads.toLocaleString()} DLs
              </div>
           </div>
-          <div style="padding:14px;display:flex;flex-direction:column;gap:8px;flex:1;">
+          <div style="padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;">
              <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
              <div style="font-size:10px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author }))}</div>
-             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
+             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:2px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
           </div>
        </div>
        ` : (analysis.modinfo ? `
-       <div style="width:260px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+       <div style="width:260px;min-width:260px;max-width:260px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
           <div style="position:relative;width:100%;height:140px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
              <div style="font-size:42px;color:var(--accent);">🛠</div>
              <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
                 ${escapeHtml(t('installer.local_package'))}
              </div>
           </div>
-          <div style="padding:14px;display:flex;flex-direction:column;gap:8px;flex:1;">
+          <div style="padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;">
              <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
              <div style="font-size:10px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.modinfo.author || t('common.unknown') }))}</div>
-             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:4px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
+             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:2px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
           </div>
        </div>
        ` : '')}
 
        <!-- Right Column: Settings Form -->
-       <div style="flex:1;display:flex;flex-direction:column;gap:14px;justify-content:center;">
+       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;justify-content:center;">
            ${updateHtml}
 
-           <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 8px 12px; margin-top: -4px; margin-bottom: 4px; align-items: center; justify-content: space-between; gap: 12px;">
+           <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 6px 10px; margin-top: -2px; margin-bottom: 2px; align-items: center; justify-content: space-between; gap: 12px;">
               <div style="display: flex; align-items: center; gap: 8px;">
                 <span style="font-size: 14px;">⚙</span>
                 <div style="display: flex; flex-direction: column; text-align: left;">
@@ -461,13 +491,13 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
            </div>
            
            <div style="display:flex;gap:12px;">
-             <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+             <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_mod_name'))}</label>
-                <input type="text" id="mod-name-input" value="${escapeHtml(existingMod ? existingMod.name : cleanName)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;" />
+                <input type="text" id="mod-name-input" value="${escapeHtml(existingMod ? existingMod.name : cleanName)}" style="width:100%;padding:7px 10px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;" />
              </div>
-             <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
+             <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_folder_name'))}</label>
-                <input type="text" id="mod-folder-name-input" value="${escapeHtml(manifest.folderName)}" disabled style="width:100%;padding:8px 12px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:13px;font-weight:600;cursor:not-allowed;" />
+                <input type="text" id="mod-folder-name-input" value="${escapeHtml(manifest.folderName)}" disabled style="width:100%;padding:7px 10px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;cursor:not-allowed;" />
              </div>
            </div>
 
@@ -625,6 +655,7 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
   const overlay = document.createElement('div');
   overlay.className = 'modal-overlay visible';
   overlay.id = 'config-diff-modal';
+  overlay.style.zIndex = '4500';
 
   const state = getState();
   const currentMod = state.allMods.find(m => m.id === modId);
@@ -1259,10 +1290,12 @@ async function executeModInstallation(
     const inputVer = versionInput?.value.trim();
     if (inputVer && !/^[0-9a-fA-F-]{6,}$/.test(inputVer)) {
       manifest.version = inputVer;
-    } else if (state.currentAnalysis.nexusInfo?.version) {
-      manifest.version = state.currentAnalysis.nexusInfo.version;
+    } else if (state.currentAnalysis.modinfo?.version) {
+      manifest.version = state.currentAnalysis.modinfo.version;
     } else if (state.currentAnalysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(state.currentAnalysis.detectedVersion)) {
       manifest.version = state.currentAnalysis.detectedVersion;
+    } else if (state.currentAnalysis.nexusInfo?.version) {
+      manifest.version = state.currentAnalysis.nexusInfo.version;
     } else {
       manifest.version = '1.0.0';
     }
@@ -1309,29 +1342,44 @@ export async function openInstallModalForZip(
   preferredVersion?: string
 ): Promise<void> {
   _lastInstallSuccess = false;
+
+  // Dismiss Discovery modal cleanly if currently open
+  const discModal = document.getElementById('discovery-mod-modal');
+  if (discModal && discModal.classList.contains('visible')) {
+    const { closeDiscoveryModal } = await import('../discoveryView');
+    closeDiscoveryModal();
+  }
+
   showInstallModal();
-  setModalStatus(t('modal.status_analyzing'));
+  setModalStatus(t('installer.status_analyzing'));
 
-  const analysis = await analyzeZip(zipPath);
-  if (preferredNexusId) {
-    analysis.nexusModId = preferredNexusId;
-  }
-  if (preferredName) {
-    (analysis as any).preferredName = preferredName;
-  }
-  if (preferredVersion) {
-    analysis.detectedVersion = preferredVersion;
-  }
-
-  let existingMod: { id: string; name: string, version: string } | null = null;
   try {
-    const checkResult = await checkModExistsCommand(zipPath);
-    if (checkResult.exists && checkResult.modInfo) {
-      existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name, version: checkResult.modInfo.version };
+    const analysis = await analyzeZip(zipPath);
+    if (preferredNexusId) {
+      analysis.nexusModId = preferredNexusId;
     }
-  } catch { }
+    if (preferredName) {
+      (analysis as any).preferredName = preferredName;
+    }
+    if (preferredVersion) {
+      analysis.detectedVersion = preferredVersion;
+    }
 
-  renderInstallPreview(analysis, existingMod);
+    let existingMod: { id: string; name: string, version: string } | null = null;
+    try {
+      const checkResult = await checkModExistsCommand(zipPath);
+      if (checkResult.exists && checkResult.modInfo) {
+        existingMod = { id: checkResult.modInfo.id, name: checkResult.modInfo.name, version: checkResult.modInfo.version };
+      }
+    } catch { }
+
+    renderInstallPreview(analysis, existingMod);
+  } catch (err: any) {
+    console.error('[Installer] analyzeZip error:', err);
+    closeInstallModal();
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+    throw err;
+  }
 }
 
 

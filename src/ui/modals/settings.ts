@@ -129,6 +129,48 @@ export function openSettingsModal(): void {
   }
 
   refreshSafetyBackupStatus();
+  refreshStorageUsageStatus();
+
+  const clearTempBtn = document.getElementById('storage-clear-temp-btn') as HTMLButtonElement | null;
+  if (clearTempBtn) {
+    clearTempBtn.onclick = async () => {
+      try {
+        clearTempBtn.disabled = true;
+        const { clearTempDownloads } = await import('../../api');
+        const freed = await clearTempDownloads();
+        showToast(t('toasts.temp_downloads_cleared', { size: formatBytes(freed) }), 'success');
+        await refreshStorageUsageStatus();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      } finally {
+        clearTempBtn.disabled = false;
+      }
+    };
+  }
+
+  const openTempBtn = document.getElementById('storage-open-temp-btn') as HTMLButtonElement | null;
+  if (openTempBtn) {
+    openTempBtn.onclick = async () => {
+      try {
+        const { openTempFolder } = await import('../../api');
+        await openTempFolder();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      }
+    };
+  }
+
+  const openLibBtn = document.getElementById('storage-open-library-btn') as HTMLButtonElement | null;
+  if (openLibBtn) {
+    openLibBtn.onclick = async () => {
+      try {
+        const { openLibraryFolder } = await import('../../api');
+        await openLibraryFolder();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      }
+    };
+  }
 
   // Setup Sidebar Tab navigation
   setupSettingsTabs();
@@ -189,8 +231,60 @@ function setupSettingsTabs(): void {
         activePane.classList.add('active');
         activePane.scrollTop = 0;
       }
+      if (targetTab === 'safety') {
+        refreshSafetyBackupStatus();
+        refreshStorageUsageStatus();
+      }
     };
   });
+}
+
+export function formatBytes(bytes: number, decimals = 1): string {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const dm = decimals < 0 ? 0 : decimals;
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
+}
+
+export async function refreshStorageUsageStatus(): Promise<void> {
+  const tempBadge = document.getElementById('storage-temp-badge');
+  const tempDetails = document.getElementById('storage-temp-details');
+  const libBadge = document.getElementById('storage-library-badge');
+  const libDetails = document.getElementById('storage-library-details');
+
+  if (!tempBadge && !libBadge) return;
+
+  try {
+    const { getStorageUsage } = await import('../../api');
+    const storage = await getStorageUsage();
+
+    if (tempBadge) {
+      tempBadge.textContent = formatBytes(storage.tempDownloadsSize);
+    }
+    if (tempDetails) {
+      tempDetails.textContent = t('settings.storage_temp_files_count', {
+        count: storage.tempDownloadsCount,
+        path: storage.tempDownloadsPath,
+      });
+      tempDetails.title = storage.tempDownloadsPath;
+    }
+
+    if (libBadge) {
+      libBadge.textContent = formatBytes(storage.librarySize);
+    }
+    if (libDetails) {
+      libDetails.textContent = t('settings.storage_library_files_count', {
+        mods: storage.libraryModsCount,
+        zips: storage.libraryZipsCount,
+        path: storage.libraryPath,
+      });
+      libDetails.title = storage.libraryPath;
+    }
+  } catch (e) {
+    console.error('Failed to load storage usage:', e);
+  }
 }
 
 export async function refreshSafetyBackupStatus(): Promise<void> {

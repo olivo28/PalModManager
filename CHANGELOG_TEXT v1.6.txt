@@ -1,4 +1,26 @@
-PalModManager - Version 1.6.0 Changelog (2026-24-08)
+PalModManager - Version 1.6.1 Changelog (2026-25-08)
+
+[1.6.1] - 2026-08-25
+
+Added
+- Storage & Cache Management: Disk storage inspector and cleaner in Settings (Safety & Backup) to view real-time space used by Temporary Downloads and the Local Mod Library, with 1-click cache purge and folder quick-access.
+- Installed Status Badge in Mod Details: Active "Installed (vX.Y.Z)" badge in Discovery mod details when inspecting a mod already present in the manager.
+- Full 6-Language Localization: Complete translations across EN, ES, PT, ZH-CN, JA, and KO for storage controls and notifications.
+
+Changed
+- Direct CDN HTTP Download Stream Handling: Download pipeline now supports direct HTTP/HTTPS CDN endpoints alongside nxm:// URLs for seamless 1-click Premium downloads.
+- Windows File Lock Release: Added immediate file flushing and handle release upon download completion to prevent OS file write locks.
+- Optimized Update Modal Dimensions: Expanded and balanced modal width to comfortably fit update notes and config diff tools.
+
+Fixed
+- Fixed runtime ReferenceError during version comparison that caused the installation modal to hang indefinitely on "Analyzing mod structure..." during updates.
+- Resolved duplicate single-instance plugin initialization that was causing unexpected app closures on startup.
+- Fixed flexbox shrink glitch on the update modal preview card, preventing it from squishing horizontally.
+- Ensured Discovery details modal cleanly dismisses when triggering an in-app download.
+
+------------------------------------
+
+[1.6.0] - 2026-08-24
 
 Added
 - Nexus Mods Discovery Tab: In-app browser with live search, categories, tag filtering, and 1-click mod installation.

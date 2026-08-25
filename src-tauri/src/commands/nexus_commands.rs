@@ -619,23 +619,25 @@ pub async fn download_nxm_file(
 ) -> Result<String, String> {
     crate::logger::log(&format!("download_nxm_file: Processing URL: {} (id: {})", nxm_url, download_id));
 
-    let nxm = crate::nexus_oauth::parse_nxm_url(&nxm_url)?;
-
-    let access_token = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.nexus_account.as_ref()
-            .and_then(|a| a.access_token.clone())
-            .ok_or("No active Nexus Mods session. Please connect your Nexus Mods account in Settings / Profile first.")?
+    let (cdn_url, file_id) = if nxm_url.starts_with("http://") || nxm_url.starts_with("https://") {
+        (nxm_url, 0u64)
+    } else {
+        let nxm = crate::nexus_oauth::parse_nxm_url(&nxm_url)?;
+        let access_token = {
+            let data = state.data.lock().map_err(|e| e.to_string())?;
+            data.settings.nexus_account.as_ref()
+                .and_then(|a| a.access_token.clone())
+                .ok_or("No active Nexus Mods session. Please connect your Nexus Mods account in Settings / Profile first.")?
+        };
+        let url = crate::nexus_oauth::fetch_nxm_direct_download_url(&access_token, &nxm).await?;
+        (url, nxm.file_id)
     };
 
-    // 1. Get CDN download URL from Nexus API
-    let cdn_url = crate::nexus_oauth::fetch_nxm_direct_download_url(&access_token, &nxm).await?;
-
-    // 2. Stream download file to temp directory with progress events
+    // Stream download file to temp directory with progress events
     let temp_zip = crate::nexus_oauth::download_file_to_temp_with_progress(
         &app_handle,
         &cdn_url,
-        nxm.file_id,
+        file_id,
         &download_id,
     ).await?;
 

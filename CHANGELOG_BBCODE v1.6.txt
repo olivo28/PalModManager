@@ -1,3 +1,30 @@
+[size=5][b]PalModManager v1.6.1 Changelog[/b][/size]
+[b]Release Date:[/b] 2026-08-25
+
+[size=4][b]Added[/b][/size]
+[list]
+[*] [b]Storage & Cache Management:[/b] Added a dedicated disk storage inspector and cleaner in Settings (under Safety & Backup) to view real-time space used by Temporary Downloads ([font=monospace]PalModManager_Downloads[/font]) and the Local Mod Library ([font=monospace]mods-library[/font]), with 1-click cache purge and folder quick-access.
+[*] [b]Installed Status Badge in Mod Details:[/b] Added an active [font=monospace]Installed (vX.Y.Z)[/font] badge to the Discovery mod details view when inspecting a mod that is already installed in your manager.
+[*] [b]Complete Storage Localization:[/b] Full translation coverage across all 6 supported languages (English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean) for all storage management controls and toast notifications.
+[/list]
+
+[size=4][b]Changed[/b][/size]
+[list]
+[*] [b]Direct CDN HTTP Download Stream Handling:[/b] Extended the native download pipeline to support direct HTTP/HTTPS CDN endpoints alongside [font=monospace]nxm://[/font] protocol URLs for 1-click Premium downloads.
+[*] [b]Windows File Lock Release on Downloads:[/b] Added immediate file flushing and handle release upon download completion to prevent OS file write locks during extraction and inspection.
+[*] [b]Optimized Update Modal Dimensions:[/b] Expanded and balanced the modal width to comfortably fit update notes and config diff tools without visual clutter.
+[/list]
+
+[size=4][b]Fixed[/b][/size]
+[list]
+[*] [b]Mod Update Hanging on Analysis:[/b] Fixed a runtime [font=monospace]ReferenceError[/font] during version comparison that caused the installation modal to hang indefinitely on "Analyzing mod structure..." during updates.
+[*] [b]App Startup Self-Termination:[/b] Resolved a duplicate single-instance plugin initialization that was falsely detecting active instances and causing unexpected app closures.
+[*] [b]Update Modal Preview Card Squishing:[/b] Fixed flexbox shrink behavior on the left-side preview card, preserving its unconstrained layout and image proportions when config merge options are displayed.
+[*] [b]Discovery Modal Auto-Dismiss on Download:[/b] Ensured the Discovery details view cleanly dismisses when triggering an in-app download and opening the installer.
+[/list]
+
+[hr]
+
 [size=5][b]PalModManager v1.6.0 Changelog[/b][/size]
 [b]Release Date:[/b] 2026-08-24
 
@@ -43,5 +70,5 @@ You can choose between the portable version or the full installer:
 
 [list]
 [*] [b]Portable Version:[/b] Download [font=monospace]palmodmanager.exe[/font]. You can place it in any folder and run it directly without installation.
-[*] [b]Installer Version:[/b] Download [font=monospace]PalModManager_1.6.0_x64-setup.exe[/font] and follow the setup wizard to install the application on your system.
+[*] [b]Installer Version:[/b] Download [font=monospace]PalModManager_1.6.1_x64-setup.exe[/font] and follow the setup wizard to install the application on your system.
 [/list]

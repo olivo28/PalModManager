@@ -226,6 +226,45 @@
                 <button type="button" id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
               </div>
             </div>
+
+            <!-- STORAGE & CACHE MANAGEMENT -->
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.storage_title">💾 Storage & Cache Management</span>
+              </div>
+              <div class="settings-hint" style="margin-bottom:10px;" data-i18n="settings.storage_hint">Inspect and manage disk space used by temporary downloads and local mod libraries:</div>
+              
+              <!-- Row 1: Temp Downloads -->
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:14px;">⚡</span>
+                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_temp_title">Temporary Downloads Cache</span>
+                  </div>
+                  <span id="storage-temp-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                </div>
+                <div id="storage-temp-details" class="settings-hint" style="font-size:11px;">0 temporary files in cache</div>
+                <div style="display:flex; gap:8px; margin-top:2px;">
+                  <button type="button" id="storage-clear-temp-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:6px 10px;" title="Clean orphaned or cancelled zip downloads" data-i18n-title="settings.btn_clear_temp_title" data-i18n="settings.btn_clear_temp">🧹 Clear Temporary Downloads</button>
+                  <button type="button" id="storage-open-temp-btn" class="btn-secondary" style="font-size:11px; padding:6px 10px;" title="Open temporary downloads folder in explorer" data-i18n-title="settings.btn_open_temp_title" data-i18n="settings.btn_open_temp">📂 Open Temp Folder</button>
+                </div>
+              </div>
+
+              <!-- Row 2: Local Library -->
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:6px;">
+                    <span style="font-size:14px;">📦</span>
+                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_library_title">Local Mod Library</span>
+                  </div>
+                  <span id="storage-library-badge" class="badge" style="background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                </div>
+                <div id="storage-library-details" class="settings-hint" style="font-size:11px;">0 mods, 0 zip archives</div>
+                <div style="display:flex; gap:8px; margin-top:2px;">
+                  <button type="button" id="storage-open-library-btn" class="btn-secondary" style="width:100%; font-size:11px; padding:6px 10px;" title="Open local mod library folder in explorer" data-i18n-title="settings.btn_open_library_title" data-i18n="settings.btn_open_library">📂 Open Library Folder</button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
