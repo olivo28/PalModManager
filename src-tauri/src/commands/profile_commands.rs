@@ -73,6 +73,14 @@ pub fn switch_profile_command(
     };
     db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
 
+    if !data_clone.settings.game_path.is_empty() {
+        let _ = crate::altermatic::sync_load_list(
+            &std::path::PathBuf::from(&data_clone.settings.game_path),
+            &target_profile.enabled_mod_ids,
+            &data_clone.mods,
+        );
+    }
+
     serde_json::to_value(&profile_mods).map_err(|e| e.to_string())
 }
 

@@ -314,6 +314,20 @@ pub async fn install_mod_command(
         let data_clone = data.clone();
         drop(data);
         let _ = db::save_db(&program_path, &data_clone);
+
+        if !data_clone.settings.game_path.is_empty() {
+            let current_profile = data_clone.profiles.iter().find(|p| p.id == data_clone.current_profile_id);
+            let enabled_ids: Vec<String> = if let Some(p) = current_profile {
+                p.enabled_mod_ids.clone()
+            } else {
+                data_clone.mods.iter().filter(|m| m.enabled).map(|m| m.id.clone()).collect()
+            };
+            let _ = crate::altermatic::sync_load_list(
+                &std::path::PathBuf::from(&data_clone.settings.game_path),
+                &enabled_ids,
+                &data_clone.mods,
+            );
+        }
     }
 
     let _ = crate::profiles::save_pmm_meta(&final_mod);

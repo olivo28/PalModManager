@@ -40,6 +40,7 @@ pub struct ModSummary {
     pub mod_type: String,
     pub palschema_rows: Vec<String>,
     pub ue4ss_hooks: Vec<String>,
+    pub pak_files: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -48,8 +49,10 @@ pub struct ScanResult {
     pub total_scanned: u32,
     pub palschema_scanned: u32,
     pub ue4ss_scanned: u32,
+    pub pak_scanned: u32,
     pub table_conflicts: Vec<TableRowConflict>,
     pub hook_conflicts: Vec<HookConflict>,
+    pub pak_conflicts: Vec<crate::pak_scanner::PakConflict>,
     pub internal_table_conflicts: Vec<TableRowConflict>,
     pub internal_hook_conflicts: Vec<HookConflict>,
     pub warnings: Vec<String>,
@@ -195,14 +198,38 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         }
     }
 
-    // Build mod summaries map
-    let mut summaries_map: HashMap<String, (String, String, Vec<String>, Vec<String>)> = HashMap::new();
+    // Build mod summaries map: mod_id -> (mod_name, mod_type, rows, hooks, pak_files)
+    let mut summaries_map: HashMap<String, (String, String, Vec<String>, Vec<String>, Vec<String>)> = HashMap::new();
     for m in &profile_mods {
         if m.enabled && !m.game_path.is_empty() && m.nexus_author.as_deref() != Some("UE4SS Native Mod") {
-            if m.mod_type == ModType::PalSchema || m.mod_type == ModType::Ue4ss || m.mod_type == ModType::Hybrid {
-                let type_str = format!("{:?}", m.mod_type);
-                summaries_map.insert(m.id.clone(), (m.name.clone(), type_str, Vec::new(), Vec::new()));
+            let type_str = format!("{:?}", m.mod_type);
+            let mut pak_assets = Vec::new();
+
+            // Collect any .pak files belonging to this mod
+            let mut paks = Vec::new();
+            if m.game_path.to_lowercase().ends_with(".pak") {
+                paks.push(PathBuf::from(&m.game_path));
             }
+            for extra in &m.extra_files {
+                if extra.to_lowercase().ends_with(".pak") {
+                    paks.push(PathBuf::from(extra));
+                }
+            }
+
+            for p in paks {
+                if p.exists() {
+                    if let Ok(entries) = crate::pak_scanner::list_pak_entries(&p) {
+                        for entry in entries {
+                            let entry_lower = entry.to_lowercase();
+                            if entry_lower.ends_with(".uasset") {
+                                pak_assets.push(entry);
+                            }
+                        }
+                    }
+                }
+            }
+
+            summaries_map.insert(m.id.clone(), (m.name.clone(), type_str, Vec::new(), Vec::new(), pak_assets));
         }
     }
 
@@ -225,29 +252,39 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
     }
 
     let mut mod_summaries = Vec::new();
-    for (mod_id, (mod_name, mod_type, mut rows, mut hooks)) in summaries_map {
-        // Skip if mod registry contains absolutely no rows and no hooks
-        if rows.is_empty() && hooks.is_empty() {
+    for (mod_id, (mod_name, mod_type, mut rows, mut hooks, mut pak_files)) in summaries_map {
+        // Skip if mod registry contains absolutely no rows, hooks, or pak assets
+        if rows.is_empty() && hooks.is_empty() && pak_files.is_empty() {
             continue;
         }
         rows.sort();
         hooks.sort();
+        pak_files.sort();
         mod_summaries.push(ModSummary {
             mod_id,
             mod_name,
             mod_type,
             palschema_rows: rows,
             ue4ss_hooks: hooks,
+            pak_files,
         });
     }
     mod_summaries.sort_by(|a, b| a.mod_name.cmp(&b.mod_name));
+
+    let (pak_conflicts, pak_scanned) = if !data.settings.game_path.is_empty() {
+        crate::pak_scanner::scan_pak_conflicts(Path::new(&data.settings.game_path), &profile_mods)
+    } else {
+        (Vec::new(), 0)
+    };
 
     Ok(ScanResult {
         total_scanned,
         palschema_scanned,
         ue4ss_scanned,
+        pak_scanned,
         table_conflicts,
         hook_conflicts,
+        pak_conflicts,
         internal_table_conflicts,
         internal_hook_conflicts,
         warnings,

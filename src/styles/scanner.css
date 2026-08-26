@@ -9,13 +9,12 @@
 }
 
 .scanner-scroll-panel {
-  flex: 1 1 0;
+  flex: 1 1 auto;
   min-height: 0;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
+  display: block;
   padding: 20px 24px;
   overflow-y: auto;
+  overflow-x: hidden;
   box-sizing: border-box;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
@@ -167,7 +166,6 @@
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  overflow: hidden;
 }
 
 .scanner-card-header {
@@ -311,6 +309,7 @@ details.scanner-card-section summary::-webkit-details-marker {
 .scanner-mod-summary-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
+  align-items: start;
   gap: 12px;
   padding: 16px 20px;
 }

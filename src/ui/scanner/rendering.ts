@@ -147,6 +147,13 @@ export const customStyles = `
       border-color: var(--accent);
       box-shadow: 0 0 10px rgba(0, 188, 255, 0.15);
     }
+    .scanner-scroll-panel {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: block;
+      overflow-y: auto;
+      overflow-x: hidden;
+    }
     .scanner-scroll-panel, .scanner-detail-list {
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
@@ -163,6 +170,17 @@ export const customStyles = `
     }
     .scanner-scroll-panel::-webkit-scrollbar-thumb:hover, .scanner-detail-list::-webkit-scrollbar-thumb:hover {
       background: var(--text-muted);
+    }
+    .scanner-mod-summary-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      align-items: start;
+      gap: 12px;
+    }
+    @media (max-width: 1000px) {
+      .scanner-mod-summary-grid {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 `;

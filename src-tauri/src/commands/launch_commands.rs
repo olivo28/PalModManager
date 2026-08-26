@@ -4,9 +4,15 @@ use crate::state::AppState;
 
 #[tauri::command]
 pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
-    let game_path = {
+    let (game_path, enabled_mod_ids, all_mods) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.game_path.clone()
+        let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let enabled_ids = if let Some(p) = current_profile {
+            p.enabled_mod_ids.clone()
+        } else {
+            data.mods.iter().filter(|m| m.enabled).map(|m| m.id.clone()).collect()
+        };
+        (data.settings.game_path.clone(), enabled_ids, data.mods.clone())
     };
 
     if game_path.is_empty() {
@@ -14,6 +20,7 @@ pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
     }
 
     let path = Path::new(&game_path);
+    let _ = crate::altermatic::sync_load_list(path, &enabled_mod_ids, &all_mods);
     let wingdk = path.join("Pal").join("Binaries").join("WinGDK");
     let is_xbox = wingdk.exists();
 

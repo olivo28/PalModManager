@@ -16,7 +16,8 @@ mod workshop;
 mod watcher;
 pub mod safety_backup;
 pub mod image_proxy;
-
+pub mod altermatic;
+pub mod pak_scanner;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -33,6 +34,7 @@ use commands::db_commands;
 use commands::load_order_commands;
 use commands::workshop_commands;
 use commands::discovery_commands;
+use commands::altermatic_commands;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -264,6 +266,8 @@ pub fn run() {
             discovery_commands::track_nexus_mod,
             discovery_commands::untrack_nexus_mod,
             discovery_commands::install_discovery_file,
+            altermatic_commands::sync_altermatic_load_list,
+            altermatic_commands::get_altermatic_dep_status,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();

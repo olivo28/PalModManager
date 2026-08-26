@@ -943,16 +943,23 @@ pub fn build_manifest_from_files(
                     target_dir.join(filename)
                 }
                 RouteType::Passthrough => {
-                    match primary_route_type {
-                        RouteType::Ue4ss => ue4ss_mods_dest.join(&folder_name).join(&relative_path),
-                        RouteType::PalSchema => palschema_mods_dest.join(&folder_name).join(&relative_path),
-                        RouteType::Pak | RouteType::LogicMods | RouteType::Companion | RouteType::Passthrough => {
-                            let target_dir = if primary_route_type == RouteType::LogicMods {
-                                &logicmods_dest_dir
-                            } else {
-                                &paks_dest_dir
-                            };
-                            target_dir.join(filename)
+                    let rel_lower = relative_path.to_lowercase();
+                    if rel_lower.contains("swapjson") {
+                        paks_dest_dir.join("SwapJSON").join(filename)
+                    } else if rel_lower.contains("alterconfig") {
+                        paks_dest_dir.join("AlterConfig").join(filename)
+                    } else {
+                        match primary_route_type {
+                            RouteType::Ue4ss => ue4ss_mods_dest.join(&folder_name).join(&relative_path),
+                            RouteType::PalSchema => palschema_mods_dest.join(&folder_name).join(&relative_path),
+                            RouteType::Pak | RouteType::LogicMods | RouteType::Companion | RouteType::Passthrough => {
+                                let target_dir = if primary_route_type == RouteType::LogicMods {
+                                    &logicmods_dest_dir
+                                } else {
+                                    &paks_dest_dir
+                                };
+                                target_dir.join(filename)
+                            }
                         }
                     }
                 }

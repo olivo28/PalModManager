@@ -13,4 +13,4 @@ pub mod load_order_commands;
 pub mod workshop_commands;
 pub mod launch_commands;
 pub mod discovery_commands;
-
+pub mod altermatic_commands;

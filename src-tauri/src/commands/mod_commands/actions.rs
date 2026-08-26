@@ -252,9 +252,23 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&program_path, &data_clone);
+    sync_altermatic_helper(&data_clone);
 
     crate::logger::log(&format!("remove_mod: Mod '{}' successfully purged physically and from database.", mod_info.name));
     Ok(serde_json::json!({ "success": true }))
+}
+
+fn sync_altermatic_helper(data: &crate::models::AppData) {
+    if !data.settings.game_path.is_empty() {
+        let game_path = PathBuf::from(&data.settings.game_path);
+        let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let enabled_mod_ids: Vec<String> = if let Some(p) = current_profile {
+            p.enabled_mod_ids.clone()
+        } else {
+            data.mods.iter().filter(|m| m.enabled).map(|m| m.id.clone()).collect()
+        };
+        let _ = crate::altermatic::sync_load_list(&game_path, &enabled_mod_ids, &data.mods);
+    }
 }
 
 #[tauri::command]
@@ -265,6 +279,7 @@ pub fn disable_mod(mod_id: String, state: State<AppState>) -> Result<Value, Stri
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&program_path, &data_clone);
+    sync_altermatic_helper(&data_clone);
     Ok(serde_json::json!({ "success": true }))
 }
 
@@ -276,6 +291,7 @@ pub fn enable_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&program_path, &data_clone);
+    sync_altermatic_helper(&data_clone);
     Ok(serde_json::json!({ "success": true }))
 }
 

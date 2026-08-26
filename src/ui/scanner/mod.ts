@@ -29,14 +29,31 @@ export interface ModSummary {
   modType: string;
   palschemaRows: string[];
   ue4ssHooks: string[];
+  pakFiles?: string[];
+}
+
+export interface PakModSource {
+  modId: string;
+  modName: string;
+  pakFilename: string;
+  pakPath: string;
+}
+
+export interface PakConflict {
+  internalPath: string;
+  assetName: string;
+  assetType: string;
+  mods: PakModSource[];
 }
 
 export interface ScanResult {
   totalScanned: number;
   palschemaScanned: number;
   ue4ssScanned: number;
+  pakScanned?: number;
   tableConflicts: TableRowConflict[];
   hookConflicts: HookConflict[];
+  pakConflicts?: PakConflict[];
   internalTableConflicts: TableRowConflict[];
   internalHookConflicts: HookConflict[];
   warnings: string[];
@@ -256,6 +273,18 @@ export function setupEventListeners(): void {
       const line = parseInt((btn as HTMLElement).dataset.line || '1');
       const { openFileAtLine } = await import('../editorView');
       openFileAtLine(modId, filePath, line);
+    });
+  });
+
+  document.querySelectorAll('details').forEach(el => {
+    el.addEventListener('toggle', () => {
+      const panel = document.querySelector('.scanner-scroll-panel');
+      if (panel) {
+        const maxScroll = Math.max(0, panel.scrollHeight - panel.clientHeight);
+        if (panel.scrollTop > maxScroll) {
+          panel.scrollTop = maxScroll;
+        }
+      }
     });
   });
 }

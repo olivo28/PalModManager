@@ -968,7 +968,7 @@ function populateModalData(details: DiscoveryModDetails): void {
   }
 
   // 2. Files List (Categorized, sorted newest to oldest, with archived toggle and scan badges)
-  const filesContainer = document.getElementById('discovery-files-container');
+  const filesContainer = document.getElementById('discovery-files-list');
   if (filesContainer) {
     renderFilesList(details, filesContainer);
   }

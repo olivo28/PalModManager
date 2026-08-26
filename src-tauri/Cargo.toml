@@ -38,5 +38,4 @@ winreg = "0.52"
 open = "5"
 regex = "1"
 sevenz-rust = { version = "0.6.1", features = ["aes256", "bzip2", "zstd"] }
-
-
+repak = { git = "https://github.com/trumank/repak" }
