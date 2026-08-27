@@ -248,6 +248,289 @@ export async function saveModFile(modId: string, filePath: string, content: stri
   return invoke('save_mod_file', { modId, filePath, content });
 }
 
+export interface PakInternalItem {
+  path: string;
+  name: string;
+  assetType: string;
+}
+
+export interface PakInspectionResult {
+  pakName: string;
+  totalFiles: number;
+  files: PakInternalItem[];
+  summaryByType: Record<string, number>;
+}
+
+export interface UAssetExportItem {
+  objectName: string;
+  className: string;
+  outerName?: string | null;
+}
+
+export interface UAssetImportItem {
+  objectName: string;
+  className: string;
+  classPackage: string;
+}
+
+export interface UAssetSummaryInfo {
+  uassetSizeBytes: number;
+  uexpSizeBytes?: number | null;
+  exportCount: number;
+  importCount: number;
+  nameCount: number;
+  packageFlags: number;
+}
+
+export interface UAssetInspectionDetails {
+  assetName: string;
+  assetPath: string;
+  assetType: string;
+  engineVersion: string;
+  summary: UAssetSummaryInfo;
+  exports: UAssetExportItem[];
+  imports: UAssetImportItem[];
+  namesSample: string[];
+}
+
+export async function inspectPakAsset(modId: string, assetInternalPath: string): Promise<string[]> {
+  return invoke('inspect_pak_asset', { modId, assetInternalPath });
+}
+
+export async function inspectUAssetDeep(params: {
+  modId?: string | null;
+  pakPath?: string | null;
+  assetInternalPath: string;
+  zipPath?: string | null;
+}): Promise<UAssetInspectionDetails> {
+  return invoke('inspect_uasset_deep_cmd', {
+    modId: params.modId || null,
+    pakPath: params.pakPath || null,
+    assetInternalPath: params.assetInternalPath,
+    zipPath: params.zipPath || null,
+  });
+}
+
+export async function inspectPakFileTree(pakPath: string, zipPath?: string): Promise<PakInspectionResult> {
+  return invoke('inspect_pak_file_tree', { pakPath, zipPath: zipPath || null });
+}
+
+export async function inspectModPakContents(modId: string): Promise<PakInspectionResult[]> {
+  return invoke('inspect_mod_pak_contents', { modId });
+}
+
+export async function convertModToGamepass(modId: string): Promise<string[]> {
+  return invoke('convert_mod_to_gamepass', { modId });
+}
+
+export async function convertAllGamepassMods(): Promise<number> {
+  return invoke('convert_all_gamepass_mods');
+}
+
+export interface SaveBackupSnapshot {
+  slotName: string;
+  timestamp: string;
+  levelSizeBytes: number;
+  uncompressedSizeBytes?: number | null;
+  localDataExists: boolean;
+  inGameDay?: number | null;
+  playerLevel?: number | null;
+  hostPlayerName?: string | null;
+  modRefsCount?: number | null;
+  isCleanVanilla?: boolean | null;
+}
+
+export interface ExternalEditDiagnostic {
+  isModified: boolean;
+  toolName?: string | null;
+  details: string;
+  editorBackupCount: number;
+  currentSizeBytes: number;
+  latestBackupSizeBytes: number;
+  sizeReductionPct?: number | null;
+}
+
+export interface WorldOptionSettings {
+  exists: boolean;
+  difficulty?: string | null;
+  dayTimeSpeedRate?: number | null;
+  nightTimeSpeedRate?: number | null;
+  expRate?: number | null;
+  palCaptureRate?: number | null;
+  palSpawnNumRate?: number | null;
+  palDamageRate?: number | null;
+  playerDamageRate?: number | null;
+  playerStomachDecreaseRate?: number | null;
+  playerStaminaDecreaseRate?: number | null;
+  playerAutoHpRegeneRate?: number | null;
+  playerAutoHpRegeneRateInSleeping?: number | null;
+  palStomachDecreaseRate?: number | null;
+  palStaminaDecreaseRate?: number | null;
+  palAutoHpRegeneRate?: number | null;
+  palAutoHpRegeneRateInSleeping?: number | null;
+  buildObjectDamageRate?: number | null;
+  buildObjectDeteriorationDamageRate?: number | null;
+  collectionDropRate?: number | null;
+  collectionObjectHpRate?: number | null;
+  collectionObjectRespawnSpeedRate?: number | null;
+  enemyDropItemRate?: number | null;
+  deathPenalty?: string | null;
+  enablePlayerToPlayerDamage?: boolean | null;
+  enableFriendlyFire?: boolean | null;
+  enableInvaderEnemy?: boolean | null;
+  activeUnko?: boolean | null;
+  dropItemMaxNum?: number | null;
+  baseCampMaxNum?: number | null;
+  baseCampWorkerMaxNum?: number | null;
+  dropItemAliveMaxHours?: number | null;
+  guildPlayerMaxNum?: number | null;
+  palEggHatchingHours?: number | null;
+  workSpeedRate?: number | null;
+  isMultiplay?: boolean | null;
+  isPvp?: boolean | null;
+  canPickupOtherGuildDeathPenaltyDrop?: boolean | null;
+  enableNonLoginPenalty?: boolean | null;
+  enableFastTravel?: boolean | null;
+  isStartLocationSelectByMap?: boolean | null;
+  existPlayerAfterLogout?: boolean | null;
+  supplyDropSpan?: number | null;
+}
+
+export interface PlayerSaveInfo {
+  playerUid: string;
+  playerName?: string | null;
+  playerLevel?: number | null;
+  isHost: boolean;
+  fileSizeBytes: number;
+  lastPlayedDate?: string | null;
+  isCorrupt: boolean;
+}
+
+export interface SaveStorageBreakdown {
+  levelSavBytes: number;
+  playersDirBytes: number;
+  backupsDirBytes: number;
+  totalWorldBytes: number;
+  uncompressedLevelBytes: number;
+  compressionRatioPct: number;
+}
+
+export interface WorldCustomMeta {
+  nickname?: string | null;
+  notes?: string | null;
+  boundProfileId?: string | null;
+  boundProfileName?: string | null;
+  tags?: string[];
+  preLaunchBackupEnabled?: boolean;
+}
+
+export interface SaveWorldSummary {
+  worldId: string;
+  worldName: string;
+  worldDir: string;
+  hostPlayerName?: string | null;
+  hostPlayerUid?: string | null;
+  playerLevel?: number | null;
+  inGameDay?: number | null;
+  saveDate?: string | null;
+  levelSizeBytes: number;
+  playerCount: number;
+  backupCount: number;
+  latestBackupDate?: string | null;
+  hasExternalEdits: boolean;
+  healthStatus: 'healthy' | 'warning' | 'corrupt' | 'external_edits';
+  detectedIssuesCount: number;
+  customMeta?: WorldCustomMeta | null;
+  worldOptions?: WorldOptionSettings | null;
+}
+
+export interface OrphanedModRef {
+  modHintName: string;
+  assetPath: string;
+  occurrences: number;
+}
+
+export interface SaveHealthReport {
+  worldId: string;
+  worldName: string;
+  levelSavPath: string;
+  hostPlayerName?: string | null;
+  hostPlayerUid?: string | null;
+  playerLevel?: number | null;
+  inGameDay?: number | null;
+  isValidGvas: boolean;
+  compressionType: string;
+  uncompressedSize: number;
+  healthStatus: 'healthy' | 'warning' | 'corrupt' | 'external_edits';
+  summaryMessage: string;
+  orphanedModRefs: OrphanedModRef[];
+  rawModPathsFound: string[];
+  totalModReferences: number;
+  backupCount: number;
+  latestBackupDate?: string | null;
+  availableBackups: SaveBackupSnapshot[];
+  hasExternalEdits: boolean;
+  externalEditDetails?: ExternalEditDiagnostic | null;
+  canRepair: boolean;
+  canRestoreBackup: boolean;
+  worldOptions?: WorldOptionSettings | null;
+  playerRoster?: PlayerSaveInfo[];
+  storageBreakdown?: SaveStorageBreakdown | null;
+  customMeta?: WorldCustomMeta | null;
+}
+
+
+export interface SaveRepairResult {
+  success: boolean;
+  backupZipPath: string;
+  sanitizedRefsCount: number;
+  message: string;
+}
+
+export async function listSaveWorlds(customDir?: string): Promise<SaveWorldSummary[]> {
+  return invoke('list_save_worlds_cmd', { customDir: customDir || null });
+}
+
+export async function deepScanSaveHealth(worldDir: string): Promise<SaveHealthReport> {
+  return invoke('deep_scan_save_cmd', { worldDir });
+}
+
+export async function repairSaveHealth(worldDir: string): Promise<SaveRepairResult> {
+  return invoke('repair_save_cmd', { worldDir });
+}
+
+export async function restoreSaveBackup(worldDir: string, backupSlot: string): Promise<SaveRepairResult> {
+  return invoke('restore_save_backup_cmd', { worldDir, backupSlot });
+}
+
+export async function createWorldBackup(worldDir: string, customDest?: string): Promise<string> {
+  return invoke('create_world_backup_cmd', { worldDir, customDest: customDest || null });
+}
+
+export async function openWorldFolder(worldDir: string): Promise<void> {
+  return invoke('open_world_folder_cmd', { worldDir });
+}
+
+export async function exportWorldZip(worldDir: string, targetPath: string): Promise<string> {
+  return invoke('export_world_zip_cmd', { worldDir, targetPath });
+}
+
+export async function pruneWorldBackups(worldDir: string, keepCount: number = 5): Promise<number> {
+  return invoke('prune_world_backups_cmd', { worldDir, keepCount });
+}
+
+export async function saveWorldCustomMeta(worldDir: string, meta: WorldCustomMeta): Promise<void> {
+  return invoke('save_world_custom_meta_cmd', { worldDir, meta });
+}
+
+export async function getWorldCustomMeta(worldDir: string): Promise<WorldCustomMeta> {
+  return invoke('get_world_custom_meta_cmd', { worldDir });
+}
+
+export async function inspectSnapshotDetails(worldDir: string, slotName: string): Promise<SaveBackupSnapshot> {
+  return invoke('inspect_snapshot_details_cmd', { worldDir, slotName });
+}
+
 export async function renameMod(modId: string, newName: string): Promise<ModInfo> {
   return invoke('rename_mod', { modId, newName });
 }

@@ -46,6 +46,19 @@
           <div class="detail-row" id="detail-duplicate-row" style="display:none;">
             <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span> <span id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
           </div>
+          <div class="detail-row" id="detail-gamepass-warning-row" style="display:none; background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 6px; padding: 10px 12px; margin: 6px 0;">
+            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+              <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                <span style="font-weight: 700; color: #ffaa00; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
+                  <span>⚠️</span> <span data-i18n="card.badge_gamepass_missing">Game Pass: Missing IoStore</span>
+                </span>
+                <button id="detail-convert-gamepass-btn" class="btn-primary btn-sm" style="font-size: 10.5px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                  <span>⚡</span> <span data-i18n="scanner.btn_convert_gamepass">Convert to Game Pass</span>
+                </button>
+              </div>
+              <span style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;" data-i18n="card.gamepass_missing_tooltip">This .pak mod needs IoStore (.utoc/.ucas) conversion to load in PC Game Pass.</span>
+            </div>
+          </div>
           <div class="detail-row" style="display: flex; align-items: center; gap: 8px;">
             <span class="detail-label" data-i18n="detail.config_label">Config</span>
             <span id="detail-config-path" style="flex: 1; word-break: break-all; font-size: 11px; font-family: monospace; overflow: hidden; text-overflow: ellipsis;"></span>
@@ -54,6 +67,7 @@
               <button id="detail-clear-config" class="btn-tiny" data-i18n="detail.btn_clear_config" style="white-space: nowrap; padding: 2px 8px; font-size: 11px;">Clear</button>
             </div>
           </div>
+          <div id="detail-pak-contents-container" style="display:none; flex-direction:column; gap:8px; margin-top:4px;"></div>
         </div>
       </div>
       <div class="detail-actions" style="display: flex; flex-direction: column; gap: 6px;">

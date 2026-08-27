@@ -8,6 +8,7 @@ import { showConfirm } from './confirm';
 import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
 import { descriptionToHtml } from '../utils/bbcode';
+import { isModMissingGamePass } from './mods/card';
 import type { ModInfo } from '../types';
 
 export interface ModComponentFolder {
@@ -310,6 +311,35 @@ export function openDetailPanel(modId: string): void {
     duplicateRow.style.display = 'none';
   }
 
+  // Game Pass IoStore Compatibility Check & Conversion
+  const gpWarningRow = document.getElementById('detail-gamepass-warning-row');
+  const gpConvertBtn = document.getElementById('detail-convert-gamepass-btn') as HTMLButtonElement | null;
+  const isMissingGp = isModMissingGamePass(mod, state);
+
+  if (gpWarningRow && gpConvertBtn) {
+    if (isMissingGp) {
+      gpWarningRow.style.display = '';
+      gpConvertBtn.disabled = false;
+      gpConvertBtn.onclick = async () => {
+        try {
+          gpConvertBtn.disabled = true;
+          gpConvertBtn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
+          const { convertModToGamepass } = await import('../api');
+          const genFiles = await convertModToGamepass(mod.id);
+          showToast(t('toasts.convert_gamepass_success', { name: mod.name, count: genFiles.length }), 'success');
+          await loadMods();
+          openDetailPanel(mod.id);
+        } catch (err: any) {
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+          gpConvertBtn.disabled = false;
+          gpConvertBtn.innerHTML = `<span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>`;
+        }
+      };
+    } else {
+      gpWarningRow.style.display = 'none';
+    }
+  }
+
   const configPathEl = document.getElementById('detail-config-path')!;
   const configRow = configPathEl.closest('.detail-row') as HTMLElement;
   const isPakType = mod.type === 'pak' || mod.type === 'logicmods';
@@ -353,6 +383,119 @@ export function openDetailPanel(modId: string): void {
     configPathEl.title = mod.configPath || '';
     configRow.style.display = '';
     pakDestRow.style.display = 'none';
+  }
+
+  // Render Pak Contents Inspection for .pak / logicmods / hybrid mods with pak
+  const pakContentsContainer = document.getElementById('detail-pak-contents-container');
+  const hasPakFiles = mod.gamePath.toLowerCase().endsWith('.pak') || mod.extraFiles.some(f => f.toLowerCase().endsWith('.pak'));
+
+  if (pakContentsContainer) {
+    if (hasPakFiles) {
+      pakContentsContainer.style.display = 'flex';
+      pakContentsContainer.innerHTML = `
+        <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div style="display:flex; align-items:center; gap:6px;">
+              <span style="font-size:14px;">📦</span>
+              <span style="font-size:12px; font-weight:700; color:var(--text-primary);">${escapeHtml(t('detail.pak_contents_title') || 'Internal .pak Contents')}</span>
+            </div>
+            <button type="button" id="detail-load-pak-contents-btn" class="btn-tiny" style="font-size:10.5px; padding:3px 8px; border-color:var(--accent); color:var(--accent);">
+              🔍 ${escapeHtml(t('detail.btn_load_pak_contents') || 'Inspect .pak Assets')}
+            </button>
+          </div>
+          <div id="detail-pak-contents-body" style="display:none; flex-direction:column; gap:8px; margin-top:4px;"></div>
+        </div>
+      `;
+
+      const loadPakBtn = document.getElementById('detail-load-pak-contents-btn') as HTMLButtonElement | null;
+      const pakBodyEl = document.getElementById('detail-pak-contents-body') as HTMLElement | null;
+
+      if (loadPakBtn && pakBodyEl) {
+        loadPakBtn.addEventListener('click', async () => {
+          if (pakBodyEl.style.display === 'flex') {
+            pakBodyEl.style.display = 'none';
+            loadPakBtn.textContent = `🔍 ${t('detail.btn_load_pak_contents') || 'Inspect .pak Assets'}`;
+            return;
+          }
+
+          loadPakBtn.disabled = true;
+          loadPakBtn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.loading') || 'Loading...')}</span>`;
+
+          try {
+            const { inspectModPakContents } = await import('../api');
+            const pakResults = await inspectModPakContents(mod.id);
+
+            loadPakBtn.disabled = false;
+            loadPakBtn.textContent = `🔼 ${t('common.hide') || 'Hide'}`;
+            pakBodyEl.style.display = 'flex';
+
+            pakBodyEl.innerHTML = `
+              <input type="text" id="detail-pak-search-input" placeholder="${escapeHtml(t('scanner.search_placeholder') || 'Search internal assets...')}" style="width:100%; background:var(--bg-primary); border:1px solid var(--border); color:var(--text-primary); border-radius:4px; padding:4px 8px; font-size:11px; outline:none;" />
+              <div id="detail-pak-results-list" style="display:flex; flex-direction:column; gap:8px; max-height:260px; overflow-y:auto; padding-right:2px;">
+                ${pakResults.map(p => `
+                  <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:6px 8px; display:flex; flex-direction:column; gap:4px;">
+                    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
+                      <span style="font-family:monospace; font-size:11px; font-weight:700; color:var(--accent);">📦 ${escapeHtml(p.pakName)}</span>
+                      <span class="badge" style="font-size:9px; padding:1px 5px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3);">${p.totalFiles} assets</span>
+                    </div>
+                    <div class="detail-pak-file-list" style="display:flex; flex-direction:column; gap:2px; margin-top:2px;">
+                      ${p.files.map(f => `
+                        <div class="detail-pak-item-row" data-search="${escapeHtml((f.name + ' ' + f.path + ' ' + f.assetType).toLowerCase())}" style="display:flex; justify-content:space-between; align-items:center; padding:3px 6px; border-radius:3px; font-family:monospace; font-size:10px; background:rgba(255,255,255,0.02);">
+                          <span style="color:var(--text-primary); text-overflow:ellipsis; overflow:hidden; white-space:nowrap; max-width:68%;" title="${escapeHtml(f.path)}">${escapeHtml(f.path)}</span>
+                          <div style="display:flex; align-items:center; gap:5px;">
+                            <span style="font-size:8.5px; padding:1px 4px; border-radius:2px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">${escapeHtml(f.assetType)}</span>
+                            ${f.path.toLowerCase().endsWith('.uasset') || f.path.toLowerCase().endsWith('.uexp') ? `
+                              <button class="btn-inspect-uasset-action" data-mod="${escapeHtml(mod.id)}" data-path="${escapeHtml(f.path)}" title="${escapeHtml(t('scanner.uasset_btn_inspect') || 'Deep Inspect Asset')}" style="background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.3); border-radius:3px; color:var(--accent); cursor:pointer; font-size:9.5px; padding:1px 5px; display:flex; align-items:center; gap:2px;">
+                                <span>🔍</span>
+                              </button>
+                            ` : ''}
+                          </div>
+                        </div>
+                      `).join('')}
+                    </div>
+                  </div>
+                `).join('')}
+              </div>
+            `;
+
+            const searchInput = document.getElementById('detail-pak-search-input') as HTMLInputElement | null;
+            if (searchInput) {
+              searchInput.addEventListener('input', () => {
+                const q = searchInput.value.trim().toLowerCase();
+                const itemRows = pakBodyEl.querySelectorAll('.detail-pak-item-row');
+                itemRows.forEach(row => {
+                  const txt = (row as HTMLElement).dataset.search || '';
+                  (row as HTMLElement).style.display = (!q || txt.includes(q)) ? 'flex' : 'none';
+                });
+              });
+            }
+
+            pakBodyEl.querySelectorAll('.btn-inspect-uasset-action').forEach(btn => {
+              btn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const modId = (btn as HTMLElement).dataset.mod;
+                const assetPath = (btn as HTMLElement).dataset.path;
+                if (!assetPath) return;
+                import('./modals/uassetInspector').then(({ openUAssetInspectorModal }) => {
+                  openUAssetInspectorModal({
+                    modId: modId || null,
+                    assetInternalPath: assetPath,
+                  });
+                });
+              });
+            });
+          } catch (err: any) {
+            loadPakBtn.disabled = false;
+            loadPakBtn.textContent = `🔍 ${t('detail.btn_load_pak_contents') || 'Inspect .pak Assets'}`;
+            pakBodyEl.style.display = 'flex';
+            pakBodyEl.innerHTML = `<span style="font-size:11px; color:var(--danger);">⚠️ ${escapeHtml(String(err))}</span>`;
+          }
+        });
+      }
+    } else {
+      pakContentsContainer.style.display = 'none';
+      pakContentsContainer.innerHTML = '';
+    }
   }
 
   // Populate Folder Dropdown

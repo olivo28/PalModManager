@@ -57,6 +57,8 @@ pub struct ScanResult {
     pub internal_hook_conflicts: Vec<HookConflict>,
     pub warnings: Vec<String>,
     pub mod_summaries: Vec<ModSummary>,
+    pub gamepass_notices: Vec<crate::pak_scanner::GamePassPakNotice>,
+    pub is_gamepass: bool,
 }
 
 #[tauri::command]
@@ -205,26 +207,37 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
             let type_str = format!("{:?}", m.mod_type);
             let mut pak_assets = Vec::new();
 
-            // Collect any .pak files belonging to this mod
+            // Collect any .pak, .utoc, .ucas files belonging to this mod
             let mut paks = Vec::new();
-            if m.game_path.to_lowercase().ends_with(".pak") {
+            let is_pak_or_zen = |path_str: &str| {
+                let lower = path_str.to_lowercase();
+                lower.ends_with(".pak") || lower.ends_with(".utoc") || lower.ends_with(".ucas")
+            };
+
+            if is_pak_or_zen(&m.game_path) {
                 paks.push(PathBuf::from(&m.game_path));
             }
             for extra in &m.extra_files {
-                if extra.to_lowercase().ends_with(".pak") {
+                if is_pak_or_zen(extra) {
                     paks.push(PathBuf::from(extra));
                 }
             }
 
             for p in paks {
                 if p.exists() {
-                    if let Ok(entries) = crate::pak_scanner::list_pak_entries(&p) {
-                        for entry in entries {
-                            let entry_lower = entry.to_lowercase();
-                            if entry_lower.ends_with(".uasset") {
-                                pak_assets.push(entry);
+                    let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
+                    if ext.eq_ignore_ascii_case("pak") {
+                        if let Ok(entries) = crate::pak_scanner::list_pak_entries(&p) {
+                            for entry in entries {
+                                let entry_lower = entry.to_lowercase();
+                                if entry_lower.ends_with(".uasset") {
+                                    pak_assets.push(entry);
+                                }
                             }
                         }
+                    } else if ext.eq_ignore_ascii_case("utoc") || ext.eq_ignore_ascii_case("ucas") {
+                        let filename = p.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                        pak_assets.push(format!("[Zen Container] {}", filename));
                     }
                 }
             }
@@ -277,6 +290,12 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         (Vec::new(), 0)
     };
 
+    let (is_gamepass, gamepass_notices) = if !data.settings.game_path.is_empty() {
+        crate::pak_scanner::check_gamepass_pak_compatibility(Path::new(&data.settings.game_path), &profile_mods)
+    } else {
+        (false, Vec::new())
+    };
+
     Ok(ScanResult {
         total_scanned,
         palschema_scanned,
@@ -289,6 +308,8 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         internal_hook_conflicts,
         warnings,
         mod_summaries,
+        gamepass_notices,
+        is_gamepass,
     })
 }
 
@@ -812,3 +833,452 @@ pub fn update_mod_hotkey(
         Err("Failed to parse RegisterKeyBind on target line".to_string())
     }
 }
+
+#[tauri::command]
+pub fn inspect_pak_file_tree(
+    pak_path: String,
+    zip_path: Option<String>,
+) -> Result<crate::pak_scanner::PakInspectionResult, String> {
+    let p = Path::new(&pak_path);
+    if p.exists() {
+        return crate::pak_scanner::list_pak_entries_detailed(p);
+    }
+
+    // If a parent zip_path is provided and the pak is inside an archive (installation preview)
+    if let Some(zp) = zip_path {
+        let zip_p = Path::new(&zp);
+        if zip_p.exists() {
+            let temp_dir = std::env::temp_dir().join("pmm_pak_inspect").join(uuid::Uuid::new_v4().to_string());
+            fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+
+            let result = (|| {
+                let lower = zp.to_lowercase();
+                if lower.ends_with(".zip") {
+                    let file = fs::File::open(&zip_p).map_err(|e| e.to_string())?;
+                    let mut archive = zip::read::ZipArchive::new(file).map_err(|e| e.to_string())?;
+                    
+                    let mut found = false;
+                    for i in 0..archive.len() {
+                        let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
+                        let ename = entry.name().replace('\\', "/");
+                        if ename.eq_ignore_ascii_case(&pak_path) || ename.ends_with(&format!("/{}", pak_path)) {
+                            let temp_pak = temp_dir.join("temp_inspect.pak");
+                            let mut out = fs::File::create(&temp_pak).map_err(|e| e.to_string())?;
+                            std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if !found {
+                        return Err(format!("Pak file '{}' not found inside archive", pak_path));
+                    }
+                } else if lower.ends_with(".7z") {
+                    // Extract with sevenz
+                    let reader = sevenz_rust::SevenZReader::open(&zip_p, sevenz_rust::Password::empty())
+                        .map_err(|e| e.to_string())?;
+                    let mut found = false;
+                    for entry in reader.archive().files.iter() {
+                        let ename = entry.name().replace('\\', "/");
+                        if ename.eq_ignore_ascii_case(&pak_path) || ename.ends_with(&format!("/{}", pak_path)) {
+                            sevenz_rust::decompress_file(&zip_p, &temp_dir).map_err(|e| e.to_string())?;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if !found {
+                        return Err(format!("Pak file '{}' not found in 7z", pak_path));
+                    }
+                }
+
+                let temp_pak = temp_dir.join("temp_inspect.pak");
+                if temp_pak.exists() {
+                    crate::pak_scanner::list_pak_entries_detailed(&temp_pak)
+                } else {
+                    // Search recursively in temp_dir for extracted pak
+                    for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
+                        if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
+                            return crate::pak_scanner::list_pak_entries_detailed(entry.path());
+                        }
+                    }
+                    Err(format!("Could not extract pak '{}'", pak_path))
+                }
+            })();
+
+            let _ = fs::remove_dir_all(&temp_dir);
+            return result;
+        }
+    }
+
+    Err(format!("Pak file not found at '{}'", pak_path))
+}
+
+#[tauri::command]
+pub fn inspect_mod_pak_contents(
+    state: State<'_, AppState>,
+    mod_id: String,
+) -> Result<Vec<crate::pak_scanner::PakInspectionResult>, String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+    let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
+        .ok_or_else(|| "Mod not found".to_string())?;
+
+    let mut candidate_paks = Vec::new();
+    if target_mod.game_path.to_lowercase().ends_with(".pak") {
+        candidate_paks.push(PathBuf::from(&target_mod.game_path));
+    }
+    for extra in &target_mod.extra_files {
+        if extra.to_lowercase().ends_with(".pak") {
+            candidate_paks.push(PathBuf::from(extra));
+        }
+    }
+
+    let mut results = Vec::new();
+    for pak in candidate_paks {
+        if pak.exists() {
+            if let Ok(info) = crate::pak_scanner::list_pak_entries_detailed(&pak) {
+                results.push(info);
+            }
+        }
+    }
+
+    if results.is_empty() {
+        return Err("No valid .pak files found for this mod on disk".to_string());
+    }
+
+    Ok(results)
+}
+
+#[tauri::command]
+pub fn inspect_pak_asset(
+    state: State<'_, AppState>,
+    mod_id: String,
+    asset_internal_path: String,
+) -> Result<Vec<String>, String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+    let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
+        .ok_or_else(|| "Mod not found".to_string())?;
+
+    let mut candidate_paks = Vec::new();
+    if target_mod.game_path.to_lowercase().ends_with(".pak") {
+        candidate_paks.push(PathBuf::from(&target_mod.game_path));
+    }
+    for extra in &target_mod.extra_files {
+        if extra.to_lowercase().ends_with(".pak") {
+            candidate_paks.push(PathBuf::from(extra));
+        }
+    }
+
+    for pak in candidate_paks {
+        if pak.exists() {
+            if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
+                if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
+                    return crate::pak_scanner::inspect_uasset_from_pak(&pak, &asset_internal_path);
+                }
+            }
+        }
+    }
+
+    Err(format!("Asset '{}' not found in mod pak archives", asset_internal_path))
+}
+
+#[tauri::command]
+pub fn inspect_uasset_deep_cmd(
+    state: State<'_, AppState>,
+    mod_id: Option<String>,
+    pak_path: Option<String>,
+    asset_internal_path: String,
+    zip_path: Option<String>,
+) -> Result<crate::pak_scanner::UAssetInspectionDetails, String> {
+    // 1. Direct pak_path if provided
+    if let Some(pp) = pak_path.as_deref() {
+        let p = Path::new(pp);
+        if p.exists() {
+            return crate::pak_scanner::inspect_uasset_deep(p, &asset_internal_path);
+        }
+    }
+
+    // 2. Mod ID search
+    if let Some(mid) = mod_id.as_deref() {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        if let Some(target_mod) = profile_mods.into_iter().find(|m| m.id == mid) {
+            let mut candidate_paks = Vec::new();
+            if target_mod.game_path.to_lowercase().ends_with(".pak") {
+                candidate_paks.push(PathBuf::from(&target_mod.game_path));
+            }
+            for extra in &target_mod.extra_files {
+                if extra.to_lowercase().ends_with(".pak") {
+                    candidate_paks.push(PathBuf::from(extra));
+                }
+            }
+
+            for pak in candidate_paks {
+                if pak.exists() {
+                    if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
+                        if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
+                            return crate::pak_scanner::inspect_uasset_deep(&pak, &asset_internal_path);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Zip preview path (Installer modal)
+    if let Some(zp) = zip_path {
+        let zip_p = Path::new(&zp);
+        if zip_p.exists() {
+            let temp_dir = std::env::temp_dir().join("pmm_uasset_inspect").join(uuid::Uuid::new_v4().to_string());
+            fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
+
+            let result = (|| {
+                let lower = zp.to_lowercase();
+                if lower.ends_with(".zip") {
+                    let file = fs::File::open(&zip_p).map_err(|e| e.to_string())?;
+                    let mut archive = zip::read::ZipArchive::new(file).map_err(|e| e.to_string())?;
+                    for i in 0..archive.len() {
+                        let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
+                        let ename = entry.name().replace('\\', "/");
+                        if ename.to_lowercase().ends_with(".pak") {
+                            let temp_pak = temp_dir.join("temp.pak");
+                            let mut out = fs::File::create(&temp_pak).map_err(|e| e.to_string())?;
+                            std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
+                            if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(&temp_pak, &asset_internal_path) {
+                                return Ok(details);
+                            }
+                        }
+                    }
+                }
+                Err(format!("Asset '{}' not found inside archive pak files", asset_internal_path))
+            })();
+
+            let _ = fs::remove_dir_all(&temp_dir);
+            return result;
+        }
+    }
+
+    Err(format!("Could not locate pak containing asset '{}'", asset_internal_path))
+}
+
+#[tauri::command]
+pub async fn convert_mod_to_gamepass(
+    state: State<'_, AppState>,
+    mod_id: String,
+) -> Result<Vec<String>, String> {
+    let (app_data_dir, mut candidate_paks, game_root) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let prog_path = if !data.settings.program_path.is_empty() {
+            PathBuf::from(&data.settings.program_path)
+        } else {
+            PathBuf::from(".")
+        };
+        let root = PathBuf::from(&data.settings.game_path);
+        let mut paks = Vec::new();
+        if let Some(target_mod) = data.mods.iter().find(|m| m.id == mod_id) {
+            if target_mod.game_path.to_lowercase().ends_with(".pak") {
+                paks.push(PathBuf::from(&target_mod.game_path));
+            }
+            if target_mod.disabled_path.to_lowercase().ends_with(".pak") {
+                paks.push(PathBuf::from(&target_mod.disabled_path));
+            }
+            for extra in &target_mod.extra_files {
+                if extra.to_lowercase().ends_with(".pak") {
+                    paks.push(PathBuf::from(extra));
+                }
+            }
+        }
+        (prog_path, paks, root)
+    };
+
+    if candidate_paks.is_empty() {
+        return Err("No .pak files found for this mod".to_string());
+    }
+
+    let mut generated_files = Vec::new();
+    for pak_path in candidate_paks {
+        let full_path = if pak_path.is_absolute() {
+            pak_path
+        } else {
+            game_root.join(&pak_path)
+        };
+
+        if full_path.exists() {
+            let (utoc, ucas) = crate::retoc_runner::convert_pak_to_gamepass_zen(&full_path, &app_data_dir).await?;
+            generated_files.push(utoc.to_string_lossy().to_string());
+            generated_files.push(ucas.to_string_lossy().to_string());
+        }
+    }
+
+    if generated_files.is_empty() {
+        return Err("Could not find on-disk .pak files to convert".to_string());
+    }
+
+    // Register generated extra files in AppData
+    {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let program_path = data.settings.program_path.clone();
+        if let Some(m) = data.mods.iter_mut().find(|m| m.id == mod_id) {
+            for gen in &generated_files {
+                if !m.extra_files.contains(gen) {
+                    m.extra_files.push(gen.clone());
+                }
+            }
+        }
+        let data_clone = data.clone();
+        let _ = crate::db::save_db(&program_path, &data_clone);
+    }
+
+    Ok(generated_files)
+}
+
+#[tauri::command]
+pub async fn convert_all_gamepass_mods(
+    state: State<'_, AppState>,
+) -> Result<u32, String> {
+    let (game_path, profile_mods) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        (data.settings.game_path.clone(), p_mods)
+    };
+
+    if game_path.is_empty() {
+        return Err("Game path is not configured".to_string());
+    }
+
+    let (_, notices) = crate::pak_scanner::check_gamepass_pak_compatibility(Path::new(&game_path), &profile_mods);
+    if notices.is_empty() {
+        return Ok(0);
+    }
+
+    let mut count = 0;
+    for notice in notices {
+        if notice.mod_id != "untracked" {
+            let _ = convert_mod_to_gamepass(state.clone(), notice.mod_id).await;
+            count += 1;
+        } else {
+            let app_data_dir = {
+                let data = state.data.lock().map_err(|e| e.to_string())?;
+                if !data.settings.program_path.is_empty() {
+                    PathBuf::from(&data.settings.program_path)
+                } else {
+                    PathBuf::from(".")
+                }
+            };
+            let pak_path = PathBuf::from(&notice.pak_path);
+            if pak_path.exists() {
+                if let Ok(_) = crate::retoc_runner::convert_pak_to_gamepass_zen(&pak_path, &app_data_dir).await {
+                    count += 1;
+                }
+            }
+        }
+    }
+
+    Ok(count)
+}
+
+#[tauri::command]
+pub fn list_save_worlds_cmd(
+    custom_dir: Option<String>,
+) -> Result<Vec<crate::save_scanner::SaveWorldSummary>, String> {
+    crate::save_scanner::list_save_worlds(custom_dir.as_deref())
+}
+
+#[tauri::command]
+pub fn deep_scan_save_cmd(
+    state: State<'_, AppState>,
+    world_dir: String,
+) -> Result<crate::save_scanner::SaveHealthReport, String> {
+    let active_mod_names = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let p_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        p_mods.into_iter().filter(|m| m.enabled).map(|m| m.name).collect::<Vec<String>>()
+    };
+
+    crate::save_scanner::deep_scan_save(&world_dir, &active_mod_names)
+}
+
+#[tauri::command]
+pub fn repair_save_cmd(
+    state: State<'_, AppState>,
+    world_dir: String,
+) -> Result<crate::save_scanner::SaveRepairResult, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+
+    crate::save_scanner::repair_and_sanitize_save(&world_dir, &program_path)
+}
+
+#[tauri::command]
+pub fn restore_save_backup_cmd(
+    state: State<'_, AppState>,
+    world_dir: String,
+    backup_slot: String,
+) -> Result<crate::save_scanner::SaveRepairResult, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+
+    crate::save_scanner::restore_save_from_backup(&world_dir, &backup_slot, &program_path)
+}
+
+#[tauri::command]
+pub fn create_world_backup_cmd(
+    state: State<'_, AppState>,
+    world_dir: String,
+    custom_dest: Option<String>,
+) -> Result<String, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+    crate::save_scanner::create_manual_world_backup(&world_dir, &program_path, custom_dest.as_deref())
+}
+
+#[tauri::command]
+pub fn open_world_folder_cmd(world_dir: String) -> Result<(), String> {
+    crate::save_scanner::open_world_folder(&world_dir)
+}
+
+#[tauri::command]
+pub fn export_world_zip_cmd(world_dir: String, target_path: String) -> Result<String, String> {
+    crate::save_scanner::create_manual_world_backup(&world_dir, ".", Some(&target_path))
+}
+
+#[tauri::command]
+pub fn prune_world_backups_cmd(world_dir: String, keep_count: usize) -> Result<usize, String> {
+    crate::save_scanner::prune_world_backups(&world_dir, keep_count)
+}
+
+#[tauri::command]
+pub fn save_world_custom_meta_cmd(world_dir: String, meta: crate::save_scanner::WorldCustomMeta) -> Result<(), String> {
+    crate::save_scanner::save_world_custom_meta(Path::new(&world_dir), &meta)
+}
+
+#[tauri::command]
+pub fn get_world_custom_meta_cmd(world_dir: String) -> Result<crate::save_scanner::WorldCustomMeta, String> {
+    Ok(crate::save_scanner::load_world_custom_meta(Path::new(&world_dir)))
+}
+
+#[tauri::command]
+pub fn inspect_snapshot_details_cmd(world_dir: String, slot_name: String) -> Result<crate::save_scanner::SaveBackupSnapshot, String> {
+    crate::save_scanner::inspect_snapshot_details(Path::new(&world_dir), &slot_name)
+}
+
+
+

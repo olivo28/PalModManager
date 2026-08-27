@@ -18,6 +18,8 @@ pub mod safety_backup;
 pub mod image_proxy;
 pub mod altermatic;
 pub mod pak_scanner;
+pub mod retoc_runner;
+pub mod save_scanner;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -243,6 +245,23 @@ pub fn run() {
             scanner_commands::scan_conflicts,
             scanner_commands::scan_mod_hotkeys,
             scanner_commands::update_mod_hotkey,
+            scanner_commands::inspect_pak_asset,
+            scanner_commands::inspect_uasset_deep_cmd,
+            scanner_commands::inspect_pak_file_tree,
+            scanner_commands::inspect_mod_pak_contents,
+            scanner_commands::convert_mod_to_gamepass,
+            scanner_commands::convert_all_gamepass_mods,
+            scanner_commands::list_save_worlds_cmd,
+            scanner_commands::deep_scan_save_cmd,
+            scanner_commands::repair_save_cmd,
+            scanner_commands::restore_save_backup_cmd,
+            scanner_commands::create_world_backup_cmd,
+            scanner_commands::open_world_folder_cmd,
+            scanner_commands::export_world_zip_cmd,
+            scanner_commands::prune_world_backups_cmd,
+            scanner_commands::save_world_custom_meta_cmd,
+            scanner_commands::get_world_custom_meta_cmd,
+            scanner_commands::inspect_snapshot_details_cmd,
             db_commands::db_get_all,
             db_commands::db_write_record,
             load_order_commands::get_ue4ss_load_order,

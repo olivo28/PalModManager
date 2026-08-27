@@ -252,6 +252,25 @@ export function openSettingsModal(): void {
     });
   }
 
+  // Reset active tab to default (Game & Storage)
+  const tabButtons = modal.querySelectorAll<HTMLButtonElement>('.settings-tab-button');
+  const panes = modal.querySelectorAll<HTMLElement>('.settings-tab-pane');
+  tabButtons.forEach(b => {
+    if (b.dataset.settingsTab === 'game') {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+  panes.forEach(p => {
+    if (p.id === 'settings-pane-game') {
+      p.classList.add('active');
+      p.scrollTop = 0;
+    } else {
+      p.classList.remove('active');
+    }
+  });
+
   modal.classList.add('visible');
 
   requestAnimationFrame(() => {
@@ -378,7 +397,26 @@ export async function refreshSafetyBackupStatus(): Promise<void> {
 
 export function closeSettingsModal(): void {
   const modal = document.getElementById('settings-modal');
-  if (modal) modal.classList.remove('visible');
+  if (modal) {
+    modal.classList.remove('visible');
+    const tabButtons = modal.querySelectorAll<HTMLButtonElement>('.settings-tab-button');
+    const panes = modal.querySelectorAll<HTMLElement>('.settings-tab-pane');
+    tabButtons.forEach(b => {
+      if (b.dataset.settingsTab === 'game') {
+        b.classList.add('active');
+      } else {
+        b.classList.remove('active');
+      }
+    });
+    panes.forEach(p => {
+      if (p.id === 'settings-pane-game') {
+        p.classList.add('active');
+        p.scrollTop = 0;
+      } else {
+        p.classList.remove('active');
+      }
+    });
+  }
   const savedScale = getState().currentSettings?.toolbarScale || 1.0;
   document.documentElement.style.setProperty('--toolbar-scale', savedScale.toString());
 }

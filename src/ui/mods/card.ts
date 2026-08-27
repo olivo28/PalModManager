@@ -92,9 +92,23 @@ export function computeAvailableUpdates(mods: ModInfo[], libraryEntries?: any[])
   return updatesMap;
 }
 
+export function isModMissingGamePass(mod: ModInfo, state: any): boolean {
+  const platform = state.dependencies?.game_platform?.toLowerCase();
+  const isXbox = platform === 'xbox' || platform === 'gamepass' || platform === 'wingdk';
+  if (!isXbox) return false;
+
+  const isPakMod = mod.type === 'pak' || mod.type === 'logicmods' || (mod.gamePath && mod.gamePath.toLowerCase().endsWith('.pak')) || (mod.extraFiles && mod.extraFiles.some(f => f.toLowerCase().endsWith('.pak')));
+  if (!isPakMod) return false;
+
+  const hasUtoc = mod.extraFiles && mod.extraFiles.some(f => f.toLowerCase().endsWith('.utoc'));
+  const hasUcas = mod.extraFiles && mod.extraFiles.some(f => f.toLowerCase().endsWith('.ucas'));
+  return !hasUtoc || !hasUcas;
+}
+
 export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = false, folderId: string = ''): string {
   const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
   const updateVer = state.availableUpdates?.get(mod.id);
+  const isMissingGp = isModMissingGamePass(mod, state);
 
   if (state.viewLayout === 'list') {
     const isSelected = state.selectedModIds.has(mod.id);
@@ -122,6 +136,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
         <span class="mod-card-name" style="font-weight:600;">${escapeHtml(mod.name)}</span>
         ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
+        ${isMissingGp ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
         ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_update_available', { version: updateVer }))}</span>` : ''}
       </div>
       <div class="cell status-cell">
@@ -192,6 +207,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
       <div class="mod-card-meta">
         <span class="mod-card-type ${mod.type}">${escapeHtml(mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase())}</span>
         <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
+        ${isMissingGp ? `<span class="badge-gp-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px; cursor: help;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
         ${updateBadge}
         ${catHtml}
         ${isWorkshop ? `<span style="margin-left: 4px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}

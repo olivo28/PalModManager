@@ -1155,12 +1155,50 @@ pub async fn fetch_nxm_mod_metadata(
     })
 }
 
-/// Download file from CDN and save as a temporary zip file with progress events
+/// Fetch mod file details (file_name, version, etc.) from Nexus REST API v1
+pub async fn fetch_nxm_file_details(
+    access_token: &str,
+    game_domain: &str,
+    mod_id: u32,
+    file_id: u64,
+) -> Result<String, String> {
+    let client = reqwest::Client::builder()
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
+        .timeout(Duration::from_secs(12))
+        .build()
+        .map_err(|e| e.to_string())?;
+
+    let api_url = format!(
+        "https://api.nexusmods.com/v1/games/{}/mods/{}/files/{}.json",
+        game_domain, mod_id, file_id
+    );
+
+    let resp = client.get(&api_url)
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", APP_VERSION)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to request file details: {}", e))?;
+
+    if resp.status().is_success() {
+        let val: serde_json::Value = resp.json().await.map_err(|e| e.to_string())?;
+        if let Some(file_name) = val.get("file_name").and_then(|v| v.as_str()) {
+            if !file_name.trim().is_empty() {
+                return Ok(file_name.trim().to_string());
+            }
+        }
+    }
+    Err("Could not retrieve file_name from Nexus API".to_string())
+}
+
+/// Download file from CDN and save with its real archive filename with progress events
 pub async fn download_file_to_temp_with_progress(
     app_handle: &tauri::AppHandle,
     download_url: &str,
     file_id: u64,
     download_id: &str,
+    preferred_filename: Option<&str>,
 ) -> Result<std::path::PathBuf, String> {
     use std::io::Write;
     use tauri::Emitter;
@@ -1183,7 +1221,62 @@ pub async fn download_file_to_temp_with_progress(
     let total_bytes = resp.content_length();
     let temp_dir = std::env::temp_dir().join("PalModManager_Downloads");
     let _ = std::fs::create_dir_all(&temp_dir);
-    let target_file = temp_dir.join(format!("nexus_{}_{}.zip", file_id, uuid::Uuid::new_v4()));
+
+    // Extract real filename: 1. Preferred from Nexus API, 2. Content-Disposition header, 3. URL path, 4. fallback
+    let mut detected_filename: Option<String> = preferred_filename.map(|s| s.to_string());
+
+    if detected_filename.is_none() {
+        if let Some(cd) = resp.headers().get(reqwest::header::CONTENT_DISPOSITION).and_then(|h| h.to_str().ok()) {
+            if let Some(idx) = cd.find("filename=") {
+                let fn_str = &cd[idx + 9..];
+                if fn_str.starts_with('"') {
+                    if let Some(end_quote) = fn_str[1..].find('"') {
+                        let name = fn_str[1..=end_quote].trim().to_string();
+                        if !name.is_empty() {
+                            detected_filename = Some(name);
+                        }
+                    }
+                } else {
+                    let end = fn_str.find(';').unwrap_or(fn_str.len());
+                    let name = fn_str[..end].trim().to_string();
+                    if !name.is_empty() {
+                        detected_filename = Some(name);
+                    }
+                }
+            }
+        }
+    }
+
+    if detected_filename.is_none() {
+        if let Ok(parsed_url) = reqwest::Url::parse(download_url) {
+            if let Some(path_seg) = parsed_url.path_segments().and_then(|mut s| s.next_back()) {
+                let decoded = match url::form_urlencoded::parse(format!("k={path_seg}").as_bytes()).next() {
+                    Some((_, v)) => v.to_string(),
+                    None => path_seg.to_string(),
+                };
+                let lower = decoded.to_lowercase();
+                if lower.ends_with(".zip") || lower.ends_with(".7z") || lower.ends_with(".rar") {
+                    detected_filename = Some(decoded);
+                }
+            }
+        }
+    }
+
+    let raw_name = detected_filename.unwrap_or_else(|| {
+        if file_id > 0 {
+            format!("nexus_{}.zip", file_id)
+        } else {
+            format!("download_{}.zip", uuid::Uuid::new_v4())
+        }
+    });
+
+    // Sanitize filename to prevent invalid OS characters
+    let clean_filename = raw_name
+        .replace(['\\', '/', ':', '*', '?', '"', '<', '>', '|'], "_")
+        .trim()
+        .to_string();
+
+    let target_file = temp_dir.join(&clean_filename);
 
     let mut file = std::fs::File::create(&target_file)
         .map_err(|e| format!("Failed to create temporary file: {}", e))?;

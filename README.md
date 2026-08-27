@@ -49,10 +49,16 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **Staging Tree Drag & Drop**: Drag and drop files to stashed workspace nodes to re-arrange their destination paths inside the archive.
 - **Pre-installed Mod Metadata Scan**: Scanned pre-installed mods automatically parse `modinfo.pmm.json` if available to retrieve rich metadata (Version, Author, Description, Nexus ID) without manual input.
 
-### 🔍 Mod Conflict & Compatibility Scanner (Scan Tab)
+### 🔍 Mod Conflict, Keybinds, Pak Inspector & Save Doctor (Scan Tab)
+- **Deep Pak & UAsset Package Inspector**: Pure-Rust virtual file tree inspection for `.pak` archives (`repak`) and Unreal Engine binary assets (`unreal_asset`), displaying export classes, dependencies, and embedded name tokens.
+- **Automated Pak Compatibility Patch Engine**: Detects colliding asset nodes across `.pak` mods and generates merged priority compatibility patches (`zzz_Patch_*.pak`) with 1 click.
 - **Engine Hook & Table Collision Detection**: Analyzes enabled mods to identify table row overlaps (PalSchema overrides) and hook overlaps (multiple mods hooking the same engine function in Lua).
-- **Side-by-Side Split View**: Renders Lua hook conflicts on the left and PalSchema table overlaps on the right.
 - **Lua Hotkeys Manager**: Scan active Lua scripts for keybind configurations (`RegisterKeyBind`), display them in an interactive table, highlight conflicts, and inline edit the key combinations.
+- **Save Health Doctor & World Hub**:
+  - **Auto-Discovery & Zero-Latency Hub**: Instant tab switching with automatic savegame discovery across Steam, PC Game Pass (WinGDK), and Linux Proton.
+  - **Save Integrity & Orphaned Mod Sanitizer**: Validates GVAS binary integrity, scans `Level.sav` for orphaned asset classes left behind by uninstalled mods, and rescues crashing saves with 1-click automatic backup.
+  - **Auto-Backup Snapshot History & Diff Inspector**: Side-by-side comparison modal with live size deltas, in-game day progression, player level differences, RAM payload size, pure vanilla detection, and 1-click restore.
+  - **WorldOption.sav Multipliers & Player Roster**: Inspects gameplay multipliers across 5 categories, player character saves (UID, level, captured Pals, Paldeck unlocks), and storage analytics.
 
 ### ✎ Config & Schema Editor (Edit Tab)
 - **Interactive Syntax Highlighting**: Edit JSON config files (`metadata.json`, `.jsonc`, `.json`) directly inside the manager.

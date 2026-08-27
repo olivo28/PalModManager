@@ -1,3 +1,4 @@
+import { invoke } from '@tauri-apps/api/core';
 import { updateModHotkey } from '../../api';
 import type { ModHotkey } from '../../api';
 import { showToast } from '../toast';
@@ -46,6 +47,14 @@ export interface PakConflict {
   mods: PakModSource[];
 }
 
+export interface GamePassPakNotice {
+  modId: string;
+  modName: string;
+  pakFilename: string;
+  pakPath: string;
+  missingContainers: string[];
+}
+
 export interface ScanResult {
   totalScanned: number;
   palschemaScanned: number;
@@ -58,6 +67,8 @@ export interface ScanResult {
   internalHookConflicts: HookConflict[];
   warnings: string[];
   modSummaries: ModSummary[];
+  gamepassNotices?: GamePassPakNotice[];
+  isGamepass?: boolean;
 }
 
 import { runScan, renderConflictsPanel } from './conflicts';
@@ -69,22 +80,30 @@ export let lastScanResult: ScanResult | null = null;
 export let lastHotkeysResult: ModHotkey[] | null = null;
 export let isScanning = false;
 export let isScanningHotkeys = false;
-export let activeSubTab: 'conflicts' | 'hotkeys' = 'conflicts';
+export let activeSubTab: 'conflicts' | 'hotkeys' | 'saves' = 'conflicts';
 export let editingHotkeyKey: string | null = null;
 export let hotkeyFilter = '';
+export let registryFilterType: 'all' | 'pak' | 'ue4ss' | 'palschema' | 'hybrid' = 'all';
+export let registrySearchQuery = '';
+export let selectedRegistryModId: string | null = null;
 
 // Shared setters to allow inner files to modify states
 export function setLastScanResult(val: ScanResult | null): void { lastScanResult = val; }
 export function setLastHotkeysResult(val: ModHotkey[] | null): void { lastHotkeysResult = val; }
 export function setIsScanning(val: boolean): void { isScanning = val; }
 export function setIsScanningHotkeys(val: boolean): void { isScanningHotkeys = val; }
-export function setActiveSubTab(val: 'conflicts' | 'hotkeys'): void { activeSubTab = val; }
+export function setActiveSubTab(val: 'conflicts' | 'hotkeys' | 'saves'): void { activeSubTab = val; }
 export function setEditingHotkeyKey(val: string | null): void { editingHotkeyKey = val; }
 export function setHotkeyFilter(val: string): void { hotkeyFilter = val; }
+export function setRegistryFilterType(val: 'all' | 'pak' | 'ue4ss' | 'palschema' | 'hybrid'): void { registryFilterType = val; }
+export function setRegistrySearchQuery(val: string): void { registrySearchQuery = val; }
+export function setSelectedRegistryModId(val: string | null): void { selectedRegistryModId = val; }
 
 export async function renderScannerView(): Promise<void> {
   const container = document.getElementById('scanner-view');
   if (!container) return;
+
+  const currentScrollTop = container.querySelector('.scanner-scroll-panel')?.scrollTop ?? 0;
 
   if (isScanning || isScanningHotkeys) {
     container.innerHTML = `
@@ -101,46 +120,189 @@ export async function renderScannerView(): Promise<void> {
 
   if (activeSubTab === 'conflicts') {
     await renderConflictsPanel(container);
-  } else {
+  } else if (activeSubTab === 'hotkeys') {
     await renderHotkeysPanel(container);
+  } else {
+    const { renderSavesDoctorPanel } = await import('./savesDoctor');
+    await renderSavesDoctorPanel(container);
+  }
+
+  const newScrollPanel = container.querySelector('.scanner-scroll-panel');
+  if (newScrollPanel && currentScrollTop > 0) {
+    newScrollPanel.scrollTop = currentScrollTop;
   }
 }
 
 export function subTabHeader(): string {
+  let title = t('scanner.title_conflicts');
+  if (activeSubTab === 'hotkeys') title = t('scanner.title_hotkeys');
+  if (activeSubTab === 'saves') title = t('scanner.title_saves_doctor') || 'Save Health Doctor';
+
   return `
     ${customStyles}
     <!-- Top Fixed Dashboard Bar -->
     <div style="display:flex;align-items:center;justify-content:space-between;padding: 16px 24px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); flex-shrink: 0;">
       <div style="display:flex;align-items:center;gap:20px;">
-        <div style="font-size:16px;font-weight:700;color:var(--text-primary);">${activeSubTab === 'conflicts' ? escapeHtml(t('scanner.title_conflicts')) : escapeHtml(t('scanner.title_hotkeys'))}</div>
+        <div style="font-size:16px;font-weight:700;color:var(--text-primary);">${escapeHtml(title)}</div>
         <div class="scanner-sub-tabs">
           <button class="scanner-sub-tab ${activeSubTab === 'conflicts' ? 'active' : ''}" data-subtab="conflicts">${escapeHtml(t('scanner.subtab_conflicts'))}</button>
           <button class="scanner-sub-tab ${activeSubTab === 'hotkeys' ? 'active' : ''}" data-subtab="hotkeys">${escapeHtml(t('scanner.subtab_hotkeys'))}</button>
+          <button class="scanner-sub-tab ${activeSubTab === 'saves' ? 'active' : ''}" data-subtab="saves">${escapeHtml(t('scanner.subtab_saves') || 'Saves Doctor')}</button>
         </div>
       </div>
+      ${activeSubTab !== 'saves' ? `
       <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px;">
         <span>↻ ${escapeHtml(t('common.refresh'))}</span>
       </button>
+      ` : ''}
     </div>
   `;
+}
+
+export function attachInspectUassetListeners(): void {
+  document.querySelectorAll('.inspect-uasset-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const modId = (btn as HTMLElement).dataset.modId;
+      const assetPath = (btn as HTMLElement).dataset.assetPath;
+      const drawerId = (btn as HTMLElement).dataset.drawerId;
+      if (!modId || !assetPath || !drawerId) return;
+
+      const drawer = document.getElementById(drawerId);
+      if (!drawer) return;
+
+      if (drawer.style.display !== 'none') {
+        drawer.style.display = 'none';
+        return;
+      }
+
+      drawer.style.display = 'block';
+      drawer.innerHTML = `<span style="color: var(--accent);">${escapeHtml(t('scanner.inspecting_uasset'))}</span>`;
+
+      try {
+        const rows = await invoke<string[]>('inspect_pak_asset', {
+          modId,
+          assetInternalPath: assetPath,
+        });
+
+        if (rows && rows.length > 0) {
+          drawer.innerHTML = `
+            <div style="font-weight: 700; color: #81c784; margin-bottom: 4px;">${rows.length} Exports / Objects:</div>
+            <ul style="margin: 0; padding-left: 14px; display: flex; flex-direction: column; gap: 2px; font-family: monospace;">
+              ${rows.map(r => `<li>${escapeHtml(r)}</li>`).join('')}
+            </ul>
+          `;
+        } else {
+          drawer.innerHTML = `<span style="color: var(--text-muted);">${escapeHtml(t('scanner.uasset_no_exports'))}</span>`;
+        }
+      } catch (err: any) {
+        drawer.innerHTML = `<span style="color: var(--danger);">Error: ${escapeHtml(String(err))}</span>`;
+      }
+    });
+  });
+}
+
+export function attachMasterListListeners(): void {
+  document.querySelectorAll('.scanner-mod-list-item').forEach(item => {
+    item.addEventListener('click', async () => {
+      const modId = (item as HTMLElement).dataset.modId || null;
+      if (!modId) return;
+
+      setSelectedRegistryModId(modId);
+
+      // Update active highlight in left list
+      document.querySelectorAll('.scanner-mod-list-item').forEach(el => {
+        if ((el as HTMLElement).dataset.modId === modId) {
+          el.classList.add('active');
+          const span = el.querySelector('span');
+          if (span) (span as HTMLElement).style.color = 'var(--accent)';
+        } else {
+          el.classList.remove('active');
+          const span = el.querySelector('span');
+          if (span) (span as HTMLElement).style.color = 'var(--text-primary)';
+        }
+      });
+
+      // Update right inspector in-place without re-rendering or resetting scroll!
+      const inspectorRoot = document.getElementById('scanner-inspector-root');
+      if (inspectorRoot && lastScanResult?.modSummaries) {
+        const activeMod = lastScanResult.modSummaries.find(m => m.modId === modId) || null;
+        const { buildInspectorContent } = await import('./conflicts');
+        inspectorRoot.innerHTML = buildInspectorContent(activeMod);
+        attachInspectUassetListeners();
+        attachGamePassConversionListeners();
+      }
+    });
+  });
+}
+
+export function attachGamePassConversionListeners(): void {
+  document.querySelectorAll<HTMLButtonElement>('.convert-single-gamepass-btn').forEach(btn => {
+    btn.onclick = async (e) => {
+      e.stopPropagation();
+      const modId = btn.dataset.modId;
+      if (!modId) return;
+
+      try {
+        btn.disabled = true;
+        btn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
+        const { convertModToGamepass } = await import('../../api');
+        const { showToast } = await import('../toast');
+        const result = await convertModToGamepass(modId);
+        showToast(t('scanner.convert_success', { count: result.length }), 'success');
+        const { runScan } = await import('./conflicts');
+        await runScan();
+      } catch (err: any) {
+        const { showToast } = await import('../toast');
+        showToast(String(err), 'error');
+        btn.disabled = false;
+        btn.innerHTML = `<span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>`;
+      }
+    };
+  });
+
+  const convertAllBtn = document.getElementById('btn-convert-all-gamepass') as HTMLButtonElement | null;
+  if (convertAllBtn) {
+    convertAllBtn.onclick = async () => {
+      try {
+        convertAllBtn.disabled = true;
+        convertAllBtn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
+        const { convertAllGamepassMods } = await import('../../api');
+        const { showToast } = await import('../toast');
+        const count = await convertAllGamepassMods();
+        showToast(t('scanner.convert_all_success', { count }), 'success');
+        const { runScan } = await import('./conflicts');
+        await runScan();
+      } catch (err: any) {
+        const { showToast } = await import('../toast');
+        showToast(String(err), 'error');
+        convertAllBtn.disabled = false;
+        convertAllBtn.innerHTML = `<span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: '' }))}</span>`;
+      }
+    };
+  }
 }
 
 export function setupEventListeners(): void {
   document.getElementById('scanner-start-btn')?.addEventListener('click', runScan);
   document.getElementById('scanner-start-hotkeys-btn')?.addEventListener('click', runHotkeysScan);
 
-  document.getElementById('scanner-re-run-btn')?.addEventListener('click', () => {
+  document.getElementById('scanner-re-run-btn')?.addEventListener('click', async () => {
     if (activeSubTab === 'conflicts') {
       runScan();
-    } else {
+    } else if (activeSubTab === 'hotkeys') {
       runHotkeysScan();
+    } else {
+      const { renderSavesDoctorPanel } = await import('./savesDoctor');
+      const container = document.getElementById('scanner-view');
+      if (container) await renderSavesDoctorPanel(container);
     }
   });
 
-  document.querySelectorAll('.scanner-sub-tab').forEach(btn => {
+  document.querySelectorAll('.scanner-sub-tab[data-subtab]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const sub = (btn as HTMLElement).dataset.subtab as 'conflicts' | 'hotkeys';
-      if (activeSubTab !== sub) {
+      const sub = (btn as HTMLElement).dataset.subtab as 'conflicts' | 'hotkeys' | 'saves';
+      if (sub && activeSubTab !== sub) {
         activeSubTab = sub;
         editingHotkeyKey = null;
         renderScannerView();
@@ -160,6 +322,31 @@ export function setupEventListeners(): void {
       }
     });
   }
+
+  // Active Mod Registries Filters & Search (Zero Flickering, In-Place DOM Update)
+  document.querySelectorAll('.registry-filter-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const type = (btn as HTMLElement).dataset.type as 'all' | 'pak' | 'ue4ss' | 'palschema' | 'hybrid';
+      if (registryFilterType !== type) {
+        registryFilterType = type;
+        const { updateMasterDetailInPlace } = await import('./conflicts');
+        updateMasterDetailInPlace();
+      }
+    });
+  });
+
+  const regSearch = document.getElementById('registry-search-input') as HTMLInputElement | null;
+  if (regSearch) {
+    regSearch.addEventListener('input', async () => {
+      registrySearchQuery = regSearch.value;
+      const { updateMasterDetailInPlace } = await import('./conflicts');
+      updateMasterDetailInPlace();
+    });
+  }
+
+  attachMasterListListeners();
+  attachInspectUassetListeners();
+  attachGamePassConversionListeners();
 
   document.querySelectorAll('.hk-edit-btn').forEach(btn => {
     btn.addEventListener('click', () => {

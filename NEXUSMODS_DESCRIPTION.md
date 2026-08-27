@@ -1,7 +1,7 @@
 # PalModManager (PMM) - Next-Gen Mod Manager & Config Editor for Palworld
 
 ---
-Latest version: 1.6.2
+Latest version: 1.7.0
 
 Changelog: You can find the latest update notes in the pinned comments section or check the full history on [GitHub](https://github.com/olivo28/PalModManager).
 
@@ -45,7 +45,10 @@ Built with **Tauri v2** and **Rust**, PalModManager launches instantly and uses 
 - **Reactive Profile Manager (File Explorer style)**: Create and switch between isolated mod profiles (e.g. Singleplayer, Multiplayer, Hardcore) with instant physical folder deployment. Shows virtual folders as folder cards side-by-side with ungrouped mods, supporting double-click navigation and a right-click custom folder options menu.
 - **ID Stability System**: Uses the **Nexus Mod ID** or **Sanitized descriptive names** to identify mods (no random UUIDs), ensuring upgrades and profile matching are 100% stable.
 - **Built-in Code Editor**: Edit mod json and jsonc configuration files directly within the application with syntax highlighting, auto-formatting, search (Ctrl+F), and safety checks preventing loss of changes when switching profiles.
-- **Settings & Database Inspector**: Advanced database inspector to view and edit Mods, Profiles, and Settings tables with raw JSON record validation, secure credential masking, custom app storage redirection/migration, and toolbar UI scaling (80% to 180%).
+- **Save Health Doctor & World Hub**: Dedicated world diagnostics suite that auto-discovers saves, validates GVAS integrity, detects orphaned mod references from uninstalled mods, rescues saves with 1-click backups/cleaning, features a side-by-side backup snapshot comparison diff inspector, and extracts WorldOption difficulty rules.
+- **Deep Pak & UAsset Package Inspector**: Pure-Rust virtual file tree inspection for `.pak` archives (`repak`) and Unreal Engine binary assets (`unreal_asset`), displaying export classes, dependencies, and embedded name tokens.
+- **Automated Pak Compatibility Patch Engine**: Detects colliding asset nodes across `.pak` mods and generates merged priority compatibility patches (`zzz_Patch_*.pak`) with 1 click.
+- **Xbox Game Pass & PC WinGDK Compatibility**: Automatic detection, card warning badges, and 1-click generation of `.utoc` and `.ucas` table-of-contents files (`retoc`) for Game Pass mod compatibility.
 - **Modern Dark Mode**: Sleek glassmorphism UI designed for maximum usability and aesthetic clarity.
 
 ---

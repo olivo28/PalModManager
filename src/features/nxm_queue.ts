@@ -197,10 +197,24 @@ async function processDownloads(): Promise<void> {
 }
 
 export function checkNextInstall(): void {
+  const installModal = document.getElementById('install-modal');
+  const isModalOpen = installModal && installModal.classList.contains('visible');
+  if (!isModalOpen) {
+    isInstallingActive = false;
+    queue.forEach((q) => {
+      if (q.status === 'installing') {
+        q.status = 'awaiting_install';
+      }
+    });
+  }
+
   if (isInstallingActive) return;
 
   const nextToInstall = queue.find((q) => q.status === 'awaiting_install');
-  if (!nextToInstall || !nextToInstall.tempZipPath) return;
+  if (!nextToInstall || !nextToInstall.tempZipPath) {
+    renderQueueUI();
+    return;
+  }
 
   isInstallingActive = true;
   nextToInstall.status = 'installing';
@@ -248,11 +262,10 @@ export function checkNextInstall(): void {
 export function cancelQueueItem(id: string): void {
   const item = queue.find((q) => q.id === id);
   if (item) {
-    if (item.status === 'queued' || item.status === 'awaiting_install') {
-      item.status = 'cancelled';
-      renderQueueUI();
-      checkNextInstall();
-    }
+    item.status = 'cancelled';
+    isInstallingActive = false;
+    renderQueueUI();
+    checkNextInstall();
   }
 }
 
@@ -315,11 +328,12 @@ export function renderQueueUI(): void {
     const thumbSrc = item.modPictureUrl || DEFAULT_NXM_THUMB;
 
     let actionBtnHtml = '';
-    if (item.status === 'awaiting_install' && !isInstallingActive) {
+    if (item.status === 'awaiting_install' || item.status === 'installing') {
       actionBtnHtml = `
         <button type="button" class="btn btn-primary btn-sm btn-queue-install" data-id="${item.id}" style="padding: 2px 8px !important; font-size: 10px !important;">
           ${t('nxm_queue.btn_install_now')}
         </button>
+        <button type="button" class="nxm-tray-btn btn-queue-cancel" data-id="${item.id}" title="Cancel">✕</button>
       `;
     } else if (item.status === 'done' || item.status === 'cancelled' || item.status === 'error') {
       actionBtnHtml = `

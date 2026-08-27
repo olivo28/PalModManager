@@ -596,6 +596,25 @@ pub fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> St
             return segment.to_string();
         }
     }
+
+    // Strategy 3: Check for .pak file stem (for pure PAK mods)
+    for file in files {
+        let normalized = file.replace('\\', "/");
+        let lower = normalized.to_lowercase();
+        if lower.ends_with(".pak") {
+            if let Some(leaf) = normalized.split('/').last() {
+                let pak_stem = Path::new(leaf).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                let cleaned_pak = crate::installer::clean_zip_name(&pak_stem);
+                if !cleaned_pak.is_empty() && cleaned_pak != "unknown" && !cleaned_pak.starts_with("nexus_") {
+                    return cleaned_pak;
+                }
+                if !pak_stem.is_empty() {
+                    return pak_stem;
+                }
+            }
+        }
+    }
+
     crate::installer::clean_zip_name(zip_filename)
 }
 
@@ -652,7 +671,16 @@ pub fn build_manifest_from_files(
     });
     let has_both_platforms = has_steam_tags && has_xbox_tags;
 
-    let folder_name = detect_folder_name_from_files(files, filename);
+    let mut folder_name = detect_folder_name_from_files(files, filename);
+    let is_uuid = folder_name.len() >= 32 && folder_name.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
+    if (folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid) {
+        if let Some(ref disp) = custom_display_name {
+            let cleaned = crate::installer::clean_zip_name(disp);
+            if !cleaned.is_empty() && cleaned != "unknown" {
+                folder_name = cleaned;
+            }
+        }
+    }
     let folder_name_lower = folder_name.to_lowercase();
 
     let mut routes = Vec::new();

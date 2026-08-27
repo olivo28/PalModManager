@@ -48,12 +48,23 @@ pub fn copy_to_library(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown.zip".to_string());
     
-    let zip_name = target_filename.unwrap_or(&original_name).to_string();
+    let zip_name = if let Some(target) = target_filename {
+        if target.starts_with("nexus_") {
+            format!("{}.zip", mod_id)
+        } else {
+            target.to_string()
+        }
+    } else if original_name.starts_with("nexus_") || original_name == "unknown.zip" {
+        format!("{}.zip", mod_id)
+    } else {
+        original_name
+    };
+    
     let dest = lib_path.join(&zip_name);
 
     fs::copy(source_zip, &dest).map_err(|e| format!("Cannot copy to library: {}", e))?;
 
-    // If there were temporary nexus_*.zip in this library folder, clean them up
+    // Clean up any obsolete temporary nexus_*.zip in this library folder
     if let Ok(entries) = fs::read_dir(&lib_path) {
         for entry in entries.flatten() {
             let p = entry.path();
@@ -235,6 +246,61 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
                     folder_nexus_summary = val.get("summary").and_then(|v| v.as_str()).map(|s| s.to_string());
                     folder_nexus_mod_id = val.get("modId").and_then(|v| v.as_u64()).map(|v| v as u32);
                     folder_nexus_version = val.get("version").and_then(|v| v.as_str()).map(|s| s.to_string());
+                }
+            }
+        }
+
+        // Auto-heal temporary nexus_*.zip archives and eliminate duplicates
+        if let Ok(files_read) = fs::read_dir(entry.path()) {
+            let files: Vec<PathBuf> = files_read
+                .filter_map(|e| e.ok())
+                .map(|e| e.path())
+                .filter(|p| p.is_file())
+                .collect();
+
+            let nexus_zips: Vec<PathBuf> = files.iter()
+                .filter(|p| {
+                    p.file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|n| n.starts_with("nexus_") && !n.ends_with(".pmm.json"))
+                        .unwrap_or(false)
+                })
+                .cloned()
+                .collect();
+
+            let clean_zips: Vec<PathBuf> = files.iter()
+                .filter(|p| {
+                    p.file_name()
+                        .and_then(|n| n.to_str())
+                        .map(|n| !n.starts_with("nexus_") && n != ".nexus.json" && !n.ends_with(".pmm.json"))
+                        .unwrap_or(false)
+                })
+                .cloned()
+                .collect();
+
+            if !clean_zips.is_empty() {
+                for nz in nexus_zips {
+                    let _ = fs::remove_file(&nz);
+                    let sc = PathBuf::from(format!("{}.pmm.json", nz.to_string_lossy()));
+                    if sc.exists() { let _ = fs::remove_file(sc); }
+                }
+            } else if !nexus_zips.is_empty() {
+                let mut sorted = nexus_zips;
+                sorted.sort_by_key(|p| fs::metadata(p).map(|m| m.len()).unwrap_or(0));
+                if let Some(best_zip) = sorted.pop() {
+                    let canonical_name = format!("{}.zip", mod_id);
+                    let target_dest = entry.path().join(&canonical_name);
+                    let _ = fs::rename(&best_zip, &target_dest);
+                    let old_sidecar = PathBuf::from(format!("{}.pmm.json", best_zip.to_string_lossy()));
+                    let new_sidecar = PathBuf::from(format!("{}.pmm.json", target_dest.to_string_lossy()));
+                    if old_sidecar.exists() {
+                        let _ = fs::rename(old_sidecar, new_sidecar);
+                    }
+                    for dup in sorted {
+                        let _ = fs::remove_file(&dup);
+                        let sc = PathBuf::from(format!("{}.pmm.json", dup.to_string_lossy()));
+                        if sc.exists() { let _ = fs::remove_file(sc); }
+                    }
                 }
             }
         }

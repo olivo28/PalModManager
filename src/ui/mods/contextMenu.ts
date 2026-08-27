@@ -18,6 +18,20 @@ export function runContextAction(action: string, modId: string): void {
   if (!mod) return;
 
   switch (action) {
+    case 'convert-gamepass':
+      (async () => {
+        try {
+          showToast(t('toasts.converting_gamepass', { name: mod.name }), 'info');
+          const { convertModToGamepass } = await import('../../api');
+          const genFiles = await convertModToGamepass(modId);
+          showToast(t('toasts.convert_gamepass_success', { name: mod.name, count: genFiles.length }), 'success');
+          await loadMods();
+        } catch (err: any) {
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+        }
+      })();
+      break;
+
     case 'check-updates':
       (async () => {
         try {
@@ -287,6 +301,17 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       ${escapeHtml(t('context.view_details'))}
     </button>
   `;
+
+  const platform = getState().dependencies?.game_platform?.toLowerCase();
+  const isXbox = platform === 'xbox' || platform === 'gamepass' || platform === 'wingdk';
+  const isPakMod = mod.type === 'pak' || mod.type === 'logicmods' || (mod.gamePath && mod.gamePath.toLowerCase().endsWith('.pak')) || (mod.extraFiles && mod.extraFiles.some(f => f.toLowerCase().endsWith('.pak')));
+  if (isXbox && isPakMod) {
+    html += `
+    <button type="button" class="context-menu-item" data-action="convert-gamepass" style="color: #ffaa00;">
+      <span class="ctx-icon">⚡</span>
+      ${escapeHtml(t('context.convert_gamepass'))}
+    </button>`;
+  }
 
   const currentProfile = getState().profiles.find(p => p.id === getState().currentProfileId);
   const folders = currentProfile?.mod_folders || [];

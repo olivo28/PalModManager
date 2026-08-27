@@ -1,0 +1,27 @@
+PalModManager - Version 1.7.0 Changelog (2026-26-08)
+
+[1.7.0] - 2026-08-26
+
+Added
+- Save Health Doctor & World Hub: Complete diagnostic and repair suite for Palworld savegames under the Scan tab.
+  - Automatically discovers world saves across Steam, Xbox / Game Pass (WinGDK), and Linux Proton.
+  - Validates GVAS binary integrity and detects orphaned mod references causing startup crashes.
+  - 1-click automatic backup and save sanitizer to safely rescue corrupted or crashing saves.
+  - Backup snapshot history with side-by-side diff comparison, vanilla detection, and 1-click restore.
+  - Interactive inspection for WorldOption.sav multipliers, player roster, and storage analytics.
+- Deep Pak & UAsset Package Inspector: Pure-Rust inspection of .pak archives (repak) and Unreal Engine binary assets (unreal_asset).
+  - Explore virtual file trees directly in the Detail Panel and Mod Installer with instant search.
+  - Deep .uasset / .uexp inspector modal displaying export classes, import dependencies, and name table tokens.
+- Automated Pak Compatibility Patch Engine: Detects colliding asset nodes across .pak mods and generates merged priority compatibility patches (zzz_Patch_*.pak) with 1 click.
+- Xbox Game Pass & PC WinGDK Compatibility: Full detection and 1-click .utoc / .ucas table-of-contents generation (retoc) for Game Pass mod support.
+- Altermatic / Dynamic Mod Alteration Engine: Framework integration for runtime alteration manifests and rule-based asset overrides.
+- Full 6-Language Localization: Complete translation coverage across English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
+
+Changed
+- Mod Installer and Detail Panel now allow direct inspection and exploration of .pak contents and binary asset metadata.
+
+Fixed
+- Fixed toast notifications displaying behind modal overlays.
+
+------------------------------------
+

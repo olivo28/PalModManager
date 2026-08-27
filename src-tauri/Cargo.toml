@@ -1,6 +1,6 @@
 [package]
 name = "palmodmanager"
-version = "1.6.2"
+version = "1.7.0"
 edition = "2021"
 default-run = "palmodmanager"
 
@@ -39,3 +39,8 @@ open = "5"
 regex = "1"
 sevenz-rust = { version = "0.6.1", features = ["aes256", "bzip2", "zstd"] }
 repak = { git = "https://github.com/trumank/repak" }
+uesave = "0.7.1"
+unreal_asset = "0.1"
+flate2 = "1.0"
+lz4_flex = "0.11"
+oozextract = "0.5.4"
