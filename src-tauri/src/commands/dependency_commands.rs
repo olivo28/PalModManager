@@ -598,10 +598,20 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         let current_profile_id = data.current_profile_id.clone();
         if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
             profile.ue4ss_enabled = true;
+            profile.dependency_mode = crate::models::DependencyMode::Standard;
             let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
             if let Ok(json) = serde_json::to_string_pretty(profile) {
                 let _ = fs::write(p_dir.join("profile.json"), json);
             }
+            let ue4ss_backup = p_dir.join("ue4ss");
+            let dwmapi_backup = p_dir.join("dwmapi.dll");
+            if ue4ss_dir.exists() {
+                let _ = copy_dir_all(&ue4ss_dir, &ue4ss_backup);
+            }
+            if win64.join("dwmapi.dll").exists() {
+                let _ = fs::copy(win64.join("dwmapi.dll"), &dwmapi_backup);
+            }
+            crate::logger::log(&format!("install_ue4ss: Updated profile '{}' with ue4ss_enabled=true, dependency_mode=Standard, and synced backup.", profile.id));
         }
         let data_clone = data.clone();
         drop(data);
@@ -779,10 +789,18 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
         let current_profile_id = data.current_profile_id.clone();
         if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
             profile.palschema_enabled = true;
+            if profile.dependency_mode == crate::models::DependencyMode::None {
+                profile.dependency_mode = crate::models::DependencyMode::Standard;
+            }
             let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
             if let Ok(json) = serde_json::to_string_pretty(profile) {
                 let _ = fs::write(p_dir.join("profile.json"), json);
             }
+            let palschema_backup = p_dir.join("palschema");
+            if palschema_dir.exists() {
+                let _ = copy_dir_all(&palschema_dir, &palschema_backup);
+            }
+            crate::logger::log(&format!("install_palschema: Updated profile '{}' with palschema_enabled=true and synced backup.", profile.id));
         }
         let data_clone = data.clone();
         drop(data);

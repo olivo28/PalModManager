@@ -84,7 +84,20 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile: &P
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
     let dwmapi_game = win64.join("dwmapi.dll");
 
-    match profile.dependency_mode {
+    let active_mode = match profile.dependency_mode {
+        DependencyMode::None => {
+            if dwmapi_game.exists() || win64.join("ue4ss").exists() {
+                DependencyMode::Standard
+            } else if game_path_to_workshop_dir(game_path).exists() {
+                DependencyMode::Workshop
+            } else {
+                DependencyMode::None
+            }
+        }
+        ref other => other.clone(),
+    };
+
+    match active_mode {
         DependencyMode::Workshop => {
             let ws_folder = game_path_to_workshop_dir(game_path);
             let root_backup = profile_dir.join("ue4ss_workshop_root");
@@ -325,7 +338,22 @@ fn restore_profile_files_to_game(
     if logic_game.exists() { let _ = fs::remove_dir_all(&logic_game); }
 
     // 2. RESTORE DEPENDENCIES AND MODS FOR THE TARGET PROFILE:
-    match target_profile.dependency_mode {
+    let target_mode = match target_profile.dependency_mode {
+        DependencyMode::None => {
+            if target_profile.ue4ss_enabled {
+                DependencyMode::Standard
+            } else if profile_dir.join("ue4ss").exists() && fs::read_dir(profile_dir.join("ue4ss")).map(|mut d| d.next().is_some()).unwrap_or(false) {
+                DependencyMode::Standard
+            } else if profile_dir.join("ue4ss_workshop_root").exists() {
+                DependencyMode::Workshop
+            } else {
+                DependencyMode::None
+            }
+        }
+        ref other => other.clone(),
+    };
+
+    match target_mode {
         DependencyMode::Workshop => {
             let settings_backup = profile_dir.join("PalModSettings.ini");
             if settings_backup.exists() {
@@ -513,7 +541,7 @@ pub fn switch_profile(
     program_path: &str,
     target_profile: &Profile,
 ) -> Result<Vec<ModInfo>, String> {
-    crate::logger::log(&format!("switch_profile: Switching to profile '{}' (folder: {})", target_profile.name, target_profile.id));
+    crate::logger::log(&format!("switch_profile: Switching to profile '{}' (folder: {}, ue4ss_enabled: {}, dependency_mode: {:?})", target_profile.name, target_profile.id, target_profile.ue4ss_enabled, target_profile.dependency_mode));
 
     let game_path = data.settings.game_path.clone();
 

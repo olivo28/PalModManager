@@ -158,6 +158,9 @@ export async function handleEditorSave(): Promise<void> {
   editorStatus.textContent = t('editor.status_saving');
 
   try {
+    const { suppressWatcherRefresh } = await import('./watcher');
+    suppressWatcherRefresh(3000);
+
     await saveModFile(state.editorModId, state.editorSelectedFile, content);
     _originalContent = content;
     editorStatus.textContent = t('editor.status_saved');

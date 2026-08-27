@@ -96,9 +96,24 @@ pub fn extract_pak_entry(pak_path: &Path, entry_path: &str) -> Result<Vec<u8>, S
         .reader(&mut file)
         .map_err(|e| format!("Failed to read pak header: {e}"))?;
 
-    let out = pak.get(entry_path, &mut file)
-        .map_err(|e| format!("Failed to extract {entry_path}: {e}"))?;
-    Ok(out)
+    let clean_target = entry_path.replace('\\', "/").trim_start_matches('/').to_string();
+    let all_files = pak.files();
+
+    if let Some(exact_key) = all_files.iter().find(|f| {
+        let clean_f = f.replace('\\', "/").trim_start_matches('/').to_string();
+        clean_f.eq_ignore_ascii_case(&clean_target)
+    }) {
+        return pak.get(exact_key, &mut file).map_err(|e| format!("Failed to extract {entry_path}: {e}"));
+    }
+
+    if let Some(suffix_key) = all_files.iter().find(|f| {
+        let clean_f = f.replace('\\', "/").trim_start_matches('/').to_string();
+        clean_f.ends_with(&clean_target) || clean_target.ends_with(&clean_f)
+    }) {
+        return pak.get(suffix_key, &mut file).map_err(|e| format!("Failed to extract {entry_path}: {e}"));
+    }
+
+    pak.get(entry_path, &mut file).map_err(|e| format!("Failed to extract {entry_path}: {e}"))
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -144,6 +159,7 @@ pub struct UAssetInspectionDetails {
 /// Deep inspection of an internal .uasset (and companion .uexp) from a .pak archive
 pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Result<UAssetInspectionDetails, String> {
     use std::io::Cursor;
+    use std::panic::{catch_unwind, AssertUnwindSafe};
     use unreal_asset::{Asset, engine_version::EngineVersion, exports::ExportBaseTrait};
 
     // Normalize path: if caller passed a .uexp, .ubulk, or .uptnl, resolve the base .uasset
@@ -170,80 +186,157 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
     let uexp_bytes = extract_pak_entry(pak_path, &uexp_path).ok();
     let uexp_size_bytes = uexp_bytes.as_ref().map(|b| b.len());
     
-    let mut uasset_cursor = Cursor::new(uasset_bytes);
-    let mut uexp_cursor = uexp_bytes.map(Cursor::new);
-
-    let asset = Asset::new(
-        &mut uasset_cursor,
-        uexp_cursor.as_mut(),
-        EngineVersion::VER_UE5_1,
-    ).map_err(|e| format!("Failed to parse Unreal Engine asset: {e}"))?;
-
     let asset_name = Path::new(&normalized_uasset_path)
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| normalized_uasset_path.clone());
     let asset_type = classify_asset_type(&normalized_uasset_path);
 
-    let mut exports = Vec::new();
-    for export in &asset.asset_data.exports {
-        let base = export.get_base_export();
-        let object_name = base.object_name.get_content();
-        let class_name = if base.class_index.index < 0 {
-            let import_idx = (-base.class_index.index - 1) as usize;
-            asset.imports.get(import_idx)
-                .map(|i| i.object_name.get_content())
-                .unwrap_or_else(|| format!("Import #{}", import_idx))
-        } else if base.class_index.index > 0 {
-            format!("Export #{}", base.class_index.index)
-        } else {
-            "Class".to_string()
-        };
+    // Try parsing with unreal_asset across candidate Unreal Engine versions safely inside catch_unwind
+    let engine_versions = [
+        (EngineVersion::VER_UE5_1, "Unreal Engine 5.1 (GVAS/Zen)"),
+        (EngineVersion::VER_UE5_0, "Unreal Engine 5.0"),
+        (EngineVersion::VER_UE5_2, "Unreal Engine 5.2"),
+        (EngineVersion::VER_UE4_27, "Unreal Engine 4.27"),
+        (EngineVersion::UNKNOWN, "Unreal Engine (Generic)"),
+    ];
 
-        let outer_name = if base.outer_index.index < 0 {
-            let import_idx = (-base.outer_index.index - 1) as usize;
-            asset.imports.get(import_idx).map(|i| i.object_name.get_content())
-        } else if base.outer_index.index > 0 {
-            let export_idx = (base.outer_index.index - 1) as usize;
-            asset.asset_data.exports.get(export_idx).map(|e| e.get_base_export().object_name.get_content())
-        } else {
-            None
-        };
+    for (ver, ver_label) in engine_versions {
+        let uasset_data = uasset_bytes.clone();
+        let uexp_data = uexp_bytes.clone();
 
-        exports.push(UAssetExportItem {
-            object_name,
-            class_name,
-            outer_name,
-        });
+        let parse_result = catch_unwind(AssertUnwindSafe(|| {
+            let uasset_cursor = Cursor::new(uasset_data);
+            let uexp_cursor = uexp_data.map(Cursor::new);
+            Asset::new(uasset_cursor, uexp_cursor, ver)
+        }));
+
+        if let Ok(Ok(asset)) = parse_result {
+            let mut exports = Vec::new();
+            for export in &asset.asset_data.exports {
+                let base = export.get_base_export();
+                let object_name = base.object_name.get_content();
+                let class_name = if base.class_index.index < 0 {
+                    let import_idx = (-base.class_index.index - 1) as usize;
+                    asset.imports.get(import_idx)
+                        .map(|i| i.object_name.get_content())
+                        .unwrap_or_else(|| format!("Import #{}", import_idx))
+                } else if base.class_index.index > 0 {
+                    format!("Export #{}", base.class_index.index)
+                } else {
+                    "Class".to_string()
+                };
+
+                let outer_name = if base.outer_index.index < 0 {
+                    let import_idx = (-base.outer_index.index - 1) as usize;
+                    asset.imports.get(import_idx).map(|i| i.object_name.get_content())
+                } else if base.outer_index.index > 0 {
+                    let export_idx = (base.outer_index.index - 1) as usize;
+                    asset.asset_data.exports.get(export_idx).map(|e| e.get_base_export().object_name.get_content())
+                } else {
+                    None
+                };
+
+                exports.push(UAssetExportItem {
+                    object_name,
+                    class_name,
+                    outer_name,
+                });
+            }
+
+            let mut imports = Vec::new();
+            for import in &asset.imports {
+                imports.push(UAssetImportItem {
+                    object_name: import.object_name.get_content(),
+                    class_name: import.class_name.get_content(),
+                    class_package: import.class_package.get_content(),
+                });
+            }
+
+            let name_map = asset.get_name_map();
+            let raw_names: Vec<String> = name_map.get_ref().get_name_map_index_list().to_vec();
+            let names_sample: Vec<String> = raw_names.into_iter()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty() && s.chars().any(|c| c.is_alphanumeric()))
+                .collect();
+            let name_count = names_sample.len();
+
+            let summary = UAssetSummaryInfo {
+                uasset_size_bytes,
+                uexp_size_bytes,
+                export_count: exports.len(),
+                import_count: imports.len(),
+                name_count,
+                package_flags: asset.asset_data.package_flags.bits(),
+            };
+
+            return Ok(UAssetInspectionDetails {
+                asset_name,
+                asset_path: uasset_internal_path.to_string(),
+                asset_type,
+                engine_version: ver_label.to_string(),
+                summary,
+                exports,
+                imports,
+                names_sample,
+            });
+        }
     }
 
+    // --- High-Reliability Binary Fallback Parser ---
+    // If unreal_asset panics or fails on custom/cooked engine structures, extract string tokens,
+    // export objects, and dependency paths directly from the raw binary stream.
+    let mut combined_bytes = uasset_bytes.clone();
+    if let Some(ref uexp) = uexp_bytes {
+        combined_bytes.extend_from_slice(uexp);
+    }
+
+    let mut names_sample = Vec::new();
     let mut imports = Vec::new();
-    for import in &asset.imports {
-        imports.push(UAssetImportItem {
-            object_name: import.object_name.get_content(),
-            class_name: import.class_name.get_content(),
-            class_package: import.class_package.get_content(),
-        });
-    }
+    let mut exports = Vec::new();
+    let mut seen_names = std::collections::HashSet::new();
 
-    let name_map = asset.get_name_map();
-    let names_sample: Vec<String> = name_map.get_ref().get_name_map_index_list().to_vec();
-    let name_count = names_sample.len();
+    let text = String::from_utf8_lossy(&combined_bytes);
+    for token in text.split(|c: char| c == '\0' || c < ' ' || c > '~') {
+        let trimmed = token.trim();
+        if trimmed.len() >= 3 && trimmed.len() <= 128 && !trimmed.contains('\n') && !trimmed.contains('\r') && trimmed.chars().any(|c| c.is_alphanumeric()) {
+            if seen_names.insert(trimmed.to_string()) {
+                names_sample.push(trimmed.to_string());
+
+                if trimmed.starts_with("/Script/") || trimmed.starts_with("/Game/") || trimmed.starts_with("/Engine/") {
+                    let parts: Vec<&str> = trimmed.split('.').collect();
+                    let pkg = parts[0].to_string();
+                    let obj = parts.get(1).unwrap_or(&"").to_string();
+                    imports.push(UAssetImportItem {
+                        object_name: if obj.is_empty() { pkg.clone() } else { obj },
+                        class_name: "Package".to_string(),
+                        class_package: pkg,
+                    });
+                } else if trimmed.ends_with("_C") || trimmed.starts_with("BP_") || trimmed.starts_with("Default__") || trimmed.contains("Function") {
+                    exports.push(UAssetExportItem {
+                        object_name: trimmed.to_string(),
+                        class_name: if trimmed.ends_with("_C") { "BlueprintGeneratedClass".to_string() } else { "Object".to_string() },
+                        outer_name: Some(asset_name.clone()),
+                    });
+                }
+            }
+        }
+    }
 
     let summary = UAssetSummaryInfo {
         uasset_size_bytes,
         uexp_size_bytes,
         export_count: exports.len(),
         import_count: imports.len(),
-        name_count,
-        package_flags: asset.asset_data.package_flags.bits(),
+        name_count: names_sample.len(),
+        package_flags: 0,
     };
 
     Ok(UAssetInspectionDetails {
         asset_name,
         asset_path: uasset_internal_path.to_string(),
         asset_type,
-        engine_version: "Unreal Engine 5.1 (GVAS/Zen Package)".to_string(),
+        engine_version: "Unreal Engine (Binary Stream Extractor)".to_string(),
         summary,
         exports,
         imports,
@@ -503,3 +596,5 @@ pub fn check_gamepass_pak_compatibility(
 
     (true, notices)
 }
+
+

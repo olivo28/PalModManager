@@ -291,6 +291,8 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         (false, Vec::new())
     };
 
+    crate::logger::log(&format!("check_dependencies: UE4SS installed={}, mode={}, ver={:?} | PalSchema installed={}, ver={:?}", ue4ss_installed, ue4ss_install_mode_str, ue4ss_version, palschema_installed, palschema_version));
+
     DependencyStatus {
         ue4ss_installed,
         ue4ss_version,

@@ -165,17 +165,4 @@ export function setupModalListeners(): void {
       }
     });
   });
-
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      document.querySelectorAll('.modal-overlay').forEach((overlay) => {
-        if (overlay.classList.contains('visible')) {
-          overlay.classList.remove('visible');
-          if (overlay.id === 'install-modal') {
-            closeInstallModal();
-          }
-        }
-      });
-    }
-  });
 }

@@ -20,6 +20,7 @@ export interface NxmQueueItem {
   modName: string;
   modAuthor?: string;
   modPictureUrl?: string;
+  modVersion?: string;
   status: 'queued' | 'downloading' | 'awaiting_install' | 'installing' | 'done' | 'cancelled' | 'error';
   progress: number;
   downloadedBytes: number;
@@ -115,6 +116,7 @@ export async function enqueueNxmDownload(nxmUrl: string): Promise<void> {
         newItem.modName = meta.name;
         newItem.modAuthor = meta.author || undefined;
         newItem.modPictureUrl = meta.pictureUrl || undefined;
+        if (meta.version) newItem.modVersion = meta.version;
         renderQueueUI();
       }
     }).catch(() => {});
@@ -133,7 +135,8 @@ export async function enqueueDiscoveryDownload(
   modName: string,
   downloadUrl: string,
   modAuthor?: string,
-  modPictureUrl?: string
+  modPictureUrl?: string,
+  modVersion?: string
 ): Promise<void> {
   const downloadId = 'disc_' + Date.now() + '_' + Math.random().toString(36).substring(2, 7);
   const newItem: NxmQueueItem = {
@@ -145,6 +148,7 @@ export async function enqueueDiscoveryDownload(
     modName: modName || `Mod #${modId}`,
     modAuthor,
     modPictureUrl,
+    modVersion,
     status: 'queued',
     progress: 0,
     downloadedBytes: 0,
@@ -196,7 +200,7 @@ async function processDownloads(): Promise<void> {
   processDownloads();
 }
 
-export function checkNextInstall(): void {
+export async function checkNextInstall(): Promise<void> {
   const installModal = document.getElementById('install-modal');
   const isModalOpen = installModal && installModal.classList.contains('visible');
   if (!isModalOpen) {
@@ -219,6 +223,22 @@ export function checkNextInstall(): void {
   isInstallingActive = true;
   nextToInstall.status = 'installing';
   renderQueueUI();
+
+  // If mod metadata is still the fallback placeholder 'Mod #1234', fetch real metadata before opening modal
+  if (nextToInstall.modName.startsWith('Mod #') && nextToInstall.modId) {
+    try {
+      const meta = await getNxmModMetadata(nextToInstall.gameDomain || 'palworld', nextToInstall.modId);
+      if (meta && meta.name) {
+        nextToInstall.modName = meta.name;
+        if (meta.author) nextToInstall.modAuthor = meta.author;
+        if (meta.pictureUrl) nextToInstall.modPictureUrl = meta.pictureUrl;
+        if (meta.version) nextToInstall.modVersion = meta.version;
+        renderQueueUI();
+      }
+    } catch (e) {
+      console.warn('[NxmQueue] Failed to resolve metadata before install:', e);
+    }
+  }
 
   setInstallModalCallback(async (success: boolean) => {
     isInstallingActive = false;
@@ -248,7 +268,8 @@ export function checkNextInstall(): void {
   openInstallModalForZip(
     nextToInstall.tempZipPath,
     nextToInstall.modName,
-    nextToInstall.modId
+    nextToInstall.modId,
+    nextToInstall.modVersion
   ).catch((err) => {
     console.error('[NxmQueue] Failed to open installer modal:', err);
     isInstallingActive = false;

@@ -673,7 +673,7 @@ pub fn build_manifest_from_files(
 
     let mut folder_name = detect_folder_name_from_files(files, filename);
     let is_uuid = folder_name.len() >= 32 && folder_name.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
-    if (folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid) {
+    if folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid {
         if let Some(ref disp) = custom_display_name {
             let cleaned = crate::installer::clean_zip_name(disp);
             if !cleaned.is_empty() && cleaned != "unknown" {
@@ -682,6 +682,22 @@ pub fn build_manifest_from_files(
         }
     }
     let folder_name_lower = folder_name.to_lowercase();
+
+    // Collect all distinct UE4SS mod root directory names from the files list
+    let mut detected_ue4ss_roots: Vec<String> = Vec::new();
+    for file in files {
+        let normalized = file.replace('\\', "/");
+        let segments: Vec<&str> = normalized.split('/').filter(|s| !s.is_empty()).collect();
+        for (i, segment) in segments.iter().enumerate() {
+            let lower = segment.to_lowercase();
+            if (lower == "scripts" || lower == "dlls" || lower == "enabled.txt") && i > 0 {
+                let candidate = segments[i - 1];
+                if !is_forbidden(candidate) && !detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(candidate)) {
+                    detected_ue4ss_roots.push(candidate.to_string());
+                }
+            }
+        }
+    }
 
     let mut routes = Vec::new();
     let mut has_ue4ss = false;
@@ -861,9 +877,16 @@ pub fn build_manifest_from_files(
                 }
             }
 
+            let is_ue4ss_asset = rel_segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)))
+                || lower.contains("ue4ss/mods/")
+                || rel_lower.ends_with("enabled.txt");
+
             if is_palschema_asset || lower.contains("palschema/") {
                 has_palschema = true;
                 RouteType::PalSchema
+            } else if is_ue4ss_asset {
+                has_ue4ss = true;
+                RouteType::Ue4ss
             } else {
                 RouteType::Passthrough
             }
@@ -907,41 +930,63 @@ pub fn build_manifest_from_files(
             .map(|n| n.to_string_lossy().to_lowercase())
             .unwrap_or_else(|| "win64".to_string());
         
-        let ue4ss_pattern = format!("pal/binaries/{}/ue4ss/mods/", binaries_name);
-        let binaries_pattern = format!("pal/binaries/{}/", binaries_name);
+        let norm_zip = zip_path.replace('\\', "/");
+        let zip_lower = norm_zip.to_lowercase();
 
-        let game_subpath = if let Some(idx) = rel_lower.find(&ue4ss_pattern) {
-            Some(&relative_path[idx..])
+        let game_subpath = if let Some(idx) = zip_lower.find("pal/content/paks/") {
+            Some(norm_zip[idx..].to_string())
+        } else if let Some(idx) = zip_lower.find("pal/binaries/") {
+            let sub = &norm_zip[idx..];
+            let sub_lower = sub.to_lowercase();
+            // Adapt win64/wingdk to target system
+            if sub_lower.starts_with("pal/binaries/win64/") && binaries_name == "wingdk" {
+                Some(format!("Pal/Binaries/WinGDK/{}", &sub["pal/binaries/win64/".len()..]))
+            } else if sub_lower.starts_with("pal/binaries/wingdk/") && binaries_name == "win64" {
+                Some(format!("Pal/Binaries/Win64/{}", &sub["pal/binaries/wingdk/".len()..]))
+            } else {
+                Some(sub.to_string())
+            }
         } else if let Some(idx) = rel_lower.find("mods/nativemods/ue4ss/mods/") {
-            Some(&relative_path[idx..])
-        } else if let Some(idx) = rel_lower.find(&binaries_pattern) {
-            Some(&relative_path[idx..])
-        } else if let Some(idx) = rel_lower.find("pal/content/paks/") {
-            Some(&relative_path[idx..])
-        // Additional fallbacks in case zip has alternative architecture naming
-        } else if let Some(idx) = rel_lower.find("pal/binaries/win64/ue4ss/mods/") {
-            Some(&relative_path[idx..])
-        } else if let Some(idx) = rel_lower.find("pal/binaries/wingdk/ue4ss/mods/") {
-            Some(&relative_path[idx..])
-        } else if let Some(idx) = rel_lower.find("pal/binaries/win64/") {
-            Some(&relative_path[idx..])
-        } else if let Some(idx) = rel_lower.find("pal/binaries/wingdk/") {
-            Some(&relative_path[idx..])
+            Some(relative_path[idx..].to_string())
         } else {
             None
         };
 
-        let dest_path = if let Some(subpath) = game_subpath {
+        let dest_path = if let Some(ref subpath) = game_subpath {
             game_path.join(subpath)
         } else {
             match route_type {
                 RouteType::Ue4ss => {
-                    let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') {
-                        format!("Scripts/{}", relative_path)
+                    let norm_file = zip_path.replace('\\', "/");
+                    let norm_parts: Vec<&str> = norm_file.split('/').filter(|s| !s.is_empty()).collect();
+
+                    let mut matched_root = None;
+                    let mut matched_subpath = None;
+
+                    for root in &detected_ue4ss_roots {
+                        let root_lower = root.to_lowercase();
+                        if let Some(pos) = norm_parts.iter().position(|p| p.to_lowercase() == root_lower) {
+                            matched_root = Some(root.clone());
+                            matched_subpath = Some(norm_parts[pos + 1..].join("/"));
+                            break;
+                        }
+                    }
+
+                    if let (Some(root), Some(subpath)) = (matched_root, matched_subpath) {
+                        let final_sub = if subpath.to_lowercase().ends_with(".lua") && !subpath.contains('/') {
+                            format!("Scripts/{}", subpath)
+                        } else {
+                            subpath
+                        };
+                        ue4ss_mods_dest.join(&root).join(final_sub)
                     } else {
-                        relative_path.clone()
-                    };
-                    ue4ss_mods_dest.join(&folder_name).join(final_rel)
+                        let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') {
+                            format!("Scripts/{}", relative_path)
+                        } else {
+                            relative_path.clone()
+                        };
+                        ue4ss_mods_dest.join(&folder_name).join(final_rel)
+                    }
                 }
                 RouteType::PalSchema => {
                     let rel_segments: Vec<&str> = relative_path.split('/').collect();
@@ -978,7 +1023,28 @@ pub fn build_manifest_from_files(
                         paks_dest_dir.join("AlterConfig").join(filename)
                     } else {
                         match primary_route_type {
-                            RouteType::Ue4ss => ue4ss_mods_dest.join(&folder_name).join(&relative_path),
+                            RouteType::Ue4ss => {
+                                let norm_file = zip_path.replace('\\', "/");
+                                let norm_parts: Vec<&str> = norm_file.split('/').filter(|s| !s.is_empty()).collect();
+
+                                let mut matched_root = None;
+                                let mut matched_subpath = None;
+
+                                for root in &detected_ue4ss_roots {
+                                    let root_lower = root.to_lowercase();
+                                    if let Some(pos) = norm_parts.iter().position(|p| p.to_lowercase() == root_lower) {
+                                        matched_root = Some(root.clone());
+                                        matched_subpath = Some(norm_parts[pos + 1..].join("/"));
+                                        break;
+                                    }
+                                }
+
+                                if let (Some(root), Some(subpath)) = (matched_root, matched_subpath) {
+                                    ue4ss_mods_dest.join(&root).join(subpath)
+                                } else {
+                                    ue4ss_mods_dest.join(&folder_name).join(&relative_path)
+                                }
+                            }
                             RouteType::PalSchema => palschema_mods_dest.join(&folder_name).join(&relative_path),
                             RouteType::Pak | RouteType::LogicMods | RouteType::Companion | RouteType::Passthrough => {
                                 let target_dir = if primary_route_type == RouteType::LogicMods {
@@ -1022,6 +1088,7 @@ pub fn build_manifest_from_files(
     };
 
     let mut display_name = custom_display_name
+        .filter(|n| !n.trim().is_empty() && !n.starts_with("Mod #") && !n.starts_with("nexus_") && n != "unknown")
         .or(parsed_nexus.name)
         .unwrap_or_else(|| crate::installer::clean_zip_name(filename));
 
@@ -1078,5 +1145,64 @@ pub fn build_install_manifest(
         }
     }
     build_manifest_from_files(&analysis.files, &filename, game_path, pak_destination, custom_display_name, modinfo_data)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+
+    #[test]
+    fn test_pal_insight_manifest_routing() {
+        let zip_file = "C:/Users/Antikux/Downloads/Pal Insight 1.6.0 4638 1.6.0 2026-08-26T17-37Z 5V0tE6iaU.zip";
+        if !std::path::Path::new(zip_file).exists() {
+            return;
+        }
+        let game_path = PathBuf::from("C:/FakeGamePath");
+        let manifest = build_install_manifest(zip_file, &game_path, None, None).expect("Should build manifest");
+
+        println!("Pal Insight Manifest: folder_name={}, version={}, mod_type={:?}", manifest.folder_name, manifest.version, manifest.mod_type);
+        for r in &manifest.routes {
+            println!("  ROUTE: {} -> {}", r.zip_path, r.dest_path);
+        }
+
+        // Verify PalInsight and PalInsightSettings are routed separately without nesting
+        let has_mangled_nesting = manifest.routes.iter().any(|r| {
+            r.dest_path.contains("PalInsightSettings\\PalInsight") || r.dest_path.contains("PalInsightSettings/PalInsight")
+        });
+        assert!(!has_mangled_nesting, "Should not nest PalInsight under PalInsightSettings!");
+
+        let has_palinsight_lua = manifest.routes.iter().any(|r| {
+            r.dest_path.ends_with("PalInsight\\Scripts\\main.lua") || r.dest_path.ends_with("PalInsight/Scripts/main.lua")
+        });
+        assert!(has_palinsight_lua, "PalInsight main.lua must be in PalInsight/Scripts/main.lua");
+
+        let has_settings_lua = manifest.routes.iter().any(|r| {
+            r.dest_path.ends_with("PalInsightSettings\\Scripts\\main.lua") || r.dest_path.ends_with("PalInsightSettings/Scripts/main.lua")
+        });
+        assert!(has_settings_lua, "PalInsightSettings main.lua must be in PalInsightSettings/Scripts/main.lua");
+
+        let has_pak = manifest.routes.iter().any(|r| {
+            r.dest_path.contains("LogicMods") && r.dest_path.ends_with("PalInsightX.pak")
+        });
+        assert!(has_pak, "PalInsightX.pak must be in LogicMods");
+    }
+
+    #[test]
+    fn test_expedition_timer_hud_manifest_routing() {
+        let zip_file = "C:/Users/Antikux/Downloads/ExpeditionTimerHUD 4687 8 2026-08-26T20-02Z tlYGMmRGl.zip";
+        if !std::path::Path::new(zip_file).exists() {
+            return;
+        }
+        let game_path = PathBuf::from("C:/FakeGamePath");
+        let analysis = analyze_zip(zip_file).expect("Should analyze zip");
+        println!("Analysis: {:?}", analysis);
+        let manifest = build_install_manifest(zip_file, &game_path, None, None).expect("Should build manifest");
+
+        println!("ExpeditionTimerHUD Manifest: folder_name={}, version={}, mod_type={:?}", manifest.folder_name, manifest.version, manifest.mod_type);
+        for r in &manifest.routes {
+            println!("  ROUTE: {} -> {} (type: {:?})", r.zip_path, r.dest_path, r.route_type);
+        }
+    }
 }
 

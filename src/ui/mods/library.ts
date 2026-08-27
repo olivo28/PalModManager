@@ -889,7 +889,42 @@ export async function triggerInstallFromLibrary(id: string, zipName?: string): P
     const analysis = await analyzeZip(zipPath);
     const check = await checkModExistsCommand(zipPath);
 
-    const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } : null;
+    const state = getState();
+    const libEntry = state.libraryEntries?.find(e => e.modId === id && (!zipName || e.zipName === zipName)) || state.libraryEntries?.find(e => e.modId === id);
+    const modInfo = check.modInfo || state.allMods.find(m => m.id === id || m.name === id);
+
+    if (libEntry || modInfo) {
+      if (!analysis.nexusModId) {
+        analysis.nexusModId = libEntry?.nexusModId || modInfo?.nexusModId || undefined;
+      }
+      if (!analysis.detectedVersion || analysis.detectedVersion === '1.0.0' || analysis.detectedVersion === 'unknown') {
+        if (libEntry?.version && libEntry.version !== 'unknown' && libEntry.version !== '1.0.0') {
+          analysis.detectedVersion = libEntry.version;
+        } else if (libEntry?.nexusVersion) {
+          analysis.detectedVersion = libEntry.nexusVersion;
+        }
+      }
+      if (!analysis.nexusInfo) {
+        const pic = libEntry?.nexusPictureUrl || modInfo?.nexusPictureUrl;
+        const name = libEntry?.nexusName || modInfo?.nexusName || libEntry?.modId || modInfo?.name;
+        const author = libEntry?.nexusAuthor || modInfo?.nexusAuthor || libEntry?.author;
+        const summary = libEntry?.nexusSummary || modInfo?.nexusSummary || libEntry?.description;
+        if (pic || name || author) {
+          analysis.nexusInfo = {
+            modId: analysis.nexusModId || 0,
+            name: name || '',
+            author: author || '',
+            summary: summary || '',
+            pictureUrl: pic || '',
+            version: libEntry?.version || libEntry?.nexusVersion || modInfo?.version || '',
+            downloads: 0,
+            endorsements: 0,
+          };
+        }
+      }
+    }
+
+    const existingMod = check.exists && check.modInfo ? { id: check.modInfo.id, name: check.modInfo.name, version: check.modInfo.version } : (modInfo ? { id: modInfo.id, name: modInfo.name, version: modInfo.version } : null);
 
     renderInstallPreview(analysis, existingMod);
     showInstallModal();

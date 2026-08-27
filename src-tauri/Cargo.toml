@@ -38,7 +38,7 @@ winreg = "0.52"
 open = "5"
 regex = "1"
 sevenz-rust = { version = "0.6.1", features = ["aes256", "bzip2", "zstd"] }
-repak = { git = "https://github.com/trumank/repak" }
+repak = { git = "https://github.com/trumank/repak", features = ["oodle"] }
 uesave = "0.7.1"
 unreal_asset = "0.1"
 flate2 = "1.0"

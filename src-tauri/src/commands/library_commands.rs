@@ -295,7 +295,9 @@ pub async fn copy_to_library_command(
         .or(matched_folder)
         .unwrap_or(clean_stem);
 
-    let mut entry = library::copy_to_library(&zip_path, &program_path, &folder_name, None)?;
+    let ver = detected_version.clone().or_else(|| matched_nexus_info.as_ref().map(|i| i.version.clone()));
+
+    let mut entry = library::copy_to_library(&zip_path, &program_path, &folder_name, None, ver.as_deref())?;
 
     if let Some(ref info) = matched_nexus_info {
         let lib_path = library::get_library_path(&program_path, &folder_name);
@@ -327,7 +329,7 @@ pub async fn copy_to_library_command(
     entry.mod_type = internal_type;
 
     // Save matching .pmm.json sidecar for this specific zip
-    let lib_zip_path = library::get_library_path(&program_path, &folder_name).join(&filename);
+    let lib_zip_path = library::get_library_path(&program_path, &folder_name).join(&entry.zip_name);
     let pmm_sidecar = std::path::PathBuf::from(format!("{}.pmm.json", lib_zip_path.to_string_lossy()));
     let pmm_json = serde_json::json!({
         "name": entry.nexus_name.as_deref().unwrap_or(&folder_name),
@@ -337,7 +339,7 @@ pub async fn copy_to_library_command(
         "modType": entry.mod_type.as_deref().unwrap_or(""),
         "nexusModId": entry.nexus_mod_id,
         "nexusPictureUrl": entry.nexus_picture_url.as_deref().unwrap_or(""),
-        "zipName": filename,
+        "zipName": entry.zip_name,
     });
     let _ = std::fs::write(&pmm_sidecar, serde_json::to_string_pretty(&pmm_json).unwrap_or_default());
 

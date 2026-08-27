@@ -89,18 +89,25 @@ pub fn sync_current_profile_states(data: &mut AppData) {
 }
 
 pub fn cleanup_profile_mod_lists(data: &mut AppData) {
+    let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
     for profile in &mut data.profiles {
         if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
             profile.installed_mod_ids = profile.enabled_mod_ids.clone();
         }
         if profile.id == "default" && !profile.ue4ss_enabled {
-            let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
             if dep.ue4ss_installed {
                 profile.ue4ss_enabled = true;
                 if dep.palschema_installed {
                     profile.palschema_enabled = true;
                 }
             }
+        }
+        if profile.dependency_mode == DependencyMode::None && profile.ue4ss_enabled {
+            profile.dependency_mode = if dep.ue4ss_install_mode == "Workshop" {
+                DependencyMode::Workshop
+            } else {
+                DependencyMode::Standard
+            };
         }
     }
 }

@@ -1,5 +1,5 @@
 import { listen } from '@tauri-apps/api/event';
-import { getState } from '../../state';
+import { getState, updateState } from '../../state';
 import { loadFileContent, _originalContent } from './viewer';
 import { renderEditorModTree } from './tree';
 import { showToast } from '../toast';
@@ -43,7 +43,9 @@ export async function setupEditorFsWatcher(): Promise<void> {
           // Restore selection highlight on file tree if selected file still exists
           if (state.editorSelectedFile) {
             const currentSelected = state.editorSelectedFile;
-            if (!latestFiles.includes(currentSelected)) {
+            const normLatest = latestFiles.map(f => f.replace(/\\/g, '/'));
+            const normSelected = currentSelected.replace(/\\/g, '/');
+            if (!normLatest.includes(normSelected)) {
               // File was deleted on disk!
               updateState({ editorSelectedFile: null });
               const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;

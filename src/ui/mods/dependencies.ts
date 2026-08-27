@@ -10,31 +10,43 @@ import { renderConflictBanner, removeConflictBanner } from '../conflictBanner';
 
 let _isPromptingUe4ss = false;
 let _isPromptingPalschema = false;
+let _loadDepsPromise: Promise<void> | null = null;
+let _lastLoadDepsTime = 0;
 
-export async function loadDependencies(): Promise<void> {
-  try {
-    const deps = await checkDependencies();
-    
-    if (deps.has_dll_conflict && deps.conflicting_dlls && deps.conflicting_dlls.length > 0) {
-      renderConflictBanner(deps.conflicting_dlls);
-    } else {
-      removeConflictBanner();
-    }
+export async function loadDependencies(force = false): Promise<void> {
+  const now = Date.now();
+  if (!force && _loadDepsPromise) {
+    return _loadDepsPromise;
+  }
+  if (!force && now - _lastLoadDepsTime < 3000) {
+    return;
+  }
+  _lastLoadDepsTime = now;
 
-    if (deps.ue4ss_updated_from && deps.ue4ss_version) {
-      showToast(t('toasts.dep_updated', { dep: 'UE4SS', oldVer: deps.ue4ss_updated_from, newVer: deps.ue4ss_version }), 'success');
-    }
-    if (deps.palschema_updated_from && deps.palschema_version) {
-      showToast(t('toasts.dep_updated', { dep: 'PalSchema', oldVer: deps.palschema_updated_from, newVer: deps.palschema_version }), 'success');
-    }
+  _loadDepsPromise = (async () => {
+    try {
+      const deps = await checkDependencies();
+      
+      if (deps.has_dll_conflict && deps.conflicting_dlls && deps.conflicting_dlls.length > 0) {
+        renderConflictBanner(deps.conflicting_dlls);
+      } else {
+        removeConflictBanner();
+      }
 
-    import('../../api').then(({ checkDependenciesFull }) => {
-      checkDependenciesFull().then(fullDeps => {
-        updateState({ dependencies: fullDeps });
-        renderDependencyBadges(fullDeps);
-        if (fullDeps.has_dll_conflict && fullDeps.conflicting_dlls && fullDeps.conflicting_dlls.length > 0) {
-          renderConflictBanner(fullDeps.conflicting_dlls);
-        }
+      if (deps.ue4ss_updated_from && deps.ue4ss_version) {
+        showToast(t('toasts.dep_updated', { dep: 'UE4SS', oldVer: deps.ue4ss_updated_from, newVer: deps.ue4ss_version }), 'success');
+      }
+      if (deps.palschema_updated_from && deps.palschema_version) {
+        showToast(t('toasts.dep_updated', { dep: 'PalSchema', oldVer: deps.palschema_updated_from, newVer: deps.palschema_version }), 'success');
+      }
+
+      import('../../api').then(({ checkDependenciesFull }) => {
+        checkDependenciesFull().then(fullDeps => {
+          updateState({ dependencies: fullDeps });
+          renderDependencyBadges(fullDeps);
+          if (fullDeps.has_dll_conflict && fullDeps.conflicting_dlls && fullDeps.conflicting_dlls.length > 0) {
+            renderConflictBanner(fullDeps.conflicting_dlls);
+          }
 
         // Check if UE4SS needs update and ask user (only for GitHub / Standalone mode)
         if (fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop') {
@@ -77,7 +89,12 @@ export async function loadDependencies(): Promise<void> {
     renderDependencyBadges(deps);
   } catch (e) {
     console.error('Failed to check dependencies:', e);
+  } finally {
+    _loadDepsPromise = null;
   }
+  })();
+
+  return _loadDepsPromise;
 }
 
 export function executeInstallOrUpdate(type: 'ue4ss' | 'palschema', isUpdate: boolean): void {

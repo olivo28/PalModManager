@@ -852,6 +852,11 @@ pub fn inspect_pak_file_tree(
             fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
 
             let result = (|| {
+                let target_name = Path::new(&pak_path)
+                    .file_name()
+                    .map(|s| s.to_string_lossy().to_lowercase())
+                    .unwrap_or_else(|| pak_path.to_lowercase());
+
                 let lower = zp.to_lowercase();
                 if lower.ends_with(".zip") {
                     let file = fs::File::open(&zip_p).map_err(|e| e.to_string())?;
@@ -861,7 +866,16 @@ pub fn inspect_pak_file_tree(
                     for i in 0..archive.len() {
                         let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
                         let ename = entry.name().replace('\\', "/");
-                        if ename.eq_ignore_ascii_case(&pak_path) || ename.ends_with(&format!("/{}", pak_path)) {
+                        let ename_lower = ename.to_lowercase();
+                        let entry_fname = Path::new(&ename)
+                            .file_name()
+                            .map(|s| s.to_string_lossy().to_lowercase())
+                            .unwrap_or_default();
+
+                        if entry_fname == target_name
+                            || ename_lower.ends_with(&format!("/{}", target_name))
+                            || ename.eq_ignore_ascii_case(&pak_path)
+                        {
                             let temp_pak = temp_dir.join("temp_inspect.pak");
                             let mut out = fs::File::create(&temp_pak).map_err(|e| e.to_string())?;
                             std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
@@ -879,7 +893,16 @@ pub fn inspect_pak_file_tree(
                     let mut found = false;
                     for entry in reader.archive().files.iter() {
                         let ename = entry.name().replace('\\', "/");
-                        if ename.eq_ignore_ascii_case(&pak_path) || ename.ends_with(&format!("/{}", pak_path)) {
+                        let ename_lower = ename.to_lowercase();
+                        let entry_fname = Path::new(&ename)
+                            .file_name()
+                            .map(|s| s.to_string_lossy().to_lowercase())
+                            .unwrap_or_default();
+
+                        if entry_fname == target_name
+                            || ename_lower.ends_with(&format!("/{}", target_name))
+                            || ename.eq_ignore_ascii_case(&pak_path)
+                        {
                             sevenz_rust::decompress_file(&zip_p, &temp_dir).map_err(|e| e.to_string())?;
                             found = true;
                             break;
@@ -888,6 +911,9 @@ pub fn inspect_pak_file_tree(
                     if !found {
                         return Err(format!("Pak file '{}' not found in 7z", pak_path));
                     }
+                } else {
+                    // .rar or other supported archive formats
+                    crate::zip_handler::extract_zip_to_temp(&zp, &temp_dir).map_err(|e| e.to_string())?;
                 }
 
                 let temp_pak = temp_dir.join("temp_inspect.pak");
@@ -895,12 +921,23 @@ pub fn inspect_pak_file_tree(
                     crate::pak_scanner::list_pak_entries_detailed(&temp_pak)
                 } else {
                     // Search recursively in temp_dir for extracted pak
+                    let mut found_pak: Option<PathBuf> = None;
                     for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
                         if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
-                            return crate::pak_scanner::list_pak_entries_detailed(entry.path());
+                            let fname = entry.file_name().to_string_lossy().to_lowercase();
+                            if fname == target_name {
+                                found_pak = Some(entry.path().to_path_buf());
+                                break;
+                            } else if found_pak.is_none() {
+                                found_pak = Some(entry.path().to_path_buf());
+                            }
                         }
                     }
-                    Err(format!("Could not extract pak '{}'", pak_path))
+                    if let Some(target) = found_pak {
+                        crate::pak_scanner::list_pak_entries_detailed(&target)
+                    } else {
+                        Err(format!("Could not extract pak '{}'", pak_path))
+                    }
                 }
             })();
 
@@ -973,7 +1010,7 @@ pub fn inspect_pak_asset(
         if pak.exists() {
             if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
                 if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
-                    return crate::pak_scanner::inspect_uasset_from_pak(&pak, &asset_internal_path);
+                    return crate::pak_scanner::list_pak_entries(&pak);
                 }
             }
         }
@@ -1046,6 +1083,26 @@ pub fn inspect_uasset_deep_cmd(
                             std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
                             if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(&temp_pak, &asset_internal_path) {
                                 return Ok(details);
+                            }
+                        }
+                    }
+                } else if lower.ends_with(".7z") {
+                    if sevenz_rust::decompress_file(&zip_p, &temp_dir).is_ok() {
+                        for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
+                            if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
+                                if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(entry.path(), &asset_internal_path) {
+                                    return Ok(details);
+                                }
+                            }
+                        }
+                    }
+                } else {
+                    if crate::zip_handler::extract_zip_to_temp(&zp, &temp_dir).is_ok() {
+                        for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
+                            if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
+                                if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(entry.path(), &asset_internal_path) {
+                                    return Ok(details);
+                                }
                             }
                         }
                     }
@@ -1278,6 +1335,45 @@ pub fn get_world_custom_meta_cmd(world_dir: String) -> Result<crate::save_scanne
 #[tauri::command]
 pub fn inspect_snapshot_details_cmd(world_dir: String, slot_name: String) -> Result<crate::save_scanner::SaveBackupSnapshot, String> {
     crate::save_scanner::inspect_snapshot_details(Path::new(&world_dir), &slot_name)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_inspect_pak_from_rar() {
+        let rar_file = "C:/Users/Antikux/Downloads/Modern Wooden Building - Steam Version(Emprxss) 5366 2 2026-08-27T18-44Z mu9Q1NbQr.rar";
+        if !std::path::Path::new(rar_file).exists() {
+            return;
+        }
+        let res = inspect_pak_file_tree("Emprxss_Wooden_Modern_Building_P.pak".to_string(), Some(rar_file.to_string()));
+        println!("RAR Inspection result: {:?}", res);
+        assert!(res.is_ok(), "Should inspect pak inside RAR");
+        let inspection = res.unwrap();
+        assert!(!inspection.files.is_empty(), "Files should not be empty");
+
+        // Inspect uasset inside RAR pak
+        let temp_dir = std::env::temp_dir().join("pmm_uasset_inspect_test");
+        let _ = fs::create_dir_all(&temp_dir);
+        let ext_res = crate::zip_handler::extract_zip_to_temp(rar_file, &temp_dir).expect("Should extract rar");
+        let pak_path = ext_res.join("Pal/Content/Paks/~mods/Emprxss_Wooden_Modern_Building_P.pak");
+        let pak_real = if pak_path.exists() {
+            pak_path
+        } else {
+            walkdir::WalkDir::new(&temp_dir)
+                .into_iter()
+                .flatten()
+                .find(|e| e.path().extension().map_or(false, |ext| ext == "pak"))
+                .map(|e| e.path().to_path_buf())
+                .unwrap()
+        };
+
+        let uasset_details = crate::pak_scanner::inspect_uasset_deep(&pak_real, "Model/Prop/Architecture/Architecture_Wood/Material/MI_PalProp_DoorBase_Wood.uasset");
+        println!("Uasset details: {:?}", uasset_details);
+        assert!(uasset_details.is_ok(), "Should parse uasset inside pak");
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
 }
 
 

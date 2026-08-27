@@ -325,21 +325,6 @@ function setupEventListeners(): void {
     });
   }
 
-  // Global Escape key listener for Discovery modals
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      const imgModal = document.getElementById('discovery-image-modal');
-      if (imgModal && imgModal.classList.contains('visible')) {
-        closeLightbox();
-        return;
-      }
-      const modModal = document.getElementById('discovery-mod-modal');
-      if (modModal && modModal.classList.contains('visible')) {
-        closeDiscoveryModal();
-      }
-    }
-  });
-
   // Modal sub-tabs
   document.querySelectorAll('.discovery-modal-tab').forEach((tabBtn) => {
     tabBtn.addEventListener('click', () => {
@@ -472,9 +457,15 @@ function setupEventListeners(): void {
     });
   }
 
-  // Global ESC key listener
+  // Global ESC key listener for Discovery modals
   window.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
+      // Do not intercept if a higher overlay is currently open on top of Discovery
+      const higherModal = document.querySelector(
+        '.confirm-overlay, #uasset-inspector-modal, #save-compare-modal, #file-tree-modal, #full-files-modal-overlay, #archive-view-modal, #archive-structure-modal, #config-diff-modal, #install-modal.visible, #settings-modal.visible, #profile-modal.visible, #about-modal.visible, #nexus-profile-modal.visible, #workshop-modal.visible'
+      );
+      if (higherModal) return;
+
       const lightbox = document.getElementById('discovery-image-modal');
       if (lightbox && (lightbox.classList.contains('visible') || (lightbox.style.display && lightbox.style.display !== 'none'))) {
         e.preventDefault();
@@ -1371,7 +1362,8 @@ async function executeInstallFile(mod: DiscoveryModDetails, file: DiscoveryFileI
       `${mod.name} - ${file.name}`,
       directUrl,
       mod.author,
-      mod.pictureUrl
+      mod.pictureUrl,
+      file.version
     );
   } catch (err: any) {
     console.error('[Discovery] Direct installation error:', err);

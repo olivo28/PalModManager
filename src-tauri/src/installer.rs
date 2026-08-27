@@ -335,25 +335,45 @@ pub fn execute_manifest(
     // 2. Write enabled.txt and mods.txt for UE4SS mods
     if manifest.has_ue4ss {
         let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
-        let u_mod_dir = ue4ss_mods_dir.join(&manifest.folder_name);
-        if u_mod_dir.exists() {
-            let enabled_file = u_mod_dir.join("enabled.txt");
-            if force_load_order_ue4ss {
-                if enabled_file.exists() {
-                    let _ = fs::remove_file(&enabled_file);
-                }
-            } else {
-                if !enabled_file.exists() {
-                    let _ = fs::write(&enabled_file, "");
+        let mut ue4ss_mod_folders: Vec<String> = Vec::new();
+        for comp in &component_paths {
+            let p = Path::new(comp);
+            if p.starts_with(&ue4ss_mods_dir) {
+                if let Ok(rel) = p.strip_prefix(&ue4ss_mods_dir) {
+                    if let Some(first_seg) = rel.iter().next() {
+                        let name = first_seg.to_string_lossy().to_string();
+                        if !name.is_empty() && name.to_lowercase() != "palschema" && !ue4ss_mod_folders.iter().any(|f| f.eq_ignore_ascii_case(&name)) {
+                            ue4ss_mod_folders.push(name);
+                        }
+                    }
                 }
             }
         }
-        let mods_txt = ue4ss_mods_dir.join("mods.txt");
-        if mods_txt.exists() {
-            if force_load_order_ue4ss {
-                let _ = crate::profiles::update_mods_txt_load_order(&mods_txt, &manifest.folder_name, true);
-            } else {
-                let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &manifest.folder_name);
+        if ue4ss_mod_folders.is_empty() {
+            ue4ss_mod_folders.push(manifest.folder_name.clone());
+        }
+
+        for folder in &ue4ss_mod_folders {
+            let u_mod_dir = ue4ss_mods_dir.join(folder);
+            if u_mod_dir.exists() {
+                let enabled_file = u_mod_dir.join("enabled.txt");
+                if force_load_order_ue4ss {
+                    if enabled_file.exists() {
+                        let _ = fs::remove_file(&enabled_file);
+                    }
+                } else {
+                    if !enabled_file.exists() {
+                        let _ = fs::write(&enabled_file, "");
+                    }
+                }
+            }
+            let mods_txt = ue4ss_mods_dir.join("mods.txt");
+            if mods_txt.exists() {
+                if force_load_order_ue4ss {
+                    let _ = crate::profiles::update_mods_txt_load_order(&mods_txt, folder, true);
+                } else {
+                    let _ = crate::profiles::remove_from_mods_txt(&mods_txt, folder);
+                }
             }
         }
     }
@@ -665,13 +685,56 @@ pub fn update_mod(
         }
     });
 
-    let snapshot = if !existing.game_path.is_empty() && Path::new(&existing.game_path).is_dir() {
-        crate::config_merge::snapshot_configs(Path::new(&existing.game_path))
-    } else if !existing.disabled_path.is_empty() && Path::new(&existing.disabled_path).is_dir() {
-        crate::config_merge::snapshot_configs(Path::new(&existing.disabled_path))
-    } else {
-        crate::config_merge::ConfigSnapshot { entries: Vec::new() }
-    };
+    let game = Path::new(game_path);
+    let mut all_existing_dirs = Vec::new();
+    if !existing.game_path.is_empty() {
+        let p = crate::config_merge::resolve_path_in_game(game, &existing.game_path);
+        if p.exists() {
+            let r = if p.is_dir() { p } else { p.parent().unwrap_or(&p).to_path_buf() };
+            all_existing_dirs.push(r);
+        }
+    }
+    if !existing.disabled_path.is_empty() {
+        let p = crate::config_merge::resolve_path_in_game(game, &existing.disabled_path);
+        if p.exists() {
+            let r = if p.is_dir() { p } else { p.parent().unwrap_or(&p).to_path_buf() };
+            if !all_existing_dirs.contains(&r) {
+                all_existing_dirs.push(r);
+            }
+        }
+    }
+    for extra in &existing.extra_files {
+        let p = crate::config_merge::resolve_path_in_game(game, extra);
+        if p.exists() {
+            let r = if p.is_dir() { p } else { p.parent().unwrap_or(&p).to_path_buf() };
+            if !all_existing_dirs.contains(&r) {
+                all_existing_dirs.push(r);
+            }
+        }
+    }
+
+    let mut snapshot = crate::config_merge::ConfigSnapshot { entries: Vec::new() };
+    for dir in &all_existing_dirs {
+        let s = crate::config_merge::snapshot_configs(dir, existing.config_path.as_deref());
+        for entry in s.entries {
+            if !snapshot.entries.iter().any(|(rel, _)| rel == &entry.0) {
+                snapshot.entries.push(entry);
+            }
+        }
+    }
+
+    if let Some(ref custom_str) = existing.config_path {
+        let cp = crate::config_merge::resolve_path_in_game(game, custom_str);
+        if cp.exists() && cp.is_file() {
+            if let Ok(content) = fs::read_to_string(&cp) {
+                let filename = cp.file_name().unwrap_or_default();
+                let rel = PathBuf::from(filename);
+                if !snapshot.entries.iter().any(|(r, _)| r == &rel) {
+                    snapshot.entries.push((rel, content));
+                }
+            }
+        }
+    }
 
     let old_game_path = existing.game_path.clone();
     let old_disabled_path = existing.disabled_path.clone();
@@ -736,8 +799,10 @@ pub fn update_mod(
     existing.mod_type = new_mod_info.mod_type;
     existing.version = new_mod_info.version;
     existing.source_zip = new_mod_info.source_zip;
-    existing.config_path = new_mod_info.config_path;
-    existing.config_type = new_mod_info.config_type;
+    if !(existing.config_type.as_deref() == Some("manual") && existing.config_path.is_some()) {
+        existing.config_path = new_mod_info.config_path;
+        existing.config_type = new_mod_info.config_type;
+    }
     existing.game_path = new_mod_info.game_path;
     existing.disabled_path = new_mod_info.disabled_path;
     existing.pak_destination = new_mod_info.pak_destination;
@@ -749,14 +814,35 @@ pub fn update_mod(
         existing.origin_load_method = new_mod_info.origin_load_method;
     }
 
-    let dest_dir = if !existing.game_path.is_empty() {
-        Path::new(&existing.game_path)
-    } else {
-        Path::new(&existing.disabled_path)
-    };
-    if dest_dir.exists() && dest_dir.is_dir() {
-        let ignored = existing.ignored_keys.clone().unwrap_or_default();
-        crate::config_merge::apply_config_merge(dest_dir, &snapshot, &ignored);
+    let mut all_dest_dirs = Vec::new();
+    if !existing.game_path.is_empty() {
+        let p = crate::config_merge::resolve_path_in_game(game, &existing.game_path);
+        if p.exists() {
+            let r = if p.is_dir() { p } else { p.parent().unwrap_or(&p).to_path_buf() };
+            all_dest_dirs.push(r);
+        }
+    }
+    if !existing.disabled_path.is_empty() {
+        let p = crate::config_merge::resolve_path_in_game(game, &existing.disabled_path);
+        if p.exists() {
+            let r = if p.is_dir() { p } else { p.parent().unwrap_or(&p).to_path_buf() };
+            if !all_dest_dirs.contains(&r) {
+                all_dest_dirs.push(r);
+            }
+        }
+    }
+    for extra in &existing.extra_files {
+        let p = crate::config_merge::resolve_path_in_game(game, extra);
+        if p.exists() {
+            let r = if p.is_dir() { p } else { p.parent().unwrap_or(&p).to_path_buf() };
+            if !all_dest_dirs.contains(&r) {
+                all_dest_dirs.push(r);
+            }
+        }
+    }
+    let ignored = existing.ignored_keys.clone().unwrap_or_default();
+    for dest in &all_dest_dirs {
+        crate::config_merge::apply_config_merge(dest, &snapshot, &ignored);
     }
 
     if !was_enabled {

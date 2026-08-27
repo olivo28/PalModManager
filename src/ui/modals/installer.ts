@@ -51,13 +51,17 @@ export function showInstallModal(): void {
   const modal = document.getElementById('install-modal');
   if (modal) modal.classList.add('visible');
   const content = document.getElementById('modal-content');
-  if (content && (!content.innerHTML.trim() || content.innerHTML.includes('loading-spinner'))) {
+  if (content) {
     content.innerHTML = `
       <div style="padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; gap: 12px;">
         <div class="loading-spinner"></div>
         <span style="font-size: 12px; font-weight: 600; color: var(--text-secondary);">${escapeHtml(t('installer.status_analyzing'))}</span>
       </div>
     `;
+  }
+  const statusEl = document.getElementById('modal-status');
+  if (statusEl) {
+    statusEl.textContent = '';
   }
 }
 
@@ -68,6 +72,15 @@ export function closeInstallModal(): void {
   _pendingUpdateModId = null;
   _pendingBatchPaths = [];
   _batchItems = [];
+
+  const content = document.getElementById('modal-content');
+  if (content) {
+    content.innerHTML = '';
+  }
+  const statusEl = document.getElementById('modal-status');
+  if (statusEl) {
+    statusEl.textContent = '';
+  }
 
   const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
   if (retryBtn) {
@@ -504,6 +517,25 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   statusEl.textContent = 'Preparing install...';
   confirmBtn.disabled = true;
 
+  // Inherit existing mod metadata if available and missing on analysis
+  if (existingMod && !analysis.nexusInfo) {
+    const installed = getState().allMods.find(m => m.id === existingMod.id || m.name === existingMod.name);
+    if (installed && (installed.nexusPictureUrl || installed.nexusAuthor || installed.nexusModId)) {
+      if (!analysis.nexusModId && installed.nexusModId) {
+        analysis.nexusModId = installed.nexusModId;
+      }
+      analysis.nexusInfo = {
+        name: installed.name,
+        author: installed.nexusAuthor || '',
+        summary: installed.nexusSummary || '',
+        pictureUrl: installed.nexusPictureUrl || '',
+        version: installed.version || '',
+        downloads: installed.nexusDownloads || 0,
+        endorsements: installed.nexusEndorsements || 0,
+      };
+    }
+  }
+
   // Background fetch of Nexus metadata for rich single-mod preview card
   if (analysis.nexusModId && !analysis.nexusInfo) {
     fetchNexusInfoAsync(analysis.nexusModId).then(info => {
@@ -566,7 +598,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     _pendingUpdateModId = existingMod.id;
     const existingVerStr = existingMod.version && existingMod.version !== 'unknown' ? `v${existingMod.version}` : '';
     const normPath = analysis.zipPath.replace(/\\/g, '/').toLowerCase();
-    const isFromLibrary = normPath.includes('/pmm_library/') || normPath.includes('/library/');
+    const isFromLibrary = normPath.includes('/pmm_library/') || normPath.includes('/library/') || normPath.includes('mods-library');
     const isFromNexusDownload = normPath.includes('nexus_') || normPath.includes('temp') || normPath.includes('palmodmanager_');
 
     let sourceBadge = '';
@@ -598,11 +630,14 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
 
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
   let versionVal = analysis.modinfo?.version || '';
-  if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim())) {
+  if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim()) && analysis.detectedVersion.trim() !== '1.0.0' && analysis.detectedVersion.trim() !== 'unknown') {
     versionVal = analysis.detectedVersion;
   }
-  if (!versionVal && analysis.nexusInfo?.version) {
+  if (!versionVal && analysis.nexusInfo?.version && analysis.nexusInfo.version !== '1.0.0' && analysis.nexusInfo.version !== 'unknown') {
     versionVal = analysis.nexusInfo.version;
+  }
+  if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim())) {
+    versionVal = analysis.detectedVersion;
   }
   if (!versionVal) {
     versionVal = '1.0.0';

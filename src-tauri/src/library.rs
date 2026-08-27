@@ -33,13 +33,22 @@ pub fn library_dir(program_path: &str) -> PathBuf {
     PathBuf::from(program_path).join("mods-library")
 }
 
+fn sanitize_filename(name: &str) -> String {
+    name.chars().map(|c| match c {
+        '/' | '\\' | ':' | '*' | '?' | '"' | '<' | '>' | '|' => '_',
+        _ => c,
+    }).collect()
+}
+
 pub fn copy_to_library(
     source_zip: &str,
     program_path: &str,
     mod_id: &str,
     target_filename: Option<&str>,
+    mod_version: Option<&str>,
 ) -> Result<LibraryEntry, String> {
-    let lib_path = get_library_path(program_path, mod_id);
+    let safe_folder_name = sanitize_filename(mod_id);
+    let lib_path = get_library_path(program_path, &safe_folder_name);
     fs::create_dir_all(&lib_path).map_err(|e| format!("Cannot create library dir: {}", e))?;
 
     let zip_path = Path::new(source_zip);
@@ -47,15 +56,31 @@ pub fn copy_to_library(
         .file_name()
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "unknown.zip".to_string());
-    
+
+    let is_temp_or_nexus = |name: &str| -> bool {
+        name.starts_with("nexus_") || name.starts_with("disc_") || name.starts_with("temp_") || name == "unknown.zip"
+    };
+
+    let clean_version = mod_version
+        .map(|v| v.trim())
+        .filter(|v| !v.is_empty() && *v != "unknown" && *v != "1.0.0" && *v != "1.0");
+
     let zip_name = if let Some(target) = target_filename {
-        if target.starts_with("nexus_") {
-            format!("{}.zip", mod_id)
+        if is_temp_or_nexus(target) {
+            if let Some(v) = clean_version {
+                format!("{} - {}.zip", safe_folder_name, sanitize_filename(v))
+            } else {
+                format!("{}.zip", safe_folder_name)
+            }
         } else {
-            target.to_string()
+            sanitize_filename(target)
         }
-    } else if original_name.starts_with("nexus_") || original_name == "unknown.zip" {
-        format!("{}.zip", mod_id)
+    } else if is_temp_or_nexus(&original_name) {
+        if let Some(v) = clean_version {
+            format!("{} - {}.zip", safe_folder_name, sanitize_filename(v))
+        } else {
+            format!("{}.zip", safe_folder_name)
+        }
     } else {
         original_name
     };

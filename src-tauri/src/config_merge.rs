@@ -8,26 +8,108 @@ pub struct ConfigSnapshot {
     pub entries: Vec<(PathBuf, String)>,
 }
 
-/// Walk the installed mod directory and collect all files matching config extensions
-pub fn snapshot_configs(mod_dir: &Path) -> ConfigSnapshot {
+/// Walk the installed mod directory and collect all files matching config extensions,
+/// plus any custom config file specified by the user in mod_info.config_path.
+/// Resolves a raw mod or config path against the game root or dependency folders.
+pub fn resolve_path_in_game(game_path: &Path, raw_path: &str) -> PathBuf {
+    let trimmed = raw_path.trim();
+    if trimmed.is_empty() {
+        return PathBuf::new();
+    }
+
+    // Strip [UE4SS] or [PalSchema] prefix if present
+    let clean = if trimmed.starts_with('[') {
+        let p_obj = Path::new(trimmed);
+        let comps: Vec<&str> = p_obj.iter().filter_map(|p| p.to_str()).collect();
+        if comps.len() > 1 {
+            comps[1..].join("/")
+        } else {
+            trimmed.to_string()
+        }
+    } else {
+        trimmed.to_string()
+    };
+
+    let p = Path::new(&clean);
+    if p.is_absolute() && p.exists() {
+        return p.to_path_buf();
+    }
+
+    // Direct join with game_path
+    let candidate1 = game_path.join(&clean);
+    if candidate1.exists() {
+        return candidate1;
+    }
+
+    // If game_path ends with "Pal" and clean starts with "Pal/" or "Pal\"
+    let clean_norm = clean.replace('\\', "/");
+    if let Some(stripped) = clean_norm.strip_prefix("Pal/").or_else(|| clean_norm.strip_prefix("pal/")) {
+        let candidate2 = game_path.join(stripped);
+        if candidate2.exists() {
+            return candidate2;
+        }
+        if let Some(parent) = game_path.parent() {
+            let candidate3 = parent.join(&clean);
+            if candidate3.exists() {
+                return candidate3;
+            }
+        }
+    } else if let Some(parent) = game_path.parent() {
+        let candidate4 = parent.join(&clean);
+        if candidate4.exists() {
+            return candidate4;
+        }
+    }
+
+    // Search under ue4ss/Mods and PalSchema/mods
+    if let Some(filename) = p.file_name() {
+        let ue4ss_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
+        if ue4ss_dir.exists() {
+            for entry in walkdir::WalkDir::new(&ue4ss_dir).max_depth(4).into_iter().flatten() {
+                if entry.file_name() == filename {
+                    return entry.path().to_path_buf();
+                }
+            }
+        }
+    }
+
+    candidate1
+}
+
+/// Create a snapshot of all user-editable configuration files in a mod folder.
+pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSnapshot {
     let mut entries = Vec::new();
     if !mod_dir.exists() {
         return ConfigSnapshot { entries };
     }
-    
-    fn walk(base: &Path, current: &Path, entries: &mut Vec<(PathBuf, String)>) {
+
+    let custom_filename = custom_config.and_then(|c| {
+        let t = c.trim();
+        if t.is_empty() { None } else { Path::new(t).file_name().map(|f| f.to_os_string()) }
+    });
+
+    fn walk(base: &Path, current: &Path, entries: &mut Vec<(PathBuf, String)>, custom_fname: &Option<std::ffi::OsString>) {
         if let Ok(dir_entries) = fs::read_dir(current) {
             for entry in dir_entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
-                    walk(base, &path, entries);
+                    walk(base, &path, entries, custom_fname);
                 } else if path.is_file() {
                     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                         let ext_lower = ext.to_lowercase();
                         if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" || ext_lower == "lua" {
                             let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
-                            // For .lua, snapshot if it looks like a config (e.g. config.lua, settings.lua) or if in a config folder
-                            if ext_lower != "lua" || file_stem.contains("config") || file_stem.contains("setting") || file_stem.contains("cfg") {
+                            let is_lua_config = if ext_lower == "lua" {
+                                let is_custom_match = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string());
+                                let stem_matches = file_stem.contains("config") || file_stem.contains("setting") || file_stem.contains("cfg") || file_stem.contains("option") || file_stem == "main";
+                                let path_str = path.to_string_lossy().replace('\\', "/").to_lowercase();
+                                let in_scripts = path_str.contains("/scripts/");
+                                is_custom_match || stem_matches || in_scripts
+                            } else {
+                                true
+                            };
+
+                            if is_lua_config {
                                 if let Ok(content) = fs::read_to_string(&path) {
                                     if let Ok(rel) = path.strip_prefix(base) {
                                         entries.push((rel.to_path_buf(), content));
@@ -40,19 +122,106 @@ pub fn snapshot_configs(mod_dir: &Path) -> ConfigSnapshot {
             }
         }
     }
-    
-    walk(mod_dir, mod_dir, &mut entries);
+
+    walk(mod_dir, mod_dir, &mut entries, &custom_filename);
+
+    // If a custom config was explicitly specified and not already snapshotted, include it
+    if let Some(ref custom_str) = custom_config {
+        let custom_trimmed = custom_str.trim();
+        if !custom_trimmed.is_empty() {
+            let path_obj = Path::new(custom_trimmed);
+            let fname = path_obj.file_name();
+            let already_present = entries.iter().any(|(rel, _)| {
+                rel == path_obj || (fname.is_some() && rel.file_name() == fname)
+            });
+
+            if !already_present {
+                if path_obj.is_absolute() && path_obj.is_file() {
+                    if let Ok(content) = fs::read_to_string(path_obj) {
+                        let rel = fname.map(PathBuf::from).unwrap_or_else(|| path_obj.to_path_buf());
+                        entries.push((rel, content));
+                    }
+                } else if let Some(target_name) = fname {
+                    fn find_file_rec(dir: &Path, target: &std::ffi::OsStr, base: &Path) -> Option<(PathBuf, String)> {
+                        if let Ok(rd) = fs::read_dir(dir) {
+                            for e in rd.flatten() {
+                                let p = e.path();
+                                if p.is_dir() {
+                                    if let Some(found) = find_file_rec(&p, target, base) {
+                                        return Some(found);
+                                    }
+                                } else if p.is_file() && p.file_name() == Some(target) {
+                                    if let Ok(content) = fs::read_to_string(&p) {
+                                        let rel = p.strip_prefix(base).map(|r| r.to_path_buf()).unwrap_or_else(|_| PathBuf::from(target));
+                                        return Some((rel, content));
+                                    }
+                                }
+                            }
+                        }
+                        None
+                    }
+                    if let Some(found) = find_file_rec(mod_dir, target_name, mod_dir) {
+                        entries.push(found);
+                    }
+                }
+            }
+        }
+    }
+
     ConfigSnapshot { entries }
 }
 
 /// Apply the merging function to combine snapshot files back into the newly installed folder
 pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_keys: &[String]) {
     for (rel_path, old_content) in &snapshot.entries {
-        let new_file = mod_dir.join(rel_path);
-        if !new_file.exists() {
-            continue; // File removed by author, skip
+        let mut target_file: Option<PathBuf> = None;
+        let direct = mod_dir.join(rel_path);
+        if direct.exists() && direct.is_file() {
+            target_file = Some(direct);
+        } else {
+            let candidate_scripts = mod_dir.join("Scripts").join(rel_path);
+            if candidate_scripts.exists() && candidate_scripts.is_file() {
+                target_file = Some(candidate_scripts);
+            } else if let Some(fname) = rel_path.file_name() {
+                let cand_root = mod_dir.join(fname);
+                if cand_root.exists() && cand_root.is_file() {
+                    target_file = Some(cand_root);
+                } else {
+                    let cand_s = mod_dir.join("Scripts").join(fname);
+                    if cand_s.exists() && cand_s.is_file() {
+                        target_file = Some(cand_s);
+                    } else {
+                        fn find_target(dir: &Path, name: &std::ffi::OsStr) -> Option<PathBuf> {
+                            if let Ok(rd) = fs::read_dir(dir) {
+                                for entry in rd.flatten() {
+                                    let p = entry.path();
+                                    if p.is_dir() {
+                                        if let Some(found) = find_target(&p, name) {
+                                            return Some(found);
+                                        }
+                                    } else if p.is_file() && p.file_name() == Some(name) {
+                                        return Some(p);
+                                    }
+                                }
+                            }
+                            None
+                        }
+                        target_file = find_target(mod_dir, fname);
+                    }
+                }
+            }
         }
-        
+
+        let new_file = match target_file {
+            Some(f) => f,
+            None => continue,
+        };
+
+        // Always save a safe pre-update backup of the user's previous file so it can never be lost
+        let ext_str = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("lua");
+        let pre_update_bak = new_file.with_extension(format!("{}.pre-update.bak", ext_str));
+        let _ = fs::write(&pre_update_bak, old_content);
+
         let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
         if let Ok(new_content) = fs::read_to_string(&new_file) {
             let merged = match ext.as_str() {
@@ -181,27 +350,34 @@ fn merge_lua(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
         }
 
         if let Some(pos) = line.find('=') {
-            let raw_key = line[..pos].trim();
-            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
+            let mut after_eq = line[pos + 1..].trim_start();
+            let mut comment = "";
+            if let Some(c_pos) = after_eq.find("--") {
+                comment = &after_eq[c_pos..];
+                after_eq = after_eq[..c_pos].trim_end();
+            }
 
-            if ignored_keys.contains(&key) {
+            // Skip table openings like `local Config = {`
+            if after_eq.ends_with('{') {
                 result_lines.push(line.to_string());
                 continue;
             }
 
-            if let Some(old_val) = old_map.get(&key) {
+            let raw_key = line[..pos].trim();
+            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
+
+            if ignored_keys.iter().any(|k| k == &key || k == raw_key || (raw_key.contains('.') && raw_key.ends_with(&format!(".{}", k)))) {
+                result_lines.push(line.to_string());
+                continue;
+            }
+
+            if let Some(old_val) = old_map.get(&key).or_else(|| old_map.get(raw_key)) {
                 let leading_ws = &line[..line.len() - line.trim_start().len()];
-                let mut after_eq = line[pos + 1..].trim_start();
-                let mut comment = "";
-                if let Some(c_pos) = after_eq.find("--") {
-                    comment = &after_eq[c_pos..];
-                    after_eq = after_eq[..c_pos].trim_end();
-                }
                 let has_comma = after_eq.ends_with(',');
                 let comma_str = if has_comma { "," } else { "" };
                 let comment_prefix = if !comment.is_empty() { " " } else { "" };
 
-                result_lines.push(format!("{}{}{} {}{}{}{}", leading_ws, raw_key, "=", old_val, comma_str, comment_prefix, comment));
+                result_lines.push(format!("{}{} = {}{}{}{}", leading_ws, raw_key, old_val, comma_str, comment_prefix, comment));
                 continue;
             }
         }
@@ -220,15 +396,20 @@ fn parse_lua_map(content: &str) -> std::collections::HashMap<String, String> {
             continue;
         }
         if let Some(pos) = line_trimmed.find('=') {
-            let raw_key = line_trimmed[..pos].trim();
-            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
             let mut val = line_trimmed[pos + 1..].trim();
             if let Some(comment_pos) = val.find("--") {
                 val = val[..comment_pos].trim();
             }
+            if val.ends_with('{') {
+                // Table header
+                continue;
+            }
             if val.ends_with(',') {
                 val = val[..val.len() - 1].trim();
             }
+
+            let raw_key = line_trimmed[..pos].trim();
+            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
             if !key.is_empty() {
                 map.insert(key, val.to_string());
             }
@@ -380,3 +561,65 @@ fn parse_kv_map(content: &str) -> std::collections::HashMap<String, String> {
     }
     map
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_merge_lua_preserves_user_settings() {
+        let old_lua = r#"
+local Config = {
+    ["ShowTimer"] = false,
+    ["Scale"] = 1.5,
+    ["PosX"] = 250,
+    ["PosY"] = 400,
+}
+return Config
+"#;
+
+        let new_lua = r#"
+local Config = {
+    ["ShowTimer"] = true,
+    ["Scale"] = 1.0,
+    ["PosX"] = 100,
+    ["PosY"] = 200,
+    ["NewAuthorFeature"] = true,
+}
+return Config
+"#;
+
+        let diff = generate_config_diff(old_lua, new_lua, "lua").expect("diff should succeed");
+        let (user_changed, added, removed) = diff;
+        assert_eq!(user_changed.len(), 4);
+        assert_eq!(added.len(), 1);
+        assert_eq!(added[0], "NewAuthorFeature");
+        assert_eq!(removed.len(), 0);
+
+        let merged = merge_lua(old_lua, new_lua, &[]).expect("merge should succeed");
+        assert!(merged.contains("[\"ShowTimer\"] = false"));
+        assert!(merged.contains("[\"Scale\"] = 1.5"));
+        assert!(merged.contains("[\"PosX\"] = 250"));
+        assert!(merged.contains("[\"PosY\"] = 400"));
+        assert!(merged.contains("[\"NewAuthorFeature\"] = true"));
+    }
+
+    #[test]
+    fn test_merge_lua_respects_ignored_keys() {
+        let old_lua = r#"
+Config = {}
+Config.Enabled = false
+Config.Version = "1.0.0"
+"#;
+        let new_lua = r#"
+Config = {}
+Config.Enabled = true
+Config.Version = "2.0.0"
+"#;
+        let ignored = vec!["Version".to_string(), "Config.Version".to_string()];
+        let merged = merge_lua(old_lua, new_lua, &ignored).expect("merge should succeed");
+        assert!(merged.contains("Config.Enabled = false"));
+        assert!(merged.contains("Config.Version = \"2.0.0\""));
+    }
+}
+

@@ -66,11 +66,7 @@ pub fn save_config(mod_id: String, content: String, state: State<AppState>) -> R
         }
     };
 
-    if config_path.exists() {
-        let ext = config_path.extension().map(|e| e.to_string_lossy().to_string()).unwrap_or_default();
-        let bak_path = config_path.with_extension(format!("{}.bak", ext));
-        let _ = fs::copy(&config_path, &bak_path);
-    }
+    create_rotated_backup(&config_path);
 
     fs::write(&config_path, &content).map_err(|e| format!("Cannot write config: {}", e))?;
 
@@ -207,7 +203,7 @@ fn walk_dir(dir: &Path, files: &mut Vec<String>, base: &Path) -> std::io::Result
             walk_dir(&path, files, base)?;
         } else {
             if let Ok(relative) = path.strip_prefix(base) {
-                files.push(relative.to_string_lossy().to_string());
+                files.push(relative.to_string_lossy().replace('\\', "/"));
             }
         }
     }
@@ -269,10 +265,7 @@ pub fn save_mod_file(mod_id: String, file_path: String, content: String, state: 
 
     let full_path = get_full_mod_file_path(mod_info, &file_path)?;
 
-    if full_path.exists() {
-        let bak_path = full_path.with_extension("bak");
-        let _ = fs::copy(&full_path, &bak_path);
-    }
+    create_rotated_backup(&full_path);
 
     if let Some(parent) = full_path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Cannot create directories: {}", e))?;
@@ -332,4 +325,29 @@ fn find_lua_config(dir: &Path) -> Option<PathBuf> {
         }
     }
     None
+}
+
+/// Rotates backups up to 3 versions: .bak -> .bak1 -> .bak2
+/// to ensure a user's original reference backup is never destroyed on intermediate saves.
+fn create_rotated_backup(path: &Path) {
+    if !path.exists() || !path.is_file() {
+        return;
+    }
+
+    let p_str = path.to_string_lossy();
+    let bak1 = PathBuf::from(format!("{}.bak", p_str));
+    let bak2 = PathBuf::from(format!("{}.bak1", p_str));
+    let bak3 = PathBuf::from(format!("{}.bak2", p_str));
+
+    if bak3.exists() {
+        let _ = fs::remove_file(&bak3);
+    }
+    if bak2.exists() {
+        let _ = fs::rename(&bak2, &bak3);
+    }
+    if bak1.exists() {
+        let _ = fs::rename(&bak1, &bak2);
+    }
+
+    let _ = fs::copy(path, &bak1);
 }
