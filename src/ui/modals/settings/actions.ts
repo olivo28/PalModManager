@@ -165,6 +165,27 @@ export async function handleSaveSettings(): Promise<void> {
       updateState({ currentSettings: settings });
     }
 
+    const folderExpandSelect = settingsDom.elMaybe('settings-folder-expand-mode-select');
+    if (folderExpandSelect && folderExpandSelect.value && folderExpandSelect.value !== (state.currentSettings?.folderExpandMode || 'always_expanded')) {
+      const mode = folderExpandSelect.value as 'always_expanded' | 'always_collapsed' | 'remember';
+      const { setFolderExpandMode } = await import('../../../api');
+      const settings = await setFolderExpandMode(mode);
+      const activeFolders = state.currentProfile?.mod_folders || [];
+      let newCollapsed = new Set<string>();
+
+      if (mode === 'always_collapsed') {
+        newCollapsed = new Set(activeFolders.map(f => f.id));
+      } else if (mode === 'remember') {
+        try {
+          const raw = localStorage.getItem('palmodmanager_collapsed_folders');
+          if (raw) {
+            newCollapsed = new Set(JSON.parse(raw));
+          }
+        } catch {}
+      }
+      updateState({ currentSettings: settings, collapsedFolderIds: newCollapsed });
+    }
+
     closeSettingsModal();
     showToast(t('toasts.settings_saved'), 'success');
 

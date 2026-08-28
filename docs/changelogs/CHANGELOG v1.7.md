@@ -19,6 +19,7 @@ All notable changes to this project will be documented in this file.
 - **Automated Pak Patch Engine**: Detects conflicting mod assets and generates 1-click merged compatibility patches (`zzz_Patch_*.pak`).
 - **Xbox Game Pass (WinGDK) Support**: Automatic detection and 1-click `.utoc` / `.ucas` table-of-contents generation (`retoc`).
 - **Altermatic Engine Support**: Built-in support for dynamic alteration manifests and runtime mod asset overrides.
+- **Virtual Folder Startup Modes**: Added a new Interface setting to configure how mod folders behave on startup (*Always Expanded*, *Always Collapsed*, or *Remember Last State*).
 - **Cache Cleaner**: Added `pnpm clean` tool to easily purge intermediate build and compiler cache.
 - **Full 6-Language Localization**: Complete translations in English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
 

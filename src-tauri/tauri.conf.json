@@ -1,7 +1,7 @@
 {
   "productName": "PalModManager",
   "version": "1.7.0",
-  "identifier": "com.palmodmanager.app",
+  "identifier": "com.pmm.palmodmanager",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://127.0.0.1:5173",

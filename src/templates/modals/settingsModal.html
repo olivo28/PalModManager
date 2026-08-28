@@ -204,6 +204,20 @@
 
             <div class="settings-section-card">
               <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.folder_expand_mode_label">Virtual Folder Startup Behavior</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.folder_expand_mode_hint">Choose how mod folders appear when opening the application</div>
+              <div class="settings-path-row" style="margin-top: 4px;">
+                <select id="settings-folder-expand-mode-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                  <option value="always_expanded" data-i18n="settings.opt_folder_always_expanded">Always Expanded (Default)</option>
+                  <option value="always_collapsed" data-i18n="settings.opt_folder_always_collapsed">Always Collapsed</option>
+                  <option value="remember" data-i18n="settings.opt_folder_remember">Remember Last State</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
                 <span class="settings-card-title" data-i18n="settings.toolbar_scale_label">Toolbar Scale</span>
               </div>
               <div class="settings-hint" data-i18n="settings.toolbar_scale_hint">Adjust the size of the top toolbar icons and buttons</div>

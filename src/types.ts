@@ -136,6 +136,7 @@ export interface AppSettings {
   nexusAccount?: NexusAccountInfo | null;
   dnsResolver?: string;
   cacheRemoteImages?: boolean;
+  folderExpandMode?: 'always_expanded' | 'always_collapsed' | 'remember';
 }
 
 export interface ModFolder {

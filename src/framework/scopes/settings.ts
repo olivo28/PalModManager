@@ -30,6 +30,7 @@ export interface SettingsDomMap {
   'settings-debug-console': HTMLInputElement;
   'settings-pane-interface': HTMLElement;
   'settings-language-select': HTMLSelectElement;
+  'settings-folder-expand-mode-select': HTMLSelectElement;
   'theme-toggle-btn': HTMLButtonElement;
   'settings-toolbar-scale': HTMLInputElement;
   'settings-toolbar-scale-value': HTMLElement;

@@ -185,6 +185,8 @@ pub struct AppSettings {
     pub dns_resolver: Option<String>,
     #[serde(default)]
     pub cache_remote_images: Option<bool>,
+    #[serde(default)]
+    pub folder_expand_mode: Option<String>,
 }
 
 
@@ -275,6 +277,7 @@ impl Default for AppData {
                 nexus_cache_timestamp: None,
                 dns_resolver: Some("auto".to_string()),
                 cache_remote_images: Some(true),
+                folder_expand_mode: Some("always_expanded".to_string()),
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

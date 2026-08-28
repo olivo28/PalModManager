@@ -252,6 +252,11 @@ export function openSettingsModal(): void {
     });
   }
 
+  const folderExpandSelect = settingsDom.elMaybe('settings-folder-expand-mode-select');
+  if (folderExpandSelect) {
+    folderExpandSelect.value = state.currentSettings?.folderExpandMode || 'always_expanded';
+  }
+
   // Reset active tab to default (Game & Storage)
   const tabButtons = modal.querySelectorAll<HTMLButtonElement>('.settings-tab-button');
   const panes = modal.querySelectorAll<HTMLElement>('.settings-tab-pane');

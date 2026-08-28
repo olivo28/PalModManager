@@ -117,6 +117,10 @@ export async function setLanguage(language: string): Promise<AppSettings> {
   return invoke('set_language', { language });
 }
 
+export async function setFolderExpandMode(mode: 'always_expanded' | 'always_collapsed' | 'remember'): Promise<AppSettings> {
+  return invoke('set_folder_expand_mode', { mode });
+}
+
 
 export async function getMods(): Promise<ModInfo[]> {
   return invoke('get_mods');

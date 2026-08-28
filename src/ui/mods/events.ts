@@ -36,6 +36,12 @@ export function attachCardEvents(container: HTMLElement): void {
         }
         updateState({ collapsedFolderIds: collapsed });
 
+        if (state.currentSettings?.folderExpandMode === 'remember') {
+          try {
+            localStorage.setItem('palmodmanager_collapsed_folders', JSON.stringify(Array.from(collapsed)));
+          } catch {}
+        }
+
         card.classList.toggle('expanded', willExpand);
         card.classList.toggle('collapsed', !willExpand);
         const chevron = card.querySelector('.folder-chevron');

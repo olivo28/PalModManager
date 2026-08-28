@@ -22,7 +22,6 @@ export async function loadMods(): Promise<void> {
       renderModsView();
       populateAdvancedFilters();
       populateEditorModSelect();
-      loadProfiles();
     } else {
       container.innerHTML = '<div id="loading-state">Scanning mods...</div>';
     }
@@ -54,7 +53,6 @@ export async function loadMods(): Promise<void> {
       renderModsView();
       populateAdvancedFilters();
       populateEditorModSelect();
-      loadProfiles();
     }
   } catch (e) {
     console.error('Error scanning mods:', e);

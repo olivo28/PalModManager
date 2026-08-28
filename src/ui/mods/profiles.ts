@@ -20,10 +20,23 @@ export async function loadProfiles(): Promise<void> {
     ]);
 
     const activeProfile = currentProfile || profiles[0] || null;
+    const mode = settings?.folderExpandMode || 'always_expanded';
+    let initialCollapsed = new Set<string>();
+
+    if (mode === 'always_collapsed') {
+      initialCollapsed = new Set((activeProfile?.mod_folders || []).map(f => f.id));
+    } else if (mode === 'remember') {
+      try {
+        const raw = localStorage.getItem('palmodmanager_collapsed_folders');
+        if (raw) initialCollapsed = new Set(JSON.parse(raw));
+      } catch {}
+    }
+
     updateState({
       profiles,
       currentProfileId: activeProfile?.id || 'default',
       currentProfile: activeProfile,
+      collapsedFolderIds: initialCollapsed,
       ...(settings ? { currentSettings: settings } : {})
     });
     updateActiveProfileLabel();

@@ -45,6 +45,7 @@ use tauri::{Manager, Emitter};
 pub fn run() {
     logger::init_logger();
     logger::log("=== APPLICATION STARTED (cargo run / .exe) ===");
+    logger::log(&format!("PMM-Core Engine: Initializing desktop runtime v{}", env!("CARGO_PKG_VERSION")));
 
     #[cfg(target_os = "windows")]
     let program_path = std::env::var("LOCALAPPDATA")
@@ -137,6 +138,7 @@ pub fn run() {
             settings_commands::set_language,
             settings_commands::set_dns_resolver,
             settings_commands::set_cache_remote_images,
+            settings_commands::set_folder_expand_mode,
             image_proxy::fetch_and_cache_image,
             image_proxy::get_image_cache_size,
             image_proxy::purge_image_cache,

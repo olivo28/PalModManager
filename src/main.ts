@@ -62,7 +62,8 @@ async function init() {
   applyTheme(getPreferredTheme());
 
   try {
-    await logFromJs("JS: Iniciando script de frontend (main.ts)");
+    await logFromJs("⚡ PMM-Core Reactive Engine: Frontend runtime initialized (Zero-VDOM, 11 scopes, Svelte-like)");
+    console.info('%c⚡ PMM-Core Reactive Engine initialized (Zero-VDOM, 11 scopes)', 'color: #38bdf8; font-weight: bold; font-size: 13px;');
     const settings = await getSettings();
     updateState({ currentSettings: settings });
     if (settings.language) {
@@ -73,18 +74,15 @@ async function init() {
     const scale = settings.toolbarScale || 1.0;
     document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
 
-    // Load additional data in parallel
-    console.time('loadStartupData');
-    await Promise.all([
-      loadProfiles().then(() => logFromJs("JS: Perfiles cargados")),
-      loadLibrary().then(() => logFromJs("JS: Librería cargada")),
-    ]);
-    console.timeEnd('loadStartupData');
-
     if (settings.gamePath) {
-      console.time('loadMods');
+      console.time('startupSequence');
+      await loadGameVersion();
+      await loadProfiles();
+      await loadDependencies();
+      await loadLibrary();
       await loadMods();
-      console.timeEnd('loadMods');
+      console.timeEnd('startupSequence');
+
       const hasMissingMetadata = getState().allMods.some(m => !m.nexusModId && m.version === 'unknown');
       if (hasMissingMetadata) {
         console.log('Some mods missing metadata');
@@ -114,11 +112,6 @@ async function init() {
     }).catch(() => {});
   }
   console.timeEnd('init');
-  // Defer slow scans so UI renders instantly
-  setTimeout(() => {
-    loadGameVersion();
-    loadDependencies();
-  }, 0);
 }
 
 function setupEventListeners() {
@@ -641,10 +634,10 @@ function setupEventListeners() {
       text: (s) => s.currentProfile?.name || s.currentProfileId || 'Default'
     }),
     bind(mainDom, 'layout-grid-btn', {
-      className: (s) => `btn-layout-toggle ${s.viewLayout === 'grid' ? 'active' : ''}`
+      className: (s) => `layout-btn ${s.viewLayout === 'grid' ? 'active' : ''}`
     }),
     bind(mainDom, 'layout-list-btn', {
-      className: (s) => `btn-layout-toggle ${s.viewLayout === 'list' ? 'active' : ''}`
+      className: (s) => `layout-btn ${s.viewLayout === 'list' ? 'active' : ''}`
     })
   );
   subscribe(appBinder);
@@ -676,21 +669,8 @@ function setupEventListeners() {
   // Initialize NXM Download Queue
   import('./features/nxm_queue').then(({ initNxmQueue }) => initNxmQueue()).catch(err => console.error("Failed to init NXM queue:", err));
 
-  // Reactively check dependencies & mods when manager window regains focus (throttled to max once per 60s)
-  let lastWindowFocusTime = Date.now();
+  // Listen to system events
   import('@tauri-apps/api/event').then(({ listen }) => {
-    listen('tauri://focus', () => {
-      const now = Date.now();
-      if (now - lastWindowFocusTime < 60000) {
-        return; // Avoid spamming scans and network calls on every window click
-      }
-      lastWindowFocusTime = now;
-      import('./ui/modsView').then(({ loadDependencies, loadMods }) => {
-        loadDependencies().catch(err => console.error("Auto-checking dependencies failed:", err));
-        loadMods().catch(err => console.error("Auto-scanning mods failed:", err));
-      });
-    });
-
     listen<string>('dns-fallback-triggered', (event) => {
       showToast(t('toasts.dns_fallback_recovered', { provider: event.payload }), 'info');
     });
