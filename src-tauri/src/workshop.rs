@@ -1,6 +1,6 @@
 use crate::models::{PalModSettings, WorkshopMod, WorkshopInstallType};
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use serde::{Deserialize, Serialize};
 
 const WORKSHOP_FRAMEWORK_IDS: &[u64] = &[3625223587, 3625280368];

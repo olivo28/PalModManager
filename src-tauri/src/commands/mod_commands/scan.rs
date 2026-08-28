@@ -467,12 +467,12 @@ pub fn scan_mods_internal(
         scan_palschema_mods(&palschema_dir, &mut fs_mods, &workshop_package_names);
     }
 
-    let pak_mods_dir = game.join("Pal").join("Content").join("Paks").join("~mods");
+    let pak_mods_dir = gp.paks_dir.clone();
     if pak_mods_dir.exists() {
         scan_pak_mods(&pak_mods_dir, "pak", &mut fs_mods);
     }
 
-    let logic_mods_dir = game.join("Pal").join("Content").join("Paks").join("LogicMods");
+    let logic_mods_dir = gp.logic_mods_dir.clone();
     if logic_mods_dir.exists() {
         scan_pak_mods(&logic_mods_dir, "logicmods", &mut fs_mods);
     }

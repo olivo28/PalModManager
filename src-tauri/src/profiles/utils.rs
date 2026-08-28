@@ -20,7 +20,7 @@ pub fn remove_junction_or_symlink(link: &Path) -> Result<(), String> {
     #[cfg(windows)]
     {
         if junction::exists(link).unwrap_or(false) {
-            if let Err(e) = junction::delete(link) {
+            if junction::delete(link).is_err() {
                 // Fallback to remove_dir if delete fails
                 let _ = fs::remove_dir(link);
             }

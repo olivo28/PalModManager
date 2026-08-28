@@ -7,11 +7,9 @@ pub mod core;
 // Re-export public functions to keep existing client interfaces unbroken
 pub use utils::{
     create_junction_or_symlink, remove_junction_or_symlink, sanitize_profile_id,
-    get_profile_dir, ensure_profile_structure, copy_dir_all, move_path,
+    get_profile_dir, copy_dir_all, move_path,
     save_pmm_meta,
 };
-
-pub use isolation::sync_profile_dependencies;
 
 pub use actions::{
     get_mod_folder_name, update_mods_txt_load_order, remove_from_mods_txt,
@@ -19,9 +17,9 @@ pub use actions::{
 };
 
 pub use core::{
-    migrate_profile_uuids_to_stable_ids, mod_matches_profile_entry,
+    mod_matches_profile_entry,
     sync_current_profile_states, cleanup_profile_mod_lists,
-    cleanup_profile_enabled_ids, get_profile_mod_names, ensure_default_profile,
+    ensure_default_profile,
     auto_add_scanned_mods_to_profile,
 };
 

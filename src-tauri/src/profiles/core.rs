@@ -116,15 +116,6 @@ pub fn cleanup_profile_enabled_ids(data: &mut AppData) {
     cleanup_profile_mod_lists(data);
 }
 
-pub fn get_profile_mod_names(data: &AppData, profile_id: &str) -> std::collections::HashSet<String> {
-    if let Some(profile) = data.profiles.iter().find(|p| p.id == profile_id) {
-        profile.installed_mod_ids.iter()
-            .map(|s| s.to_lowercase())
-            .collect()
-    } else {
-        std::collections::HashSet::new()
-    }
-}
 
 pub fn ensure_default_profile(data: &mut AppData) {
     let program_path = data.settings.program_path.clone();

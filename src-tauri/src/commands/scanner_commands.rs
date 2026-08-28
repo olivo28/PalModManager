@@ -1123,7 +1123,7 @@ pub async fn convert_mod_to_gamepass(
     state: State<'_, AppState>,
     mod_id: String,
 ) -> Result<Vec<String>, String> {
-    let (app_data_dir, mut candidate_paks, game_root) = {
+    let (app_data_dir, candidate_paks, game_root) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let prog_path = if !data.settings.program_path.is_empty() {
             PathBuf::from(&data.settings.program_path)

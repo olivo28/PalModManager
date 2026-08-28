@@ -200,8 +200,8 @@ pub async fn get_discovery_mods(
     language_name: Option<String>,
     language_names: Option<Vec<String>>,
     include_tags: Option<Vec<String>>,
-    exclude_tags: Option<Vec<String>>,
-    hide_translations: Option<bool>,
+    _exclude_tags: Option<Vec<String>>,
+    _hide_translations: Option<bool>,
     sort_by: Option<String>,
     time_range: Option<String>,
     include_adult: Option<bool>,
@@ -531,6 +531,7 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
         created_time: Option<String>,
         updated_time: Option<String>,
         created_timestamp: Option<i64>,
+        #[allow(dead_code)]
         updated_timestamp: Option<i64>,
         contains_adult_content: Option<bool>,
     }
@@ -670,7 +671,7 @@ query GetModFullDetails($modId: ID!) {
     let mut created_at = String::new();
     let mut updated_at = String::new();
     let mut category_name: Option<String> = None;
-    let mut contains_adult_content = false;
+    let contains_adult_content = false;
     let mut is_endorsed = false;
     let mut is_tracked = false;
     let mut images: Vec<String> = Vec::new();

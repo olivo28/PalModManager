@@ -1,5 +1,10 @@
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, '..');
 
 const dirsToClean = [
   'dist',
@@ -12,7 +17,7 @@ console.log('🧹 [PalModManager] Cleaning build caches & temp directories...');
 let totalCleaned = 0;
 
 for (const dir of dirsToClean) {
-  const fullPath = path.resolve(dir);
+  const fullPath = path.resolve(repoRoot, dir);
   if (fs.existsSync(fullPath)) {
     try {
       fs.rmSync(fullPath, { recursive: true, force: true });

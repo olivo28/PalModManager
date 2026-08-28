@@ -191,7 +191,7 @@ pub fn disable_mod_internal(
 
         let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
         let palschema_mods_dir = gp.palschema_mods_dir.clone();
-        let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
+        let palschema_storage_dir = gp.palschema_storage_dir.clone();
 
         if palschema_mods_dir.exists() {
             if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
@@ -470,7 +470,7 @@ pub fn enable_mod_internal(
 
         let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
         let palschema_mods_dir = gp.palschema_mods_dir.clone();
-        let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
+        let palschema_storage_dir = gp.palschema_storage_dir.clone();
 
         if primary_disabled.exists() {
             let _ = fs::create_dir_all(&palschema_mods_dir);

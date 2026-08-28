@@ -38,89 +38,6 @@ pub struct ZipAnalysis {
 
 
 
-/// Core detection: find the mod root path within the ZIP using substring matching.
-/// Works for direct paths, Nexus-wrapped paths, and double-wrapped paths.
-/// Returns (mod_content_path, mod_folder_name).
-fn detect_mod_content_and_name(
-    files: &[String],
-    detected_type: &DetectedModType,
-) -> (Option<String>, Option<String>) {
-
-    // --- Strategy 1: marker-based (handles any depth of wrapping) ---
-    // Find "ue4ss/Mods/", "PalSchema/mods/", etc. ANYWHERE in the path.
-    for name in files {
-        if name.ends_with('/') { continue; }
-        let lower = name.to_lowercase();
-
-        for marker in MODS_DIR_MARKERS {
-            if let Some(pos) = lower.find(marker) {
-                let after = &name[pos + marker.len()..];
-                let mod_name = after.split('/').next().unwrap_or("").to_string();
-                if !mod_name.is_empty() && !is_forbidden(&mod_name) {
-                    // mod_content_path = everything up to and including mod_name
-                    let content_path = format!("{}{}", &name[..pos + marker.len()], mod_name);
-                    return (Some(content_path), Some(mod_name));
-                }
-            }
-        }
-    }
-
-    // --- Strategy 2: content-based structural heuristics ---
-    match detected_type {
-        DetectedModType::Ue4ss => {
-            // "dlls/main.dll" or "Scripts" subfolder -> mod root is its parent
-            for name in files {
-                let lower = name.to_lowercase();
-                if !lower.ends_with(".lua") && !lower.ends_with(".dll") { continue; }
-                let parts: Vec<&str> = name.split('/').filter(|s| !s.is_empty()).collect();
-                for (i, &part) in parts.iter().enumerate() {
-                    let part_lower = part.to_lowercase();
-                    if (part_lower == "scripts" || part_lower == "dlls") && i > 0 {
-                        let mod_name = parts[i - 1].to_string();
-                        if !is_forbidden(&mod_name) {
-                            let content_path = parts[..i].join("/");
-                            return (Some(content_path), Some(mod_name));
-                        }
-                    }
-                }
-                // No Scripts/dlls subdir: file directly in mod folder
-                let parts: Vec<&str> = name.split('/').filter(|s| !s.is_empty()).collect();
-                if parts.len() >= 2 {
-                    let mod_name = parts[parts.len() - 2].to_string();
-                    if !is_forbidden(&mod_name) {
-                        let content_path = parts[..parts.len() - 1].join("/");
-                        return (Some(content_path), Some(mod_name));
-                    }
-                }
-            }
-        }
-
-        DetectedModType::PalSchema => {
-            // "raw" or "translations" subfolder -> mod root is their parent
-            for name in files {
-                if name.ends_with('/') { continue; }
-                let parts: Vec<&str> = name.split('/').filter(|s| !s.is_empty()).collect();
-                for (i, &part) in parts.iter().enumerate() {
-                    let pl = part.to_lowercase();
-                    if (pl == "raw" || pl == "translations") && i > 0 {
-                        let mod_name = parts[i - 1].to_string();
-                        if !is_forbidden(&mod_name) {
-                            let content_path = parts[..i].join("/");
-                            return (Some(content_path), Some(mod_name));
-                        }
-                    }
-                }
-            }
-            // Flat case (blueprints at root): no mod root detected.
-            // Caller must create a folder from the zip filename.
-        }
-
-        _ => {}
-    }
-
-    (None, None)
-}
-
 fn find_root_folder(files: &[String]) -> Option<String> {
     for name in files {
         if name.contains('/') {
@@ -132,15 +49,6 @@ fn find_root_folder(files: &[String]) -> Option<String> {
         }
     }
     None
-}
-
-
-
-/// Legacy: kept for install_commands.rs call site.
-pub fn detect_mod_folder(files: &[String]) -> (Option<String>, bool, Option<String>, Option<String>) {
-    let (content_path, mod_name) = detect_mod_content_and_name(files, &DetectedModType::Unknown);
-    let has_game_path = content_path.is_some();
-    (mod_name, has_game_path, None, content_path)
 }
 
 fn list_7z_files(path: &str) -> Result<Vec<String>, String> {
@@ -361,21 +269,6 @@ pub fn extract_zip_to_temp(zip_path: &str, temp_dir: &Path) -> Result<PathBuf, S
     Ok(temp_dir.to_path_buf())
 }
 
-/// Recursively find all .pak files in a directory tree.
-pub fn find_pak_files_recursive(dir: &Path) -> Vec<PathBuf> {
-    let mut paks = Vec::new();
-    if let Ok(entries) = fs::read_dir(dir) {
-        for entry in entries.filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.is_dir() {
-                paks.extend(find_pak_files_recursive(&path));
-            } else if path.extension().map(|e| e == "pak").unwrap_or(false) {
-                paks.push(path);
-            }
-        }
-    }
-    paks
-}
 
 /// Find all companion files (.pak, .ucas, .utoc) for a given .pak stem.
 pub fn find_pak_companions(pak_path: &Path) -> Vec<PathBuf> {
@@ -459,18 +352,6 @@ const FORBIDDEN_MOD_NAMES: &[&str] = &[
     "blueprints", "translations",
 ];
 
-/// Markers that identify the boundary before mod folders.
-/// Using substring matching (lower.find()) so they work at ANY depth in the path.
-/// Order matters: most specific first.
-const MODS_DIR_MARKERS: &[&str] = &[
-    "ue4ss/mods/palschema/mods/",
-    "ue4ss/mods/palschema/",
-    "palschema/mods/",
-    "ue4ss/mods/",
-    "ue4ss/mods/",
-    "binaries/win64/ue4ss/mods/",
-    "binaries/wingdk/ue4ss/mods/",
-];
 
 fn is_forbidden(name: &str) -> bool {
     let lower = name.to_lowercase();

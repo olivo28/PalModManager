@@ -229,8 +229,8 @@ pub fn get_palschema_load_order(state: State<AppState>) -> Result<Vec<ModInfo>, 
         .cloned()
         .collect();
 
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let palschema_mods_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("mods");
+    let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+    let palschema_mods_dir = gp.palschema_mods_dir.clone();
 
     // Read the physical mods/ directory to determine current order weights and enabled state
     let mut order_map = std::collections::HashMap::new();
@@ -261,7 +261,7 @@ pub fn get_palschema_load_order(state: State<AppState>) -> Result<Vec<ModInfo>, 
     }
 
     // Update ModInfo enabled status and temporary order weights
-    let palschema_storage_dir = win64.join("ue4ss").join("Mods").join("PalSchema").join("Storage");
+    let palschema_storage_dir = gp.palschema_storage_dir.clone();
     let mut filtered_mods = Vec::new();
     for mut m in target_mods {
         let folder_name = crate::profiles::get_mod_folder_name(&m).to_lowercase();
@@ -311,7 +311,7 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
 
     let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
     let palschema_mods_dir = gp.palschema_mods_dir.clone();
-    let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
+    let palschema_storage_dir = gp.palschema_storage_dir.clone();
 
     if !palschema_mods_dir.exists() {
         let _ = fs::create_dir_all(&palschema_mods_dir);

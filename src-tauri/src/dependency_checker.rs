@@ -65,6 +65,7 @@ pub enum UE4SSInstallMode {
 
 #[derive(Debug, Clone)]
 pub struct GameProfile {
+    #[allow(dead_code)]
     pub game_root: std::path::PathBuf,
     pub binaries_dir: std::path::PathBuf,
     pub platform: String,

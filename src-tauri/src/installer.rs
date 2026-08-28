@@ -64,51 +64,6 @@ pub fn clean_zip_name(zip_filename: &str) -> String {
     if final_result.len() < 2 { stem } else { final_result }
 }
 
-fn parse_version_from_filename(zip_filename: &str) -> String {
-    crate::nexus::parse_mod_filename(zip_filename)
-        .version
-        .unwrap_or_else(|| "unknown".to_string())
-}
-
-
-// ---------------------------------------------------------------------------
-// Mod root detection  (works on the EXTRACTED filesystem, not zip file list)
-// ---------------------------------------------------------------------------
-
-const GAME_DIR_SEGMENTS: &[&str] = &[
-    "pal", "binaries", "win64", "wingdk", "ue4ss", "mods", "palschema", "content", "paks"
-];
-
-/// Navigate down through game directories (like Pal/Binaries/Win64...) if present.
-fn navigate_to_mod_root(dir: &Path) -> PathBuf {
-    let mut current = dir.to_path_buf();
-    loop {
-        if let Ok(mut entries) = fs::read_dir(&current) {
-            let mut subdirs = Vec::new();
-            let mut has_files = false;
-            while let Some(Ok(entry)) = entries.next() {
-                let path = entry.path();
-                if path.is_dir() {
-                    subdirs.push(path);
-                } else {
-                    let name = path.file_name().map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default();
-                    if !name.starts_with('.') && !name.contains("nexus") && name != "info.json" {
-                        has_files = true;
-                    }
-                }
-            }
-            if subdirs.len() == 1 && !has_files {
-                let dir_name = subdirs[0].file_name().map(|n| n.to_string_lossy().to_lowercase()).unwrap_or_default();
-                if GAME_DIR_SEGMENTS.contains(&dir_name.as_str()) {
-                    current = subdirs[0].clone();
-                    continue;
-                }
-            }
-        }
-        break;
-    }
-    current
-}
 
 pub fn install_mod(
     game_path: &str,
@@ -877,7 +832,7 @@ pub fn update_mod(
             let folder_name = crate::profiles::get_mod_folder_name(existing);
             let gp = crate::dependency_checker::build_game_profile(Path::new(game_path));
             let palschema_mods_dir = gp.palschema_mods_dir.clone();
-            let palschema_storage_dir = gp.palschema_mods_dir.parent().unwrap().join("Storage");
+            let palschema_storage_dir = gp.palschema_storage_dir.clone();
 
             if palschema_mods_dir.exists() {
                 if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
