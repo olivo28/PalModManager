@@ -6,7 +6,7 @@ import { loadMods, renderModsView } from './modsView';
 import { showToast } from './toast';
 import { showConfirm } from './confirm';
 import { escapeHtml } from '../utils/helpers';
-import { t } from '../utils/i18n';
+import { t, getLocale } from '../utils/i18n';
 import { descriptionToHtml } from '../utils/bbcode';
 import { isModMissingGamePass } from './mods/card';
 import type { ModInfo } from '../types';
@@ -302,7 +302,7 @@ export function openDetailPanel(modId: string): void {
   const similar = state.allMods.filter(m =>
     m.id !== mod.id &&
     (m.name.toLowerCase().includes(mod.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')) ||
-     mod.name.toLowerCase().includes(m.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')))
+      mod.name.toLowerCase().includes(m.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')))
   );
   if (similar.length > 0) {
     duplicateWarning.textContent = t('detail.duplicate_warning', { names: similar.map(m => m.name).join(', ') });
@@ -351,7 +351,7 @@ export function openDetailPanel(modId: string): void {
     configPathEl.textContent = 'N/A';
     configPathEl.title = '';
     configRow.style.display = 'none';
-    
+
     pakDestRow.style.display = '';
     const currentDest = mod.pakDestination || (mod.type === 'logicmods' ? 'LogicMods' : '~mods');
     pakDestSelect.value = currentDest;
@@ -436,7 +436,7 @@ export function openDetailPanel(modId: string): void {
                   <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:6px 8px; display:flex; flex-direction:column; gap:4px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
                       <span style="font-family:monospace; font-size:11px; font-weight:700; color:var(--accent);">📦 ${escapeHtml(p.pakName)}</span>
-                      <span class="badge" style="font-size:9px; padding:1px 5px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3);">${p.totalFiles} assets</span>
+                      <span class="badge" style="font-size:9px; padding:1px 5px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3);">${p.totalFiles} ${escapeHtml(t('scanner.assets_count_label') || 'assets')}</span>
                     </div>
                     <div class="detail-pak-file-list" style="display:flex; flex-direction:column; gap:2px; margin-top:2px;">
                       ${p.files.map(f => `
@@ -504,22 +504,22 @@ export function openDetailPanel(modId: string): void {
     const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
     const folders = currentProfile?.mod_folders || [];
     const currentFolder = folders.find(f => f.mod_ids.includes(mod.id));
-    
-    folderSelect.innerHTML = `<option value="">${escapeHtml(t('detail.folder_none'))}</option>` + 
+
+    folderSelect.innerHTML = `<option value="">${escapeHtml(t('detail.folder_none'))}</option>` +
       folders.map(f => `<option value="${escapeHtml(f.id)}" ${currentFolder?.id === f.id ? 'selected' : ''}>${escapeHtml(f.name)}</option>`).join('');
-      
+
     const newSelect = folderSelect.cloneNode(true) as HTMLSelectElement;
     folderSelect.parentNode!.replaceChild(newSelect, folderSelect);
-    
+
     newSelect.addEventListener('change', async () => {
       const selectedFolderId = newSelect.value || null;
       try {
         const { addModToFolder } = await import('../api');
         const updatedProfile = await addModToFolder(state.currentProfileId, selectedFolderId, mod.id);
-        
+
         const updatedProfiles = state.profiles.map(p => p.id === state.currentProfileId ? updatedProfile : p);
         updateState({ profiles: updatedProfiles });
-        
+
         await loadMods();
         showToast(selectedFolderId ? t('toasts.folder_assigned') : t('toasts.folder_unassigned'), 'success');
       } catch (err) {
@@ -797,7 +797,7 @@ function renderVersion(mod: ModInfo): void {
   const el = document.getElementById('detail-version')!;
   const state = getState();
   const updateVer = state.availableUpdates?.get(mod.id);
-  
+
   let updateBadge = '';
   if (updateVer) {
     updateBadge = `
@@ -811,10 +811,10 @@ function renderVersion(mod: ModInfo): void {
     : '';
 
   el.innerHTML = `<span class="version-value">v${escapeHtml(mod.version)}</span> ${updateBadge} ${ignoredLabel} <button class="btn-tiny version-edit-btn" style="margin-left: 6px;">${escapeHtml(t('common.edit'))}</button>`;
-  
+
   const editBtn = el.querySelector('.version-edit-btn') as HTMLButtonElement;
   const valSpan = el.querySelector('.version-value') as HTMLSpanElement;
-  
+
   // Event listeners for ignore/unignore
   const ignoreBtn = el.querySelector('.ignore-update-btn') as HTMLButtonElement | null;
   if (ignoreBtn) {

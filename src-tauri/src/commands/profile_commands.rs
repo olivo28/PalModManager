@@ -41,6 +41,8 @@ pub fn switch_profile_command(
             .ok_or_else(|| "Profile not found".to_string())?
     };
 
+    let _guard = crate::watcher::pause_watcher_guard();
+
     // 1. Switch profile (backup current, restore target game files)
     {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
@@ -81,6 +83,7 @@ pub fn switch_profile_command(
         );
     }
 
+    crate::logger::log(&format!("switch_profile: Switched to '{}' (mods in profile: {})", target_profile.name, profile_mods.len()));
     serde_json::to_value(&profile_mods).map_err(|e| e.to_string())
 }
 
@@ -96,6 +99,8 @@ pub fn create_profile_command(name: String, state: State<AppState>) -> Result<Pr
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
         profiles::create_profile(&mut data, name)?
     };
+
+    crate::logger::log(&format!("create_profile: Created new profile '{}' (id: {})", profile.name, profile.id));
 
     let data_clone = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
@@ -122,6 +127,8 @@ pub fn clone_profile_command(
         profiles::clone_profile(&mut data, &profile_id, new_name)?
     };
 
+    crate::logger::log(&format!("clone_profile: Cloned profile '{}' -> '{}' (id: {})", profile_id, profile.name, profile.id));
+
     let data_clone = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.clone()
@@ -133,6 +140,7 @@ pub fn clone_profile_command(
 
 #[tauri::command]
 pub fn delete_profile_command(profile_id: String, state: State<AppState>) -> Result<Value, String> {
+    crate::logger::log(&format!("delete_profile: Deleting profile '{}'", profile_id));
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.settings.program_path.clone()
@@ -178,6 +186,8 @@ pub fn rename_profile_command(
             .ok_or_else(|| "Profile not found".to_string())?;
         (p, data.clone())
     };
+
+    crate::logger::log(&format!("rename_profile: Renamed profile '{}' -> '{}'", profile_id, profile.name));
     db::save_db(&program_path, &data_clone).map_err(|e| e.to_string())?;
 
     Ok(profile)
@@ -189,6 +199,7 @@ pub fn set_mod_profile_state(
     enabled: bool,
     state: State<AppState>,
 ) -> Result<Value, String> {
+    crate::logger::log(&format!("set_mod_profile_state: Setting mod '{}' enabled={}", mod_id, enabled));
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.settings.program_path.clone()

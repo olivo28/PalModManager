@@ -24,6 +24,8 @@ pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
     let wingdk = path.join("Pal").join("Binaries").join("WinGDK");
     let is_xbox = wingdk.exists();
 
+    crate::logger::log(&format!("launch_game: Launching Palworld (Platform: {}, Enabled mods: {})...", if is_xbox { "Xbox/WinGDK" } else { "Steam/Win64" }, enabled_mod_ids.len()));
+
     if is_xbox {
         let exe_path = wingdk.join("Palworld-WinGDK-Shipping.exe");
         if exe_path.exists() {
@@ -58,5 +60,6 @@ pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
         }
     }
 
+    crate::logger::log("launch_game: Game process spawned successfully");
     Ok(())
 }

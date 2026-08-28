@@ -345,7 +345,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
       <div style="padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); display: flex; align-items: center; gap: 10px;">
         <span style="font-size: 13px; color: var(--text-muted);">🔍</span>
         <input type="text" id="filetree-search-input" placeholder="${escapeHtml(t('scanner.search_placeholder') || 'Search files or assets...')}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 10px; font-size: 12px; outline: none;" />
-        <span id="filetree-count-badge" class="badge" style="font-size: 10px; padding: 3px 8px; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">${routes.length} files</span>
+        <span id="filetree-count-badge" class="badge" style="font-size: 10px; padding: 3px 8px; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">${escapeHtml(t('installer.file_count_badge', { count: routes.length }) || `${routes.length} files`)}</span>
       </div>
 
       <div class="modal-body" id="filetree-body-container" style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px;">
@@ -434,7 +434,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
           <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:6px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:6px;">
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
               <span style="font-size:11px; font-weight:700; color:var(--text-primary);">📦 ${escapeHtml(inspectRes.pakName)}</span>
-              <span class="badge" style="font-size:9.5px; padding:1px 6px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-weight:600;">${inspectRes.totalFiles} internal assets</span>
+              <span class="badge" style="font-size:9.5px; padding:1px 6px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-weight:600;">${escapeHtml(t('installer.internal_assets_count', { count: inspectRes.totalFiles }) || `${inspectRes.totalFiles} internal assets`)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
               ${summaryBadges}
@@ -665,40 +665,40 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   `;
 
   content.innerHTML = `
-    <div style="display:flex;gap:20px;align-items:stretch;padding:2px 0;">
+    <div style="display:flex;gap:18px;align-items:flex-start;padding:2px 0;">
        <!-- Left Column: Card Preview (Nexus Info or Local Modinfo) -->
        ${analysis.nexusInfo ? `
-       <div style="width:260px;min-width:260px;max-width:260px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
-          <div style="position:relative;width:100%;height:140px;overflow:hidden;background:#000;">
+       <div style="width:230px;min-width:230px;max-width:230px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+          <div style="position:relative;width:100%;height:120px;overflow:hidden;background:#000;">
              ${picUrl ? `<img src="${escapeHtml(picUrl)}" data-original-src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div style="display:none;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>`}
-             <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:#00ffcc;font-weight:700;letter-spacing:0.5px;">
+             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:10px;font-size:9px;color:#00ffcc;font-weight:700;letter-spacing:0.5px;">
                 ${analysis.nexusInfo.downloads.toLocaleString()} DLs
              </div>
           </div>
-          <div style="padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;">
-             <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
-             <div style="font-size:10px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author }))}</div>
-             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:2px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
+          <div style="padding:10px;display:flex;flex-direction:column;gap:5px;">
+             <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
+             <div style="font-size:9.5px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author }))}</div>
+             <div style="font-size:10.5px;color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
           </div>
        </div>
        ` : (analysis.modinfo ? `
-       <div style="width:260px;min-width:260px;max-width:260px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
-          <div style="position:relative;width:100%;height:140px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
-             <div style="font-size:42px;color:var(--accent);">🛠</div>
-             <div style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.75);padding:2px 8px;border-radius:12px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+       <div style="width:230px;min-width:230px;max-width:230px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+          <div style="position:relative;width:100%;height:120px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
+             <div style="font-size:38px;color:var(--accent);">🛠</div>
+             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:10px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
                 ${escapeHtml(t('installer.local_package'))}
              </div>
           </div>
-          <div style="padding:12px;display:flex;flex-direction:column;gap:6px;flex:1;">
-             <div style="font-size:13px;font-weight:700;color:var(--text-primary);line-height:1.35;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
-             <div style="font-size:10px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.modinfo.author || t('common.unknown') }))}</div>
-             <div style="font-size:11px;color:var(--text-secondary);line-height:1.45;margin-top:2px;flex:1;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
+          <div style="padding:10px;display:flex;flex-direction:column;gap:5px;">
+             <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
+             <div style="font-size:9.5px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.modinfo.author || t('common.unknown') }))}</div>
+             <div style="font-size:10.5px;color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
           </div>
        </div>
        ` : '')}
 
-       <!-- Right Column: Settings Form -->
-       <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;justify-content:center;">
+        <!-- Right Column: Settings Form -->
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;">
            ${updateHtml}
 
            <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 6px 10px; margin-top: -2px; margin-bottom: 2px; align-items: center; justify-content: space-between; gap: 12px;">

@@ -1,6 +1,6 @@
-PalModManager - Version 1.7.0 Changelog (2026-26-08)
+PalModManager - Version 1.7.0 Changelog (2026-27-08)
 
-[1.7.0] - 2026-08-26
+[1.7.0] - 2026-08-27
 
 Added
 - Save Health Doctor & World Hub: Complete diagnostic and repair suite for Palworld savegames under the Scan tab.
@@ -12,15 +12,26 @@ Added
 - Deep Pak & UAsset Package Inspector: Pure-Rust inspection of .pak archives (repak) and Unreal Engine binary assets (unreal_asset).
   - Explore virtual file trees directly in the Detail Panel and Mod Installer with instant search.
   - Deep .uasset / .uexp inspector modal displaying export classes, import dependencies, and name table tokens.
+  - Added DirectDraw Surface (DDS) texture metadata inspection card with dimensions, mip levels, and DXGI format.
+- Config Editor Enhancements: Smart auto-indentation on Enter, live cursor position (Ln X, Col Y), folder state persistence, and unsaved changes indicator.
+- Expanded Syntax Highlighting: Added native syntax highlighting for .ini, .cfg, .toml, .yaml, .xml, .py, and .md files.
 - Automated Pak Compatibility Patch Engine: Detects colliding asset nodes across .pak mods and generates merged priority compatibility patches (zzz_Patch_*.pak) with 1 click.
 - Xbox Game Pass & PC WinGDK Compatibility: Full detection and 1-click .utoc / .ucas table-of-contents generation (retoc) for Game Pass mod support.
 - Altermatic / Dynamic Mod Alteration Engine: Framework integration for runtime alteration manifests and rule-based asset overrides.
+- Comprehensive Backend Logging: Added structured logs for mod installs, game launch, library management, and profile switches.
 - Full 6-Language Localization: Complete translation coverage across English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
 
 Changed
+- Decoupled Config Editor syntax highlighting with requestAnimationFrame and line-count gutter caching for fluid, lag-free typing.
+- Compacted and optimized the preview card layout in the single-mod installer modal.
+- Standardized dependency check logging for symmetrical output across UE4SS and PalSchema.
 - Mod Installer and Detail Panel now allow direct inspection and exploration of .pak contents and binary asset metadata.
 
 Fixed
+- Paused filesystem watcher during profile switching to prevent event storms and duplicate disk scans.
+- Added a 60-second throttle to window focus checks to eliminate redundant rescans.
+- Prevented redundant database disk writes when scanned mod data is unchanged.
+- Fixed missing i18n translation import in profile management dialogs.
 - Fixed toast notifications displaying behind modal overlays.
 
 ------------------------------------

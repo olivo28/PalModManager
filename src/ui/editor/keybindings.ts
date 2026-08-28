@@ -26,6 +26,19 @@ export function setupEditorKeybindings(): void {
   });
 
   if (editorContent) {
+    const updateCursorPosition = () => {
+      const pos = editorContent.selectionStart;
+      const val = editorContent.value;
+      const textBefore = val.substring(0, pos);
+      const lines = textBefore.split('\n');
+      const lineNum = lines.length;
+      const colNum = lines[lines.length - 1].length + 1;
+      const cursorEl = document.getElementById('editor-cursor-pos');
+      if (cursorEl) {
+        cursorEl.textContent = `Ln ${lineNum}, Col ${colNum}`;
+      }
+    };
+
     editorContent.addEventListener('keydown', (e: KeyboardEvent) => {
       if (e.key === 'Tab') {
         e.preventDefault();
@@ -34,12 +47,38 @@ export function setupEditorKeybindings(): void {
         editorContent.value = editorContent.value.substring(0, start) + '  ' + editorContent.value.substring(end);
         editorContent.selectionStart = editorContent.selectionEnd = start + 2;
         syncHighlight();
+        updateCursorPosition();
+      } else if (e.key === 'Enter') {
+        const start = editorContent.selectionStart;
+        const val = editorContent.value;
+        const textBefore = val.substring(0, start);
+        const currentLine = textBefore.split('\n').pop() || '';
+        const matchIndent = currentLine.match(/^(\s+)/);
+        let indent = matchIndent ? matchIndent[1] : '';
+
+        const trimmed = currentLine.trim();
+        if (trimmed.endsWith('{') || trimmed.endsWith('[') || trimmed.endsWith('(') || trimmed.endsWith('then') || trimmed.endsWith('do')) {
+          indent += '  ';
+        }
+
+        if (indent.length > 0) {
+          e.preventDefault();
+          const end = editorContent.selectionEnd;
+          editorContent.value = val.substring(0, start) + '\n' + indent + val.substring(end);
+          editorContent.selectionStart = editorContent.selectionEnd = start + 1 + indent.length;
+          syncHighlight();
+          updateCursorPosition();
+        }
       }
     });
 
     editorContent.addEventListener('input', () => {
       syncHighlight();
+      updateCursorPosition();
     });
+
+    editorContent.addEventListener('click', updateCursorPosition);
+    editorContent.addEventListener('keyup', updateCursorPosition);
 
     editorContent.addEventListener('scroll', () => {
       highlightEl.scrollTop = editorContent.scrollTop;

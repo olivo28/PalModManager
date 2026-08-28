@@ -204,7 +204,7 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
     let is_workshop = status.ue4ss_install_mode == "Workshop";
 
     if let Ok((ue4ss_tag, ue4ss_date)) = dependency_checker::check_ue4ss_latest().await {
-        status.ue4ss_latest_tag = Some(ue4ss_tag);
+        status.ue4ss_latest_tag = Some(ue4ss_tag.clone());
         status.ue4ss_latest_date = Some(ue4ss_date.clone());
         if is_workshop {
             // Check if Workshop staging has a pending update for UE4SS
@@ -217,16 +217,25 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
             } else {
                 status.ue4ss_needs_update = false;
             }
+            crate::logger::log(&format!("UE4SS check [Workshop]: local='{:?}', needs_update={}", status.ue4ss_version, status.ue4ss_needs_update));
         } else {
             status.ue4ss_needs_update = match &status.ue4ss_version {
-                Some(local) if local == "Workshop" => false,
+                Some(local) if local == "Workshop" => {
+                    crate::logger::log("UE4SS check: installed via Steam Workshop");
+                    false
+                }
                 Some(local) => {
-                    match (parse_dmy(local.trim()), parse_dmy(ue4ss_date.trim())) {
+                    let needs_up = match (parse_dmy(local.trim()), parse_dmy(ue4ss_date.trim())) {
                         (Some(l), Some(r)) => l < r,
                         _ => true,
-                    }
+                    };
+                    crate::logger::log(&format!("UE4SS check: local='{}', remote='{}' (tag: {}), match={}", local, ue4ss_date, ue4ss_tag, !needs_up));
+                    needs_up
                 }
-                None => true,
+                None => {
+                    crate::logger::log("UE4SS check: local is None (not installed or version not read)");
+                    true
+                }
             };
         }
     }
@@ -244,9 +253,13 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
             } else {
                 status.palschema_needs_update = false;
             }
+            crate::logger::log(&format!("PalSchema check [Workshop]: local='{:?}', needs_update={}", status.palschema_version, status.palschema_needs_update));
         } else {
             status.palschema_needs_update = match &status.palschema_version {
-                Some(local) if local == "Workshop" => false,
+                Some(local) if local == "Workshop" => {
+                    crate::logger::log("PalSchema check: installed via Steam Workshop");
+                    false
+                }
                 Some(local) => {
                     let eq = compare_versions(local, &ps_version);
                     crate::logger::log(&format!("PalSchema check: local='{}', remote='{}', match={}", local, ps_version, eq));

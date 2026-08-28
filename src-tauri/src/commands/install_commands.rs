@@ -39,7 +39,7 @@ fn check_mod_dependencies(game_path: &str, mod_type: &str, analysis: &zip_handle
 
 #[tauri::command]
 pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result<Value, String> {
-    println!("[INFO] Analyzing zip file: {}", zip_path);
+    crate::logger::log(&format!("analyze_zip: Analyzing archive '{}'", zip_path));
     let _ = state; // state unused here now
 
     let analysis = zip_handler::analyze_zip(&zip_path)?;
@@ -182,14 +182,14 @@ pub async fn install_mod_command(
     custom_name: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    println!("[INFO] Installing mod from zip: {}, custom_type: {:?}, pak_destination: {:?}", zip_path, custom_type, pak_destination);
+    crate::logger::log(&format!("install_mod_from_zip: Installing mod from '{}' (custom_type: {:?}, pak_destination: {:?})", zip_path, custom_type, pak_destination));
     let (game_path, program_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (data.settings.game_path.clone(), data.settings.program_path.clone())
     };
 
     if game_path.is_empty() {
-        eprintln!("[ERROR] Game path not configured.");
+        crate::logger::log("install_mod_from_zip: Error - Game path not configured");
         return Err("No game path configured. Set it first.".to_string());
     }
 
@@ -613,13 +613,14 @@ pub async fn install_mod_with_manifest(
     zip_path: String,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
-    println!("[INFO] Installing mod with manifest: {}", manifest.display_name);
+    crate::logger::log(&format!("install_mod_with_manifest: Installing '{}' (type: {:?}) from '{}'", manifest.display_name, manifest.mod_type, zip_path));
     let (game_path, program_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (data.settings.game_path.clone(), data.settings.program_path.clone())
     };
 
     if game_path.is_empty() {
+        crate::logger::log("install_mod_with_manifest: Error - Game path not configured");
         return Err("No game path configured. Set it first.".to_string());
     }
 

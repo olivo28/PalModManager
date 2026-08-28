@@ -1,8 +1,32 @@
 use std::path::PathBuf;
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::channel;
 use std::time::Duration;
 use notify::{Config, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use tauri::{AppHandle, Emitter};
+
+static WATCHER_PAUSED: AtomicBool = AtomicBool::new(false);
+
+pub fn pause_watcher() {
+    WATCHER_PAUSED.store(true, Ordering::SeqCst);
+}
+
+pub fn resume_watcher() {
+    WATCHER_PAUSED.store(false, Ordering::SeqCst);
+}
+
+pub struct WatcherPauseGuard;
+
+impl Drop for WatcherPauseGuard {
+    fn drop(&mut self) {
+        resume_watcher();
+    }
+}
+
+pub fn pause_watcher_guard() -> WatcherPauseGuard {
+    pause_watcher();
+    WatcherPauseGuard
+}
 
 pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
     std::thread::spawn(move || {
@@ -39,6 +63,10 @@ pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
         loop {
             match rx.recv_timeout(Duration::from_millis(150)) {
                 Ok(event) => {
+                    if WATCHER_PAUSED.load(Ordering::Relaxed) {
+                        pending_paths.clear();
+                        continue;
+                    }
                     let should_track = match event.kind {
                         EventKind::Create(_) | EventKind::Modify(_) | EventKind::Remove(_) | EventKind::Any => true,
                         _ => true, // Track all FS events for safety
@@ -56,7 +84,11 @@ pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
                     }
                 }
                 Err(_) => {
-                    if !pending_paths.is_empty() && last_event_time.elapsed() >= Duration::from_millis(100) {
+                    if WATCHER_PAUSED.load(Ordering::Relaxed) {
+                        pending_paths.clear();
+                        continue;
+                    }
+                    if !pending_paths.is_empty() && last_event_time.elapsed() >= Duration::from_millis(150) {
                         let payload = serde_json::json!({
                             "paths": pending_paths.clone(),
                         });

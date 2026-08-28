@@ -608,3 +608,26 @@ export async function handleSaveSettings(): Promise<void> {
     saveBtn.disabled = false;
   }
 }
+
+export function openSettingsToTab(tabName: string): void {
+  openSettingsModal();
+  const tabButtons = document.querySelectorAll<HTMLButtonElement>('.settings-tab-button');
+  const panes = document.querySelectorAll<HTMLElement>('.settings-tab-pane');
+
+  tabButtons.forEach(b => {
+    if (b.dataset.settingsTab === tabName) {
+      b.classList.add('active');
+    } else {
+      b.classList.remove('active');
+    }
+  });
+
+  panes.forEach(p => {
+    if (p.id === `settings-pane-${tabName}`) {
+      p.classList.add('active');
+      p.scrollTop = 0;
+    } else {
+      p.classList.remove('active');
+    }
+  });
+}

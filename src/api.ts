@@ -1020,13 +1020,3 @@ export async function getImageCacheSize(): Promise<number> {
 export async function purgeImageCache(): Promise<void> {
   return invoke('purge_image_cache');
 }
-
-
-
-
-
-
-
-
-
-

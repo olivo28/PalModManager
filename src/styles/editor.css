@@ -259,6 +259,15 @@
 .editor-file-item[data-ext="jsonc"] .editor-file-icon { color: #c792ea; }
 .editor-file-item[data-ext="lua"] .editor-file-icon { color: #82aaff; }
 .editor-file-item[data-ext="md"] .editor-file-icon { color: #ffcb6b; }
+.editor-file-item[data-ext="cfg"] .editor-file-icon,
+.editor-file-item[data-ext="ini"] .editor-file-icon,
+.editor-file-item[data-ext="conf"] .editor-file-icon { color: #f78c6c; }
+.editor-file-item[data-ext="toml"] .editor-file-icon { color: #ff5370; }
+.editor-file-item[data-ext="yaml"] .editor-file-icon,
+.editor-file-item[data-ext="yml"] .editor-file-icon { color: #c3e88d; }
+.editor-file-item[data-ext="py"] .editor-file-icon { color: #3572A5; }
+.editor-file-item[data-ext="xml"] .editor-file-icon,
+.editor-file-item[data-ext="html"] .editor-file-icon { color: #e06c75; }
 .editor-file-item[data-ext="png"] .editor-file-icon,
 .editor-file-item[data-ext="jpg"] .editor-file-icon,
 .editor-file-item[data-ext="jpeg"] .editor-file-icon,
@@ -269,6 +278,22 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.editor-file-dirty-dot {
+  display: none;
+  font-size: 8px;
+  color: var(--accent);
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+.editor-file-item.dirty .editor-file-dirty-dot {
+  display: inline-block;
+}
+
+.btn-editor.primary.dirty {
+  box-shadow: 0 0 8px rgba(0, 188, 255, 0.45);
 }
 
 .editor-file-empty,

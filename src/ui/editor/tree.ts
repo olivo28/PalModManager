@@ -143,13 +143,17 @@ function buildFileTree(files: string[]): FileTreeNode {
   return root;
 }
 
+const _collapsedFolders: Set<string> = new Set();
+
 function getFileIcon(ext: string): string {
   const lower = ext.toLowerCase();
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'bmp', 'svg'].includes(lower)) return 'IMG';
   if (lower === 'json' || lower === 'jsonc') return '{ }';
   if (lower === 'lua') return 'LUA';
   if (lower === 'txt' || lower === 'md') return 'TXT';
-  if (lower === 'cfg' || lower === 'ini') return 'CFG';
+  if (lower === 'cfg' || lower === 'ini' || lower === 'conf') return 'CFG';
+  if (lower === 'toml') return 'TOML';
+  if (lower === 'yaml' || lower === 'yml') return 'YML';
   if (lower === 'py') return 'PY';
   if (lower === 'xml' || lower === 'html') return 'XML';
   return '--';
@@ -161,10 +165,14 @@ function renderNodeHTML(node: FileTreeNode): string {
     return a.name.localeCompare(b.name);
   });
 
+  const state = getState();
+  const currentSelected = state.editorSelectedFile;
+
   return childrenArray.map(child => {
     if (child.isFolder) {
+      const isCollapsed = _collapsedFolders.has(child.path);
       return `
-      <div class="editor-tree-folder">
+      <div class="editor-tree-folder${isCollapsed ? ' collapsed' : ''}" data-folder-path="${escapeHtml(child.path)}">
         <div class="editor-tree-folder-header">
           <span class="editor-tree-chevron">▾</span>
           <span class="editor-file-icon" style="color:var(--accent);">📁</span>
@@ -177,10 +185,12 @@ function renderNodeHTML(node: FileTreeNode): string {
     } else {
       const ext = child.name.split('.').pop() || '';
       const icon = getFileIcon(ext);
+      const isSelected = currentSelected === child.path;
       return `
-      <div class="editor-file-item" data-path="${escapeHtml(child.path)}" data-ext="${escapeHtml(ext)}">
+      <div class="editor-file-item${isSelected ? ' selected' : ''}" data-path="${escapeHtml(child.path)}" data-ext="${escapeHtml(ext)}">
         <span class="editor-file-icon">${icon}</span>
         <span class="editor-file-name" title="${escapeHtml(child.name)}">${escapeHtml(child.name)}</span>
+        <span class="editor-file-dirty-dot" title="${escapeHtml(t('editor.unsaved_changes') || 'Unsaved changes')}">●</span>
       </div>`;
     }
   }).join('');
@@ -200,8 +210,18 @@ export function renderFileTree(files: string[]): void {
   tree.querySelectorAll('.editor-tree-folder-header').forEach(header => {
     header.addEventListener('click', (e) => {
       e.stopPropagation();
-      const folder = header.closest('.editor-tree-folder')!;
-      folder.classList.toggle('collapsed');
+      const folder = header.closest('.editor-tree-folder') as HTMLElement | null;
+      if (folder) {
+        folder.classList.toggle('collapsed');
+        const folderPath = folder.dataset.folderPath;
+        if (folderPath) {
+          if (folder.classList.contains('collapsed')) {
+            _collapsedFolders.add(folderPath);
+          } else {
+            _collapsedFolders.delete(folderPath);
+          }
+        }
+      }
     });
   });
 

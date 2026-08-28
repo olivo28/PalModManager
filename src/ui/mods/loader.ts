@@ -46,11 +46,15 @@ export async function loadMods(): Promise<void> {
       showToast(t('toasts.workshop_mod_updated', { name: mod.name }), 'info');
     }
 
+    const modsChanged = oldMods.length !== freshMods.length || JSON.stringify(oldMods) !== JSON.stringify(freshMods);
     updateState({ allMods: freshMods, availableUpdates: updatesMap });
-    renderModsView();
-    populateAdvancedFilters();
-    populateEditorModSelect();
-    loadProfiles();
+
+    if (modsChanged || oldMods.length === 0) {
+      renderModsView();
+      populateAdvancedFilters();
+      populateEditorModSelect();
+      loadProfiles();
+    }
   } catch (e) {
     console.error('Error scanning mods:', e);
     const state = getState();

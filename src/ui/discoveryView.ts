@@ -18,7 +18,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { enqueueDiscoveryDownload } from '../features/nxm_queue';
 import { getState } from '../state';
 import { showToast } from './toast';
-import { t } from '../utils/i18n';
+import { t, getLocale } from '../utils/i18n';
 import { escapeHtml } from '../utils/helpers';
 import { descriptionToHtml } from '../utils/bbcode';
 import logoUrl from '../assets/logo.png';

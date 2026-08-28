@@ -124,20 +124,6 @@ function setupEventListeners() {
     await loadMods();
     await loadDependencies();
   });
-  
-  let lastFocusCheck = 0;
-  window.addEventListener('focus', () => {
-    const now = Date.now();
-    if (now - lastFocusCheck > 30000) {
-      lastFocusCheck = now;
-      import('./api').then(({ checkDependencies }) => {
-        checkDependencies().then(deps => {
-          import('./state').then(({ updateState }) => updateState({ dependencies: deps }));
-          import('./ui/modsView').then(({ renderDependencyBadges }) => renderDependencyBadges(deps));
-        }).catch(() => {});
-      });
-    }
-  });
 
   safeEl('install-btn')?.addEventListener('click', handleInstall);
   safeEl('modal-close-x')?.addEventListener('click', closeInstallModal);
@@ -650,9 +636,15 @@ function setupEventListeners() {
   // Initialize NXM Download Queue
   import('./features/nxm_queue').then(({ initNxmQueue }) => initNxmQueue()).catch(err => console.error("Failed to init NXM queue:", err));
 
-  // Reactively check and update dependencies & mods when the manager window regains focus
+  // Reactively check dependencies & mods when manager window regains focus (throttled to max once per 60s)
+  let lastWindowFocusTime = Date.now();
   import('@tauri-apps/api/event').then(({ listen }) => {
     listen('tauri://focus', () => {
+      const now = Date.now();
+      if (now - lastWindowFocusTime < 60000) {
+        return; // Avoid spamming scans and network calls on every window click
+      }
+      lastWindowFocusTime = now;
       import('./ui/modsView').then(({ loadDependencies, loadMods }) => {
         loadDependencies().catch(err => console.error("Auto-checking dependencies failed:", err));
         loadMods().catch(err => console.error("Auto-scanning mods failed:", err));

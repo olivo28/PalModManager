@@ -48,7 +48,7 @@ pub async fn scan_mods(state: State<'_, AppState>) -> Result<Value, String> {
     crate::logger::log("scan_mods: Starting full disk scan...");
     let start_scan = std::time::Instant::now();
     
-    let (game_path, program_path, current_profile_id, installed_ids, mut mods_clone) = {
+    let (game_path, program_path, current_profile_id, installed_ids, mut mods_clone, initial_data) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
         let installed_ids = current_profile.map(|p| p.installed_mod_ids.clone()).unwrap_or_default();
@@ -58,6 +58,7 @@ pub async fn scan_mods(state: State<'_, AppState>) -> Result<Value, String> {
             data.current_profile_id.clone(),
             installed_ids,
             data.mods.clone(),
+            data.clone(),
         )
     };
 
@@ -90,19 +91,25 @@ pub async fn scan_mods(state: State<'_, AppState>) -> Result<Value, String> {
         }
     }
 
-    let (profile_mods, data_clone) = {
+    let (profile_mods, data_to_save) = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
         data.mods = merged;
         crate::profiles::auto_add_scanned_mods_to_profile(&mut data);
         crate::profiles::cleanup_profile_mod_lists(&mut data);
         crate::profiles::sync_current_profile_states(&mut data);
         let profile_mods = filter_mods_for_current_profile(&data);
-        let data_clone = data.clone();
+        let changed = *data != initial_data;
+        let data_clone = if changed { Some(data.clone()) } else { None };
         (profile_mods, data_clone)
     };
 
-    let _ = db::save_db(&program_path, &data_clone);
-    crate::logger::log(&format!("scan_mods: Full disk scan finished in total {:?}", start_scan.elapsed()));
+    if let Some(data_clone) = data_to_save {
+        let _ = db::save_db(&program_path, &data_clone);
+        crate::logger::log(&format!("scan_mods: Full disk scan finished in {:?} (changes saved to DB)", start_scan.elapsed()));
+    } else {
+        crate::logger::log(&format!("scan_mods: Full disk scan finished in {:?} (no changes, skipped DB save)", start_scan.elapsed()));
+    }
+
     serde_json::to_value(&profile_mods).map_err(|e| e.to_string())
 }
 

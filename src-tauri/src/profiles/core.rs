@@ -131,9 +131,10 @@ pub fn ensure_default_profile(data: &mut AppData) {
     let profiles_base = PathBuf::from(&program_path).join("profiles");
     let _ = fs::create_dir_all(&profiles_base);
 
+    let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
+
     if !data.profiles.iter().any(|p| p.id == "default") {
         let now = chrono::Utc::now().to_rfc3339();
-        let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
         let dependency_mode = if dep.ue4ss_installed {
             if dep.ue4ss_install_mode == "Workshop" {
                 DependencyMode::Workshop
@@ -161,7 +162,6 @@ pub fn ensure_default_profile(data: &mut AppData) {
         });
     }
 
-    let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
     for profile in &mut data.profiles {
         if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
             profile.installed_mod_ids = profile.enabled_mod_ids.clone();

@@ -291,7 +291,15 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         (false, Vec::new())
     };
 
-    crate::logger::log(&format!("check_dependencies: UE4SS installed={}, mode={}, ver={:?} | PalSchema installed={}, ver={:?}", ue4ss_installed, ue4ss_install_mode_str, ue4ss_version, palschema_installed, palschema_version));
+    use std::sync::Mutex;
+    static LAST_LOGGED_STATUS: Mutex<Option<String>> = Mutex::new(None);
+    let log_msg = format!("check_dependencies: UE4SS installed={}, mode={}, ver={:?} | PalSchema installed={}, ver={:?}", ue4ss_installed, ue4ss_install_mode_str, ue4ss_version, palschema_installed, palschema_version);
+    if let Ok(mut last) = LAST_LOGGED_STATUS.lock() {
+        if last.as_deref() != Some(&log_msg) {
+            crate::logger::log(&log_msg);
+            *last = Some(log_msg);
+        }
+    }
 
     DependencyStatus {
         ue4ss_installed,

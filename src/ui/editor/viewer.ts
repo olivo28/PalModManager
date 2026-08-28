@@ -11,43 +11,99 @@ import { resetFindMatches, getFindMatchesText } from './search';
 
 export let _originalContent: string | null = null;
 export const _lastFilePerMod: Record<string, string> = {};
+let _lastLineCount: number = -1;
+let _highlightRafId: number | null = null;
 
 export function clearOriginalContent(): void {
   _originalContent = null;
+  _lastLineCount = -1;
+  updateUnsavedIndicator();
 }
 
-export function syncHighlight(): void {
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const codeEl = document.getElementById('editor-highlight-code')!;
-  const state = getState();
-  const ext = state.editorSelectedFile ? state.editorSelectedFile.split('.').pop() || '' : '';
-  const text = editorContent.value;
+export function updateUnsavedIndicator(): void {
+  const isDirty = _originalContent !== null && (() => {
+    const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+    if (!editorContent) return false;
+    const normalize = (str: string) => str.replace(/\r\n/g, '\n');
+    return normalize(editorContent.value) !== normalize(_originalContent);
+  })();
 
+  const state = getState();
+  const selectedPath = state.editorSelectedFile;
+  if (selectedPath) {
+    const activeItem = document.querySelector(`.editor-file-item[data-path="${CSS.escape(selectedPath)}"]`);
+    if (activeItem) {
+      activeItem.classList.toggle('dirty', isDirty);
+    }
+  }
+
+  const saveBtn = document.getElementById('editor-save-btn');
+  if (saveBtn) {
+    saveBtn.classList.toggle('dirty', isDirty);
+  }
+}
+
+export function syncHighlight(immediate = false): void {
+  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
+  if (!editorContent) return;
+
+  const codeEl = document.getElementById('editor-highlight-code');
+  if (!codeEl) return;
+
+  const text = editorContent.value;
   const gutter = document.getElementById('editor-gutter');
+
+  // Gutter Line Numbers: Only re-render when line count actually changes
   if (gutter) {
     const lines = text.split('\n').length;
-    let html = '';
-    for (let i = 1; i <= lines; i++) {
-      html += `${i}<br/>`;
-    }
-    gutter.innerHTML = html;
-  }
-
-  // Handle Find/Search matches highlighting dynamically
-  const processedText = getFindMatchesText(text);
-
-  const highlighted = highlightText(processedText.text, ext);
-  let result = highlighted;
-
-  if (processedText.hasMatches) {
-    for (let i = 0; i < processedText.count; i++) {
-      result = result
-        .replace('\x00START' + i + '\x00', '<mark class="find-match">')
-        .replace('\x00END' + i + '\x00', '</mark>');
+    if (lines !== _lastLineCount) {
+      _lastLineCount = lines;
+      let html = '';
+      for (let i = 1; i <= lines; i++) {
+        html += `${i}<br/>`;
+      }
+      gutter.innerHTML = html;
     }
   }
 
-  codeEl.innerHTML = result + '\n';
+  updateUnsavedIndicator();
+
+  const performHighlight = () => {
+    const state = getState();
+    const ext = state.editorSelectedFile ? state.editorSelectedFile.split('.').pop() || '' : '';
+    const currentText = editorContent.value;
+
+    // Handle Find/Search matches highlighting dynamically
+    const processedText = getFindMatchesText(currentText);
+    const highlighted = highlightText(processedText.text, ext);
+    let result = highlighted;
+
+    if (processedText.hasMatches) {
+      for (let i = 0; i < processedText.count; i++) {
+        result = result
+          .replace('\x00START' + i + '\x00', '<mark class="find-match">')
+          .replace('\x00END' + i + '\x00', '</mark>');
+      }
+    }
+
+    codeEl.innerHTML = result + '\n';
+  };
+
+  if (immediate) {
+    if (_highlightRafId !== null) {
+      cancelAnimationFrame(_highlightRafId);
+      _highlightRafId = null;
+    }
+    performHighlight();
+  } else {
+    if (_highlightRafId !== null) {
+      cancelAnimationFrame(_highlightRafId);
+    }
+    _highlightRafId = requestAnimationFrame(() => {
+      _highlightRafId = null;
+      performHighlight();
+    });
+  }
 }
 
 export async function loadFileContent(filePath: string): Promise<void> {
@@ -125,7 +181,7 @@ export async function loadFileContent(filePath: string): Promise<void> {
     _originalContent = null;
     editorStatus.textContent = '';
   }
-  syncHighlight();
+  syncHighlight(true);
 }
 
 export function stripJsonComments(jsonc: string): string {
@@ -163,6 +219,7 @@ export async function handleEditorSave(): Promise<void> {
 
     await saveModFile(state.editorModId, state.editorSelectedFile, content);
     _originalContent = content;
+    updateUnsavedIndicator();
     editorStatus.textContent = t('editor.status_saved');
     showToast(t('editor.toast_saved'), 'success');
 

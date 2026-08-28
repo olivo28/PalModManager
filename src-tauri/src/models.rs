@@ -14,7 +14,7 @@ pub enum ModType {
     Hybrid,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct ModInfo {
     pub id: String,
@@ -73,7 +73,7 @@ pub struct ModInfo {
     pub origin_load_method: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NexusAccountInfo {
     pub user_id: Option<u64>,
@@ -95,7 +95,7 @@ pub struct NexusAccountInfo {
     pub mod_count: Option<u32>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NexusUserEndorsement {
     #[serde(alias = "mod_id")]
@@ -113,7 +113,7 @@ pub struct NexusUserEndorsement {
     pub summary: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NexusUserTrackedMod {
     #[serde(alias = "mod_id")]
@@ -128,7 +128,7 @@ pub struct NexusUserTrackedMod {
     pub summary: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct NexusUserAuthoredMod {
     pub mod_id: u32,
@@ -144,7 +144,7 @@ pub struct NexusUserAuthoredMod {
     pub updated_at: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 #[serde(rename_all = "camelCase")]
 pub struct AppSettings {
     pub game_path: String,
@@ -188,7 +188,7 @@ pub struct AppSettings {
 }
 
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct ModFolder {
     pub id: String,
     pub name: String,
@@ -207,7 +207,7 @@ fn default_dependency_mode() -> DependencyMode {
     DependencyMode::None
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Profile {
     pub id: String,
     pub name: String,
@@ -236,7 +236,7 @@ pub struct Profile {
     pub hide_native_mods: Option<bool>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AppData {
     pub mods: Vec<ModInfo>,
     pub settings: AppSettings,

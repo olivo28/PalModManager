@@ -17,6 +17,7 @@ pub fn install_mod_from_library(
     mod_id: String,
     state: State<AppState>,
 ) -> Result<Value, String> {
+    crate::logger::log(&format!("install_mod_from_library: Installing mod '{}' from library", mod_id));
     let (program_path, game_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (data.settings.program_path.clone(), data.settings.game_path.clone())
@@ -126,6 +127,7 @@ pub fn remove_from_library(
     zip_name: Option<String>,
     state: tauri::State<AppState>,
 ) -> Result<Value, String> {
+    crate::logger::log(&format!("remove_from_library: Removing mod '{}' (zip: {:?}) from library", mod_id, zip_name));
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.settings.program_path.clone()
@@ -169,6 +171,7 @@ pub async fn copy_to_library_command(
     mod_name: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
+    crate::logger::log(&format!("copy_to_library: Importing archive '{}' into library", zip_path));
     let (program_path, installed_mods) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (data.settings.program_path.clone(), data.mods.clone())

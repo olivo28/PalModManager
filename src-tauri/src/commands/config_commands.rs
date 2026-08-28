@@ -247,6 +247,7 @@ pub fn read_mod_file(mod_id: String, file_path: String, state: State<AppState>) 
     }
 
     let content = fs::read_to_string(&full_path).map_err(|e| format!("Cannot read file: {}", e))?;
+    crate::logger::log(&format!("read_mod_file: Read '{}' for mod '{}' ({} bytes)", file_path, mod_id, content.len()));
 
     Ok(serde_json::json!({
         "content": content,
@@ -257,6 +258,7 @@ pub fn read_mod_file(mod_id: String, file_path: String, state: State<AppState>) 
 
 #[tauri::command]
 pub fn save_mod_file(mod_id: String, file_path: String, content: String, state: State<AppState>) -> Result<Value, String> {
+    crate::logger::log(&format!("save_mod_file: Saving '{}' for mod '{}' ({} bytes)", file_path, mod_id, content.len()));
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let program_path = data.settings.program_path.clone();
 
@@ -272,6 +274,7 @@ pub fn save_mod_file(mod_id: String, file_path: String, content: String, state: 
     }
 
     fs::write(&full_path, &content).map_err(|e| format!("Cannot write file: {}", e))?;
+    crate::logger::log(&format!("save_mod_file: File '{}' written successfully", full_path.display()));
 
     let data_clone = data.clone();
     drop(data);

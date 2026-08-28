@@ -44,6 +44,7 @@ pub fn set_game_path(path: String, state: State<AppState>) -> Result<Value, Stri
     };
 
     let resolved_path = detected_root.to_string_lossy().into_owned();
+    crate::logger::log(&format!("settings: Game path set to '{}'", resolved_path));
 
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     data.settings.game_path = resolved_path;

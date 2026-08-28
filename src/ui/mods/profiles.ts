@@ -8,6 +8,7 @@ import { showConfirm } from '../confirm';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { switchProfile, clearProfile } from '../../api';
+import { suppressWatcherRefresh } from '../editor/watcher';
 
 export async function loadProfiles(): Promise<void> {
   try {
@@ -254,6 +255,7 @@ export async function handleProfileChange(profileId: string): Promise<void> {
     return;
   }
   _isSwitchingProfile = true;
+  suppressWatcherRefresh(3500);
 
   // Disable switch buttons while processing
   document.querySelectorAll<HTMLButtonElement>('.profile-switch-btn, .profile-item').forEach(el => {

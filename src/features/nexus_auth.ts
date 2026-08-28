@@ -299,6 +299,9 @@ export function openNexusProfileModal(): void {
   const nameEl = document.getElementById('nexus-profile-modal-name');
   const idEl = document.getElementById('nexus-profile-modal-id');
   const badgeEl = document.getElementById('nexus-profile-modal-badge');
+  const authorBadgeEl = document.getElementById('nexus-profile-modal-author-badge');
+  const downloadsEl = document.getElementById('nexus-profile-modal-downloads');
+  const downloadsCountEl = document.getElementById('nexus-profile-modal-downloads-count');
   const protoEl = document.getElementById('nexus-profile-modal-proto');
   const endorsementsEl = document.getElementById('nexus-profile-modal-endorsements');
   const viewsEl = document.getElementById('nexus-profile-modal-views');
@@ -306,6 +309,17 @@ export function openNexusProfileModal(): void {
   const lastActiveEl = document.getElementById('nexus-profile-modal-last-active');
   const joinedEl = document.getElementById('nexus-profile-modal-joined');
   const aboutEl = document.getElementById('nexus-profile-modal-about');
+
+  const updateAuthorMetrics = (mods: NexusUserAuthoredMod[]) => {
+    if (mods && mods.length > 0) {
+      if (authorBadgeEl) authorBadgeEl.style.display = 'inline-flex';
+      const totalDownloads = mods.reduce((sum, m) => sum + (m.downloads || 0), 0);
+      if (downloadsEl && downloadsCountEl && totalDownloads > 0) {
+        downloadsCountEl.textContent = totalDownloads.toLocaleString();
+        downloadsEl.style.display = 'inline-flex';
+      }
+    }
+  };
 
   const populateFields = (acc: NexusAccountInfo) => {
     if (avatarEl) {
@@ -320,6 +334,11 @@ export function openNexusProfileModal(): void {
       const isSupporter = acc.isSupporter;
       badgeEl.className = `nexus-tier-badge ${isPremium ? 'nexus-badge-premium' : isSupporter ? 'nexus-badge-supporter' : 'nexus-badge-free'}`;
       badgeEl.textContent = isPremium ? t('settings.nexus_status_premium') : isSupporter ? t('settings.nexus_status_supporter') : t('settings.nexus_status_free');
+    }
+
+    const isAuthor = (acc.modCount !== undefined && acc.modCount !== null && acc.modCount > 0) || (acc.roles && acc.roles.some(r => r.toLowerCase().includes('author') || r.toLowerCase().includes('creator')));
+    if (authorBadgeEl) {
+      authorBadgeEl.style.display = isAuthor ? 'inline-flex' : 'none';
     }
 
     if (endorsementsEl) {
@@ -354,6 +373,14 @@ export function openNexusProfileModal(): void {
   };
 
   populateFields(account);
+
+  // Pre-fetch authored mods in background to populate downloads counter & author badge early
+  getNexusUserAuthoredMods(false).then(myMods => {
+    cachedMyMods = myMods;
+    const authoredCountBadge = document.getElementById('nexus-tab-authored-count');
+    if (authoredCountBadge) authoredCountBadge.textContent = String(myMods.length);
+    updateAuthorMetrics(myMods);
+  }).catch(() => {});
 
   // Tab Switching Logic
   const tabs = modal.querySelectorAll<HTMLButtonElement>('.nexus-modal-tab');
@@ -616,11 +643,13 @@ export function openNexusProfileModal(): void {
       if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">${t('nexus_profile.loading_my_mods')}</div>`;
       try {
         cachedMyMods = await getNexusUserAuthoredMods(force);
+        updateAuthorMetrics(cachedMyMods);
         renderMyModsList(cachedMyMods);
       } catch (err: any) {
         if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--danger); font-size: 11px;">${String(err)}</div>`;
       }
     } else {
+      updateAuthorMetrics(cachedMyMods);
       renderMyModsList(cachedMyMods);
     }
   };
