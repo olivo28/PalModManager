@@ -7,12 +7,12 @@ import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
-import { switchProfile, clearProfile } from '../../api';
+import { switchProfile, clearProfile, getProfiles, getCurrentProfile, getSettings } from '../../api';
 import { suppressWatcherRefresh } from '../editor/watcher';
+import { mainDom, editorDom, bus } from '../../framework';
 
 export async function loadProfiles(): Promise<void> {
   try {
-    const { getProfiles, getCurrentProfile, getSettings } = await import('../../api');
     const [profiles, currentProfile, settings] = await Promise.all([
       getProfiles(),
       getCurrentProfile().catch(() => null),
@@ -36,7 +36,7 @@ export async function loadProfiles(): Promise<void> {
 }
 
 function updateActiveProfileLabel(): void {
-  const label = document.getElementById('profile-active-label');
+  const label = mainDom.elMaybe('profile-active-label');
   if (!label) return;
   const { profiles, currentProfileId } = getState();
   const current = profiles.find(p => p.id === currentProfileId);
@@ -44,7 +44,7 @@ function updateActiveProfileLabel(): void {
 }
 
 export function renderProfileList(): void {
-  const list = document.getElementById('profile-list');
+  const list = mainDom.elMaybe('profile-list');
   if (!list) return;
   const { profiles, currentProfileId, dependencies } = getState();
   const isUe4ssWorkshop = dependencies?.ue4ss_version === 'Workshop';
@@ -292,18 +292,18 @@ export async function handleProfileChange(profileId: string): Promise<void> {
     });
     renderModsView();
 
-    const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+    const editorContent = editorDom.elMaybe('editor-content');
     if (editorContent) {
       editorContent.value = '';
       editorContent.disabled = true;
     }
-    const editorPath = document.getElementById('editor-file-path');
+    const editorPath = editorDom.elMaybe('editor-file-path');
     if (editorPath) editorPath.textContent = '';
-    const nameEl = document.getElementById('editor-current-mod-name');
+    const nameEl = editorDom.elMaybe('editor-current-mod-name');
     if (nameEl) nameEl.textContent = '';
-    const highlightCode = document.getElementById('editor-highlight-code');
+    const highlightCode = editorDom.elMaybe('editor-highlight-code');
     if (highlightCode) highlightCode.innerHTML = '';
-    const fileTreeEl = document.getElementById('editor-file-tree');
+    const fileTreeEl = editorDom.elMaybe('editor-file-tree');
     if (fileTreeEl) fileTreeEl.innerHTML = `<div class="editor-file-empty">${escapeHtml(t('editor.file_empty'))}</div>`;
 
     const { populateEditorModSelect, renderEditorModTree } = await import('../editorView');
@@ -312,6 +312,7 @@ export async function handleProfileChange(profileId: string): Promise<void> {
 
     await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
     renderModsView();
+    bus.emit('profile:switched', { profileId, profileName: targetName });
     showToast(t('toasts.profile_switched', { name: targetName }), 'success');
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');

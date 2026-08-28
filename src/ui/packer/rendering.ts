@@ -2,20 +2,21 @@ import { stagedFiles, sourcePaths, targetOverrides, backupPaths, viewMode, virtu
 import { toggleSkipFile } from './staging';
 import { showPrompt, showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
+import { packerDom } from '../../framework';
 
 export async function renderWorkspace(): Promise<void> {
-  const ws = document.getElementById('packer-workspace-view');
+  const ws = packerDom.elMaybe('packer-workspace-view');
   if (!ws || ws.style.display === 'none') return;
 
-  const noFilesPlaceholder = document.getElementById('packer-empty-state');
-  const filesContainer = document.getElementById('packer-files-container');
+  const noFilesPlaceholder = packerDom.elMaybe('packer-empty-state');
+  const filesContainer = packerDom.elMaybe('packer-files-container');
 
   if (filesContainer) filesContainer.style.display = 'block';
 
   if (stagedFiles.length === 0) {
     if (noFilesPlaceholder) noFilesPlaceholder.style.display = 'flex';
-    const listArea = document.getElementById('packer-list-table');
-    const treeArea = document.getElementById('packer-tree-view');
+    const listArea = packerDom.elMaybe('packer-list-table');
+    const treeArea = packerDom.elMaybe('packer-tree-view');
     if (listArea) listArea.style.display = 'none';
     if (treeArea) treeArea.style.display = 'none';
     updateBuildButtonState();
@@ -24,10 +25,10 @@ export async function renderWorkspace(): Promise<void> {
 
   if (noFilesPlaceholder) noFilesPlaceholder.style.display = 'none';
 
-  const listTab = document.getElementById('packer-view-list-btn');
-  const treeTab = document.getElementById('packer-view-tree-btn');
-  const listArea = document.getElementById('packer-list-table');
-  const treeArea = document.getElementById('packer-tree-view');
+  const listTab = packerDom.elMaybe('packer-view-list-btn');
+  const treeTab = packerDom.elMaybe('packer-view-tree-btn');
+  const listArea = packerDom.elMaybe('packer-list-table');
+  const treeArea = packerDom.elMaybe('packer-tree-view');
 
   if (viewMode === 'list') {
     if (listTab) listTab.classList.add('active');
@@ -47,7 +48,7 @@ export async function renderWorkspace(): Promise<void> {
 }
 
 function renderListMode(): void {
-  const container = document.getElementById('packer-files-body');
+  const container = packerDom.elMaybe('packer-files-body');
   if (!container) return;
 
   container.innerHTML = stagedFiles.map((file, index) => {
@@ -110,7 +111,7 @@ function renderListMode(): void {
 }
 
 async function renderTreeMode(): Promise<void> {
-  const container = document.getElementById('packer-tree-view');
+  const container = packerDom.elMaybe('packer-tree-view');
   if (!container) return;
 
   const root: any = { name: 'root', isDir: true, children: {} };
@@ -347,12 +348,12 @@ export function formatBytes(bytes: number): string {
 }
 
 export function clearMetadataForm(): void {
-  const metaName = document.getElementById('packer-meta-name') as HTMLInputElement | null;
-  const metaVersion = document.getElementById('packer-meta-version') as HTMLInputElement | null;
-  const metaAuthor = document.getElementById('packer-meta-author') as HTMLInputElement | null;
-  const metaNexusId = document.getElementById('packer-meta-nexus-id') as HTMLInputElement | null;
-  const metaType = document.getElementById('packer-meta-type') as HTMLSelectElement | null;
-  const metaDesc = document.getElementById('packer-meta-desc') as HTMLTextAreaElement | null;
+  const metaName = packerDom.elMaybe('packer-meta-name');
+  const metaVersion = packerDom.elMaybe('packer-meta-version');
+  const metaAuthor = packerDom.elMaybe('packer-meta-author');
+  const metaNexusId = packerDom.elMaybe('packer-meta-nexus-id');
+  const metaType = packerDom.elMaybe('packer-meta-type');
+  const metaDesc = packerDom.elMaybe('packer-meta-desc');
 
   if (metaName) metaName.value = '';
   if (metaVersion) metaVersion.value = '1.0.0';
@@ -363,10 +364,10 @@ export function clearMetadataForm(): void {
 }
 
 export function updateBuildButtonState(): void {
-  const name = (document.getElementById('packer-meta-name') as HTMLInputElement | null)?.value.trim();
-  const version = (document.getElementById('packer-meta-version') as HTMLInputElement | null)?.value.trim();
-  const type = (document.getElementById('packer-meta-type') as HTMLSelectElement | null)?.value;
-  const buildBtn = document.getElementById('packer-build-btn') as HTMLButtonElement | null;
+  const name = packerDom.elMaybe('packer-meta-name')?.value.trim();
+  const version = packerDom.elMaybe('packer-meta-version')?.value.trim();
+  const type = packerDom.elMaybe('packer-meta-type')?.value;
+  const buildBtn = packerDom.elMaybe('packer-build-btn');
   
   if (buildBtn) {
     buildBtn.disabled = !name || !version || !type || stagedFiles.length === 0;

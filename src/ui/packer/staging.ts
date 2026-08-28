@@ -1,6 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
+import { packerDom } from '../../framework';
 import { stagedFiles, sourcePaths, targetOverrides, backupPaths, renderWorkspace, setStagedFiles, setSourcePaths } from './mod';
 
 export async function addStagedPaths(paths: string[]): Promise<void> {
@@ -56,8 +57,8 @@ export function toggleSkipFile(index: number): void {
 }
 
 export function autoStructureWorkspace(): void {
-  const modNameInput = document.getElementById('packer-meta-name') as HTMLInputElement;
-  const modTypeSelect = document.getElementById('packer-meta-type') as HTMLSelectElement;
+  const modNameInput = packerDom.elMaybe('packer-meta-name') as HTMLInputElement | null;
+  const modTypeSelect = packerDom.elMaybe('packer-meta-type') as HTMLSelectElement | null;
 
   const rawModName = modNameInput?.value.trim();
   const modType = modTypeSelect?.value;

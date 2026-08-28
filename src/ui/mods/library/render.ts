@@ -14,16 +14,17 @@ import {
 import { formatSize, parseModFilename } from './helpers';
 import { updateWorkshopTabVisibility, isWorkshopModNew } from './workshop';
 import { updateLibraryBulkBar, triggerInstallFromLibrary } from './actions';
+import { libraryDom } from '../../../framework';
 
 export async function renderLibraryView(): Promise<void> {
-  const container = document.getElementById('library-container');
+  const container = libraryDom.elMaybe('library-container');
   if (!container) return;
 
   updateWorkshopTabVisibility();
 
-  const masterToggleWrap = document.getElementById('library-workshop-master-wrap');
-  const bulkBar = document.getElementById('library-bulk-actions-bar');
-  const wsCheckUpdatesBtn = document.getElementById('workshop-check-updates-btn');
+  const masterToggleWrap = libraryDom.elMaybe('library-workshop-master-wrap');
+  const bulkBar = libraryDom.elMaybe('library-bulk-actions-bar');
+  const wsCheckUpdatesBtn = libraryDom.elMaybe('workshop-check-updates-btn');
 
   if (_activeLibrarySubTab === 'local') {
     if (masterToggleWrap) masterToggleWrap.style.display = 'none';
@@ -436,7 +437,7 @@ export async function renderLibraryView(): Promise<void> {
     try {
       const wState = await getWorkshopState();
 
-      const masterToggle = document.getElementById('library-workshop-master-toggle') as HTMLInputElement | null;
+      const masterToggle = libraryDom.elMaybe('library-workshop-master-toggle');
       if (masterToggle) {
         masterToggle.checked = wState.globalEnabled;
         masterToggle.onchange = async () => {

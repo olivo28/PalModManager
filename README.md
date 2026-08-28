@@ -78,13 +78,19 @@ Whether you're installing complex UE4SS mods, PalSchema mods, Pak mods, or Logic
 - **Toolbar UI Scaling**: Resize main workspace toolbars from 80% to 180% via settings range slider.
 - **Database Grid Inspector (DB Tab)**: Advanced database inspector to view and edit Mods, Profiles, and Settings tables with raw JSON record validation and secure credential masking.
 
+### ⚡ Internal PMM-Core Reactive Framework & Telemetry
+- **Zero-Virtual DOM Performance**: Custom internal reactive engine (`src/framework/`) providing compile-time type safety across all 11 UI domain scopes with instant, micro-second execution.
+- **Strongly-Typed Event Mesh**: Pub/sub event bus (`bus`) decoupling cross-subsystem interactions (packers, installers, scanners, profiles) without cyclic dependencies.
+- **Live Download Velocity & ETA Telemetry**: Real-time sliding-window throughput calculator rendering dynamic download speed (`⚡ MB/s`) and estimated completion time (`⏳ ETA`) badges in the NXM download tray.
+- **Cross-Platform Cache Hygiene**: Integrated fast cache cleaner script (`pnpm clean`) to maintain a lean developer and runtime footprint.
+
 ---
 
 ## 💻 Tech Stack
 
-- **Frontend**: HTML5, Vanilla CSS (Modern Dark Mode with Glassmorphism), TypeScript, Vite
+- **Frontend**: HTML5, Vanilla CSS (Modern Glassmorphism Dark Mode), TypeScript, **PMM-Core Framework**, Vite 8 (Rolldown)
 - **Backend**: Rust, Tauri v2
-- **Storage**: Encrypted JSON database for persistent profiles and mod settings
+- **Storage**: JSON database with secure credential isolation for persistent profiles and mod settings
 
 ---
 

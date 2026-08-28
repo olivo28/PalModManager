@@ -2,13 +2,14 @@ import { getWorkshopState, setWorkshopGlobalEnabled, activateWorkshopMod, deacti
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
+import { mainDom } from '../../framework';
 
 export async function openWorkshopModal(): Promise<void> {
-  const modal = document.getElementById('workshop-modal')!;
+  const modal = mainDom.el('workshop-modal');
   modal.classList.add('visible');
 
-  const closeX = document.getElementById('workshop-modal-close-x')!;
-  const closeBtn = document.getElementById('workshop-modal-close')!;
+  const closeX = mainDom.el('workshop-modal-close-x');
+  const closeBtn = mainDom.el('workshop-modal-close');
 
   const close = () => {
     modal.classList.remove('visible');
@@ -21,8 +22,8 @@ export async function openWorkshopModal(): Promise<void> {
 }
 
 export async function refreshWorkshopUI(): Promise<void> {
-  const masterToggle = document.getElementById('workshop-master-toggle') as HTMLInputElement;
-  const listContainer = document.getElementById('workshop-list-container')!;
+  const masterToggle = mainDom.el('workshop-master-toggle');
+  const listContainer = mainDom.el('workshop-list-container');
 
   try {
     const wState = await getWorkshopState();

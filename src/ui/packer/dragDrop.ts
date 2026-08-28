@@ -2,14 +2,15 @@ import { addStagedPaths } from './staging';
 import { stagedFiles, targetOverrides, renderWorkspace, virtualFolders, setVirtualFolders } from './mod';
 import { showToast as toast } from '../toast';
 import { t } from '../../utils/i18n';
+import { packerDom } from '../../framework';
 
 function showToast(msg: string, type: 'success' | 'warning' | 'error' | 'info'): void {
   toast(msg, type);
 }
 
 export function setupPackerDragAndDrop(): void {
-  const container = document.getElementById('build-view');
-  const overlay = document.getElementById('packer-drag-overlay');
+  const container = packerDom.elMaybe('build-view');
+  const overlay = packerDom.elMaybe('packer-drag-overlay');
   if (!container || !overlay) return;
 
   ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {

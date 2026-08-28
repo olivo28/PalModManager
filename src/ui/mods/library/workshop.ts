@@ -66,9 +66,11 @@ export function isWorkshopModNew(packageName: string): boolean {
   }
 }
 
+import { libraryDom, mainDom } from '../../../framework';
+
 export function updateWorkshopBadges(newCount: number): void {
-  const subtabBadge = document.getElementById('workshop-subtab-badge');
-  const sidebarBadge = document.getElementById('sidebar-library-badge');
+  const subtabBadge = libraryDom.elMaybe('workshop-subtab-badge');
+  const sidebarBadge = mainDom.elMaybe('sidebar-library-badge');
 
   if (subtabBadge) {
     if (newCount > 0) {
@@ -106,7 +108,7 @@ export function updateWorkshopTabVisibility(): void {
 }
 
 export async function handleCheckWorkshopOnlineUpdates(): Promise<void> {
-  const btn = document.getElementById('workshop-check-updates-btn') as HTMLButtonElement | null;
+  const btn = libraryDom.elMaybe('workshop-check-updates-btn');
   if (btn) {
     btn.disabled = true;
     btn.textContent = t('library.checking_workshop_updates');
@@ -166,7 +168,7 @@ export async function handleTriggerSteamValidation(bypassConfirm: boolean = fals
     await triggerSteamValidation();
 
     // Lock Play button safely for 2 minutes (120 seconds) while Steam downloads updates
-    const playBtn = document.getElementById('launch-game-btn') as HTMLButtonElement | null;
+    const playBtn = mainDom.elMaybe('launch-game-btn');
     const playLabel = playBtn?.querySelector('.sidebar-tab-label') as HTMLElement | null;
 
     if (playBtn) {

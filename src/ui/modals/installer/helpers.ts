@@ -10,11 +10,12 @@ import {
   setLastInstallSuccess,
   setInstallModalCallback
 } from './state';
+import { installerDom } from '../../../framework';
 
 export function showInstallModal(): void {
-  const modal = document.getElementById('install-modal');
+  const modal = installerDom.elMaybe('install-modal');
   if (modal) modal.classList.add('visible');
-  const content = document.getElementById('modal-content');
+  const content = installerDom.elMaybe('modal-content');
   if (content) {
     content.innerHTML = `
       <div style="padding: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 180px; gap: 12px;">
@@ -23,36 +24,36 @@ export function showInstallModal(): void {
       </div>
     `;
   }
-  const statusEl = document.getElementById('modal-status');
+  const statusEl = installerDom.elMaybe('modal-status');
   if (statusEl) {
     statusEl.textContent = '';
   }
 }
 
 export function closeInstallModal(): void {
-  const modal = document.getElementById('install-modal');
+  const modal = installerDom.elMaybe('install-modal');
   if (modal) modal.classList.remove('visible');
   updateState({ currentAnalysis: null });
   setPendingUpdateModId(null);
   setPendingBatchPaths([]);
   setBatchItems([]);
 
-  const content = document.getElementById('modal-content');
+  const content = installerDom.elMaybe('modal-content');
   if (content) {
     content.innerHTML = '';
   }
-  const statusEl = document.getElementById('modal-status');
+  const statusEl = installerDom.elMaybe('modal-status');
   if (statusEl) {
     statusEl.textContent = '';
   }
 
-  const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
+  const retryBtn = installerDom.elMaybe('modal-install-deps-retry');
   if (retryBtn) {
     retryBtn.style.display = 'none';
   }
 
-  const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
-  const cancelBtn = document.getElementById('modal-cancel')! as HTMLButtonElement;
+  const confirmBtn = installerDom.elMaybe('modal-confirm');
+  const cancelBtn = installerDom.elMaybe('modal-cancel');
   if (confirmBtn) {
     confirmBtn.style.display = '';
     confirmBtn.textContent = t('installer.btn_install');
@@ -78,7 +79,7 @@ export function closeInstallModal(): void {
 }
 
 export function setModalStatus(status: string): void {
-  const statusEl = document.getElementById('modal-status');
+  const statusEl = installerDom.elMaybe('modal-status');
   if (statusEl) statusEl.textContent = status;
 }
 

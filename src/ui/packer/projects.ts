@@ -5,6 +5,7 @@ import { t } from '../../utils/i18n';
 import { stagedFiles, sourcePaths, targetOverrides, virtualFolders, backupPaths, activeProjectName, savedProjects, setStagedFiles, setSourcePaths, setVirtualFolders, setBackupPaths, setActiveProject, setSavedProjects, renderWorkspace, escapeHtml } from './mod';
 import { scanAndBuildStagedFiles } from './staging';
 import { clearMetadataForm } from './rendering';
+import { packerDom } from '../../framework';
 
 import { ModMetadata, PackerProject } from './mod';
 
@@ -19,7 +20,7 @@ export async function loadProjectsList(): Promise<void> {
 }
 
 export function renderProjectsHub(): void {
-  const grid = document.getElementById('packer-projects-grid');
+  const grid = packerDom.elMaybe('packer-projects-grid');
   if (!grid) return;
 
   let html = savedProjects.map(proj => {
@@ -68,14 +69,14 @@ export function renderProjectsHub(): void {
     });
   });
 
-  document.getElementById('packer-hub-create-card')?.addEventListener('click', () => {
+  packerDom.elMaybe('packer-hub-create-card')?.addEventListener('click', () => {
     openNewProjectWorkspace();
   });
 }
 
 export function showProjectsHub(): void {
-  document.getElementById('packer-projects-hub')!.style.display = 'flex';
-  document.getElementById('packer-workspace-view')!.style.display = 'none';
+  packerDom.el('packer-projects-hub').style.display = 'flex';
+  packerDom.el('packer-workspace-view').style.display = 'none';
   loadProjectsList();
 }
 
@@ -88,12 +89,12 @@ export function openNewProjectWorkspace(): void {
   backupPaths.clear();
   clearMetadataForm();
 
-  const nameInput = document.getElementById('packer-project-name') as HTMLInputElement;
+  const nameInput = packerDom.elMaybe('packer-project-name');
   if (nameInput) nameInput.value = '';
 
-  document.getElementById('packer-workspace-title')!.textContent = t('packer.workspace_title_new');
-  document.getElementById('packer-projects-hub')!.style.display = 'none';
-  document.getElementById('packer-workspace-view')!.style.display = 'flex';
+  packerDom.el('packer-workspace-title').textContent = t('packer.workspace_title_new');
+  packerDom.el('packer-projects-hub').style.display = 'none';
+  packerDom.el('packer-workspace-view').style.display = 'flex';
   renderWorkspace();
 }
 
@@ -126,27 +127,27 @@ export function loadSelectedProject(name: string): void {
 
   if (project.metadata) {
     const m = project.metadata;
-    (document.getElementById('packer-meta-name') as HTMLInputElement).value = m.name || '';
-    (document.getElementById('packer-meta-version') as HTMLInputElement).value = m.version || '1.0.0';
-    (document.getElementById('packer-meta-author') as HTMLInputElement).value = m.author || '';
-    (document.getElementById('packer-meta-type') as HTMLSelectElement).value = m.modType || '';
-    (document.getElementById('packer-meta-nexus-id') as HTMLInputElement).value = m.nexusModId ? String(m.nexusModId) : '';
-    (document.getElementById('packer-meta-desc') as HTMLTextAreaElement).value = m.description || '';
+    packerDom.el('packer-meta-name').value = m.name || '';
+    packerDom.el('packer-meta-version').value = m.version || '1.0.0';
+    packerDom.el('packer-meta-author').value = m.author || '';
+    packerDom.el('packer-meta-type').value = m.modType || '';
+    packerDom.el('packer-meta-nexus-id').value = m.nexusModId ? String(m.nexusModId) : '';
+    packerDom.el('packer-meta-desc').value = m.description || '';
   } else {
     clearMetadataForm();
   }
 
-  const formatSelect = document.getElementById('packer-format-select') as HTMLSelectElement;
+  const formatSelect = packerDom.elMaybe('packer-format-select');
   if (formatSelect) {
     formatSelect.value = project.format || 'zip';
   }
 
-  const nameInput = document.getElementById('packer-project-name') as HTMLInputElement;
+  const nameInput = packerDom.elMaybe('packer-project-name');
   if (nameInput) nameInput.value = name;
 
-  document.getElementById('packer-workspace-title')!.textContent = t('packer.workspace_title_project', { name });
-  document.getElementById('packer-projects-hub')!.style.display = 'none';
-  document.getElementById('packer-workspace-view')!.style.display = 'flex';
+  packerDom.el('packer-workspace-title').textContent = t('packer.workspace_title_project', { name });
+  packerDom.el('packer-projects-hub').style.display = 'none';
+  packerDom.el('packer-workspace-view').style.display = 'flex';
 
   scanAndBuildStagedFiles().then(() => {
     showToast(t('packer.toast_loaded_project', { name }), 'info');
@@ -154,11 +155,11 @@ export function loadSelectedProject(name: string): void {
 }
 
 export async function saveCurrentProject(): Promise<void> {
-  const nameInput = document.getElementById('packer-project-name') as HTMLInputElement;
+  const nameInput = packerDom.elMaybe('packer-project-name');
   let projName = nameInput?.value.trim();
 
   if (!projName) {
-    const modName = (document.getElementById('packer-meta-name') as HTMLInputElement)?.value.trim();
+    const modName = packerDom.elMaybe('packer-meta-name')?.value.trim();
     if (modName) {
       projName = modName;
     } else {
@@ -167,22 +168,22 @@ export async function saveCurrentProject(): Promise<void> {
     }
   }
 
-  const metaName = (document.getElementById('packer-meta-name') as HTMLInputElement)?.value.trim();
-  const metaVersion = (document.getElementById('packer-meta-version') as HTMLInputElement)?.value.trim();
-  const metaAuthor = (document.getElementById('packer-meta-author') as HTMLInputElement)?.value.trim();
-  const metaType = (document.getElementById('packer-meta-type') as HTMLSelectElement)?.value;
-  const metaDesc = (document.getElementById('packer-meta-desc') as HTMLTextAreaElement)?.value.trim();
-  const metaNexusIdStr = (document.getElementById('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
+  const metaName = packerDom.elMaybe('packer-meta-name')?.value.trim();
+  const metaVersion = packerDom.elMaybe('packer-meta-version')?.value.trim();
+  const metaAuthor = packerDom.elMaybe('packer-meta-author')?.value.trim();
+  const metaType = packerDom.elMaybe('packer-meta-type')?.value;
+  const metaDesc = packerDom.elMaybe('packer-meta-desc')?.value.trim();
+  const metaNexusIdStr = packerDom.elMaybe('packer-meta-nexus-id')?.value.trim();
   const metaNexusId = metaNexusIdStr ? parseInt(metaNexusIdStr, 10) : null;
-  const formatSelect = document.getElementById('packer-format-select') as HTMLSelectElement;
+  const formatSelect = packerDom.elMaybe('packer-format-select');
   const format = formatSelect?.value || 'zip';
 
   const metadata: ModMetadata | null = metaName ? {
     name: metaName,
     version: metaVersion || '1.0.0',
-    author: metaAuthor,
-    modType: metaType,
-    description: metaDesc,
+    author: metaAuthor || '',
+    modType: metaType || '',
+    description: metaDesc || '',
     nexusModId: isNaN(metaNexusId as any) ? null : metaNexusId
   } : null;
 
@@ -207,7 +208,7 @@ export async function saveCurrentProject(): Promise<void> {
     });
 
     setActiveProject(projName);
-    document.getElementById('packer-workspace-title')!.textContent = `Project: ${projName}`;
+    packerDom.el('packer-workspace-title').textContent = `Project: ${projName}`;
     showToast(t('packer.toast_saved_project'), 'success');
   } catch (err: any) {
     showToast(t('toasts.export_failed', { error: String(err) }), 'error');

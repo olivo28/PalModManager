@@ -1,14 +1,10 @@
-/**
- * tabManager.ts
- * Central tab router. Wraps the legacy switchTab from editorView.ts and extends it
- * with the 'db' tab — editorView.ts is NOT modified.
- */
 import { switchTab } from './editorView';
 import { updateState } from '../state';
+import { mainDom, type MainDomMap } from '../framework';
 
 export type AppTab = 'discovery' | 'mods' | 'load' | 'editor' | 'library' | 'build' | 'scanner' | 'db';
 
-const ALL_PANELS: { id: string; tab: AppTab; display: string }[] = [
+const ALL_PANELS: { id: keyof MainDomMap; tab: AppTab; display: string }[] = [
   { id: 'discovery-view', tab: 'discovery', display: 'flex' },
   { id: 'mods-view',      tab: 'mods',      display: '' },
   { id: 'load-view',      tab: 'load',      display: 'flex' },
@@ -33,7 +29,7 @@ export function navigateTo(tab: AppTab): void {
 
     // Show/hide panels
     ALL_PANELS.forEach(({ id, tab: panelTab, display }) => {
-      const el = document.getElementById(id);
+      const el = mainDom.elMaybe(id as any);
       if (el) el.style.display = panelTab === tab ? display : 'none';
     });
 
@@ -48,11 +44,11 @@ export function navigateTo(tab: AppTab): void {
     }
   } else {
     // Always hide custom panels first
-    const dbPanel = document.getElementById('db-view');
+    const dbPanel = mainDom.elMaybe('db-view');
     if (dbPanel) dbPanel.style.display = 'none';
-    const loadPanel = document.getElementById('load-view');
+    const loadPanel = mainDom.elMaybe('load-view');
     if (loadPanel) loadPanel.style.display = 'none';
-    const discoveryPanel = document.getElementById('discovery-view');
+    const discoveryPanel = mainDom.elMaybe('discovery-view');
     if (discoveryPanel) discoveryPanel.style.display = 'none';
     // Delegate to the existing router for all known legacy tabs
     switchTab(tab);

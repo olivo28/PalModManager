@@ -8,6 +8,7 @@ import { openLightbox, closeLightbox, updateLightboxTransform, setupLightboxPanZ
 import { renderTagChips, renderTagMenu, setupTagPickers } from './tags';
 import { renderGrid } from './grid';
 import { closeDiscoveryModal } from './detailsModal';
+import { discoveryDom } from '../../framework';
 
 export async function renderDiscoveryView(): Promise<void> {
   setupEventListeners();
@@ -24,8 +25,8 @@ export function setupEventListeners(): void {
   discState.isInitialized = true;
 
   // Search input debounce
-  const searchInput = document.getElementById('discovery-search-input') as HTMLInputElement | null;
-  const searchClear = document.getElementById('discovery-search-clear');
+  const searchInput = discoveryDom.elMaybe('discovery-search-input');
+  const searchClear = discoveryDom.elMaybe('discovery-search-clear');
   let debounceTimeout: any = null;
 
   if (searchInput) {
@@ -54,7 +55,7 @@ export function setupEventListeners(): void {
   }
 
   // Category select
-  const catSelect = document.getElementById('discovery-category-select') as HTMLSelectElement | null;
+  const catSelect = discoveryDom.elMaybe('discovery-category-select');
   if (catSelect) {
     catSelect.addEventListener('change', () => {
       const val = catSelect.value;
@@ -65,7 +66,7 @@ export function setupEventListeners(): void {
   }
 
   // Time Range select
-  const timeSelect = document.getElementById('discovery-time-select') as HTMLSelectElement | null;
+  const timeSelect = discoveryDom.elMaybe('discovery-time-select');
   if (timeSelect) {
     timeSelect.value = discState.currentTimeRange;
     timeSelect.addEventListener('change', () => {
@@ -77,7 +78,7 @@ export function setupEventListeners(): void {
   }
 
   // Sort select
-  const sortSelect = document.getElementById('discovery-sort-select') as HTMLSelectElement | null;
+  const sortSelect = discoveryDom.elMaybe('discovery-sort-select');
   if (sortSelect) {
     sortSelect.value = discState.currentSort;
     sortSelect.addEventListener('change', () => {
@@ -89,7 +90,7 @@ export function setupEventListeners(): void {
   }
 
   // NSFW select
-  const nsfwSelect = document.getElementById('discovery-nsfw-select') as HTMLSelectElement | null;
+  const nsfwSelect = discoveryDom.elMaybe('discovery-nsfw-select');
   if (nsfwSelect) {
     nsfwSelect.value = discState.currentNsfwFilter;
     nsfwSelect.addEventListener('change', () => {
@@ -101,12 +102,12 @@ export function setupEventListeners(): void {
   }
 
   // Refresh btn
-  document.getElementById('discovery-refresh-btn')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-refresh-btn')?.addEventListener('click', () => {
     loadMods();
   });
 
   // Pagination buttons
-  document.getElementById('discovery-prev-page')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-prev-page')?.addEventListener('click', () => {
     if (discState.currentPage > 1) {
       discState.currentPage--;
       loadMods();
@@ -114,7 +115,7 @@ export function setupEventListeners(): void {
     }
   });
 
-  document.getElementById('discovery-next-page')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-next-page')?.addEventListener('click', () => {
     if (discState.currentPage * discState.PAGE_SIZE < discState.totalCount) {
       discState.currentPage++;
       loadMods();
@@ -123,11 +124,11 @@ export function setupEventListeners(): void {
   });
 
   // Modal close
-  document.getElementById('discovery-modal-close')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-modal-close')?.addEventListener('click', () => {
     closeDiscoveryModal();
   });
 
-  const modalOverlay = document.getElementById('discovery-mod-modal');
+  const modalOverlay = discoveryDom.elMaybe('discovery-mod-modal');
   if (modalOverlay) {
     modalOverlay.addEventListener('click', (e) => {
       if (e.target === modalOverlay) {
@@ -137,7 +138,7 @@ export function setupEventListeners(): void {
   }
 
   // Modal sub-tabs
-  document.querySelectorAll('.discovery-modal-tab').forEach((tabBtn) => {
+  discoveryDom.queryAll('.discovery-modal-tab').forEach((tabBtn) => {
     tabBtn.addEventListener('click', () => {
       const tabName = (tabBtn as HTMLElement).dataset.tab;
       document.querySelectorAll('.discovery-modal-tab').forEach((b) => b.classList.remove('active'));
@@ -157,11 +158,11 @@ export function setupEventListeners(): void {
   });
 
   // Lightbox close & controls
-  document.getElementById('discovery-lightbox-close')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-lightbox-close')?.addEventListener('click', () => {
     closeLightbox();
   });
 
-  const lightboxOverlay = document.getElementById('discovery-image-modal');
+  const lightboxOverlay = discoveryDom.elMaybe('discovery-image-modal');
   if (lightboxOverlay) {
     lightboxOverlay.addEventListener('click', (e) => {
       if (e.target === lightboxOverlay) {
@@ -170,13 +171,13 @@ export function setupEventListeners(): void {
     });
   }
 
-  document.getElementById('discovery-lightbox-zoom-in')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-lightbox-zoom-in')?.addEventListener('click', () => {
     updateLightboxTransform(discState.lightboxZoom + 0.3, discState.lightboxPanX, discState.lightboxPanY);
   });
-  document.getElementById('discovery-lightbox-zoom-out')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-lightbox-zoom-out')?.addEventListener('click', () => {
     updateLightboxTransform(discState.lightboxZoom - 0.3, discState.lightboxPanX, discState.lightboxPanY);
   });
-  document.getElementById('discovery-lightbox-zoom-reset')?.addEventListener('click', () => {
+  discoveryDom.elMaybe('discovery-lightbox-zoom-reset')?.addEventListener('click', () => {
     updateLightboxTransform(1, 0, 0);
   });
 
@@ -184,8 +185,8 @@ export function setupEventListeners(): void {
   setupLightboxPanZoom();
 
   // Cover image click opens lightbox
-  document.getElementById('discovery-modal-img')?.addEventListener('click', () => {
-    const img = document.getElementById('discovery-modal-img') as HTMLImageElement | null;
+  discoveryDom.elMaybe('discovery-modal-img')?.addEventListener('click', () => {
+    const img = discoveryDom.elMaybe('discovery-modal-img');
     if (img && img.src && !img.src.includes('logo') && img.src !== logoUrl) {
       openLightbox(img.src);
     }
@@ -194,12 +195,12 @@ export function setupEventListeners(): void {
   setupTagPickers();
 
   // Advanced Filter Sidebar setup
-  const toggleSidebarBtn = document.getElementById('discovery-toggle-filters-btn');
-  const sidebar = document.getElementById('discovery-filters-sidebar');
-  const closeSidebarBtn = document.getElementById('discovery-sidebar-close-btn');
-  const applySidebarBtn = document.getElementById('discovery-sidebar-apply-btn');
-  const searchApplySidebarBtn = document.getElementById('discovery-sidebar-search-apply-btn');
-  const resetSidebarBtn = document.getElementById('discovery-sidebar-reset-btn');
+  const toggleSidebarBtn = discoveryDom.elMaybe('discovery-toggle-filters-btn');
+  const sidebar = discoveryDom.elMaybe('discovery-filters-sidebar');
+  const closeSidebarBtn = discoveryDom.elMaybe('discovery-sidebar-close-btn');
+  const applySidebarBtn = discoveryDom.elMaybe('discovery-sidebar-apply-btn');
+  const searchApplySidebarBtn = discoveryDom.elMaybe('discovery-sidebar-search-apply-btn');
+  const resetSidebarBtn = discoveryDom.elMaybe('discovery-sidebar-reset-btn');
 
   if (toggleSidebarBtn && sidebar) {
     toggleSidebarBtn.addEventListener('click', () => {
@@ -232,17 +233,17 @@ export function setupEventListeners(): void {
 
   if (resetSidebarBtn) {
     resetSidebarBtn.addEventListener('click', () => {
-      const titleInp = document.getElementById('filter-title-contains') as HTMLInputElement | null;
-      const descInp = document.getElementById('filter-desc-contains') as HTMLInputElement | null;
-      const authorInp = document.getElementById('filter-author-contains') as HTMLInputElement | null;
-      const uploaderInp = document.getElementById('filter-uploader-contains') as HTMLInputElement | null;
-      const vortexCb = document.getElementById('filter-supports-vortex') as HTMLInputElement | null;
-      const updatedCb = document.getElementById('filter-has-updated') as HTMLInputElement | null;
-      const hideAdultCb = document.getElementById('filter-hide-adult') as HTMLInputElement | null;
-      const onlyAdultCb = document.getElementById('filter-only-adult') as HTMLInputElement | null;
-      const hideTransCb = document.getElementById('filter-hide-translations') as HTMLInputElement | null;
-      const incSearch = document.getElementById('tags-include-search') as HTMLInputElement | null;
-      const excSearch = document.getElementById('tags-exclude-search') as HTMLInputElement | null;
+      const titleInp = discoveryDom.elMaybe('filter-title-contains');
+      const descInp = discoveryDom.elMaybe('filter-desc-contains');
+      const authorInp = discoveryDom.elMaybe('filter-author-contains');
+      const uploaderInp = discoveryDom.elMaybe('filter-uploader-contains');
+      const vortexCb = discoveryDom.elMaybe('filter-supports-vortex');
+      const updatedCb = discoveryDom.elMaybe('filter-has-updated');
+      const hideAdultCb = discoveryDom.elMaybe('filter-hide-adult');
+      const onlyAdultCb = discoveryDom.elMaybe('filter-only-adult');
+      const hideTransCb = discoveryDom.elMaybe('filter-hide-translations');
+      const incSearch = discoveryDom.elMaybe('tags-include-search');
+      const excSearch = discoveryDom.elMaybe('tags-exclude-search');
 
       if (titleInp) titleInp.value = '';
       if (descInp) descInp.value = '';
@@ -261,7 +262,7 @@ export function setupEventListeners(): void {
       renderTagChips('include');
       renderTagChips('exclude');
 
-      document.querySelectorAll<HTMLInputElement>('.filter-lang-cb').forEach((cb) => (cb.checked = false));
+      discoveryDom.queryAll<HTMLInputElement>('.filter-lang-cb').forEach((cb) => (cb.checked = false));
 
       discState.currentPage = 1;
       loadMods();
@@ -277,14 +278,14 @@ export function setupEventListeners(): void {
       );
       if (higherModal) return;
 
-      const lightbox = document.getElementById('discovery-image-modal');
+      const lightbox = discoveryDom.elMaybe('discovery-image-modal');
       if (lightbox && (lightbox.classList.contains('visible') || (lightbox.style.display && lightbox.style.display !== 'none'))) {
         e.preventDefault();
         e.stopPropagation();
         closeLightbox();
         return;
       }
-      const modal = document.getElementById('discovery-mod-modal');
+      const modal = discoveryDom.elMaybe('discovery-mod-modal');
       if (modal && (modal.classList.contains('visible') || (modal.style.display && modal.style.display !== 'none'))) {
         e.preventDefault();
         e.stopPropagation();
@@ -297,7 +298,7 @@ export function setupEventListeners(): void {
 export async function loadCategories(): Promise<void> {
   try {
     discState.categories = await getDiscoveryCategories();
-    const select = document.getElementById('discovery-category-select') as HTMLSelectElement | null;
+    const select = discoveryDom.elMaybe('discovery-category-select');
     if (select && discState.categories.length > 0) {
       select.innerHTML = `<option value="">${t('discovery.all_categories')}</option>` +
         discState.categories.map((c) => `<option value="${c.categoryId}">${escapeHtml(c.name)}</option>`).join('');
@@ -311,10 +312,10 @@ export async function loadMods(): Promise<void> {
   if (discState.isLoading) return;
   discState.isLoading = true;
 
-  const grid = document.getElementById('discovery-grid');
-  const loadingEl = document.getElementById('discovery-loading');
-  const emptyEl = document.getElementById('discovery-empty');
-  const paginationEl = document.getElementById('discovery-pagination');
+  const grid = discoveryDom.elMaybe('discovery-grid');
+  const loadingEl = discoveryDom.elMaybe('discovery-loading');
+  const emptyEl = discoveryDom.elMaybe('discovery-empty');
+  const paginationEl = discoveryDom.elMaybe('discovery-pagination');
 
   if (loadingEl) loadingEl.style.display = 'flex';
   if (emptyEl) emptyEl.style.display = 'none';
@@ -322,15 +323,15 @@ export async function loadMods(): Promise<void> {
 
   try {
     const selectedCat = discState.currentCategoryId ? discState.categories.find((c) => c.categoryId === discState.currentCategoryId) : undefined;
-    const titleVal = (document.getElementById('filter-title-contains') as HTMLInputElement)?.value.trim();
-    const descVal = (document.getElementById('filter-desc-contains') as HTMLInputElement)?.value.trim();
-    const authorVal = (document.getElementById('filter-author-contains') as HTMLInputElement)?.value.trim();
-    const uploaderVal = (document.getElementById('filter-uploader-contains') as HTMLInputElement)?.value.trim();
-    const vortexChecked = (document.getElementById('filter-supports-vortex') as HTMLInputElement)?.checked;
-    const updatedChecked = (document.getElementById('filter-has-updated') as HTMLInputElement)?.checked;
-    const hideAdultChecked = (document.getElementById('filter-hide-adult') as HTMLInputElement)?.checked;
-    const onlyAdultChecked = (document.getElementById('filter-only-adult') as HTMLInputElement)?.checked;
-    const hideTransChecked = (document.getElementById('filter-hide-translations') as HTMLInputElement)?.checked;
+    const titleVal = discoveryDom.elMaybe('filter-title-contains')?.value.trim();
+    const descVal = discoveryDom.elMaybe('filter-desc-contains')?.value.trim();
+    const authorVal = discoveryDom.elMaybe('filter-author-contains')?.value.trim();
+    const uploaderVal = discoveryDom.elMaybe('filter-uploader-contains')?.value.trim();
+    const vortexChecked = discoveryDom.elMaybe('filter-supports-vortex')?.checked;
+    const updatedChecked = discoveryDom.elMaybe('filter-has-updated')?.checked;
+    const hideAdultChecked = discoveryDom.elMaybe('filter-hide-adult')?.checked;
+    const onlyAdultChecked = discoveryDom.elMaybe('filter-only-adult')?.checked;
+    const hideTransChecked = discoveryDom.elMaybe('filter-hide-translations')?.checked;
 
     // Read selected languages
     const selectedLangs = Array.from(document.querySelectorAll<HTMLInputElement>('.filter-lang-cb:checked')).map((cb) => cb.value);
@@ -382,9 +383,9 @@ export async function loadMods(): Promise<void> {
       const totalPages = Math.max(1, Math.ceil(discState.totalCount / discState.PAGE_SIZE));
       if (discState.totalCount > discState.PAGE_SIZE) {
         paginationEl.style.display = 'flex';
-        const prevBtn = document.getElementById('discovery-prev-page') as HTMLButtonElement | null;
-        const nextBtn = document.getElementById('discovery-next-page') as HTMLButtonElement | null;
-        const pageIndicator = document.getElementById('discovery-page-indicator');
+        const prevBtn = discoveryDom.elMaybe('discovery-prev-page');
+        const nextBtn = discoveryDom.elMaybe('discovery-next-page');
+        const pageIndicator = discoveryDom.elMaybe('discovery-page-indicator');
 
         if (prevBtn) prevBtn.disabled = discState.currentPage <= 1;
         if (nextBtn) nextBtn.disabled = discState.currentPage >= totalPages;

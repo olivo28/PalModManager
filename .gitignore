@@ -99,6 +99,8 @@ docs/media/PMM logo.jpg
 scripts/zip_project.bat
 task.md
 docs/ANALISIS_PROYECTO.md
+docs/ANALISIS_FRAMEWORK.md
+docs/TECNICA_FRAMEWORK.md
 docs/METRICAS_CODIGO.md
 docs/backups/
 docs/features/dom-binding-system.md

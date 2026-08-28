@@ -8,6 +8,7 @@ import { marked } from 'marked';
 import { confirmDiscardOrSave } from './unsaved';
 import { renderFileTree } from './tree';
 import { resetFindMatches, getFindMatchesText } from './search';
+import { editorDom, bus } from '../../framework';
 
 export let _originalContent: string | null = null;
 export const _lastFilePerMod: Record<string, string> = {};
@@ -22,7 +23,7 @@ export function clearOriginalContent(): void {
 
 export function updateUnsavedIndicator(): void {
   const isDirty = _originalContent !== null && (() => {
-    const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+    const editorContent = editorDom.elMaybe('editor-content');
     if (!editorContent) return false;
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
     return normalize(editorContent.value) !== normalize(_originalContent);
@@ -37,21 +38,21 @@ export function updateUnsavedIndicator(): void {
     }
   }
 
-  const saveBtn = document.getElementById('editor-save-btn');
+  const saveBtn = editorDom.elMaybe('editor-save-btn');
   if (saveBtn) {
     saveBtn.classList.toggle('dirty', isDirty);
   }
 }
 
 export function syncHighlight(immediate = false): void {
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
+  const editorContent = editorDom.elMaybe('editor-content');
   if (!editorContent) return;
 
-  const codeEl = document.getElementById('editor-highlight-code');
+  const codeEl = editorDom.elMaybe('editor-highlight-code');
   if (!codeEl) return;
 
   const text = editorContent.value;
-  const gutter = document.getElementById('editor-gutter');
+  const gutter = editorDom.elMaybe('editor-gutter');
 
   // Gutter Line Numbers: Only re-render when line count actually changes
   if (gutter) {
@@ -112,14 +113,14 @@ export async function loadFileContent(filePath: string): Promise<void> {
 
   resetFindMatches();
 
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const editorPath = document.getElementById('editor-file-path')!;
-  const editorStatus = document.getElementById('editor-status')!;
-  const formatBtn = document.getElementById('editor-format-btn') as HTMLButtonElement;
-  const previewBtn = document.getElementById('editor-preview-btn') as HTMLButtonElement;
-  const preview = document.getElementById('editor-preview')!;
-  const highlight = document.getElementById('editor-highlight')!;
-  const gutter = document.getElementById('editor-gutter')!;
+  const editorContent = editorDom.el('editor-content');
+  const editorPath = editorDom.el('editor-file-path');
+  const editorStatus = editorDom.el('editor-status');
+  const formatBtn = editorDom.el('editor-format-btn');
+  const previewBtn = editorDom.el('editor-preview-btn');
+  const preview = editorDom.el('editor-preview');
+  const highlight = editorDom.el('editor-highlight');
+  const gutter = editorDom.el('editor-gutter');
 
   editorContent.disabled = true;
   editorStatus.textContent = '';
@@ -191,9 +192,9 @@ export function stripJsonComments(jsonc: string): string {
 export async function handleEditorSave(): Promise<void> {
   const state = getState();
   if (!state.editorModId || !state.editorSelectedFile) return;
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const editorStatus = document.getElementById('editor-status')!;
-  const saveBtn = document.getElementById('editor-save-btn') as HTMLButtonElement;
+  const editorContent = editorDom.el('editor-content');
+  const editorStatus = editorDom.el('editor-status');
+  const saveBtn = editorDom.el('editor-save-btn');
 
   const content = editorContent.value;
   const isJson = state.editorSelectedFile.endsWith('.json') || state.editorSelectedFile.endsWith('.jsonc');
@@ -221,6 +222,7 @@ export async function handleEditorSave(): Promise<void> {
     _originalContent = content;
     updateUnsavedIndicator();
     editorStatus.textContent = t('editor.status_saved');
+    bus.emit('editor:saved', { filePath: state.editorSelectedFile });
     showToast(t('editor.toast_saved'), 'success');
 
     setTimeout(() => { editorStatus.textContent = ''; }, 2000);
@@ -233,8 +235,8 @@ export async function handleEditorSave(): Promise<void> {
 }
 
 export function handleEditorFormat(): void {
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const editorStatus = document.getElementById('editor-status')!;
+  const editorContent = editorDom.el('editor-content');
+  const editorStatus = editorDom.el('editor-status');
   const state = getState();
   const isJsonc = state.editorSelectedFile?.endsWith('.jsonc');
 
@@ -253,11 +255,11 @@ export function handleEditorFormat(): void {
 
 export async function handleEditorPreview(): Promise<void> {
   const state = getState();
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const highlight = document.getElementById('editor-highlight')!;
-  const preview = document.getElementById('editor-preview')!;
-  const previewBtn = document.getElementById('editor-preview-btn') as HTMLButtonElement;
-  const gutter = document.getElementById('editor-gutter')!;
+  const editorContent = editorDom.el('editor-content');
+  const highlight = editorDom.el('editor-highlight');
+  const preview = editorDom.el('editor-preview');
+  const previewBtn = editorDom.el('editor-preview-btn');
+  const gutter = editorDom.el('editor-gutter');
   const mode = state.editorPreviewMode;
 
   if (mode) {
@@ -285,11 +287,11 @@ export async function loadEditorData(modId: string): Promise<void> {
   const state = getState();
   const mod = state.allMods.find(m => m.id === modId);
 
-  const editorModSelect = document.getElementById('editor-mod-select') as HTMLSelectElement;
-  const editorFileTree = document.getElementById('editor-file-tree')!;
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const editorPath = document.getElementById('editor-file-path')!;
-  const editorStatus = document.getElementById('editor-status')!;
+  const editorModSelect = editorDom.el('editor-mod-select');
+  const editorFileTree = editorDom.el('editor-file-tree');
+  const editorContent = editorDom.el('editor-content');
+  const editorPath = editorDom.el('editor-file-path');
+  const editorStatus = editorDom.el('editor-status');
 
   editorPath.textContent = '';
   editorStatus.textContent = '';
@@ -297,10 +299,10 @@ export async function loadEditorData(modId: string): Promise<void> {
   editorContent.disabled = true;
   _originalContent = null;
 
-  const codeEl = document.getElementById('editor-highlight-code');
+  const codeEl = editorDom.elMaybe('editor-highlight-code');
   if (codeEl) codeEl.innerHTML = '';
 
-  const nameEl = document.getElementById('editor-current-mod-name');
+  const nameEl = editorDom.elMaybe('editor-current-mod-name');
   if (nameEl) nameEl.textContent = mod?.name || '';
 
   if (mod) {

@@ -7,9 +7,10 @@ import { populateEditorModSelect } from '../editorView';
 import { loadProfiles } from './profiles';
 import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
+import { mainDom } from '../../framework';
 
 export async function loadMods(): Promise<void> {
-  const container = document.getElementById('mods-container');
+  const container = mainDom.elMaybe('mods-container');
   if (!container) return;
 
   // 1. Instant load cached database mods
@@ -68,7 +69,7 @@ export async function loadGameVersion(): Promise<void> {
   try {
     const version = await getGameVersion();
     updateState({ gameVersion: version });
-    const el = document.getElementById('game-version-badge');
+    const el = mainDom.elMaybe('game-version-badge');
     if (el) {
       el.textContent = version ? (version.toLowerCase() === 'palworld' ? 'PalWorld' : `PalWorld ${version}`) : '';
       el.style.display = version ? '' : 'none';

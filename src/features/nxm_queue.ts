@@ -10,6 +10,7 @@ import { showToast } from '../ui/toast';
 import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
 import { openInstallModalForZip, setInstallModalCallback } from '../ui/modals/installer';
+import { mainDom, bus } from '../framework';
 
 export interface NxmQueueItem {
   id: string;
@@ -25,6 +26,8 @@ export interface NxmQueueItem {
   progress: number;
   downloadedBytes: number;
   totalBytes?: number;
+  speedText?: string;
+  etaText?: string;
   errorMessage?: string;
   tempZipPath?: string;
   addedAt: number;
@@ -34,6 +37,59 @@ let queue: NxmQueueItem[] = [];
 let isQueueProcessing = false;
 let isInstallingActive = false;
 let isInitialized = false;
+
+interface DownloadSample {
+  time: number;
+  bytes: number;
+}
+const speedTracker = new Map<string, DownloadSample[]>();
+
+function calculateSpeedAndEta(downloadId: string, bytesDownloaded: number, totalBytes?: number): { speedText: string; etaText: string; speedBytesPerSec: number; etaSeconds?: number } {
+  const now = Date.now();
+  let samples = speedTracker.get(downloadId);
+  if (!samples) {
+    samples = [];
+    speedTracker.set(downloadId, samples);
+  }
+  samples.push({ time: now, bytes: bytesDownloaded });
+  while (samples.length > 0 && now - samples[0].time > 4000) {
+    samples.shift();
+  }
+
+  let speedBytesPerSec = 0;
+  if (samples.length >= 2) {
+    const oldest = samples[0];
+    const timeDiff = (now - oldest.time) / 1000;
+    const bytesDiff = bytesDownloaded - oldest.bytes;
+    if (timeDiff > 0 && bytesDiff >= 0) {
+      speedBytesPerSec = bytesDiff / timeDiff;
+    }
+  }
+
+  let speedText = '';
+  if (speedBytesPerSec > 1024 * 1024) {
+    speedText = `${(speedBytesPerSec / (1024 * 1024)).toFixed(1)} MB/s`;
+  } else if (speedBytesPerSec > 1024) {
+    speedText = `${(speedBytesPerSec / 1024).toFixed(0)} KB/s`;
+  } else if (speedBytesPerSec > 0) {
+    speedText = `${speedBytesPerSec.toFixed(0)} B/s`;
+  }
+
+  let etaText = '';
+  let etaSeconds: number | undefined;
+  if (totalBytes && totalBytes > bytesDownloaded && speedBytesPerSec > 0) {
+    etaSeconds = Math.round((totalBytes - bytesDownloaded) / speedBytesPerSec);
+    if (etaSeconds < 60) {
+      etaText = `${etaSeconds}s`;
+    } else {
+      const mins = Math.floor(etaSeconds / 60);
+      const secs = etaSeconds % 60;
+      etaText = `${mins}m ${secs}s`;
+    }
+  }
+
+  return { speedText, etaText, speedBytesPerSec, etaSeconds };
+}
 
 export async function initNxmQueue(): Promise<void> {
   if (isInitialized) return;
@@ -49,6 +105,12 @@ export async function initNxmQueue(): Promise<void> {
         item.progress = Math.min(100, Math.max(0, Math.round(percentage)));
         item.downloadedBytes = bytesDownloaded;
         if (totalBytes) item.totalBytes = totalBytes;
+
+        const { speedText, etaText, speedBytesPerSec, etaSeconds } = calculateSpeedAndEta(downloadId, bytesDownloaded, totalBytes ?? undefined);
+        item.speedText = speedText;
+        item.etaText = etaText;
+        bus.emit('queue:speed', { downloadId, speedBytesPerSec, etaSeconds });
+
         renderQueueUI();
       }
     });
@@ -57,10 +119,10 @@ export async function initNxmQueue(): Promise<void> {
   }
 
   // 2. Setup Tray Toggle Controls
-  const toggleBtn = document.getElementById('nxm-tray-toggle-collapse');
-  const closeBtn = document.getElementById('nxm-tray-close');
-  const header = document.getElementById('nxm-tray-header-toggle');
-  const tray = document.getElementById('nxm-download-tray');
+  const toggleBtn = mainDom.elMaybe('nxm-tray-toggle-collapse');
+  const closeBtn = mainDom.elMaybe('nxm-tray-close');
+  const header = mainDom.elMaybe('nxm-tray-header-toggle');
+  const tray = mainDom.elMaybe('nxm-download-tray');
 
   if (toggleBtn && tray) {
     toggleBtn.addEventListener('click', (e) => {
@@ -163,11 +225,11 @@ export async function enqueueDiscoveryDownload(
 }
 
 function showTray(): void {
-  const tray = document.getElementById('nxm-download-tray');
+  const tray = mainDom.elMaybe('nxm-download-tray');
   if (tray) {
     tray.classList.remove('hidden');
     tray.classList.remove('minimized');
-    const toggleBtn = document.getElementById('nxm-tray-toggle-collapse');
+    const toggleBtn = mainDom.elMaybe('nxm-tray-toggle-collapse');
     if (toggleBtn) toggleBtn.textContent = '▲';
   }
 }
@@ -201,7 +263,7 @@ async function processDownloads(): Promise<void> {
 }
 
 export async function checkNextInstall(): Promise<void> {
-  const installModal = document.getElementById('install-modal');
+  const installModal = mainDom.elMaybe('install-modal');
   const isModalOpen = installModal && installModal.classList.contains('visible');
   if (!isModalOpen) {
     isInstallingActive = false;
@@ -294,7 +356,7 @@ export function removeQueueItem(id: string): void {
   queue = queue.filter((q) => q.id !== id);
   renderQueueUI();
   if (queue.length === 0) {
-    const tray = document.getElementById('nxm-download-tray');
+    const tray = mainDom.elMaybe('nxm-download-tray');
     if (tray) tray.classList.add('hidden');
   }
 }
@@ -302,8 +364,8 @@ export function removeQueueItem(id: string): void {
 const DEFAULT_NXM_THUMB = 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIzNiIgaGVpZ2h0PSIzNiIgdmlld0JveD0iMCAwIDI0IDI0IiBmaWxsPSIjNzA3ODg4Ij48cGF0aCBkPSJNMTkgOWgtNFYzSDl2Nkg1bDcgNyA3LTd6TTUgMTh2MmgxNHYtMkg1eiIvPjwvc3ZnPg==';
 
 export function renderQueueUI(): void {
-  const body = document.getElementById('nxm-download-body');
-  const countBadge = document.getElementById('nxm-tray-badge-count');
+  const body = mainDom.elMaybe('nxm-download-body');
+  const countBadge = mainDom.elMaybe('nxm-tray-badge-count');
   if (!body) return;
 
   const activeCount = queue.filter((q) => ['queued', 'downloading', 'awaiting_install', 'installing'].includes(q.status)).length;
@@ -328,7 +390,9 @@ export function renderQueueUI(): void {
 
     if (item.status === 'downloading') {
       statusClass = 'nxm-status-downloading';
-      statusText = `${t('nxm_queue.status_downloading')} ${item.progress}%`;
+      const speedPart = item.speedText ? ` • ⚡ ${item.speedText}` : '';
+      const etaPart = item.etaText ? ` • ⏳ ${item.etaText}` : '';
+      statusText = `${t('nxm_queue.status_downloading')} ${item.progress}%${speedPart}${etaPart}`;
     } else if (item.status === 'awaiting_install') {
       statusClass = 'nxm-status-ready';
       statusText = t('nxm_queue.status_awaiting_install');
@@ -396,7 +460,6 @@ export function renderQueueUI(): void {
       img.src = DEFAULT_NXM_THUMB;
     };
   });
-
 
   // Bind item button events
   body.querySelectorAll<HTMLButtonElement>('.btn-queue-install').forEach((btn) => {

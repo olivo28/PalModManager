@@ -32,6 +32,7 @@ import {
 } from './helpers';
 import { showFileTreeModal } from './fileTree';
 import { renderInstallPreview } from './single';
+import { installerDom, discoveryDom } from '../../../framework';
 
 export async function renderBatchInstallPreview(paths: string[]): Promise<void> {
   setPendingBatchPaths(paths);
@@ -39,9 +40,9 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
   setPendingUpdateModId(null);
   setBatchItems([]);
 
-  const content = document.getElementById('modal-content')!;
-  const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
-  const statusEl = document.getElementById('modal-status')!;
+  const content = installerDom.el('modal-content');
+  const confirmBtn = installerDom.el('modal-confirm') as HTMLButtonElement;
+  const statusEl = installerDom.el('modal-status');
 
   confirmBtn.disabled = true;
   confirmBtn.textContent = t('installer.btn_install');
@@ -234,7 +235,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
   if (modalEl) {
     modalEl.style.width = '900px';
   }
-  const wrapper = document.getElementById('batch-table-wrapper');
+  const wrapper = installerDom.elMaybe('batch-table-wrapper');
   if (wrapper) {
     wrapper.style.maxHeight = 'calc(80vh - 150px)';
   }
@@ -243,10 +244,10 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
 }
 
 export async function handleInstallConfirm(): Promise<void> {
-  const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
-  const cancelBtn = document.getElementById('modal-cancel')! as HTMLButtonElement;
-  const statusEl = document.getElementById('modal-status')!;
-  const contentEl = document.getElementById('modal-content')!;
+  const confirmBtn = installerDom.el('modal-confirm');
+  const cancelBtn = installerDom.el('modal-cancel');
+  const statusEl = installerDom.el('modal-status');
+  const contentEl = installerDom.el('modal-content');
 
   confirmBtn.disabled = true;
   cancelBtn.disabled = true;
@@ -347,10 +348,10 @@ export async function handleInstallConfirm(): Promise<void> {
   const state = getState();
   if (!state.currentAnalysis) return;
 
-  const typeSelect = document.getElementById('mod-type-select') as HTMLSelectElement | null;
+  const typeSelect = installerDom.elMaybe('mod-type-select');
   const customType = typeSelect ? typeSelect.value : state.currentAnalysis.detectedType;
 
-  const nameInput = document.getElementById('mod-name-input') as HTMLInputElement | null;
+  const nameInput = installerDom.elMaybe('mod-name-input');
   const customName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : null;
 
   let pakDestination: string | null = null;
@@ -407,7 +408,7 @@ export async function handleInstallConfirm(): Promise<void> {
     cancelBtn.disabled = false;
     confirmBtn.textContent = _pendingUpdateModId ? t('installer.btn_update') : t('installer.btn_install');
 
-    const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
+    const retryBtn = installerDom.elMaybe('modal-install-deps-retry');
     if (retryBtn) {
       retryBtn.style.display = '';
       retryBtn.onclick = async () => {
@@ -499,7 +500,7 @@ async function executeModInstallation(
     if (customName) {
       manifest.displayName = customName;
     }
-    const versionInput = document.getElementById('mod-version-input') as HTMLInputElement | null;
+    const versionInput = installerDom.elMaybe('mod-version-input');
     const inputVer = versionInput?.value.trim();
     if (inputVer && !/^[0-9a-fA-F-]{6,}$/.test(inputVer)) {
       manifest.version = inputVer;
@@ -557,7 +558,7 @@ export async function openInstallModalForZip(
   setLastInstallSuccess(false);
 
   // Dismiss Discovery modal cleanly if currently open
-  const discModal = document.getElementById('discovery-mod-modal');
+  const discModal = discoveryDom.elMaybe('discovery-mod-modal');
   if (discModal && discModal.classList.contains('visible')) {
     const { closeDiscoveryModal } = await import('../../discoveryView');
     closeDiscoveryModal();

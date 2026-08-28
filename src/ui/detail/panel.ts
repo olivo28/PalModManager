@@ -10,6 +10,7 @@ import { isModMissingGamePass } from '../mods/card';
 import { formatDisplayPath, getModComponentFolders } from './helpers';
 import { autoFetchNexusInfo, setupNexusIdEdit } from './nexus';
 import { renderVersion, renderGithubSection, setupDetailTabs } from './sections';
+import { detailDom } from '../../framework';
 
 export function openDetailPanel(modId: string): void {
   const state = getState();
@@ -17,25 +18,25 @@ export function openDetailPanel(modId: string): void {
   if (!mod) return;
   updateState({ currentDetailMod: mod });
 
-  const panel = document.getElementById('detail-panel')!;
+  const panel = detailDom.el('detail-panel');
   panel.dataset.id = modId;
 
-  document.getElementById('detail-name-header')!.textContent = mod.name;
+  detailDom.el('detail-name-header').textContent = mod.name;
   const typeLabel = mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase();
-  document.getElementById('detail-type')!.textContent = typeLabel;
-  document.getElementById('detail-type')!.className = `mod-type-badge ${mod.type}`;
+  detailDom.el('detail-type').textContent = typeLabel;
+  detailDom.el('detail-type').className = `mod-type-badge ${mod.type}`;
   renderVersion(mod);
-  document.getElementById('detail-status')!.textContent = mod.enabled ? t('common.enabled') : t('common.disabled');
-  document.getElementById('detail-status')!.className = `detail-status ${mod.enabled ? 'enabled' : 'disabled'}`;
+  detailDom.el('detail-status').textContent = mod.enabled ? t('common.enabled') : t('common.disabled');
+  detailDom.el('detail-status').className = `detail-status ${mod.enabled ? 'enabled' : 'disabled'}`;
 
-  const toggleBtn = document.getElementById('detail-toggle')! as HTMLButtonElement;
+  const toggleBtn = detailDom.el('detail-toggle');
   toggleBtn.textContent = mod.enabled ? t('common.disabled') : t('common.enabled');
   toggleBtn.dataset.enabled = String(mod.enabled);
 
-  const nexusSection = document.getElementById('detail-nexus')!;
-  const descSection = document.getElementById('detail-description')!;
-  const imgEl = document.getElementById('detail-image')! as HTMLImageElement;
-  const imgContainer = document.getElementById('detail-image-container')!;
+  const nexusSection = detailDom.el('detail-nexus');
+  const descSection = detailDom.el('detail-description');
+  const imgEl = detailDom.el('detail-image');
+  const imgContainer = detailDom.el('detail-image-container');
 
   if (mod.nexusModId) {
     const hasNexusInfo = mod.nexusAuthor || mod.nexusDescription || mod.nexusEndorsements !== null;
@@ -145,12 +146,12 @@ export function openDetailPanel(modId: string): void {
     const d = new Date(mod.installDate);
     formattedInstallDate = isNaN(d.getTime()) ? t('common.none') : d.toLocaleString();
   }
-  document.getElementById('detail-install-date')!.textContent = formattedInstallDate;
-  document.getElementById('detail-source-zip')!.textContent = mod.sourceZip || t('common.none');
+  detailDom.el('detail-install-date').textContent = formattedInstallDate;
+  detailDom.el('detail-source-zip').textContent = mod.sourceZip || t('common.none');
 
   // Technical Component rows & Dynamic Action Buttons
-  const componentsContainer = document.getElementById('detail-components-container');
-  const folderButtonsContainer = document.getElementById('detail-folder-buttons');
+  const componentsContainer = detailDom.elMaybe('detail-components-container');
+  const folderButtonsContainer = detailDom.elMaybe('detail-folder-buttons');
   const compFolders = getModComponentFolders(mod);
 
   if (componentsContainer) {
@@ -200,8 +201,8 @@ export function openDetailPanel(modId: string): void {
   }
 
   // Duplicate detection
-  const duplicateRow = document.getElementById('detail-duplicate-row')!;
-  const duplicateWarning = document.getElementById('detail-duplicate-warning')!;
+  const duplicateRow = detailDom.el('detail-duplicate-row');
+  const duplicateWarning = detailDom.el('detail-duplicate-warning');
   const similar = state.allMods.filter(m =>
     m.id !== mod.id &&
     (m.name.toLowerCase().includes(mod.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')) ||
@@ -215,8 +216,8 @@ export function openDetailPanel(modId: string): void {
   }
 
   // Game Pass IoStore Compatibility Check & Conversion
-  const gpWarningRow = document.getElementById('detail-gamepass-warning-row');
-  const gpConvertBtn = document.getElementById('detail-convert-gamepass-btn') as HTMLButtonElement | null;
+  const gpWarningRow = detailDom.elMaybe('detail-gamepass-warning-row');
+  const gpConvertBtn = detailDom.elMaybe('detail-convert-gamepass-btn');
   const isMissingGp = isModMissingGamePass(mod, state);
 
   if (gpWarningRow && gpConvertBtn) {
@@ -243,12 +244,12 @@ export function openDetailPanel(modId: string): void {
     }
   }
 
-  const configPathEl = document.getElementById('detail-config-path')!;
+  const configPathEl = detailDom.el('detail-config-path');
   const configRow = configPathEl.closest('.detail-row') as HTMLElement;
   const isPakType = mod.type === 'pak' || mod.type === 'logicmods';
 
-  const pakDestRow = document.getElementById('detail-pak-destination-row')!;
-  const pakDestSelect = document.getElementById('detail-pak-destination-select') as HTMLSelectElement;
+  const pakDestRow = detailDom.el('detail-pak-destination-row');
+  const pakDestSelect = detailDom.el('detail-pak-destination-select');
 
   if (isPakType) {
     configPathEl.textContent = 'N/A';
@@ -289,7 +290,7 @@ export function openDetailPanel(modId: string): void {
   }
 
   // Render Pak Contents Inspection for .pak / logicmods / hybrid mods with pak
-  const pakContentsContainer = document.getElementById('detail-pak-contents-container');
+  const pakContentsContainer = detailDom.elMaybe('detail-pak-contents-container');
   const hasPakFiles = mod.gamePath.toLowerCase().endsWith('.pak') || mod.extraFiles.some(f => f.toLowerCase().endsWith('.pak'));
 
   if (pakContentsContainer) {
@@ -402,7 +403,7 @@ export function openDetailPanel(modId: string): void {
   }
 
   // Populate Folder Dropdown
-  const folderSelect = document.getElementById('detail-folder-select') as HTMLSelectElement | null;
+  const folderSelect = detailDom.elMaybe('detail-folder-select');
   if (folderSelect) {
     const currentProfile = state.profiles.find(p => p.id === state.currentProfileId);
     const folders = currentProfile?.mod_folders || [];
@@ -432,21 +433,22 @@ export function openDetailPanel(modId: string): void {
   }
 
   // Reset scroll position and tabs — fixes state persistence across mods
-  document.getElementById('detail-body')!.scrollTop = 0;
-  document.querySelectorAll('.detail-tab').forEach(t => t.classList.remove('active'));
-  (document.querySelector('.detail-tab[data-tab="info"]') as HTMLElement)?.classList.add('active');
-  document.getElementById('detail-info-tab')!.style.display = '';
-  document.getElementById('detail-tech-tab')!.style.display = 'none';
+  detailDom.el('detail-body').scrollTop = 0;
+  detailDom.queryAll('.detail-tab').forEach(t => t.classList.remove('active'));
+  detailDom.query('.detail-tab[data-tab="info"]')?.classList.add('active');
+  detailDom.el('detail-info-tab').style.display = '';
+  detailDom.el('detail-tech-tab').style.display = 'none';
 
-  document.getElementById('detail-overlay')!.classList.add('visible');
+  detailDom.el('detail-overlay').classList.add('visible');
   setupDetailTabs();
 }
 
 // Intercept NexusMods/GitHub link clicks inside the detail panel to open in default browser
 document.addEventListener('click', (e) => {
   const link = (e.target as HTMLElement).closest('.nexus-link') as HTMLAnchorElement | null;
-  if (link && link.href && document.getElementById('detail-panel')?.contains(link)) {
+  if (link && link.href && detailDom.elMaybe('detail-panel')?.contains(link)) {
     e.preventDefault();
     openUrl(link.href).catch(err => console.error('Failed to open link:', err));
   }
 });
+

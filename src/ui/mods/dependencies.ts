@@ -169,8 +169,10 @@ export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
   }
 }
 
+import { mainDom } from '../../framework';
+
 export function renderDependencyBadges(deps: import('../../types').DependencyStatus): void {
-  const platformEl = document.getElementById('game-platform-badge');
+  const platformEl = mainDom.elMaybe('game-platform-badge');
   if (platformEl) {
     if (deps.game_platform && deps.game_platform !== 'Unknown') {
       platformEl.textContent = deps.game_platform;
@@ -181,8 +183,8 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
     }
   }
 
-  const ue4ssEl = document.getElementById('ue4ss-badge');
-  const psEl = document.getElementById('palschema-badge');
+  const ue4ssEl = mainDom.elMaybe('ue4ss-badge');
+  const psEl = mainDom.elMaybe('palschema-badge');
   if (!ue4ssEl || !psEl) return;
 
   const { currentProfile } = getState();

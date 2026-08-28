@@ -1,5 +1,6 @@
 import { getState, updateState } from '../../state';
 import { syncHighlight } from './viewer';
+import { editorDom } from '../../framework';
 
 export let findMatches: { index: number; length: number }[] = [];
 export let findCurrentMatch = -1;
@@ -8,13 +9,13 @@ let findTimeout: any = null;
 export function resetFindMatches(): void {
   findMatches = [];
   findCurrentMatch = -1;
-  const findCount = document.getElementById('editor-find-count');
+  const findCount = editorDom.elMaybe('editor-find-count');
   if (findCount) findCount.textContent = '';
 }
 
 export function openFind(): void {
-  const findBar = document.getElementById('editor-find-bar')!;
-  const findInput = document.getElementById('editor-find-input') as HTMLInputElement;
+  const findBar = editorDom.el('editor-find-bar');
+  const findInput = editorDom.el('editor-find-input');
   findBar.style.display = 'flex';
   findInput.value = '';
   findInput.focus();
@@ -22,7 +23,7 @@ export function openFind(): void {
 }
 
 export function closeFind(): void {
-  const findBar = document.getElementById('editor-find-bar')!;
+  const findBar = editorDom.el('editor-find-bar');
   findBar.style.display = 'none';
   clearFindHighlights();
 }
@@ -30,15 +31,15 @@ export function closeFind(): void {
 function clearFindHighlights(): void {
   findMatches = [];
   findCurrentMatch = -1;
-  const countEl = document.getElementById('editor-find-count');
+  const countEl = editorDom.elMaybe('editor-find-count');
   if (countEl) countEl.textContent = '';
   syncHighlight();
 }
 
 export function updateFindMatches(): void {
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const findInput = document.getElementById('editor-find-input') as HTMLInputElement;
-  const countEl = document.getElementById('editor-find-count')!;
+  const editorContent = editorDom.el('editor-content');
+  const findInput = editorDom.el('editor-find-input');
+  const countEl = editorDom.el('editor-find-count');
   const text = editorContent.value;
   const query = findInput.value;
 
@@ -73,7 +74,7 @@ export function updateFindMatches(): void {
 }
 
 export function scrollToMatch(idx: number, focusEditor = true): void {
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
+  const editorContent = editorDom.el('editor-content');
   if (idx < 0 || idx >= findMatches.length) return;
   findCurrentMatch = idx;
   const match = findMatches[idx];
@@ -93,7 +94,7 @@ export function scrollToMatch(idx: number, focusEditor = true): void {
     }
     pos += lines[i].length + 1;
   }
-  const countEl = document.getElementById('editor-find-count');
+  const countEl = editorDom.elMaybe('editor-find-count');
   if (countEl) countEl.textContent = `${findCurrentMatch + 1} of ${findMatches.length}`;
   syncHighlight();
 }
@@ -111,7 +112,7 @@ export function findPrev(): void {
 }
 
 export function setupEditorFindHandlers(): void {
-  const findInput = document.getElementById('editor-find-input');
+  const findInput = editorDom.elMaybe('editor-find-input');
   if (!findInput) return;
 
   findInput.addEventListener('input', () => {
@@ -120,9 +121,9 @@ export function setupEditorFindHandlers(): void {
     }
     findTimeout = setTimeout(updateFindMatches, 250);
   });
-  document.getElementById('editor-find-next')!.addEventListener('click', findNext);
-  document.getElementById('editor-find-prev')!.addEventListener('click', findPrev);
-  document.getElementById('editor-find-close')!.addEventListener('click', closeFind);
+  editorDom.el('editor-find-next').addEventListener('click', findNext);
+  editorDom.el('editor-find-prev').addEventListener('click', findPrev);
+  editorDom.el('editor-find-close').addEventListener('click', closeFind);
   findInput.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.key === 'Enter') {
       e.shiftKey ? findPrev() : findNext();

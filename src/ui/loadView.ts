@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { ModInfo } from '../types';
 import { escapeHtml } from '../utils/helpers';
 import { getState } from '../state';
+import { loadOrderDom, mainDom } from '../framework';
 
 let _ue4ssMods: ModInfo[] = [];
 let _palschemaMods: ModInfo[] = [];
@@ -10,7 +11,7 @@ let _ue4ssAbort: AbortController | null = null;
 let _palschemaAbort: AbortController | null = null;
 
 export async function renderLoadView(): Promise<void> {
-  const container = document.getElementById('load-list-container');
+  const container = loadOrderDom.elMaybe('load-list-container');
   if (!container) return;
 
   let state = getState();
@@ -51,8 +52,8 @@ export async function renderLoadView(): Promise<void> {
     </div>
   `;
 
-  const ue4ssSub = document.getElementById('ue4ss-list-subcontainer')!;
-  const palschemaSub = document.getElementById('palschema-list-subcontainer')!;
+  const ue4ssSub = loadOrderDom.el('ue4ss-list-subcontainer');
+  const palschemaSub = loadOrderDom.el('palschema-list-subcontainer');
 
   // 1. Load UE4SS Mods (if enabled)
   if (showUe4ss) {
@@ -361,7 +362,7 @@ export function updateLoadTabVisibility(): void {
 
   const isFloActive = globalFlo && (floUe4ss || floPalSchema);
 
-  const loadTabBtn = document.getElementById('sidebar-tab-load');
+  const loadTabBtn = mainDom.elMaybe('sidebar-tab-load');
   if (loadTabBtn) {
     loadTabBtn.style.display = isFloActive ? 'flex' : 'none';
   }

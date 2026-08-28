@@ -20,13 +20,14 @@ import logoUrl from '../../assets/logo.png';
 import { discState, isUserPremium } from './state';
 import { handleDiscoveryImageError } from './helpers';
 import { openLightbox } from './lightbox';
+import { discoveryDom } from '../../framework';
 
 export async function openModDetails(
   modId: number,
   autoInstallFirstPrimary: boolean = false,
   previewData?: Partial<DiscoveryModItem>
 ): Promise<void> {
-  const modal = document.getElementById('discovery-mod-modal');
+  const modal = discoveryDom.elMaybe('discovery-mod-modal');
   if (!modal) return;
 
   modal.classList.add('visible');
@@ -43,7 +44,7 @@ export async function openModDetails(
     if (autoInstallFirstPrimary && details.files.length > 0) {
       if (isUserPremium()) {
         // Switch to files tab
-        const filesTabBtn = document.querySelector('.discovery-modal-tab[data-tab="files"]') as HTMLElement | null;
+        const filesTabBtn = discoveryDom.query('.discovery-modal-tab[data-tab="files"]');
         filesTabBtn?.click();
 
         const primary = details.files.find((f) => f.isPrimary || f.categoryName === 'MAIN') || details.files[0];
@@ -61,18 +62,18 @@ export async function openModDetails(
 }
 
 export function resetModalUI(previewData?: Partial<DiscoveryModItem>): void {
-  const title = document.getElementById('discovery-modal-title');
-  const author = document.getElementById('discovery-modal-author');
-  const cat = document.getElementById('discovery-modal-category');
-  const ver = document.getElementById('discovery-modal-version');
-  const installedBadge = document.getElementById('discovery-modal-installed-badge');
-  const updated = document.getElementById('discovery-modal-updated');
-  const endorsements = document.getElementById('discovery-modal-endorsements');
-  const downloads = document.getElementById('discovery-modal-downloads');
-  const desc = document.getElementById('discovery-modal-description');
-  const filesList = document.getElementById('discovery-files-list');
-  const gallery = document.getElementById('discovery-media-gallery');
-  const img = document.getElementById('discovery-modal-img') as HTMLImageElement | null;
+  const title = discoveryDom.elMaybe('discovery-modal-title');
+  const author = discoveryDom.elMaybe('discovery-modal-author');
+  const cat = discoveryDom.elMaybe('discovery-modal-category');
+  const ver = discoveryDom.elMaybe('discovery-modal-version');
+  const installedBadge = discoveryDom.elMaybe('discovery-modal-installed-badge');
+  const updated = discoveryDom.elMaybe('discovery-modal-updated');
+  const endorsements = discoveryDom.elMaybe('discovery-modal-endorsements');
+  const downloads = discoveryDom.elMaybe('discovery-modal-downloads');
+  const desc = discoveryDom.elMaybe('discovery-modal-description');
+  const filesList = discoveryDom.elMaybe('discovery-files-list');
+  const gallery = discoveryDom.elMaybe('discovery-media-gallery');
+  const img = discoveryDom.elMaybe('discovery-modal-img');
 
   if (installedBadge) {
     installedBadge.style.display = 'none';
@@ -110,14 +111,14 @@ export function resetModalUI(previewData?: Partial<DiscoveryModItem>): void {
   if (gallery) gallery.innerHTML = '<div class="loading-spinner"></div>';
 
   // Switch to Description tab by default
-  document.querySelectorAll('.discovery-modal-tab').forEach((b) => b.classList.remove('active'));
-  document.querySelector('.discovery-modal-tab[data-tab="desc"]')?.classList.add('active');
+  discoveryDom.queryAll('.discovery-modal-tab').forEach((b) => b.classList.remove('active'));
+  discoveryDom.query('.discovery-modal-tab[data-tab="desc"]')?.classList.add('active');
 
-  document.querySelectorAll('.discovery-tab-pane').forEach((p) => {
+  discoveryDom.queryAll('.discovery-tab-pane').forEach((p) => {
     (p as HTMLElement).style.display = 'none';
     p.classList.remove('active');
   });
-  const descPane = document.getElementById('discovery-tab-desc');
+  const descPane = discoveryDom.elMaybe('discovery-tab-desc');
   if (descPane) {
     descPane.style.display = 'block';
     descPane.classList.add('active');
@@ -125,18 +126,18 @@ export function resetModalUI(previewData?: Partial<DiscoveryModItem>): void {
 }
 
 export function populateModalData(details: DiscoveryModDetails): void {
-  const title = document.getElementById('discovery-modal-title');
-  const author = document.getElementById('discovery-modal-author');
-  const cat = document.getElementById('discovery-modal-category');
-  const ver = document.getElementById('discovery-modal-version');
-  const installedBadge = document.getElementById('discovery-modal-installed-badge');
-  const updated = document.getElementById('discovery-modal-updated');
-  const endorsements = document.getElementById('discovery-modal-endorsements');
-  const downloads = document.getElementById('discovery-modal-downloads');
-  const desc = document.getElementById('discovery-modal-description');
-  const filesList = document.getElementById('discovery-files-list');
-  const gallery = document.getElementById('discovery-media-gallery');
-  const img = document.getElementById('discovery-modal-img') as HTMLImageElement | null;
+  const title = discoveryDom.elMaybe('discovery-modal-title');
+  const author = discoveryDom.elMaybe('discovery-modal-author');
+  const cat = discoveryDom.elMaybe('discovery-modal-category');
+  const ver = discoveryDom.elMaybe('discovery-modal-version');
+  const installedBadge = discoveryDom.elMaybe('discovery-modal-installed-badge');
+  const updated = discoveryDom.elMaybe('discovery-modal-updated');
+  const endorsements = discoveryDom.elMaybe('discovery-modal-endorsements');
+  const downloads = discoveryDom.elMaybe('discovery-modal-downloads');
+  const desc = discoveryDom.elMaybe('discovery-modal-description');
+  const filesList = discoveryDom.elMaybe('discovery-files-list');
+  const gallery = discoveryDom.elMaybe('discovery-media-gallery');
+  const img = discoveryDom.elMaybe('discovery-modal-img');
 
   if (title) title.textContent = details.name;
   if (author) author.textContent = details.author;
@@ -200,7 +201,7 @@ export function populateModalData(details: DiscoveryModDetails): void {
   }
 
   // Update files instruction text for premium vs free
-  const filesInstruction = document.getElementById('discovery-files-instruction-text');
+  const filesInstruction = discoveryDom.elMaybe('discovery-files-instruction-text');
   if (filesInstruction) {
     if (isUserPremium()) {
       filesInstruction.textContent = t('discovery.files_instruction');
@@ -212,19 +213,19 @@ export function populateModalData(details: DiscoveryModDetails): void {
   }
 
   // 2. Files List (Categorized, sorted newest to oldest, with archived toggle and scan badges)
-  const filesContainer = document.getElementById('discovery-files-list');
+  const filesContainer = discoveryDom.elMaybe('discovery-files-list');
   if (filesContainer) {
     renderFilesList(details, filesContainer);
   }
 
   // 3. Changelogs Tab
-  const changelogsContainer = document.getElementById('discovery-modal-changelogs');
+  const changelogsContainer = discoveryDom.elMaybe('discovery-modal-changelogs');
   if (changelogsContainer) {
     renderChangelogsList(details, changelogsContainer);
   }
 
   // 4. Media gallery (screenshots)
-  const galleryContainer = document.getElementById('discovery-media-gallery');
+  const galleryContainer = discoveryDom.elMaybe('discovery-media-gallery');
   if (galleryContainer) {
     const allImages = details.images && details.images.length > 0
       ? details.images
@@ -494,13 +495,13 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
 }
 
 export function setupModalActions(details: DiscoveryModDetails): void {
-  const endorseBtn = document.getElementById('discovery-modal-endorse-btn');
-  const endorseText = document.getElementById('discovery-modal-endorse-text');
-  const trackBtn = document.getElementById('discovery-modal-track-btn');
-  const trackText = document.getElementById('discovery-modal-track-text');
-  const communityBtn = document.getElementById('discovery-modal-community-btn');
-  const bugsBtn = document.getElementById('discovery-modal-bugs-btn');
-  const nexusLinkBtn = document.getElementById('discovery-modal-nexus-link-btn');
+  const endorseBtn = discoveryDom.elMaybe('discovery-modal-endorse-btn');
+  const endorseText = discoveryDom.elMaybe('discovery-modal-endorse-text');
+  const trackBtn = discoveryDom.elMaybe('discovery-modal-track-btn');
+  const trackText = discoveryDom.elMaybe('discovery-modal-track-text');
+  const communityBtn = discoveryDom.elMaybe('discovery-modal-community-btn');
+  const bugsBtn = discoveryDom.elMaybe('discovery-modal-bugs-btn');
+  const nexusLinkBtn = discoveryDom.elMaybe('discovery-modal-nexus-link-btn');
 
   let isEndorsed = details.isEndorsed || false;
   let isTracked = details.isTracked || false;
@@ -625,7 +626,7 @@ export async function executeInstallFile(mod: DiscoveryModDetails, file: Discove
 }
 
 export function closeDiscoveryModal(): void {
-  const modal = document.getElementById('discovery-mod-modal');
+  const modal = discoveryDom.elMaybe('discovery-mod-modal');
   if (modal) {
     modal.classList.remove('visible');
     modal.classList.remove('active');

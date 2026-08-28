@@ -2,7 +2,8 @@ import 'highlight.js/styles/github-dark.css';
 import './utils/imageFallback';
 import { initI18n, t } from './utils/i18n';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
-import { getState, updateState } from './state';
+import { getState, updateState, subscribe } from './state';
+import type { AppState } from './state';
 import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal, openAboutModal, closeAboutModal, setupAboutModal } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailOpenExtraFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
@@ -15,6 +16,7 @@ import { showToast } from './ui/toast';
 import { setupSelection } from './features/selection';
 import { initPackerView } from './ui/packerView';
 import { renderScannerView } from './ui/scannerView';
+import { mainDom, bind, createBinderGroup, bus } from './framework';
 
 const THEME_KEY = 'pmm-theme';
 
@@ -32,7 +34,7 @@ function applyTheme(theme: 'dark' | 'light'): void {
 }
 
 function updateThemeToggleBtn(): void {
-  const btn = document.getElementById('theme-toggle-btn') as HTMLButtonElement | null;
+  const btn = mainDom.elMaybe('theme-toggle-btn');
   if (!btn) return;
   const current = document.documentElement.dataset.theme || 'dark';
   btn.textContent = current === 'dark' ? t('settings.btn_theme_light') : t('settings.btn_theme_dark');
@@ -43,9 +45,9 @@ function safeEl(id: string): HTMLElement | null {
 }
 
 function showApp(): void {
-  const loading = document.getElementById('app-loading');
+  const loading = mainDom.elMaybe('app-loading');
   if (loading) loading.style.display = 'none';
-  const app = document.getElementById('app');
+  const app = mainDom.elMaybe('app');
   if (app) app.style.display = 'flex';
 }
 
@@ -441,7 +443,7 @@ function setupEventListeners() {
     });
   });
 
-  const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+  const sortSelect = mainDom.elMaybe('sort-select');
   if (sortSelect) {
     const current = getState().currentSort;
     sortSelect.value = `${current.field}:${current.asc ? 'asc' : 'desc'}`;
@@ -454,8 +456,8 @@ function setupEventListeners() {
   }
 
   // Layout Toggle
-  const gridBtn = document.getElementById('layout-grid-btn');
-  const listBtn = document.getElementById('layout-list-btn');
+  const gridBtn = mainDom.elMaybe('layout-grid-btn');
+  const listBtn = mainDom.elMaybe('layout-list-btn');
 
   function updateLayoutUI(layout: 'grid' | 'list') {
     if (layout === 'grid') {
@@ -483,7 +485,7 @@ function setupEventListeners() {
     renderModsView();
   });
 
-  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
+  const searchInput = mainDom.elMaybe('search-input');
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       updateState({ searchQuery: searchInput.value.toLowerCase() });
@@ -632,6 +634,44 @@ function setupEventListeners() {
 
   setupSelection();
   setupLibraryHandlers();
+
+  // PMM-Core Declarative State-to-DOM Bindings
+  const appBinder = createBinderGroup<AppState>(
+    bind(mainDom, 'profile-active-label', {
+      text: (s) => s.currentProfile?.name || s.currentProfileId || 'Default'
+    }),
+    bind(mainDom, 'layout-grid-btn', {
+      className: (s) => `btn-layout-toggle ${s.viewLayout === 'grid' ? 'active' : ''}`
+    }),
+    bind(mainDom, 'layout-list-btn', {
+      className: (s) => `btn-layout-toggle ${s.viewLayout === 'list' ? 'active' : ''}`
+    })
+  );
+  subscribe(appBinder);
+  appBinder(getState());
+
+  // PMM-Core Event Mesh Listeners
+  bus.on('mods:refresh', () => {
+    loadMods().catch(err => console.error("EventBus loadMods error:", err));
+  });
+
+  bus.on('backup:restored', () => {
+    Promise.all([loadMods(), loadProfiles(), loadDependencies()])
+      .catch(err => console.error("EventBus backup:restored reload error:", err));
+  });
+
+  bus.on('project:packed', ({ modName }) => {
+    loadLibrary().catch(err => console.error("EventBus project:packed reload library error:", err));
+  });
+
+  bus.on('workshop:updated', () => {
+    Promise.all([loadLibrary(), loadMods()])
+      .catch(err => console.error("EventBus workshop:updated reload error:", err));
+  });
+
+  bus.on('profile:switched', () => {
+    loadGameVersion().catch(err => console.error("EventBus profile:switched version check error:", err));
+  });
 
   // Initialize NXM Download Queue
   import('./features/nxm_queue').then(({ initNxmQueue }) => initNxmQueue()).catch(err => console.error("Failed to init NXM queue:", err));

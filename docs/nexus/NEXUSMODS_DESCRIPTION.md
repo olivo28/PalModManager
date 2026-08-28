@@ -48,7 +48,8 @@ Built with **Tauri v2** and **Rust**, PalModManager launches instantly and uses 
 - **Save Health Doctor & World Hub**: Dedicated world diagnostics suite that auto-discovers saves, validates GVAS integrity, detects orphaned mod references from uninstalled mods, rescues saves with 1-click backups/cleaning, features a side-by-side backup snapshot comparison diff inspector, and extracts WorldOption difficulty rules.
 - **Deep Pak & UAsset Package Inspector**: Pure-Rust virtual file tree inspection for `.pak` archives (`repak`) and Unreal Engine binary assets (`unreal_asset`), displaying export classes, dependencies, and embedded name tokens.
 - **Automated Pak Compatibility Patch Engine**: Detects colliding asset nodes across `.pak` mods and generates merged priority compatibility patches (`zzz_Patch_*.pak`) with 1 click.
-- **Xbox Game Pass & PC WinGDK Compatibility**: Automatic detection, card warning badges, and 1-click generation of `.utoc` and `.ucas` table-of-contents files (`retoc`) for Game Pass mod compatibility.
+- **Xbox Game Pass & PC WinGDK Compatibility**: Automatic detection, card warning badges, and 1-click generation of `.utoc` and `.ucas` table-of-contents files (`retoc`) for Game Pass mod support.
+- **PMM-Core Reactive Engine & Live Download Telemetry**: Built on an ultra-lightweight zero-VDOM internal framework with real-time sliding-window download rate calculations (`⚡ MB/s` • `⏳ ETA`) in the NXM queue tray.
 - **Modern Dark Mode**: Sleek glassmorphism UI designed for maximum usability and aesthetic clarity.
 
 ---

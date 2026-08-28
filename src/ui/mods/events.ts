@@ -8,6 +8,7 @@ import { loadMods } from './loader';
 import { loadProfiles, showInputModal } from './profiles';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
+import { bus, mainDom } from '../../framework';
 
 export function attachCardEvents(container: HTMLElement): void {
   container.querySelectorAll('.mod-card').forEach((card) => {
@@ -100,6 +101,7 @@ export function attachCardEvents(container: HTMLElement): void {
           if (isEnabled) { await enableMod(id); } else { await disableMod(id); }
           try { await setModProfileState(id, isEnabled); } catch { }
         }
+        bus.emit('mod:toggled', { id, enabled: isEnabled });
         showToast(isEnabled ? t('toasts.mod_enabled') : t('toasts.mod_disabled'), isEnabled ? 'success' : 'info');
         await loadMods();
         const state = getState();
@@ -255,8 +257,8 @@ export function setupFilterListeners(): void {
     });
   });
 
-  const advancedBtn = document.getElementById('advanced-filter-btn');
-  const advancedDropdown = document.getElementById('advanced-filter-dropdown');
+  const advancedBtn = mainDom.elMaybe('advanced-filter-btn');
+  const advancedDropdown = mainDom.elMaybe('advanced-filter-dropdown');
   if (advancedBtn && advancedDropdown) {
     advancedBtn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -270,7 +272,7 @@ export function setupFilterListeners(): void {
 }
 
 export async function handleCheckUpdates(): Promise<void> {
-  const btn = document.getElementById('check-updates-btn')! as HTMLButtonElement;
+  const btn = mainDom.el('check-updates-btn');
   btn.disabled = true;
   btn.innerHTML = '<span class="btn-icon-text">&#8634;</span> ...';
   showToast(t('common.checking_updates'), 'info');
@@ -324,6 +326,7 @@ export async function handleDisableAll(): Promise<void> {
   try {
     const result = await disableAllMods();
     showToast(t('toasts.disabled_all_success', { count: result.disabled }), 'success');
+    bus.emit('mods:refresh', undefined);
     await loadMods();
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
@@ -335,6 +338,7 @@ export async function handleEnableAll(): Promise<void> {
   try {
     const result = await enableAllMods();
     showToast(t('toasts.enabled_all_success', { count: result.enabled }), 'success');
+    bus.emit('mods:refresh', undefined);
     await loadMods();
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
@@ -342,7 +346,7 @@ export async function handleEnableAll(): Promise<void> {
 }
 
 export function setupAdvancedFilterHandlers(): void {
-  document.getElementById('filter-tags-list')!.addEventListener('click', (e) => {
+  mainDom.elMaybe('filter-tags-list')?.addEventListener('click', (e) => {
     const chip = (e.target as HTMLElement).closest('.filter-chip') as HTMLElement | null;
     if (!chip || chip.dataset.type !== 'tag') return;
     const value = chip.dataset.value!;
@@ -355,7 +359,7 @@ export function setupAdvancedFilterHandlers(): void {
     renderModsView();
   });
 
-  document.getElementById('filter-cats-list')!.addEventListener('click', (e) => {
+  mainDom.elMaybe('filter-cats-list')?.addEventListener('click', (e) => {
     const chip = (e.target as HTMLElement).closest('.filter-chip') as HTMLElement | null;
     if (!chip || chip.dataset.type !== 'cat') return;
     const value = chip.dataset.value!;

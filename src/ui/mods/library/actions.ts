@@ -113,10 +113,12 @@ export async function handleLibraryBulkRemove(): Promise<void> {
   }
 }
 
+import { libraryDom } from '../../../framework';
+
 export function updateLibraryBulkBar(): void {
   const state = getState();
-  const bar = document.getElementById('library-bulk-actions-bar');
-  const countEl = document.getElementById('library-bulk-selected-count');
+  const bar = libraryDom.elMaybe('library-bulk-actions-bar');
+  const countEl = libraryDom.elMaybe('library-bulk-selected-count');
   if (!bar || !countEl) return;
 
   const selectedCount = state.selectedLibraryIds.size;

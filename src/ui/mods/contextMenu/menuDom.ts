@@ -1,11 +1,13 @@
+import { mainDom } from '../../../framework';
+
 export function getContextOverlay(): HTMLElement {
-  return document.getElementById('context-overlay')!;
+  return mainDom.el('context-overlay');
 }
 
 export function hideContextMenu(): void {
   const overlay = getContextOverlay();
   overlay.classList.remove('visible');
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
   menu.style.display = 'none';
   menu.innerHTML = '';
   document.querySelectorAll('.mod-card.context-active').forEach(el => el.classList.remove('context-active'));
@@ -13,7 +15,7 @@ export function hideContextMenu(): void {
 
 export function positionContextMenu(x: number, y: number): void {
   const overlay = getContextOverlay();
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
   overlay.classList.add('visible');
   menu.style.display = 'block';
   menu.style.visibility = 'hidden';

@@ -70,10 +70,23 @@ let state: AppState = {
 };
 
 
+const listeners: Array<(state: AppState) => void> = [];
+
 export function getState(): AppState {
   return state;
 }
 
 export function updateState(partial: Partial<AppState>): void {
   state = { ...state, ...partial };
+  for (let i = 0; i < listeners.length; i++) {
+    listeners[i](state);
+  }
+}
+
+export function subscribe(fn: (state: AppState) => void): () => void {
+  listeners.push(fn);
+  return () => {
+    const idx = listeners.indexOf(fn);
+    if (idx >= 0) listeners.splice(idx, 1);
+  };
 }

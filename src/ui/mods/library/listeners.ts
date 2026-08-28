@@ -25,9 +25,10 @@ import {
   updateLibraryBulkBar,
 } from './actions';
 import { renderLibraryView } from './render';
+import { libraryDom } from '../../../framework';
 
 export function setupLibraryHandlers(): void {
-  const searchInput = document.getElementById('library-search-input') as HTMLInputElement | null;
+  const searchInput = libraryDom.elMaybe('library-search-input');
   if (searchInput) {
     searchInput.addEventListener('input', () => {
       setLibrarySearchQuery(searchInput.value.trim().toLowerCase());
@@ -35,7 +36,7 @@ export function setupLibraryHandlers(): void {
     });
   }
 
-  const filterSelect = document.getElementById('library-filter-status') as HTMLSelectElement | null;
+  const filterSelect = libraryDom.elMaybe('library-filter-status');
   if (filterSelect) {
     filterSelect.value = _libraryFilterStatus;
     filterSelect.addEventListener('change', () => {
@@ -45,7 +46,7 @@ export function setupLibraryHandlers(): void {
     });
   }
 
-  const sortSelect = document.getElementById('library-sort-select') as HTMLSelectElement | null;
+  const sortSelect = libraryDom.elMaybe('library-sort-select');
   if (sortSelect) {
     sortSelect.value = _librarySortBy;
     sortSelect.addEventListener('change', () => {
@@ -77,10 +78,10 @@ export function setupLibraryHandlers(): void {
     }
   });
 
-  document.getElementById('workshop-check-updates-btn')?.addEventListener('click', handleCheckWorkshopOnlineUpdates);
-  document.getElementById('library-bulk-install-btn')?.addEventListener('click', handleLibraryBulkInstall);
-  document.getElementById('library-bulk-remove-btn')?.addEventListener('click', handleLibraryBulkRemove);
-  document.getElementById('library-bulk-clear-btn')?.addEventListener('click', () => {
+  libraryDom.elMaybe('workshop-check-updates-btn')?.addEventListener('click', handleCheckWorkshopOnlineUpdates);
+  libraryDom.elMaybe('library-bulk-install-btn')?.addEventListener('click', handleLibraryBulkInstall);
+  libraryDom.elMaybe('library-bulk-remove-btn')?.addEventListener('click', handleLibraryBulkRemove);
+  libraryDom.elMaybe('library-bulk-clear-btn')?.addEventListener('click', () => {
     updateState({ selectedLibraryIds: new Set() });
     updateLibraryBulkBar();
     renderLibraryView();

@@ -1,5 +1,6 @@
 import { escapeHtml } from '../rendering';
 import { t } from '../../../utils/i18n';
+import { scannerDom } from '../../../framework';
 import {
   lastScanResult,
   registryFilterType,
@@ -221,7 +222,7 @@ export function updateMasterDetailInPlace(): void {
   }
 
   // Update right inspector panel
-  const inspectorRoot = document.getElementById('scanner-inspector-root');
+  const inspectorRoot = scannerDom.elMaybe('scanner-inspector-root');
   if (inspectorRoot) {
     inspectorRoot.innerHTML = buildInspectorContent(activeMod || null);
   }

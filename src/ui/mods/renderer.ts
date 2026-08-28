@@ -3,6 +3,7 @@ import { buildModCardHtml, buildFolderCardHtml } from './card';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import type { ModInfo } from '../../types';
+import { mainDom } from '../../framework';
 
 export function populateAdvancedFilters(): void {
   const state = getState();
@@ -13,30 +14,34 @@ export function populateAdvancedFilters(): void {
     if (m.nexusCategory) catsSet.add(m.nexusCategory);
   });
 
-  const tagsList = document.getElementById('filter-tags-list')!;
+  const tagsList = mainDom.elMaybe('filter-tags-list');
   const tagsHtml = Array.from(tagsSet).sort().map(t => `
     <button class="filter-chip ${state.tagFilters.has(t) ? 'active' : ''}" data-type="tag" data-value="${escapeHtml(t)}">${escapeHtml(t)}</button>
   `).join('');
 
-  const catsList = document.getElementById('filter-cats-list')!;
+  const catsList = mainDom.elMaybe('filter-cats-list');
   const catsHtml = Array.from(catsSet).sort().map(c => `
     <button class="filter-chip ${state.categoryFilters.has(c) ? 'active' : ''}" data-type="cat" data-value="${escapeHtml(c)}">${escapeHtml(c)}</button>
   `).join('');
 
-  tagsList.innerHTML = tagsHtml
-    ? `<div class="filter-chips">${tagsHtml}</div>`
-    : `<div class="filter-dropdown-empty">${escapeHtml(t('mods.filter_no_tags'))}</div>`;
-  catsList.innerHTML = catsHtml
-    ? `<div class="filter-chips">${catsHtml}</div>`
-    : `<div class="filter-dropdown-empty">${escapeHtml(t('mods.filter_no_cats'))}</div>`;
+  if (tagsList) {
+    tagsList.innerHTML = tagsHtml
+      ? `<div class="filter-chips">${tagsHtml}</div>`
+      : `<div class="filter-dropdown-empty">${escapeHtml(t('mods.filter_no_tags'))}</div>`;
+  }
+  if (catsList) {
+    catsList.innerHTML = catsHtml
+      ? `<div class="filter-chips">${catsHtml}</div>`
+      : `<div class="filter-dropdown-empty">${escapeHtml(t('mods.filter_no_cats'))}</div>`;
+  }
 }
 
 export function renderModsView(): void {
   const state = getState();
-  const container = document.getElementById('mods-container');
+  const container = mainDom.elMaybe('mods-container');
   if (!container) return;
 
-  const openAllBtn = document.getElementById('open-all-updates-btn');
+  const openAllBtn = mainDom.elMaybe('open-all-updates-btn');
   if (openAllBtn) {
     const hasNexusUpdates = Array.from(state.availableUpdates.keys()).some(id => {
       const m = state.allMods.find(mod => mod.id === id);
@@ -222,7 +227,7 @@ export function renderModsView(): void {
           asc = !currentSort.asc;
         }
         updateState({ currentSort: { field: sortField, asc } });
-        const sortSelect = document.getElementById('sort-select') as HTMLSelectElement | null;
+        const sortSelect = mainDom.elMaybe('sort-select');
         if (sortSelect) {
           sortSelect.value = `${sortField}:${asc ? 'asc' : 'desc'}`;
         }

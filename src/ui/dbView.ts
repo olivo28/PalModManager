@@ -1,12 +1,8 @@
-/**
- * dbView.ts
- * DB Inspector & Editor — Browse and edit the live PMM database state.
- * Read: db_get_all | Write: db_write_record
- */
 import { invoke } from '@tauri-apps/api/core';
 import { showToast } from './toast';
 import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
+import { dbDom } from '../framework';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,7 +53,7 @@ let _selectedRecordId: string = '';
 // ─── Entry Point ──────────────────────────────────────────────────────────────
 
 export async function renderDbView(): Promise<void> {
-  const container = document.getElementById('db-view');
+  const container = dbDom.elMaybe('db-view');
   if (!container) return;
 
   container.innerHTML = `
@@ -107,18 +103,18 @@ function setupDbEventListeners(): void {
     });
   });
 
-  document.getElementById('db-refresh-btn')?.addEventListener('click', loadSnapshot);
+  dbDom.elMaybe('db-refresh-btn')?.addEventListener('click', loadSnapshot);
 
-  const editor = document.getElementById('db-json-editor') as HTMLTextAreaElement | null;
+  const editor = dbDom.elMaybe('db-json-editor');
   editor?.addEventListener('input', onJsonEditorInput);
 
-  document.getElementById('db-save-btn')?.addEventListener('click', handleSaveRecord);
+  dbDom.elMaybe('db-save-btn')?.addEventListener('click', handleSaveRecord);
 }
 
 // ─── Data Loading ─────────────────────────────────────────────────────────────
 
 async function loadSnapshot(): Promise<void> {
-  const panel = document.getElementById('db-grid-panel');
+  const panel = dbDom.elMaybe('db-grid-panel');
   if (panel) panel.innerHTML = '<div class="db-loading">Loading database…</div>';
 
   try {
@@ -332,7 +328,7 @@ function selectRecord(type: 'mod' | 'profile' | 'settings', id: string, data: un
   _selectedRecordId = id;
 
   const maskedData = maskSensitiveData(data);
-  const editor = document.getElementById('db-json-editor') as HTMLTextAreaElement | null;
+  const editor = dbDom.elMaybe('db-json-editor');
   if (editor) {
     editor.value = JSON.stringify(maskedData, null, 2);
     editor.disabled = false;
@@ -343,7 +339,7 @@ function selectRecord(type: 'mod' | 'profile' | 'settings', id: string, data: un
 function clearInspector(): void {
   _selectedRecordType = null;
   _selectedRecordId = '';
-  const editor = document.getElementById('db-json-editor') as HTMLTextAreaElement | null;
+  const editor = dbDom.elMaybe('db-json-editor');
   if (editor) {
     editor.value = '';
     editor.disabled = true;
@@ -352,7 +348,7 @@ function clearInspector(): void {
 }
 
 function onJsonEditorInput(): void {
-  const editor = document.getElementById('db-json-editor') as HTMLTextAreaElement | null;
+  const editor = dbDom.elMaybe('db-json-editor');
   if (!editor) return;
   try {
     JSON.parse(editor.value);
@@ -363,8 +359,8 @@ function onJsonEditorInput(): void {
 }
 
 function updateJsonStatus(valid: boolean | null): void {
-  const status = document.getElementById('db-json-status');
-  const saveBtn = document.getElementById('db-save-btn') as HTMLButtonElement | null;
+  const status = dbDom.elMaybe('db-json-status');
+  const saveBtn = dbDom.elMaybe('db-save-btn');
   if (!status || !saveBtn) return;
 
   if (valid === null) {
@@ -387,7 +383,7 @@ function updateJsonStatus(valid: boolean | null): void {
 async function handleSaveRecord(): Promise<void> {
   if (!_selectedRecordType) return;
 
-  const editor = document.getElementById('db-json-editor') as HTMLTextAreaElement | null;
+  const editor = dbDom.elMaybe('db-json-editor');
   if (!editor) return;
 
   let parsed: unknown;

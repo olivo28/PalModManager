@@ -3,22 +3,23 @@ import { handleEditorSave, handleEditorPreview, syncHighlight, loadEditorData } 
 import { switchEditorMod, renderEditorModTree } from './tree';
 import { openFind, closeFind } from './search';
 import { confirmDiscardOrSave } from './unsaved';
+import { editorDom, mainDom } from '../../framework';
 
 export function setupEditorKeybindings(): void {
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const highlightEl = document.getElementById('editor-highlight')!;
+  const editorContent = editorDom.elMaybe('editor-content');
+  const highlightEl = editorDom.elMaybe('editor-highlight');
 
   document.addEventListener('keydown', (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      const editorView = document.getElementById('editor-view')!;
-      if (editorView.style.display !== 'none') {
+      const editorView = editorDom.elMaybe('editor-view');
+      if (editorView && editorView.style.display !== 'none') {
         e.preventDefault();
         openFind();
       }
     }
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      const editorView = document.getElementById('editor-view')!;
-      if (editorView.style.display !== 'none') {
+      const editorView = editorDom.elMaybe('editor-view');
+      if (editorView && editorView.style.display !== 'none') {
         e.preventDefault();
         handleEditorSave();
       }
@@ -33,7 +34,7 @@ export function setupEditorKeybindings(): void {
       const lines = textBefore.split('\n');
       const lineNum = lines.length;
       const colNum = lines[lines.length - 1].length + 1;
-      const cursorEl = document.getElementById('editor-cursor-pos');
+      const cursorEl = editorDom.elMaybe('editor-cursor-pos');
       if (cursorEl) {
         cursorEl.textContent = `Ln ${lineNum}, Col ${colNum}`;
       }
@@ -81,9 +82,11 @@ export function setupEditorKeybindings(): void {
     editorContent.addEventListener('keyup', updateCursorPosition);
 
     editorContent.addEventListener('scroll', () => {
-      highlightEl.scrollTop = editorContent.scrollTop;
-      highlightEl.scrollLeft = editorContent.scrollLeft;
-      const gutter = document.getElementById('editor-gutter');
+      if (highlightEl) {
+        highlightEl.scrollTop = editorContent.scrollTop;
+        highlightEl.scrollLeft = editorContent.scrollLeft;
+      }
+      const gutter = editorDom.elMaybe('editor-gutter');
       if (gutter) gutter.scrollTop = editorContent.scrollTop;
     });
   }
@@ -92,19 +95,19 @@ export function setupEditorKeybindings(): void {
     highlightEl.addEventListener('scroll', () => {
       editorContent.scrollTop = highlightEl.scrollTop;
       editorContent.scrollLeft = highlightEl.scrollLeft;
-      const gutter = document.getElementById('editor-gutter');
+      const gutter = editorDom.elMaybe('editor-gutter');
       if (gutter) gutter.scrollTop = highlightEl.scrollTop;
     });
   }
 
-  const previewBtn = document.getElementById('editor-preview-btn');
+  const previewBtn = editorDom.elMaybe('editor-preview-btn');
   if (previewBtn) {
     previewBtn.addEventListener('click', handleEditorPreview);
   }
 }
 
 export async function handleEditorModChange(): Promise<void> {
-  const select = document.getElementById('editor-mod-select') as HTMLSelectElement;
+  const select = editorDom.elMaybe('editor-mod-select');
   if (!select) return;
   const modId = select.value;
   const state = getState();
@@ -130,10 +133,10 @@ export function switchTab(tab: 'mods' | 'editor' | 'library' | 'build' | 'scanne
   const tabBtn = document.querySelector(`.sidebar-tab[data-tab="${tab}"]`);
   if (tabBtn) tabBtn.classList.add('active');
 
-  const modsView = document.getElementById('mods-view');
+  const modsView = mainDom.elMaybe('mods-view');
   if (modsView) modsView.style.display = tab === 'mods' ? '' : 'none';
 
-  const editorView = document.getElementById('editor-view');
+  const editorView = editorDom.elMaybe('editor-view');
   if (editorView) editorView.style.display = tab === 'editor' ? 'flex' : 'none';
 
   const libView = document.getElementById('library-view');
@@ -170,7 +173,7 @@ export async function openFileAtLine(modId: string, filePath: string, lineNumber
     }
 
     setTimeout(() => {
-      const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+      const editorContent = editorDom.elMaybe('editor-content');
       if (editorContent) {
         const text = editorContent.value;
         const lines = text.split('\n');

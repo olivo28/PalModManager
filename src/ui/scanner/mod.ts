@@ -3,6 +3,7 @@ import { updateModHotkey } from '../../api';
 import type { ModHotkey } from '../../api';
 import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
+import { scannerDom, bus } from '../../framework';
 
 export interface ConflictingMod {
   modId: string;
@@ -92,6 +93,7 @@ export function setLastScanResult(val: ScanResult | null): void { lastScanResult
 export function setLastHotkeysResult(val: ModHotkey[] | null): void { lastHotkeysResult = val; }
 export function setIsScanning(val: boolean): void { isScanning = val; }
 export function setIsScanningHotkeys(val: boolean): void { isScanningHotkeys = val; }
+
 export function setActiveSubTab(val: 'conflicts' | 'hotkeys' | 'saves'): void { activeSubTab = val; }
 export function setEditingHotkeyKey(val: string | null): void { editingHotkeyKey = val; }
 export function setHotkeyFilter(val: string): void { hotkeyFilter = val; }
@@ -100,7 +102,7 @@ export function setRegistrySearchQuery(val: string): void { registrySearchQuery 
 export function setSelectedRegistryModId(val: string | null): void { selectedRegistryModId = val; }
 
 export async function renderScannerView(): Promise<void> {
-  const container = document.getElementById('scanner-view');
+  const container = scannerDom.elMaybe('scanner-view');
   if (!container) return;
 
   const currentScrollTop = container.querySelector('.scanner-scroll-panel')?.scrollTop ?? 0;
@@ -224,7 +226,7 @@ export function attachMasterListListeners(): void {
       });
 
       // Update right inspector in-place without re-rendering or resetting scroll!
-      const inspectorRoot = document.getElementById('scanner-inspector-root');
+      const inspectorRoot = scannerDom.elMaybe('scanner-inspector-root');
       if (inspectorRoot && lastScanResult?.modSummaries) {
         const activeMod = lastScanResult.modSummaries.find(m => m.modId === modId) || null;
         const { buildInspectorContent } = await import('./conflicts');
@@ -261,7 +263,7 @@ export function attachGamePassConversionListeners(): void {
     };
   });
 
-  const convertAllBtn = document.getElementById('btn-convert-all-gamepass') as HTMLButtonElement | null;
+  const convertAllBtn = scannerDom.elMaybe('btn-convert-all-gamepass');
   if (convertAllBtn) {
     convertAllBtn.onclick = async () => {
       try {
@@ -284,17 +286,17 @@ export function attachGamePassConversionListeners(): void {
 }
 
 export function setupEventListeners(): void {
-  document.getElementById('scanner-start-btn')?.addEventListener('click', runScan);
-  document.getElementById('scanner-start-hotkeys-btn')?.addEventListener('click', runHotkeysScan);
+  scannerDom.elMaybe('scanner-start-btn')?.addEventListener('click', runScan);
+  scannerDom.elMaybe('scanner-start-hotkeys-btn')?.addEventListener('click', runHotkeysScan);
 
-  document.getElementById('scanner-re-run-btn')?.addEventListener('click', async () => {
+  scannerDom.elMaybe('scanner-re-run-btn')?.addEventListener('click', async () => {
     if (activeSubTab === 'conflicts') {
       runScan();
     } else if (activeSubTab === 'hotkeys') {
       runHotkeysScan();
     } else {
       const { renderSavesDoctorPanel } = await import('./savesDoctor');
-      const container = document.getElementById('scanner-view');
+      const container = scannerDom.elMaybe('scanner-view');
       if (container) await renderSavesDoctorPanel(container);
     }
   });
@@ -310,12 +312,12 @@ export function setupEventListeners(): void {
     });
   });
 
-  const search = document.getElementById('hk-search-input') as HTMLInputElement | null;
+  const search = scannerDom.elMaybe('hk-search-input');
   if (search) {
     search.addEventListener('input', () => {
       hotkeyFilter = search.value;
       renderScannerView();
-      const searchRef = document.getElementById('hk-search-input') as HTMLInputElement | null;
+      const searchRef = scannerDom.elMaybe('hk-search-input');
       if (searchRef) {
         searchRef.focus();
         searchRef.setSelectionRange(searchRef.value.length, searchRef.value.length);
@@ -335,7 +337,7 @@ export function setupEventListeners(): void {
     });
   });
 
-  const regSearch = document.getElementById('registry-search-input') as HTMLInputElement | null;
+  const regSearch = scannerDom.elMaybe('registry-search-input');
   if (regSearch) {
     regSearch.addEventListener('input', async () => {
       registrySearchQuery = regSearch.value;
@@ -443,6 +445,7 @@ export function setupEventListeners(): void {
       (btn as HTMLButtonElement).disabled = true;
       try {
         await updateModHotkey(hk.absoluteFilePath, hk.lineNumber, newKeys);
+        bus.emit('hotkey:updated', { modId: hk.modId, newHotkey: newKeys });
         showToast(t('scanner.toast_hotkey_saved'), 'success');
         editingHotkeyKey = null;
         await runHotkeysScan();

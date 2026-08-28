@@ -20,6 +20,7 @@ import {
   setCurrentHealthReport,
   setIsRestoringBackup,
 } from './state';
+import { scannerDom } from '../../../framework';
 
 export function showSnapshotComparisonModal(
   world: SaveWorldSummary,
@@ -27,7 +28,7 @@ export function showSnapshotComparisonModal(
   parentContainer: HTMLElement,
   rerenderCallback: (container: HTMLElement) => Promise<void>
 ): void {
-  const existingModal = document.getElementById('save-compare-modal');
+  const existingModal = scannerDom.elMaybe('save-compare-modal');
   if (existingModal) existingModal.remove();
 
   const diffBytes = (world.levelSizeBytes || 0) - snap.levelSizeBytes;
@@ -179,15 +180,15 @@ export function showSnapshotComparisonModal(
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
 
-  const modalEl = document.getElementById('save-compare-modal');
-  const closeBtn = document.getElementById('btn-close-compare-modal');
-  const closeActionBtn = document.getElementById('btn-modal-close-action');
-  const restoreActionBtn = document.getElementById('btn-modal-restore-action');
-  const deltasContainer = document.getElementById('snap-internal-deltas-container');
-  const dayEl = document.getElementById('snap-inspect-day');
-  const hostEl = document.getElementById('snap-inspect-host');
-  const ramEl = document.getElementById('snap-inspect-ram');
-  const modCleanlinessEl = document.getElementById('snap-inspect-mod-cleanliness');
+  const modalEl = scannerDom.elMaybe('save-compare-modal');
+  const closeBtn = scannerDom.elMaybe('btn-close-compare-modal');
+  const closeActionBtn = scannerDom.elMaybe('btn-modal-close-action');
+  const restoreActionBtn = scannerDom.elMaybe('btn-modal-restore-action');
+  const deltasContainer = scannerDom.elMaybe('snap-internal-deltas-container');
+  const dayEl = scannerDom.elMaybe('snap-inspect-day');
+  const hostEl = scannerDom.elMaybe('snap-inspect-host');
+  const ramEl = scannerDom.elMaybe('snap-inspect-ram');
+  const modCleanlinessEl = scannerDom.elMaybe('snap-inspect-mod-cleanliness');
 
   // Asynchronously inspect this single snapshot on demand
   inspectSnapshotDetails(world.worldDir, snap.slotName)

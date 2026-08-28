@@ -24,6 +24,7 @@ export interface PackerProject {
 }
 
 import { loadProjectsList, renderProjectsHub, showProjectsHub, openNewProjectWorkspace, loadSelectedProject, saveCurrentProject, deleteProjectByName } from './projects';
+import { packerDom, bus, type PackerDomMap } from '../../framework';
 export { addStagedPaths };
 export let stagedFiles: StagedFile[] = [];
 export let sourcePaths: string[] = [];
@@ -66,15 +67,15 @@ export function initPackerView(): void {
 }
 
 function setupPackerEventListeners(): void {
-  document.getElementById('packer-workspace-back-btn')?.addEventListener('click', () => {
+  packerDom.elMaybe('packer-workspace-back-btn')?.addEventListener('click', () => {
     showProjectsHub();
   });
 
-  document.getElementById('packer-hub-new-btn')?.addEventListener('click', () => {
+  packerDom.elMaybe('packer-hub-new-btn')?.addEventListener('click', () => {
     openNewProjectWorkspace();
   });
 
-  document.getElementById('packer-add-files-btn')?.addEventListener('click', async () => {
+  packerDom.elMaybe('packer-add-files-btn')?.addEventListener('click', async () => {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({
@@ -91,7 +92,7 @@ function setupPackerEventListeners(): void {
     }
   });
 
-  document.getElementById('packer-add-folder-btn')?.addEventListener('click', async () => {
+  packerDom.elMaybe('packer-add-folder-btn')?.addEventListener('click', async () => {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({
@@ -100,7 +101,7 @@ function setupPackerEventListeners(): void {
         title: t('packer.dialog_select_folder_title')
       });
       if (selected) {
-        const paths = Array.isArray(selected) ? [selected] : [selected as any];
+        const paths = Array.isArray(selected) ? selected : [selected as any];
         await addStagedPaths(paths);
       }
     } catch (err) {
@@ -108,7 +109,7 @@ function setupPackerEventListeners(): void {
     }
   });
 
-  document.getElementById('packer-new-virtual-folder-btn')?.addEventListener('click', async () => {
+  packerDom.elMaybe('packer-new-virtual-folder-btn')?.addEventListener('click', async () => {
     const input = await showPrompt(t('packer.prompt_virtual_folder'));
     if (input && input.trim()) {
       const cleaned = input.trim().replace(/\\/g, '/');
@@ -120,7 +121,7 @@ function setupPackerEventListeners(): void {
     }
   });
 
-  document.getElementById('packer-clear-btn')?.addEventListener('click', async () => {
+  packerDom.elMaybe('packer-clear-btn')?.addEventListener('click', async () => {
     const confirmed = await showConfirm(t('packer.confirm_clear_staging'));
     if (confirmed) {
       stagedFiles = [];
@@ -132,29 +133,29 @@ function setupPackerEventListeners(): void {
     }
   });
 
-  document.getElementById('packer-autostruct-btn')?.addEventListener('click', () => {
+  packerDom.elMaybe('packer-autostruct-btn')?.addEventListener('click', () => {
     autoStructureWorkspace();
   });
 
-  document.getElementById('packer-project-save-btn')?.addEventListener('click', () => {
+  packerDom.elMaybe('packer-project-save-btn')?.addEventListener('click', () => {
     saveCurrentProject();
   });
 
-  document.getElementById('packer-build-btn')?.addEventListener('click', async () => {
+  packerDom.elMaybe('packer-build-btn')?.addEventListener('click', async () => {
     if (stagedFiles.length === 0) {
       showToast(t('packer.toast_no_files_staged'), 'warning');
       return;
     }
 
-    const formatSelect = document.getElementById('packer-format-select') as HTMLSelectElement;
+    const formatSelect = packerDom.elMaybe('packer-format-select') as HTMLSelectElement;
     const format = formatSelect?.value || 'zip';
 
-    const metaName = (document.getElementById('packer-meta-name') as HTMLInputElement)?.value.trim();
-    const metaVersion = (document.getElementById('packer-meta-version') as HTMLInputElement)?.value.trim() || '1.0.0';
-    const metaAuthor = (document.getElementById('packer-meta-author') as HTMLInputElement)?.value.trim();
-    const metaType = (document.getElementById('packer-meta-type') as HTMLSelectElement)?.value;
-    const metaDesc = (document.getElementById('packer-meta-desc') as HTMLTextAreaElement)?.value.trim();
-    const metaNexusIdStr = (document.getElementById('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
+    const metaName = (packerDom.elMaybe('packer-meta-name') as HTMLInputElement)?.value.trim();
+    const metaVersion = (packerDom.elMaybe('packer-meta-version') as HTMLInputElement)?.value.trim() || '1.0.0';
+    const metaAuthor = (packerDom.elMaybe('packer-meta-author') as HTMLInputElement)?.value.trim();
+    const metaType = (packerDom.elMaybe('packer-meta-type') as HTMLSelectElement)?.value;
+    const metaDesc = (packerDom.elMaybe('packer-meta-desc') as HTMLTextAreaElement)?.value.trim();
+    const metaNexusIdStr = (packerDom.elMaybe('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
     const metaNexusId = metaNexusIdStr ? parseInt(metaNexusIdStr, 10) : null;
 
     // Compute routes based on staged files
@@ -225,9 +226,11 @@ function setupPackerEventListeners(): void {
 
       if (!destPath) return;
 
-      const btn = document.getElementById('packer-build-btn') as HTMLButtonElement;
-      btn.disabled = true;
-      btn.textContent = '...';
+      const btn = packerDom.elMaybe('packer-build-btn') as HTMLButtonElement;
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = '...';
+      }
       showToast(t('packer.toast_packing_wait'), 'info');
 
       const filesToPack = activeFiles.map(f => ({
@@ -244,12 +247,18 @@ function setupPackerEventListeners(): void {
         format
       });
 
+      bus.emit('project:packed', {
+        outputPath: destPath,
+        format,
+        modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
+      });
+
       showToast(t('packer.toast_pack_success'), 'success');
     } catch (err: any) {
       console.error(err);
       showToast(t('toasts.export_failed', { error: String(err) }), 'error');
     } finally {
-      const btn = document.getElementById('packer-build-btn') as HTMLButtonElement;
+      const btn = packerDom.elMaybe('packer-build-btn');
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = `📦 ${escapeHtml(t('packer.btn_package_mod'))}`;
@@ -257,8 +266,8 @@ function setupPackerEventListeners(): void {
     }
   });
 
-  const listTab = document.getElementById('packer-view-list-btn');
-  const treeTab = document.getElementById('packer-view-tree-btn');
+  const listTab = packerDom.elMaybe('packer-view-list-btn');
+  const treeTab = packerDom.elMaybe('packer-view-tree-btn');
 
   if (listTab && treeTab) {
     listTab.addEventListener('click', () => {
@@ -272,11 +281,11 @@ function setupPackerEventListeners(): void {
   }
 
   // Automatically update build button disabled state on form changes
-  const inputs = ['packer-meta-name', 'packer-meta-version', 'packer-meta-author', 'packer-meta-nexus-id'];
+  const inputs: (keyof PackerDomMap)[] = ['packer-meta-name', 'packer-meta-version', 'packer-meta-author', 'packer-meta-nexus-id'];
   inputs.forEach(id => {
-    document.getElementById(id)?.addEventListener('input', updateBuildButtonState);
+    packerDom.elMaybe(id)?.addEventListener('input', updateBuildButtonState);
   });
-  document.getElementById('packer-meta-type')?.addEventListener('change', updateBuildButtonState);
+  packerDom.elMaybe('packer-meta-type')?.addEventListener('change', updateBuildButtonState);
 }
 
 export function escapeHtml(str: string): string {

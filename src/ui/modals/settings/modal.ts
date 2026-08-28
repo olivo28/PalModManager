@@ -5,15 +5,16 @@ import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
 import { formatBytes } from './helpers';
 import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus } from './status';
+import { settingsDom } from '../../../framework';
 
 export function openSettingsModal(): void {
-  const modal = document.getElementById('settings-modal')!;
-  const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
-  const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
-  const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
-  const forceLoadOrderUe4ssCheckbox = document.getElementById('settings-force-load-order-ue4ss')! as HTMLInputElement;
-  const forceLoadOrderPalschemaCheckbox = document.getElementById('settings-force-load-order-palschema')! as HTMLInputElement;
-  const pathStatus = document.getElementById('settings-path-status')!;
+  const modal = settingsDom.el('settings-modal');
+  const pathInput = settingsDom.el('settings-game-path');
+  const hideNativeCheckbox = settingsDom.elMaybe('settings-hide-native-mods');
+  const debugConsoleCheckbox = settingsDom.elMaybe('settings-debug-console');
+  const forceLoadOrderUe4ssCheckbox = settingsDom.elMaybe('settings-force-load-order-ue4ss');
+  const forceLoadOrderPalschemaCheckbox = settingsDom.elMaybe('settings-force-load-order-palschema');
+  const pathStatus = settingsDom.el('settings-path-status');
   const state = getState();
 
   pathInput.value = state.currentSettings?.gamePath || '';
@@ -80,8 +81,8 @@ export function openSettingsModal(): void {
     pathStatus.className = 'settings-path-status invalid';
   }
 
-  const dataPathSelect = document.getElementById('settings-data-path-select') as HTMLSelectElement | null;
-  const dataPathDisplay = document.getElementById('settings-custom-data-path-display');
+  const dataPathSelect = settingsDom.elMaybe('settings-data-path-select');
+  const dataPathDisplay = settingsDom.elMaybe('settings-custom-data-path-display');
   setTempCustomDataPath(state.currentSettings?.customDataPath || null);
 
   if (dataPathSelect) {
@@ -100,8 +101,8 @@ export function openSettingsModal(): void {
     }
   }
 
-  const scaleInput = document.getElementById('settings-toolbar-scale') as HTMLInputElement | null;
-  const scaleValue = document.getElementById('settings-toolbar-scale-value');
+  const scaleInput = settingsDom.elMaybe('settings-toolbar-scale');
+  const scaleValue = settingsDom.elMaybe('settings-toolbar-scale-value');
   const initialScale = state.currentSettings?.toolbarScale || 1.0;
   if (scaleInput) {
     scaleInput.value = initialScale.toString();
@@ -118,8 +119,8 @@ export function openSettingsModal(): void {
     });
   }
 
-  const openUe4ssBtn = document.getElementById('open-folder-ue4ss') as HTMLButtonElement | null;
-  const openPalschemaBtn = document.getElementById('open-folder-palschema') as HTMLButtonElement | null;
+  const openUe4ssBtn = settingsDom.elMaybe('open-folder-ue4ss');
+  const openPalschemaBtn = settingsDom.elMaybe('open-folder-palschema');
   if (openUe4ssBtn) {
     openUe4ssBtn.style.display = !!state.dependencies?.ue4ss_installed ? '' : 'none';
   }
@@ -132,7 +133,7 @@ export function openSettingsModal(): void {
   refreshImageCacheStatus();
 
   // DNS Resolver Select
-  const dnsSelect = document.getElementById('settings-dns-resolver-select') as HTMLSelectElement | null;
+  const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');
   if (dnsSelect) {
     dnsSelect.value = state.currentSettings?.dnsResolver || 'auto';
   }
@@ -152,12 +153,12 @@ export function openSettingsModal(): void {
     }
   };
 
-  const purgeCacheBtn = document.getElementById('btn-purge-image-cache') as HTMLButtonElement | null;
+  const purgeCacheBtn = settingsDom.elMaybe('btn-purge-image-cache');
   if (purgeCacheBtn) {
     purgeCacheBtn.onclick = () => purgeCacheHandler(purgeCacheBtn);
   }
 
-  const storagePurgeImagesBtn = document.getElementById('storage-clear-images-btn') as HTMLButtonElement | null;
+  const storagePurgeImagesBtn = settingsDom.elMaybe('storage-clear-images-btn');
   if (storagePurgeImagesBtn) {
     storagePurgeImagesBtn.onclick = () => purgeCacheHandler(storagePurgeImagesBtn);
   }
@@ -179,7 +180,7 @@ export function openSettingsModal(): void {
     };
   });
 
-  const clearTempBtn = document.getElementById('storage-clear-temp-btn') as HTMLButtonElement | null;
+  const clearTempBtn = settingsDom.elMaybe('storage-clear-temp-btn');
   if (clearTempBtn) {
     clearTempBtn.onclick = async () => {
       try {
@@ -196,7 +197,7 @@ export function openSettingsModal(): void {
     };
   }
 
-  const openTempBtn = document.getElementById('storage-open-temp-btn') as HTMLButtonElement | null;
+  const openTempBtn = settingsDom.elMaybe('storage-open-temp-btn');
   if (openTempBtn) {
     openTempBtn.onclick = async () => {
       try {
@@ -208,7 +209,7 @@ export function openSettingsModal(): void {
     };
   }
 
-  const openLibBtn = document.getElementById('storage-open-library-btn') as HTMLButtonElement | null;
+  const openLibBtn = settingsDom.elMaybe('storage-open-library-btn');
   if (openLibBtn) {
     openLibBtn.onclick = async () => {
       try {
@@ -227,8 +228,8 @@ export function openSettingsModal(): void {
   import('../../../features/nexus_auth').then(({ renderNexusAccountUI, processOAuthCallback }) => {
     renderNexusAccountUI();
 
-    const manualCallbackBtn = document.getElementById('btn-nexus-manual-callback');
-    const manualCallbackInput = document.getElementById('nexus-manual-callback-input') as HTMLInputElement | null;
+    const manualCallbackBtn = settingsDom.elMaybe('btn-nexus-manual-callback');
+    const manualCallbackInput = settingsDom.elMaybe('nexus-manual-callback-input');
     if (manualCallbackBtn && manualCallbackInput) {
       manualCallbackBtn.onclick = async () => {
         const val = manualCallbackInput.value.trim();
@@ -240,7 +241,7 @@ export function openSettingsModal(): void {
     }
   }).catch(() => {});
 
-  const langSelect = document.getElementById('settings-language-select') as HTMLSelectElement | null;
+  const langSelect = settingsDom.elMaybe('settings-language-select');
   if (langSelect) {
     import('../../../utils/i18n').then(({ getLocale, setLocale }) => {
       langSelect.value = getLocale();
@@ -310,7 +311,7 @@ export function setupSettingsTabs(): void {
 }
 
 export function closeSettingsModal(): void {
-  const modal = document.getElementById('settings-modal');
+  const modal = settingsDom.elMaybe('settings-modal');
   if (modal) {
     modal.classList.remove('visible');
     const tabButtons = modal.querySelectorAll<HTMLButtonElement>('.settings-tab-button');

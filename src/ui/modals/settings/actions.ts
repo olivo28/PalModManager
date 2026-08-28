@@ -11,10 +11,11 @@ import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
 import { revertDataPathSelect } from './helpers';
 import { closeSettingsModal } from './modal';
+import { settingsDom } from '../../../framework';
 
 export async function handleDataPathChange(): Promise<void> {
-  const select = document.getElementById('settings-data-path-select') as HTMLSelectElement | null;
-  const display = document.getElementById('settings-custom-data-path-display');
+  const select = settingsDom.elMaybe('settings-data-path-select');
+  const display = settingsDom.elMaybe('settings-custom-data-path-display');
   if (!select) return;
 
   const value = select.value;
@@ -59,7 +60,7 @@ export async function handleSettingsBrowse(): Promise<void> {
     });
     if (selected) {
       const path = typeof selected === 'string' ? selected : selected as string;
-      const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
+      const pathInput = settingsDom.el('settings-game-path');
       pathInput.value = path;
     }
   } catch (e) {
@@ -68,19 +69,19 @@ export async function handleSettingsBrowse(): Promise<void> {
 }
 
 export async function handleSaveSettings(): Promise<void> {
-  const pathInput = document.getElementById('settings-game-path')! as HTMLInputElement;
-  const hideNativeCheckbox = document.getElementById('settings-hide-native-mods')! as HTMLInputElement;
-  const debugConsoleCheckbox = document.getElementById('settings-debug-console')! as HTMLInputElement;
-  const saveBtn = document.getElementById('settings-save')! as HTMLButtonElement;
-  const pathStatus = document.getElementById('settings-path-status')!;
+  const pathInput = settingsDom.el('settings-game-path');
+  const hideNativeCheckbox = settingsDom.elMaybe('settings-hide-native-mods');
+  const debugConsoleCheckbox = settingsDom.elMaybe('settings-debug-console');
+  const saveBtn = settingsDom.el('settings-save');
+  const pathStatus = settingsDom.el('settings-path-status');
   saveBtn.disabled = true;
 
   try {
     const newPath = pathInput.value.trim();
     const hideNative = hideNativeCheckbox ? hideNativeCheckbox.checked : false;
     const debugConsole = debugConsoleCheckbox ? debugConsoleCheckbox.checked : false;
-    const forceLoadOrderUe4ssCheckbox = document.getElementById('settings-force-load-order-ue4ss')! as HTMLInputElement;
-    const forceLoadOrderPalschemaCheckbox = document.getElementById('settings-force-load-order-palschema')! as HTMLInputElement;
+    const forceLoadOrderUe4ssCheckbox = settingsDom.elMaybe('settings-force-load-order-ue4ss');
+    const forceLoadOrderPalschemaCheckbox = settingsDom.elMaybe('settings-force-load-order-palschema');
 
     const forceLoadOrderUe4ss = forceLoadOrderUe4ssCheckbox ? forceLoadOrderUe4ssCheckbox.checked : false;
     const forceLoadOrderPalschema = forceLoadOrderPalschemaCheckbox ? forceLoadOrderPalschemaCheckbox.checked : false;
@@ -140,7 +141,7 @@ export async function handleSaveSettings(): Promise<void> {
       updateState({ currentSettings: settings });
     }
 
-    const scaleInput = document.getElementById('settings-toolbar-scale') as HTMLInputElement | null;
+    const scaleInput = settingsDom.elMaybe('settings-toolbar-scale');
     if (scaleInput) {
       const scale = parseFloat(scaleInput.value);
       if (scale !== (state.currentSettings?.toolbarScale || 1.0)) {
@@ -150,14 +151,14 @@ export async function handleSaveSettings(): Promise<void> {
       }
     }
 
-    const langSelect = document.getElementById('settings-language-select') as HTMLSelectElement | null;
+    const langSelect = settingsDom.elMaybe('settings-language-select');
     if (langSelect && langSelect.value) {
       const { setLanguage } = await import('../../../api');
       const settings = await setLanguage(langSelect.value);
       updateState({ currentSettings: settings });
     }
 
-    const dnsSelect = document.getElementById('settings-dns-resolver-select') as HTMLSelectElement | null;
+    const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');
     if (dnsSelect && dnsSelect.value && dnsSelect.value !== (state.currentSettings?.dnsResolver || 'auto')) {
       const { setDnsResolver } = await import('../../../api');
       const settings = await setDnsResolver(dnsSelect.value);

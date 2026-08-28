@@ -17,10 +17,11 @@ import aboutModalHtml from '../templates/modals/aboutModal.html?raw';
 import nexusProfileModalHtml from '../templates/modals/nexusProfileModal.html?raw';
 import downloadQueuePanelHtml from '../templates/modals/downloadQueuePanel.html?raw';
 import discoveryModModalHtml from '../templates/modals/discoveryModModal.html?raw';
+import { mainDom } from '../framework';
 
 export function loadAppTemplates(): void {
-  const mainContent = document.getElementById('main-content');
-  const modalsRoot = document.getElementById('modals-root');
+  const mainContent = mainDom.elMaybe('main-content');
+  const modalsRoot = mainDom.elMaybe('modals-root');
 
   if (mainContent) {
     mainContent.innerHTML = [

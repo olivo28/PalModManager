@@ -1,5 +1,7 @@
+import { mainDom } from '../framework';
+
 function getToastContainer(): HTMLElement {
-  let container = document.getElementById('toast-container');
+  let container = mainDom.elMaybe('toast-container');
   if (!container) {
     container = document.createElement('div');
     container.id = 'toast-container';

@@ -11,14 +11,15 @@ import { t } from '../../../utils/i18n';
 import { getCleanNameFromFilename } from './helpers';
 import { showFileTreeModal } from './fileTree';
 import { setPendingUpdateModId } from './state';
+import { installerDom } from '../../../framework';
 
 export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: { id: string; name: string, version: string } | null = null): Promise<void> {
   updateState({ currentAnalysis: analysis });
-  const content = document.getElementById('modal-content')!;
-  const confirmBtn = document.getElementById('modal-confirm')! as HTMLButtonElement;
-  const statusEl = document.getElementById('modal-status')!;
+  const content = installerDom.el('modal-content');
+  const confirmBtn = installerDom.el('modal-confirm');
+  const statusEl = installerDom.el('modal-status');
 
-  const retryBtn = document.getElementById('modal-install-deps-retry') as HTMLButtonElement | null;
+  const retryBtn = installerDom.elMaybe('modal-install-deps-retry');
   if (retryBtn) {
     retryBtn.style.display = 'none';
   }
@@ -262,7 +263,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   `;
 
   // Wire up Show Full List button
-  const viewAllBtn = document.getElementById('view-all-files-btn');
+  const viewAllBtn = installerDom.elMaybe('view-all-files-btn');
   if (viewAllBtn) {
     viewAllBtn.addEventListener('click', (e) => {
       e.preventDefault();
@@ -298,9 +299,9 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   });
 
   // Wire up update/install-new mode toggle buttons
-  const updateModeBtn = document.getElementById('update-mode-btn') as HTMLButtonElement | null;
-  const installNewModeBtn = document.getElementById('install-new-mode-btn') as HTMLButtonElement | null;
-  const folderInput = document.getElementById('mod-folder-name-input') as HTMLInputElement | null;
+  const updateModeBtn = installerDom.elMaybe('update-mode-btn');
+  const installNewModeBtn = installerDom.elMaybe('install-new-mode-btn');
+  const folderInput = installerDom.elMaybe('mod-folder-name-input');
 
   function setInstallMode(isUpdate: boolean) {
     if (!existingMod) return;
@@ -356,9 +357,9 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
 
   if (existingMod) {
     previewConfigDiff(analysis.zipPath, existingMod.id).then(diffs => {
-      const diffContainer = document.getElementById('config-diff-container');
-      const summaryText = document.getElementById('config-diff-summary-text');
-      const viewBtn = document.getElementById('view-config-diff-btn');
+      const diffContainer = installerDom.elMaybe('config-diff-container');
+      const summaryText = installerDom.elMaybe('config-diff-summary-text');
+      const viewBtn = installerDom.elMaybe('view-config-diff-btn');
       if (diffContainer && diffs && diffs.length > 0) {
         diffContainer.style.display = 'flex';
         if (summaryText) {
