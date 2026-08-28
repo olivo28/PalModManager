@@ -24,6 +24,7 @@ All notable changes to this project will be documented in this file.
 - **Full 6-Language Localization**: Complete translations in English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
 
 ### Changed
+- **Faster & Smoother Startup**: Streamlined the application startup order for faster launch times and eliminated background rescan lag when switching windows.
 - **100% PMM-Core Rollout**: Completely modernized all app views and modals using the new Svelte-like typed architecture.
 - **Modular Codebase**: Restructured large monolithic files into clean, decoupled domain modules.
 - **Instant Settings Updates**: Visibility and behavior toggles now apply immediately without reloading the app.
@@ -33,7 +34,6 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 - **Filesystem Watcher**: Paused file watchers during profile switches to avoid duplicate scans and event storms.
-- **Window Focus Throttling**: Added a 60-second cooldown to window focus checks to prevent unnecessary rescans.
 - **Database Write Hygiene**: Prevented redundant database disk writes when mod metadata is unchanged.
 - **Toast Notifications Layering**: Fixed toast alerts appearing behind open modal dialogs.
 - **Translation Cleanup**: Cleaned up obsolete and duplicate translation keys across all language files.

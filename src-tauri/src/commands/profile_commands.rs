@@ -8,6 +8,7 @@ use tauri::State;
 #[tauri::command]
 pub fn get_profiles(state: State<AppState>) -> Result<Vec<Profile>, String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
+    crate::logger::log(&format!("get_profiles: {} profiles loaded (active='{}')", data.profiles.len(), data.current_profile_id));
     Ok(data.profiles.clone())
 }
 
@@ -15,11 +16,13 @@ pub fn get_profiles(state: State<AppState>) -> Result<Vec<Profile>, String> {
 pub fn get_current_profile(state: State<AppState>) -> Result<Profile, String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let profile_id = &data.current_profile_id;
-    data.profiles
+    let profile = data.profiles
         .iter()
         .find(|p| p.id == *profile_id)
         .cloned()
-        .ok_or_else(|| "Current profile not found".to_string())
+        .ok_or_else(|| "Current profile not found".to_string())?;
+    crate::logger::log(&format!("get_current_profile: active profile '{}' [{}] mode={:?}", profile.name, profile.id, profile.dependency_mode));
+    Ok(profile)
 }
 
 #[tauri::command]

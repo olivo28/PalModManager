@@ -45,19 +45,29 @@ function safeEl(id: string): HTMLElement | null {
 }
 
 function showApp(): void {
-  const loading = mainDom.elMaybe('app-loading');
-  if (loading) loading.style.display = 'none';
+  const loading = document.getElementById('app-loading');
   const app = mainDom.elMaybe('app');
   if (app) app.style.display = 'flex';
+  if (loading) {
+    loading.classList.add('fade-out');
+    setTimeout(() => {
+      loading.style.display = 'none';
+    }, 380);
+  }
 }
 
 import { loadAppTemplates } from './ui/templateLoader';
 
 loadAppTemplates();
 initI18n();
-showApp();
+
+// Immediately reveal the Tauri window with the splash screen so the user never sees a black screen
+import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
+  getCurrentWindow().show().catch(() => {});
+}).catch(() => {});
 
 async function init() {
+  const startTime = Date.now();
   console.time('init');
   applyTheme(getPreferredTheme());
 
@@ -101,15 +111,16 @@ async function init() {
       initNexusAuth();
     }).catch(err => console.warn('Failed to init Nexus Auth:', err));
 
-    // Reveal the window smoothly once DOM and initial UI are fully ready
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-      getCurrentWindow().show().catch(() => {});
-    }).catch(() => {});
+    // Ensure a smooth, pleasant splash display duration (~1.2s minimum) before transitioning to main view
+    const elapsed = Date.now() - startTime;
+    const remainingTime = Math.max(0, 1200 - elapsed);
+    if (remainingTime > 0) {
+      await new Promise(resolve => setTimeout(resolve, remainingTime));
+    }
+    showApp();
   } catch (e) {
     console.error('Error initializing:', e);
-    import('@tauri-apps/api/window').then(({ getCurrentWindow }) => {
-      getCurrentWindow().show().catch(() => {});
-    }).catch(() => {});
+    showApp();
   }
   console.timeEnd('init');
 }

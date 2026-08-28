@@ -89,25 +89,36 @@ pub fn sync_current_profile_states(data: &mut AppData) {
 }
 
 pub fn cleanup_profile_mod_lists(data: &mut AppData) {
-    let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
+    let needs_dep_check = data.profiles.iter().any(|p| {
+        (p.id == "default" && !p.ue4ss_enabled) || (p.dependency_mode == DependencyMode::None && p.ue4ss_enabled)
+    });
+
+    let dep = if needs_dep_check && !data.settings.game_path.is_empty() {
+        Some(crate::dependency_checker::check_dependencies(&data.settings.game_path))
+    } else {
+        None
+    };
+
     for profile in &mut data.profiles {
         if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
             profile.installed_mod_ids = profile.enabled_mod_ids.clone();
         }
-        if profile.id == "default" && !profile.ue4ss_enabled {
-            if dep.ue4ss_installed {
-                profile.ue4ss_enabled = true;
-                if dep.palschema_installed {
-                    profile.palschema_enabled = true;
+        if let Some(ref d) = dep {
+            if profile.id == "default" && !profile.ue4ss_enabled {
+                if d.ue4ss_installed {
+                    profile.ue4ss_enabled = true;
+                    if d.palschema_installed {
+                        profile.palschema_enabled = true;
+                    }
                 }
             }
-        }
-        if profile.dependency_mode == DependencyMode::None && profile.ue4ss_enabled {
-            profile.dependency_mode = if dep.ue4ss_install_mode == "Workshop" {
-                DependencyMode::Workshop
-            } else {
-                DependencyMode::Standard
-            };
+            if profile.dependency_mode == DependencyMode::None && profile.ue4ss_enabled {
+                profile.dependency_mode = if d.ue4ss_install_mode == "Workshop" {
+                    DependencyMode::Workshop
+                } else {
+                    DependencyMode::Standard
+                };
+            }
         }
     }
 }
@@ -122,19 +133,30 @@ pub fn ensure_default_profile(data: &mut AppData) {
     let profiles_base = PathBuf::from(&program_path).join("profiles");
     let _ = fs::create_dir_all(&profiles_base);
 
-    let dep = crate::dependency_checker::check_dependencies(&data.settings.game_path);
-
     if !data.profiles.iter().any(|p| p.id == "default") {
+        let dep = if !data.settings.game_path.is_empty() {
+            Some(crate::dependency_checker::check_dependencies(&data.settings.game_path))
+        } else {
+            None
+        };
+
         let now = chrono::Utc::now().to_rfc3339();
-        let dependency_mode = if dep.ue4ss_installed {
-            if dep.ue4ss_install_mode == "Workshop" {
-                DependencyMode::Workshop
+        let dependency_mode = if let Some(ref d) = dep {
+            if d.ue4ss_installed {
+                if d.ue4ss_install_mode == "Workshop" {
+                    DependencyMode::Workshop
+                } else {
+                    DependencyMode::Standard
+                }
             } else {
-                DependencyMode::Standard
+                DependencyMode::None
             }
         } else {
             DependencyMode::None
         };
+
+        let ue4ss_on = dep.as_ref().map(|d| d.ue4ss_installed).unwrap_or(false);
+        let ps_on = dep.as_ref().map(|d| d.palschema_installed).unwrap_or(false);
 
         data.profiles.push(Profile {
             id: "default".to_string(),
@@ -142,8 +164,8 @@ pub fn ensure_default_profile(data: &mut AppData) {
             created_at: now,
             installed_mod_ids: Vec::new(),
             enabled_mod_ids: Vec::new(),
-            ue4ss_enabled: dep.ue4ss_installed,
-            palschema_enabled: dep.palschema_installed,
+            ue4ss_enabled: ue4ss_on,
+            palschema_enabled: ps_on,
             dependency_mode,
             mod_folders: Vec::new(),
             load_order_metadata: None,
@@ -151,19 +173,6 @@ pub fn ensure_default_profile(data: &mut AppData) {
             force_load_order_palschema: None,
             hide_native_mods: None,
         });
-    }
-
-    for profile in &mut data.profiles {
-        if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
-            profile.installed_mod_ids = profile.enabled_mod_ids.clone();
-        }
-        if profile.dependency_mode == DependencyMode::None && profile.ue4ss_enabled {
-            profile.dependency_mode = if dep.ue4ss_install_mode == "Workshop" {
-                DependencyMode::Workshop
-            } else {
-                DependencyMode::Standard
-            };
-        }
     }
 
     migrate_profile_uuids_to_stable_ids(data);
