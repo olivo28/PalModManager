@@ -38,6 +38,9 @@ logs/
 DESCRIPTION_PIPELINE.md
 PROJECT.md
 RESUMEN.md
+ARCHITECTURE.md
+GUIDELINES.md
+CHANGES_LOG.md
 palmodmanager_mods.json
 UE4SS-Palworld (3).zip
 /.agents

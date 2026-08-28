@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { showToast } from '../utils/toast';
+import { showToast } from '../ui/toast';
 import { t } from '../utils/i18n';
 
 export interface AltermaticDepStatus {

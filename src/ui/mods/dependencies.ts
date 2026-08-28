@@ -141,12 +141,12 @@ export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
     const isWorkshop = deps.ue4ss_install_mode === 'Workshop';
     if (isWorkshop && needsUpdate) {
       const packageName = type === 'ue4ss' ? 'UE4SSExperimentalPW' : 'PalSchema';
-      import('../../api').then(async ({ getWorkshopState, activateWorkshopModCmd }) => {
+      import('../../api').then(async ({ getWorkshopState, activateWorkshopMod }) => {
         showToast(t('toasts.updating_dep', { dep: type === 'ue4ss' ? 'UE4SS' : 'PalSchema' }), 'info');
         const wState = await getWorkshopState();
-        const targetMod = wState.mods.find(m => m.packageName.toLowerCase() === packageName.toLowerCase());
+        const targetMod = wState.mods.find((m: any) => m.packageName.toLowerCase() === packageName.toLowerCase());
         if (targetMod) {
-          await activateWorkshopModCmd(targetMod);
+          await activateWorkshopMod(targetMod.packageName);
           showToast(t('dependencies.up_to_date'), 'success');
           await loadDependencies();
           await loadMods();
