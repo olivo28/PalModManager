@@ -160,6 +160,9 @@ export interface Profile {
   force_load_order_ue4ss?: boolean | null;
   force_load_order_palschema?: boolean | null;
   hide_native_mods?: boolean | null;
+  ue4ss_version?: string | null;
+  palschema_version?: string | null;
+  compatibility_patches?: string[] | null;
 }
 
 export interface LibraryEntry {
@@ -314,6 +317,50 @@ export interface DiscoveryResponse {
   totalCount: number;
   page: number;
   pageSize: number;
+}
+
+export interface DependencyVaultEntry {
+  depType: 'ue4ss' | 'palschema';
+  version: string;
+  filename: string;
+  filePath: string;
+  fileSize: number;
+  modifiedTime: string;
+  isInstalled: boolean;
+  isCustom: boolean;
+}
+
+export interface InstalledBuildInfo {
+  gameVersion: string | null;
+  buildId: string | null;
+  lastUpdated: string | null;
+  appId: number | null;
+  detectionSource: string;
+}
+
+export interface MappingEntry {
+  gameVersion: string;
+  steamBuildId?: string | null;
+  appId?: number | null;
+  usmapFilename: string;
+  usmapUrl: string;
+  sha256: string;
+  fileSizeBytes: number;
+  uploadedAt: string;
+  isLatest: boolean;
+  notes?: string | null;
+}
+
+export interface UsmapStatus {
+  installedBuild: InstalledBuildInfo;
+  activeMapping?: MappingEntry | null;
+  isSynced: boolean;
+  localUsmapExists: boolean;
+  localFileSize: number;
+  localSha256?: string | null;
+  latestRemoteVersion?: string | null;
+  errorMessage?: string | null;
+  mappingsPath: string;
 }
 
 

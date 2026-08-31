@@ -19,10 +19,12 @@ import {
   _pendingUpdateModId,
   _pendingBatchPaths,
   _batchItems,
+  _isProcessingInstall,
   setPendingBatchPaths,
   setPendingUpdateModId,
   setBatchItems,
-  setLastInstallSuccess
+  setLastInstallSuccess,
+  setIsProcessingInstall
 } from './state';
 import {
   showInstallModal,
@@ -244,6 +246,9 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
 }
 
 export async function handleInstallConfirm(): Promise<void> {
+  if (_isProcessingInstall) return;
+  setIsProcessingInstall(true);
+
   const confirmBtn = installerDom.el('modal-confirm');
   const cancelBtn = installerDom.el('modal-cancel');
   const statusEl = installerDom.el('modal-status');
@@ -346,7 +351,10 @@ export async function handleInstallConfirm(): Promise<void> {
   }
 
   const state = getState();
-  if (!state.currentAnalysis) return;
+  if (!state.currentAnalysis) {
+    setIsProcessingInstall(false);
+    return;
+  }
 
   const typeSelect = installerDom.elMaybe('mod-type-select');
   const customType = typeSelect ? typeSelect.value : state.currentAnalysis.detectedType;
@@ -538,6 +546,7 @@ async function executeModInstallation(
       await loadLibrary();
     }, 1500);
   } catch (e) {
+    setIsProcessingInstall(false);
     setLastInstallSuccess(false);
     logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] Installation failed: ${escapeHtml(String(e))}</div>`);
     resultsList.innerHTML = logs.join('');

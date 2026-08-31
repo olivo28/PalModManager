@@ -325,66 +325,81 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
 /// tag_name is what we show to the user; iso_date is used for update comparison.
 pub async fn check_ue4ss_latest() -> Result<(String, String), String> {
     let client = reqwest::Client::builder()
-        .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
+        .user_agent("PalModManager/1.7.0")
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
 
-    let tag_name = "experimental-palworld".to_string();
+    let default_tag = "experimental-palworld".to_string();
 
-    // Try HTML scraping first to avoid API rate limit
+    // Priority 1: GitHub API (inspects asset upload/update timestamps)
+    let url = "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld";
+    if let Ok(resp) = client.get(url).send().await {
+        if resp.status().is_success() {
+            if let Ok(json) = resp.json::<serde_json::Value>().await {
+                let api_tag = json["tag_name"].as_str().unwrap_or(&default_tag).to_string();
+                let mut latest_asset_dt: Option<chrono::DateTime<chrono::Utc>> = None;
+
+                if let Some(assets) = json["assets"].as_array() {
+                    for asset in assets {
+                        let name = asset["name"].as_str().unwrap_or("");
+                        if name.starts_with("UE4SS-Palworld") {
+                            if let Some(updated) = asset["updated_at"].as_str().or_else(|| asset["created_at"].as_str()) {
+                                if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
+                                    let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
+                                    match latest_asset_dt {
+                                        Some(cur) if dt_utc > cur => { latest_asset_dt = Some(dt_utc); }
+                                        None => { latest_asset_dt = Some(dt_utc); }
+                                        _ => {}
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if let Some(dt) = latest_asset_dt {
+                    return Ok((api_tag, dt.format("%d.%m.%Y").to_string()));
+                }
+
+                if let Some(published) = json["published_at"].as_str() {
+                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(published) {
+                        return Ok((api_tag, dt.format("%d.%m.%Y").to_string()));
+                    }
+                }
+            }
+        }
+    }
+
+    // Priority 2: Fallback HTML scraping (scan ALL datetime tags across the page and pick the latest)
     if let Ok(resp) = client.get("https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld").send().await {
         if let Ok(html) = resp.text().await {
-            if let Some(time_pos) = html.find("datetime=") {
-                let time_start = time_pos + 10;
-                if let Some(time_end) = html[time_start..].find('"') {
-                    let dt_raw = &html[time_start..time_start + time_end];
+            let mut latest_html_dt: Option<chrono::DateTime<chrono::Utc>> = None;
+            let mut cursor = 0;
+            while let Some(pos) = html[cursor..].find("datetime=\"") {
+                let time_start = cursor + pos + 10;
+                if let Some(len) = html[time_start..].find('"') {
+                    let dt_raw = &html[time_start..time_start + len];
                     if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
-                        let iso_date = dt.format("%d.%m.%Y").to_string();
-                        return Ok((tag_name, iso_date));
+                        let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
+                        match latest_html_dt {
+                            Some(cur) if dt_utc > cur => { latest_html_dt = Some(dt_utc); }
+                            None => { latest_html_dt = Some(dt_utc); }
+                            _ => {}
+                        }
                     }
+                    cursor = time_start + len;
+                } else {
+                    break;
                 }
+            }
+
+            if let Some(dt) = latest_html_dt {
+                return Ok((default_tag, dt.format("%d.%m.%Y").to_string()));
             }
         }
     }
 
-    // Fallback: GitHub API
-    let url = "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld";
-    let resp = client.get(url)
-        .send()
-        .await
-        .map_err(|e| format!("GitHub API request failed: {}", e))?;
-    if !resp.status().is_success() {
-        return Err(format!("GitHub API returned {}", resp.status()));
-    }
-    let json: serde_json::Value = resp.json().await
-        .map_err(|e| format!("Failed to parse response: {}", e))?;
-
-    let api_tag = json["tag_name"].as_str().unwrap_or("experimental-palworld").to_string();
-    let mut latest: Option<chrono::DateTime<chrono::Utc>> = None;
-    if let Some(assets) = json["assets"].as_array() {
-        for asset in assets {
-            if let Some(updated) = asset["updated_at"].as_str() {
-                if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
-                    match latest {
-                        Some(current) if dt > current => { latest = Some(dt.into()); }
-                        None => { latest = Some(dt.into()); }
-                        _ => {}
-                    }
-                }
-            }
-        }
-    }
-    if latest.is_none() {
-        if let Some(published) = json["published_at"].as_str() {
-            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(published) {
-                latest = Some(dt.into());
-            }
-        }
-    }
-    match latest {
-        Some(dt) => Ok((api_tag, dt.format("%d.%m.%Y").to_string())),
-        None => Err("Could not determine latest UE4SS date".to_string()),
-    }
+    Err("Could not determine latest UE4SS date from GitHub".to_string())
 }
 
 pub async fn check_palschema_latest() -> Result<String, String> {
@@ -419,3 +434,21 @@ pub async fn check_palschema_latest() -> Result<String, String> {
         .ok_or_else(|| "No tag_name in response".to_string())?;
     Ok(tag.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_check_ue4ss_latest() {
+        tauri::async_runtime::block_on(async {
+            let result = check_ue4ss_latest().await;
+            assert!(result.is_ok(), "check_ue4ss_latest failed: {:?}", result.err());
+            let (tag, date_str) = result.unwrap();
+            assert_eq!(tag, "experimental-palworld");
+            assert!(date_str.ends_with("2026"), "Expected 2026 date for UE4SS, got: {}", date_str);
+        });
+    }
+}
+
+

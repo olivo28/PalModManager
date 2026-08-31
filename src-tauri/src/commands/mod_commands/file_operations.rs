@@ -216,6 +216,42 @@ pub fn export_mods_json(path: String, state: State<AppState>) -> Result<String, 
 }
 
 #[tauri::command]
+pub fn export_profile_pack_cmd(
+    profile_id: String,
+    target_path: String,
+    state: State<AppState>,
+) -> Result<String, String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    crate::profiles::export_profile_pack_internal(&data, &profile_id, &target_path)
+}
+
+#[tauri::command]
+pub fn import_profile_pack_cmd(
+    source_path: String,
+    custom_name: Option<String>,
+    state: State<AppState>,
+) -> Result<crate::profiles::ImportProfileResult, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let result = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        crate::profiles::import_profile_pack_internal(&mut data, &source_path, custom_name)?
+    };
+
+    // Save state changes into database
+    let data_clone = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.clone()
+    };
+    let _ = crate::db::save_db(&program_path, &data_clone);
+
+    Ok(result)
+}
+
+#[tauri::command]
 pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let mod_info = data.mods.iter().find(|m| m.id == mod_id)
@@ -620,7 +656,7 @@ pub fn change_pak_destination(
             let file_stem = file_path.file_stem().unwrap().to_string_lossy().to_string();
             let mut new_game_path = String::new();
 
-            for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
+            for ext in &["pak", "ucas", "utoc"] {
                 let old_file = old_dir.join(format!("{}.{}", file_stem, ext));
                 if old_file.exists() {
                     let new_file = new_dir.join(format!("{}.{}", file_stem, ext));
@@ -630,6 +666,11 @@ pub fn change_pak_destination(
                         new_game_path = new_file.to_string_lossy().to_string();
                     }
                 }
+            }
+            let old_sidecar = old_dir.join(format!("{}.pak.pmm.json", file_stem));
+            if old_sidecar.exists() {
+                let new_sidecar = new_dir.join(format!("{}.pak.pmm.json", file_stem));
+                let _ = std::fs::rename(&old_sidecar, &new_sidecar);
             }
             if !new_game_path.is_empty() {
                 mod_info.game_path = new_game_path;
@@ -654,7 +695,7 @@ pub fn change_pak_destination(
             let mut new_disabled_path = String::new();
             let mut new_extra_files = Vec::new();
 
-            for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
+            for ext in &["pak", "ucas", "utoc"] {
                 let old_file = old_dir.join(format!("{}.{}", file_stem, ext));
                 if old_file.exists() {
                     let new_file = new_dir.join(format!("{}.{}", file_stem, ext));
@@ -666,6 +707,11 @@ pub fn change_pak_destination(
                         new_extra_files.push(new_file.to_string_lossy().to_string());
                     }
                 }
+            }
+            let old_sidecar = old_dir.join(format!("{}.pak.pmm.json", file_stem));
+            if old_sidecar.exists() {
+                let new_sidecar = new_dir.join(format!("{}.pak.pmm.json", file_stem));
+                let _ = std::fs::rename(&old_sidecar, &new_sidecar);
             }
             if !new_disabled_path.is_empty() {
                 mod_info.disabled_path = new_disabled_path;

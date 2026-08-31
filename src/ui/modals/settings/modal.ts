@@ -4,7 +4,7 @@ import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
 import { formatBytes } from './helpers';
-import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus } from './status';
+import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshUsmapStatus } from './status';
 import { settingsDom } from '../../../framework';
 
 export function openSettingsModal(): void {
@@ -131,11 +131,38 @@ export function openSettingsModal(): void {
   refreshSafetyBackupStatus();
   refreshStorageUsageStatus();
   refreshImageCacheStatus();
+  refreshUsmapStatus();
 
   // DNS Resolver Select
   const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');
   if (dnsSelect) {
     dnsSelect.value = state.currentSettings?.dnsResolver || 'auto';
+  }
+
+  // USMAP Sync Mappings Button
+  const syncUsmapBtn = settingsDom.elMaybe('btn-sync-usmap');
+  const syncUsmapIcon = settingsDom.elMaybe('btn-sync-usmap-icon');
+  if (syncUsmapBtn) {
+    syncUsmapBtn.onclick = async () => {
+      try {
+        syncUsmapBtn.disabled = true;
+        if (syncUsmapIcon) syncUsmapIcon.classList.add('spinning');
+        showToast(t('settings.usmap_syncing'), 'info');
+        const { syncMappingsNow } = await import('../../../api');
+        const res = await syncMappingsNow();
+        if (res.isSynced) {
+          showToast(t('settings.usmap_sync_success'), 'success');
+        } else {
+          showToast(t('settings.usmap_sync_complete'), 'info');
+        }
+        await refreshUsmapStatus();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      } finally {
+        syncUsmapBtn.disabled = false;
+        if (syncUsmapIcon) syncUsmapIcon.classList.remove('spinning');
+      }
+    };
   }
 
   // Purge Image Cache Buttons (in Network and Safety panes)

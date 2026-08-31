@@ -273,11 +273,50 @@
 .editor-file-item[data-ext="jpeg"] .editor-file-icon,
 .editor-file-item[data-ext="gif"] .editor-file-icon,
 .editor-file-item[data-ext="webp"] .editor-file-icon { color: #4ec9b0; }
+.editor-file-item[data-ext="bak"] .editor-file-icon,
+.editor-file-item[data-ext="bak1"] .editor-file-icon,
+.editor-file-item[data-ext="bak2"] .editor-file-icon { color: #ff9000; }
+.editor-file-item[data-ext="log"] .editor-file-icon { color: #888888; }
 
 .editor-file-name {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  flex: 1;
+}
+
+.editor-file-actions {
+  display: none;
+  align-items: center;
+  gap: 3px;
+  margin-left: auto;
+  padding-left: 4px;
+}
+
+.editor-file-item:hover .editor-file-actions {
+  display: flex;
+}
+
+.editor-file-action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  font-size: 11px;
+  line-height: 1;
+  border-radius: 3px;
+  opacity: 0.6;
+  transition: all 0.15s;
+}
+
+.editor-file-action-btn:hover {
+  opacity: 1;
+  background: rgba(255, 255, 255, 0.1);
+  transform: scale(1.15);
+}
+
+.editor-file-delete-btn:hover {
+  background: rgba(255, 95, 86, 0.25);
 }
 
 .editor-file-dirty-dot {

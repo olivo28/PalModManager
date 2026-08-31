@@ -239,13 +239,18 @@ pub fn disable_mod_internal(
                 let dest_dir = disabled_base.join(type_dir);
                 let _ = fs::create_dir_all(&dest_dir);
 
-                for ext in &["pak", "ucas", "utoc", "pak.pmm.json"] {
+                for ext in &["pak", "ucas", "utoc"] {
                     let companion = parent.join(format!("{}.{}", file_stem, ext));
                     if companion.exists() {
                         let dest = dest_dir.join(format!("{}.{}", file_stem, ext));
                         move_path(&companion, &dest)?;
                         moved_files.push(dest.to_string_lossy().to_string());
                     }
+                }
+                let sidecar = parent.join(format!("{}.pak.pmm.json", file_stem));
+                if sidecar.exists() {
+                    let dest = dest_dir.join(format!("{}.pak.pmm.json", file_stem));
+                    let _ = move_path(&sidecar, &dest);
                 }
             }
             mod_info.disabled_path = moved_files.first().cloned().unwrap_or_default();
@@ -313,10 +318,12 @@ pub fn disable_mod_internal(
                             let _ = move_path(&companion, &c_dest);
                         }
                     }
-                    let sidecar = parent.join(format!("{}.pmm.json", file_name));
-                    if sidecar.exists() {
-                        let c_dest = dest_dir.join(format!("{}.pmm.json", file_name));
-                        let _ = move_path(&sidecar, &c_dest);
+                    if !file_name.ends_with(".pmm.json") {
+                        let sidecar = parent.join(format!("{}.pmm.json", file_name));
+                        if sidecar.exists() {
+                            let c_dest = dest_dir.join(format!("{}.pmm.json", file_name));
+                            let _ = move_path(&sidecar, &c_dest);
+                        }
                     }
                 }
             }
@@ -603,10 +610,12 @@ pub fn enable_mod_internal(
                             let _ = move_path(&companion, &c_dest);
                         }
                     }
-                    let sidecar = parent.join(format!("{}.pmm.json", filename));
-                    if sidecar.exists() {
-                        let c_dest = dest_dir.join(format!("{}.pmm.json", filename));
-                        let _ = move_path(&sidecar, &c_dest);
+                    if !filename.ends_with(".pmm.json") {
+                        let sidecar = parent.join(format!("{}.pmm.json", filename));
+                        if sidecar.exists() {
+                            let c_dest = dest_dir.join(format!("{}.pmm.json", filename));
+                            let _ = move_path(&sidecar, &c_dest);
+                        }
                     }
                 }
             }

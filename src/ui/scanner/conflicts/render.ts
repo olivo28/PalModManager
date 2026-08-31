@@ -35,70 +35,165 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
   const res = lastScanResult;
   const tableCount = res.tableConflicts.length;
   const hookCount = res.hookConflicts.length;
-  const pakCount = res.pakConflicts ? res.pakConflicts.length : 0;
-  const hasConflicts = tableCount > 0 || hookCount > 0 || pakCount > 0;
+  const allPakConflicts = res.pakConflicts || [];
+  const unresolvedPakConflicts = allPakConflicts.filter(c => !c.resolvedByPatch);
+  const resolvedPakConflicts = allPakConflicts.filter(c => !!c.resolvedByPatch);
+  const pakCount = allPakConflicts.length;
+  const unresolvedPakCount = unresolvedPakConflicts.length;
+  const resolvedPakCount = resolvedPakConflicts.length;
+  const isAllPakResolved = pakCount > 0 && unresolvedPakCount === 0 && resolvedPakCount > 0;
+  const activeConflictsCount = tableCount + hookCount + unresolvedPakCount;
+  const hasConflicts = activeConflictsCount > 0;
 
   let pakConflictsHtml = '';
-  if (pakCount > 0 && res.pakConflicts) {
-    pakConflictsHtml = `
-      <details class="scanner-card-section" style="width: 100%; cursor: pointer; margin-bottom: 20px; border-color: rgba(255, 75, 75, 0.25);" open>
-        <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 75, 75, 0.04); border-bottom: 1px solid rgba(255, 75, 75, 0.1);">
-          <span style="color: var(--danger); font-weight: 700; display: flex; align-items: center; gap: 8px;">
-            <span>📦</span>
-            <span>${escapeHtml(t('scanner.pak_conflicts_title', { count: pakCount }))}</span>
-          </span>
-          <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.pak_conflicts_desc'))}</span>
-        </summary>
-        <div class="scanner-card-body" style="cursor: default; gap: 14px; padding-top: 14px;">
-          ${res.pakConflicts.map(c => {
-            let badgeClass = 'lua';
-            let badgeBg = 'rgba(0, 188, 255, 0.15)';
-            let badgeColor = 'var(--accent)';
-            if (c.assetType === 'DataTable') {
-              badgeClass = 'json';
-              badgeBg = 'rgba(255, 165, 0, 0.15)';
-              badgeColor = 'var(--warning)';
-            } else if (c.assetType === 'Blueprint') {
-              badgeBg = 'rgba(147, 112, 219, 0.15)';
-              badgeColor = 'rgb(186, 104, 200)';
-            } else if (c.assetType === 'Texture' || c.assetType === 'Mesh') {
-              badgeBg = 'rgba(76, 175, 80, 0.15)';
-              badgeColor = '#81c784';
-            }
-
-            return `
-              <div class="scanner-conflict-item" style="border-left: 2.5px solid var(--danger);">
-                <div class="scanner-conflict-header" style="flex-wrap: wrap; gap: 6px;">
-                  <span class="scanner-conflict-title" style="font-size: 13px; font-weight: 700;">${escapeHtml(c.assetName)}</span>
-                  <span class="scanner-conflict-type ${badgeClass}" style="background: ${badgeBg}; color: ${badgeColor}; font-weight: 700;">${escapeHtml(c.assetType)}</span>
-                </div>
-                <div style="font-size: 11px; color: var(--text-muted); font-family: monospace; margin: 4px 0 8px 0; word-break: break-all;">
-                  📁 ${escapeHtml(c.internalPath)}
-                </div>
-                <div class="scanner-conflict-mods">
-                  ${c.mods.map(m => `
-                    <div class="scanner-conflict-mod-row" style="align-items: center; gap: 8px; margin-bottom: 4px;">
-                      <span class="scanner-conflict-mod-name" style="font-weight: 600;">${escapeHtml(m.modName)}</span>
-                      <span class="scanner-conflict-mod-file" style="font-size: 11px; color: var(--text-muted); font-family: monospace;">(${escapeHtml(m.pakFilename)})</span>
-                    </div>
-                  `).join('')}
-                </div>
+  if (pakCount > 0) {
+    if (isAllPakResolved) {
+      // All collisions are resolved by an active compatibility patch!
+      const activePatchName = resolvedPakConflicts[0]?.resolvedByPatch || 'zzz_PMM_Patch_Compat_P.pak';
+      pakConflictsHtml = `
+        <details class="scanner-card-section" style="width: 100%; cursor: pointer; margin-bottom: 20px; border-color: var(--success);" open>
+          <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: var(--success-dim); border-bottom: 1px solid var(--border);">
+            <span style="color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <span>✅</span>
+              <span>${escapeHtml(t('scanner.pak_conflicts_resolved_title', { count: resolvedPakCount }) || `Pak Asset Conflicts: ${resolvedPakCount} Resolved`)}</span>
+            </span>
+            <span style="font-size: 10.5px; color: var(--success); font-weight: 600;">
+              ${escapeHtml(activePatchName)}
+            </span>
+          </summary>
+          <div class="scanner-card-body" style="cursor: default; gap: 12px; padding-top: 14px;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 12px 16px; border-radius: var(--card-radius); border: 1px solid var(--success); gap: 12px; flex-wrap: wrap;">
+              <div style="font-size: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 18px;">🎉</span>
+                <span>${escapeHtml(t('scanner.pak_patch_resolved_banner', { count: resolvedPakCount, patch: activePatchName }) || `All ${resolvedPakCount} conflicting asset collisions are successfully resolved by compatibility patch '${activePatchName}'.`)}</span>
               </div>
-            `;
-          }).join('')}
-        </div>
-      </details>
-    `;
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="btn-open-existing-patches" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 6px 14px;">
+                  <span>📋</span> <span>${escapeHtml(t('scanner.btn_view_existing_patches') || 'Existing Patches')}</span>
+                </button>
+                <button id="btn-open-patch-builder" class="btn btn-primary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 6px 16px;">
+                  <span>🛠️</span> <span>${escapeHtml(t('scanner.btn_rebuild_compat_patch') || 'Rebuild Patch')}</span>
+                </button>
+              </div>
+            </div>
+
+            ${allPakConflicts.map(c => {
+              let badgeClass = 'lua';
+              if (c.assetType === 'DataTable') {
+                badgeClass = 'datatable';
+              } else if (c.assetType === 'Blueprint') {
+                badgeClass = 'blueprint';
+              }
+
+              return `
+                <div class="scanner-conflict-item" style="border-left: 3px solid var(--success);">
+                  <div class="scanner-conflict-header">
+                    <span class="scanner-conflict-title">${escapeHtml(c.assetName)}</span>
+                    <span class="scanner-conflict-type ${badgeClass}">${escapeHtml(c.assetType)}</span>
+                    <span style="font-size: 10.5px; font-weight: 700; color: var(--success); background: var(--success-dim); padding: 2px 7px; border-radius: var(--radius); display: inline-flex; align-items: center; gap: 4px;">
+                      <span>✓</span> <span>${escapeHtml(t('scanner.resolved_by_tag', { patch: c.resolvedByPatch || activePatchName }) || `Resolved by ${c.resolvedByPatch || activePatchName}`)}</span>
+                    </span>
+                  </div>
+                  <div class="scanner-conflict-path">
+                    <span>📄</span> <span>${escapeHtml(c.internalPath)}</span>
+                  </div>
+                  <div class="scanner-conflict-mods">
+                    ${c.mods.map(m => `
+                      <div class="scanner-conflict-mod-row">
+                        <span style="font-size: 13px;">📦</span>
+                        <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
+                        <span class="scanner-conflict-mod-file">(${escapeHtml(m.pakFilename)})</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </details>
+      `;
+    } else {
+      // Unresolved collisions exist
+      pakConflictsHtml = `
+        <details class="scanner-card-section" style="width: 100%; cursor: pointer; margin-bottom: 20px; border-color: rgba(255, 75, 75, 0.25);" open>
+          <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(255, 75, 75, 0.04); border-bottom: 1px solid var(--border);">
+            <span style="color: var(--danger); font-weight: 700; display: flex; align-items: center; gap: 8px;">
+              <span>📦</span>
+              <span>${escapeHtml(t('scanner.pak_conflicts_title', { count: unresolvedPakCount }))}</span>
+            </span>
+            <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.pak_conflicts_desc'))}</span>
+          </summary>
+          <div class="scanner-card-body" style="cursor: default; gap: 12px; padding-top: 14px;">
+            
+            <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 12px 16px; border-radius: var(--card-radius); border: 1px solid var(--border); gap: 12px; flex-wrap: wrap;">
+              <div style="font-size: 12px; color: var(--text-secondary); display: flex; align-items: center; gap: 8px;">
+                <span style="font-size: 16px;">💡</span>
+                <span>${escapeHtml(t('scanner.pak_patch_banner_hint') || 'Resolve overlapping .pak assets by building a custom compatibility patch.')}</span>
+              </div>
+              <div style="display: flex; align-items: center; gap: 10px;">
+                <button id="btn-open-existing-patches" class="btn btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600; padding: 6px 14px;">
+                  <span>📋</span> <span>${escapeHtml(t('scanner.btn_view_existing_patches') || 'Existing Patches')}</span>
+                </button>
+                <button id="btn-open-patch-builder" class="btn btn-primary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 700; padding: 6px 16px;">
+                  <span>🛠️</span> <span>${escapeHtml(t('scanner.btn_create_compat_patch') || 'Build Compatibility Patch')}</span>
+                </button>
+              </div>
+            </div>
+
+            ${allPakConflicts.map(c => {
+              let badgeClass = 'lua';
+              if (c.assetType === 'DataTable') {
+                badgeClass = 'datatable';
+              } else if (c.assetType === 'Blueprint') {
+                badgeClass = 'blueprint';
+              }
+
+              const isResolved = !!c.resolvedByPatch;
+
+              return `
+                <div class="scanner-conflict-item" style="border-left: 3px solid ${isResolved ? 'var(--success)' : 'var(--danger)'};">
+                  <div class="scanner-conflict-header">
+                    <span class="scanner-conflict-title">${escapeHtml(c.assetName)}</span>
+                    <span class="scanner-conflict-type ${badgeClass}">${escapeHtml(c.assetType)}</span>
+                    ${isResolved ? `
+                      <span style="font-size: 10.5px; font-weight: 700; color: var(--success); background: var(--success-dim); padding: 2px 7px; border-radius: var(--radius); display: inline-flex; align-items: center; gap: 4px;">
+                        <span>✓</span> <span>${escapeHtml(t('scanner.resolved_by_tag', { patch: c.resolvedByPatch! }) || `Resolved by ${c.resolvedByPatch}`)}</span>
+                      </span>
+                    ` : ''}
+                  </div>
+                  <div class="scanner-conflict-path">
+                    <span>📄</span> <span>${escapeHtml(c.internalPath)}</span>
+                  </div>
+                  <div class="scanner-conflict-mods">
+                    ${c.mods.map(m => `
+                      <div class="scanner-conflict-mod-row">
+                        <span style="font-size: 13px;">📦</span>
+                        <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
+                        <span class="scanner-conflict-mod-file">(${escapeHtml(m.pakFilename)})</span>
+                      </div>
+                    `).join('')}
+                  </div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+        </details>
+      `;
+    }
   }
 
   let contentHtml = '';
   if (!hasConflicts) {
     contentHtml = `
-      <div class="scanner-clean-state" style="margin-bottom: 20px;">
-        <div class="scanner-clean-icon">✅</div>
-        <div class="scanner-clean-title">${escapeHtml(t('scanner.no_conflicts_title'))}</div>
-        <div class="scanner-clean-desc">${escapeHtml(t('scanner.no_conflicts_desc'))}</div>
-      </div>
+      ${pakConflictsHtml}
+      ${!pakConflictsHtml ? `
+        <div class="scanner-clean-state" style="margin-bottom: 20px;">
+          <div class="scanner-clean-icon">✅</div>
+          <div class="scanner-clean-title">${escapeHtml(t('scanner.no_conflicts_title'))}</div>
+          <div class="scanner-clean-desc">${escapeHtml(t('scanner.no_conflicts_desc'))}</div>
+        </div>
+      ` : ''}
     `;
   } else {
     contentHtml = `
@@ -373,14 +468,14 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       </div>
       <div class="premium-stat-card">
         <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_conflicts'))}</div>
-        <div class="premium-stat-value ${hasConflicts ? 'danger' : 'success'}">${tableCount + hookCount + pakCount}</div>
+        <div class="premium-stat-value ${hasConflicts ? 'danger' : 'success'}">${hasConflicts ? activeConflictsCount : (resolvedPakCount > 0 ? `0 (✓${resolvedPakCount})` : '0')}</div>
       </div>
     </div>
   `;
 
   const infoBannerHtml = `
     <!-- Info notice banner -->
-    <div class="scanner-info-banner" style="margin-bottom: 20px; padding: 14px 18px; background: rgba(0, 188, 255, 0.06); border: 1px solid rgba(0, 188, 255, 0.2); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.5;">
+    <div class="scanner-info-banner" style="margin-bottom: 20px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.5;">
       <div style="font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; font-size: 13px;">
         <span style="font-size: 14px;">ℹ</span>
         <span>${escapeHtml(t('scanner.info_title'))}</span>
@@ -401,14 +496,14 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
   if (res.isGamepass && res.gamepassNotices && res.gamepassNotices.length > 0) {
     const gpCount = res.gamepassNotices.length;
     gamepassNoticeHtml = `
-      <div class="scanner-card-section" style="border-color: rgba(0, 188, 255, 0.3); background: rgba(0, 188, 255, 0.04); margin-bottom: 20px;">
-        <div class="scanner-card-header" style="background: rgba(0, 188, 255, 0.08); border-bottom: 1px solid rgba(0, 188, 255, 0.15); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-          <span style="color: #00bcff; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px;">
+      <div class="scanner-card-section" style="border-color: var(--border); background: var(--bg-card); margin-bottom: 20px;">
+        <div class="scanner-card-header" style="background: var(--bg-primary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+          <span style="color: var(--accent); display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px;">
             <span>🎮</span> ${escapeHtml(t('scanner.gamepass_notice_title'))} (${gpCount})
           </span>
           <div style="display: flex; align-items: center; gap: 10px;">
             <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">PC Game Pass (WinGDK)</span>
-            <button id="btn-convert-all-gamepass" class="btn-primary btn-sm" style="font-size: 10.5px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 4px;">
+            <button id="btn-convert-all-gamepass" class="btn btn-primary btn-sm" style="font-size: 10.5px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 4px;">
               <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: gpCount }))}</span>
             </button>
           </div>
@@ -419,7 +514,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
           </div>
           <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
             ${res.gamepassNotices.map(n => `
-              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; font-size: 11px; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 11px; flex-wrap: wrap; gap: 8px;">
                 <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; min-width: 200px;">
                   <span style="font-weight: 700; color: var(--text-primary);">${escapeHtml(n.modName)}</span>
                   <span style="color: var(--text-muted); font-family: monospace; font-size: 10px;">(${escapeHtml(n.pakFilename)})</span>
@@ -428,7 +523,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
                   <span style="font-size: 9px; padding: 2px 6px; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                     ${escapeHtml(t('scanner.gamepass_missing_badge'))} (${n.missingContainers.join(', ')})
                   </span>
-                  <button class="btn-secondary btn-sm convert-single-gamepass-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                  <button class="btn btn-secondary btn-sm convert-single-gamepass-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
                     <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>
                   </button>
                 </div>
@@ -440,18 +535,72 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     `;
   }
 
+  // 4. USMAP Engine Schema Compatibility Notices HTML
+  const schemaNoticeCount = res.schemaNotices ? res.schemaNotices.length : 0;
+  let schemaNoticesHtml = '';
+  if (schemaNoticeCount > 0) {
+    schemaNoticesHtml = `
+      <div style="display: flex; gap: 20px; flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: 20px;">
+        <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer; border-color: rgba(56, 189, 248, 0.3);" open>
+          <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.05); border-bottom: 1px solid rgba(56, 189, 248, 0.15);">
+            <span style="color: #38bdf8; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+              <span>⚡</span> <span>${escapeHtml(t('scanner.schema_notices_title', { count: schemaNoticeCount }) || `Engine Schema Compatibility (${schemaNoticeCount})`)}</span>
+            </span>
+            <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.schema_notices_desc') || 'Verified against Palworld v1.0.3 USMAP Schema')}</span>
+          </summary>
+          <div class="scanner-card-body" style="cursor: default; gap: 10px; padding-top: 14px;">
+            ${res.schemaNotices!.map(n => `
+              <div class="scanner-conflict-item" style="border-left: 2.5px solid #38bdf8;">
+                <div class="scanner-conflict-header">
+                  <span class="scanner-conflict-title">${escapeHtml(n.modName)}</span>
+                  <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(n.structName)}</span>
+                </div>
+                <div class="scanner-conflict-path" style="font-size: 10.5px; color: var(--text-secondary); margin-top: 3px;">
+                  <span>📄</span> <span>${escapeHtml(n.assetPath)}</span>
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                  ${escapeHtml(n.message)}
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        </details>
+      </div>
+    `;
+  }
+
   container.innerHTML = `
     ${subTabHeader()}
     <div class="scanner-scroll-panel" style="flex: 1 1 auto; min-height: 0; display: block; padding: 20px 24px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box;">
       ${statCards}
       ${infoBannerHtml}
       ${gamepassNoticeHtml}
+      ${schemaNoticesHtml}
       ${contentHtml}
       ${internalConflictsHtml}
       ${summariesHtml}
       ${warningsHtml}
     </div>
   `;
+
+  // Patch Builder button listeners
+  const openPatchBuilderBtn = document.getElementById('btn-open-patch-builder');
+  if (openPatchBuilderBtn && res.pakConflicts) {
+    openPatchBuilderBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const { openPatchBuilderModal } = await import('./patchBuilderModal');
+      openPatchBuilderModal(res.pakConflicts as any);
+    });
+  }
+
+  const openExistingPatchesBtn = document.getElementById('btn-open-existing-patches');
+  if (openExistingPatchesBtn) {
+    openExistingPatchesBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const { openExistingPatchesModal } = await import('./patchBuilderModal');
+      openExistingPatchesModal();
+    });
+  }
 
   const { setupEventListeners } = await import('../mod');
   setupEventListeners();

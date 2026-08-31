@@ -243,8 +243,21 @@ pub fn read_mod_file(mod_id: String, file_path: String, state: State<AppState>) 
             "content": data_url,
             "path": file_path,
             "configType": "image",
+            "modifiedTime": None::<u64>,
+            "fileSize": bytes.len(),
+            "modVersion": mod_info.version.clone(),
         }));
     }
+
+    let (modified_time, file_size) = match fs::metadata(&full_path) {
+        Ok(meta) => {
+            let mtime = meta.modified().ok()
+                .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                .map(|d| d.as_millis() as u64);
+            (mtime, meta.len())
+        }
+        Err(_) => (None, 0),
+    };
 
     let content = fs::read_to_string(&full_path).map_err(|e| format!("Cannot read file: {}", e))?;
     crate::logger::log(&format!("read_mod_file: Read '{}' for mod '{}' ({} bytes)", file_path, mod_id, content.len()));
@@ -253,6 +266,9 @@ pub fn read_mod_file(mod_id: String, file_path: String, state: State<AppState>) 
         "content": content,
         "path": file_path,
         "configType": ext,
+        "modifiedTime": modified_time,
+        "fileSize": file_size,
+        "modVersion": mod_info.version.clone(),
     }))
 }
 
@@ -281,6 +297,131 @@ pub fn save_mod_file(mod_id: String, file_path: String, content: String, state: 
     let _ = db::save_db(&program_path, &data_clone);
 
     Ok(serde_json::json!({ "success": true }))
+}
+
+#[tauri::command]
+pub fn delete_mod_file(mod_id: String, file_path: String, state: State<AppState>) -> Result<Value, String> {
+    crate::logger::log(&format!("delete_mod_file: Deleting '{}' for mod '{}'", file_path, mod_id));
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let mod_info = data.mods.iter().find(|m| m.id == mod_id).ok_or("Mod not found")?;
+    let full_path = get_full_mod_file_path(mod_info, &file_path)?;
+
+    if !full_path.exists() {
+        return Err("File does not exist".to_string());
+    }
+
+    if full_path.is_file() {
+        fs::remove_file(&full_path).map_err(|e| format!("Cannot delete file: {}", e))?;
+    } else {
+        return Err("Target is not a file".to_string());
+    }
+
+    crate::logger::log(&format!("delete_mod_file: File '{}' deleted successfully", full_path.display()));
+    Ok(serde_json::json!({ "success": true }))
+}
+
+#[tauri::command]
+pub fn restore_mod_backup(mod_id: String, backup_file_path: String, state: State<AppState>) -> Result<Value, String> {
+    crate::logger::log(&format!("restore_mod_backup: Restoring '{}' for mod '{}'", backup_file_path, mod_id));
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let program_path = data.settings.program_path.clone();
+    let mod_info = data.mods.iter().find(|m| m.id == mod_id).ok_or("Mod not found")?;
+
+    let backup_full_path = get_full_mod_file_path(mod_info, &backup_file_path)?;
+    if !backup_full_path.exists() || !backup_full_path.is_file() {
+        return Err("Backup file not found".to_string());
+    }
+
+    let target_rel_path = if let Some(stripped) = backup_file_path.strip_suffix(".bak") {
+        stripped
+    } else if let Some(stripped) = backup_file_path.strip_suffix(".bak1") {
+        stripped
+    } else if let Some(stripped) = backup_file_path.strip_suffix(".bak2") {
+        stripped
+    } else {
+        return Err("Not a recognized backup file extension (.bak, .bak1, .bak2)".to_string());
+    };
+
+    let target_full_path = get_full_mod_file_path(mod_info, target_rel_path)?;
+
+    if target_full_path.exists() {
+        create_rotated_backup(&target_full_path);
+    }
+
+    let backup_content = fs::read_to_string(&backup_full_path)
+        .map_err(|e| format!("Cannot read backup file: {}", e))?;
+
+    fs::write(&target_full_path, &backup_content)
+        .map_err(|e| format!("Cannot restore file: {}", e))?;
+
+    crate::logger::log(&format!("restore_mod_backup: Restored '{}' -> '{}' successfully", backup_full_path.display(), target_full_path.display()));
+
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&program_path, &data_clone);
+
+    Ok(serde_json::json!({
+        "success": true,
+        "targetPath": target_rel_path,
+        "content": backup_content
+    }))
+}
+
+#[tauri::command]
+pub fn merge_mod_backup(mod_id: String, backup_file_path: String, state: State<AppState>) -> Result<Value, String> {
+    crate::logger::log(&format!("merge_mod_backup: Merging settings from '{}' for mod '{}'", backup_file_path, mod_id));
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let program_path = data.settings.program_path.clone();
+    let mod_info = data.mods.iter().find(|m| m.id == mod_id).ok_or("Mod not found")?;
+
+    let backup_full_path = get_full_mod_file_path(mod_info, &backup_file_path)?;
+    if !backup_full_path.exists() || !backup_full_path.is_file() {
+        return Err("Backup file not found".to_string());
+    }
+
+    let target_rel_path = if let Some(stripped) = backup_file_path.strip_suffix(".bak") {
+        stripped
+    } else if let Some(stripped) = backup_file_path.strip_suffix(".bak1") {
+        stripped
+    } else if let Some(stripped) = backup_file_path.strip_suffix(".bak2") {
+        stripped
+    } else {
+        return Err("Not a recognized backup file extension (.bak, .bak1, .bak2)".to_string());
+    };
+
+    let target_full_path = get_full_mod_file_path(mod_info, target_rel_path)?;
+    if !target_full_path.exists() || !target_full_path.is_file() {
+        return Err("Target active file not found to merge into".to_string());
+    }
+
+    let backup_content = fs::read_to_string(&backup_full_path)
+        .map_err(|e| format!("Cannot read backup file: {}", e))?;
+    let active_content = fs::read_to_string(&target_full_path)
+        .map_err(|e| format!("Cannot read active file: {}", e))?;
+
+    let ext = Path::new(target_rel_path).extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+    let empty_ignored = Vec::new();
+    let ignored_slice = mod_info.ignored_keys.as_deref().unwrap_or(&empty_ignored);
+
+    let merged_content = crate::config_merge::merge_file_contents(&backup_content, &active_content, &ext, ignored_slice)
+        .ok_or_else(|| "Failed to merge configuration: unsupported file format or invalid syntax".to_string())?;
+
+    create_rotated_backup(&target_full_path);
+
+    fs::write(&target_full_path, &merged_content)
+        .map_err(|e| format!("Cannot write merged file: {}", e))?;
+
+    crate::logger::log(&format!("merge_mod_backup: Merged '{}' into '{}' successfully", backup_full_path.display(), target_full_path.display()));
+
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&program_path, &data_clone);
+
+    Ok(serde_json::json!({
+        "success": true,
+        "targetPath": target_rel_path,
+        "content": merged_content
+    }))
 }
 
 fn find_json_config(dir: &Path) -> Option<PathBuf> {

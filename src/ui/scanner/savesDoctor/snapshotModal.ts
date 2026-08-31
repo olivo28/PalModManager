@@ -2,6 +2,7 @@ import {
   inspectSnapshotDetails,
   restoreSaveBackup,
   deepScanSaveHealth,
+  listSaveWorlds,
   type SaveWorldSummary,
   type SaveBackupSnapshot,
 } from '../../../api';
@@ -283,7 +284,13 @@ export function showSnapshotComparisonModal(
       showToast((t('scanner.toast_restore_success') || 'World successfully restored from snapshot {timestamp}.').replace('{timestamp}', snap.timestamp), 'success');
       const rep = await deepScanSaveHealth(curWorldDir);
       setCurrentHealthReport(rep);
-      setCachedWorlds(null);
+      try {
+        const curCustomPath = doctorState.customSavesPath;
+        const worlds = await listSaveWorlds(curCustomPath || undefined);
+        setCachedWorlds(worlds);
+      } catch {
+        // preserve current cached worlds
+      }
     } catch (err: any) {
       showToast(`Restore failed: ${String(err)}`, 'error');
     } finally {

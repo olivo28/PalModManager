@@ -1,0 +1,74 @@
+<!-- FILE DIFF & BACKUP COMPARISON MODAL -->
+<div id="diff-modal" class="modal-overlay">
+  <div class="modal" style="max-width: 980px; width: 95vw; max-height: 90vh; display: flex; flex-direction: column;">
+    
+    <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: 14px 20px; border-bottom: 1px solid var(--border);">
+      <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
+        <span style="font-size: 20px; line-height: 1;">🔍</span>
+        <div style="display: flex; flex-direction: column; min-width: 0; gap: 2px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 id="diff-modal-title" style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" data-i18n="editor.diff_title">Compare Backup Diff</h3>
+            <span id="diff-modal-version" class="badge" style="font-size: 11px; padding: 1px 7px; border-radius: 4px; background: rgba(0, 188, 255, 0.15); border: 1px solid rgba(0, 188, 255, 0.3); color: var(--accent); font-weight: 700;">--</span>
+          </div>
+          <span id="diff-modal-subtitle" style="font-size: 11px; color: var(--text-muted); font-family: monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">config.jsonc vs config.jsonc.bak</span>
+        </div>
+      </div>
+      <button class="modal-close-btn" id="diff-modal-close-x">✕</button>
+    </div>
+
+    <!-- Diff Metrics & File Comparison Headers with Timestamps -->
+    <div style="padding: 10px 20px; background: var(--bg-secondary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 16px; font-size: 11px;">
+      <div style="display: flex; align-items: center; gap: 20px; flex-wrap: wrap;">
+        
+        <!-- Active File Info -->
+        <div style="display: flex; flex-direction: column; gap: 1px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #38bdf8;"></span>
+            <span style="font-weight: 700; color: var(--text-primary);" data-i18n="editor.diff_current">Active Version:</span>
+            <span id="diff-left-label" style="color: var(--text-primary); font-family: monospace; font-weight: 600;">config.jsonc</span>
+          </div>
+          <span id="diff-left-time" style="color: var(--text-muted); font-size: 10px; margin-left: 14px; font-family: monospace;">--</span>
+        </div>
+
+        <!-- Backup File Info -->
+        <div style="display: flex; flex-direction: column; gap: 1px;">
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <span style="display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: #ff9000;"></span>
+            <span style="font-weight: 700; color: var(--text-primary);" data-i18n="editor.diff_backup">Backup Version:</span>
+            <span id="diff-right-label" style="color: var(--text-primary); font-family: monospace; font-weight: 600;">config.jsonc.bak</span>
+          </div>
+          <span id="diff-right-time" style="color: var(--text-muted); font-size: 10px; margin-left: 14px; font-family: monospace;">--</span>
+        </div>
+
+      </div>
+
+      <div id="diff-stats-badge" style="display: flex; align-items: center; gap: 8px; font-family: monospace; flex-shrink: 0;">
+        <span id="diff-stat-additions" style="color: #4af626; font-weight: 700; background: rgba(74, 246, 38, 0.1); border: 1px solid rgba(74, 246, 38, 0.25); border-radius: 4px; padding: 2px 6px;">+0</span>
+        <span id="diff-stat-deletions" style="color: #ff5f56; font-weight: 700; background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.25); border-radius: 4px; padding: 2px 6px;">-0</span>
+      </div>
+    </div>
+
+    <!-- Diff Content Body -->
+    <div class="modal-body" style="padding: 0; flex: 1; overflow: hidden; display: flex; flex-direction: column; background: var(--bg-primary);">
+      <div id="diff-modal-container" style="flex: 1; overflow: auto; font-family: 'Consolas', 'Courier New', monospace; font-size: 12px; line-height: 1.5;">
+        <!-- Diff rows rendered dynamically -->
+      </div>
+    </div>
+
+    <!-- Footer Actions -->
+    <div class="modal-footer" style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid var(--border); background: var(--bg-secondary);">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="diff-modal-restore-btn" class="btn-primary" style="display: flex; align-items: center; gap: 6px; background: #ff9000; border-color: #ff9000; color: #000; font-weight: 700; cursor: pointer;">
+          <span>🔄</span>
+          <span data-i18n="editor.btn_restore">Restore Backup</span>
+        </button>
+        <button id="diff-modal-merge-btn" class="btn-primary" style="display: none; align-items: center; gap: 6px; background: #38bdf8; border-color: #38bdf8; color: #000; font-weight: 700; cursor: pointer;" title="Intelligently merge custom settings from backup into active file" data-i18n-title="editor.btn_merge_title">
+          <span>🔀</span>
+          <span data-i18n="editor.btn_merge">Merge Config</span>
+        </button>
+      </div>
+      <button id="diff-modal-close-btn" class="btn-secondary" style="cursor: pointer;" data-i18n="common.close">Close</button>
+    </div>
+
+  </div>
+</div>

@@ -8,7 +8,8 @@ import {
   setPendingBatchPaths,
   setBatchItems,
   setLastInstallSuccess,
-  setInstallModalCallback
+  setInstallModalCallback,
+  setIsProcessingInstall
 } from './state';
 import { installerDom } from '../../../framework';
 
@@ -37,6 +38,7 @@ export function closeInstallModal(): void {
   setPendingUpdateModId(null);
   setPendingBatchPaths([]);
   setBatchItems([]);
+  setIsProcessingInstall(false);
 
   const content = installerDom.elMaybe('modal-content');
   if (content) {

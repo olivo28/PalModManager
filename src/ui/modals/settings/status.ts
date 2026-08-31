@@ -75,3 +75,67 @@ export async function refreshSafetyBackupStatus(): Promise<void> {
     statusElem.textContent = t('settings.safety_ready');
   }
 }
+
+export async function refreshUsmapStatus(): Promise<void> {
+  const badge = document.getElementById('settings-usmap-badge');
+  const gameVer = document.getElementById('settings-usmap-game-ver');
+  const activeFile = document.getElementById('settings-usmap-active-file');
+  const hashElem = document.getElementById('settings-usmap-hash');
+
+  if (!badge && !gameVer) return;
+
+  try {
+    const { getMappingsStatus } = await import('../../../api');
+    const status = await getMappingsStatus();
+
+    if (badge) {
+      if (status.isSynced && status.localUsmapExists) {
+        badge.textContent = `✅ ${t('settings.usmap_status_synced')}`;
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else if (status.localUsmapExists) {
+        badge.textContent = `📦 ${t('settings.usmap_status_available')}`;
+        badge.style.background = 'rgba(0,188,255,0.15)';
+        badge.style.color = '#00bcff';
+        badge.style.borderColor = 'rgba(0,188,255,0.3)';
+      } else {
+        badge.textContent = `⚠️ ${t('settings.usmap_status_missing')}`;
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+    }
+
+    if (gameVer) {
+      const verText = status.installedBuild.gameVersion || 'Unknown';
+      const buildText = status.installedBuild.buildId ? ` (Steam Build: ${status.installedBuild.buildId})` : '';
+      gameVer.textContent = `${verText}${buildText}`;
+    }
+
+    if (activeFile) {
+      if (status.localUsmapExists) {
+        const sizeFormatted = formatBytes(status.localFileSize);
+        const fileName = status.activeMapping?.usmapFilename || 'Palworld.usmap';
+        activeFile.textContent = `${fileName} (${sizeFormatted})`;
+      } else {
+        activeFile.textContent = t('settings.usmap_not_installed');
+      }
+    }
+
+    if (hashElem) {
+      if (status.localSha256) {
+        hashElem.textContent = status.localSha256.substring(0, 16) + '...' + status.localSha256.substring(status.localSha256.length - 8);
+        hashElem.title = status.localSha256;
+      } else {
+        hashElem.textContent = '---';
+      }
+    }
+  } catch (e) {
+    console.error('Failed to get USMAP mappings status:', e);
+    if (badge) {
+      badge.textContent = `⚠️ ${t('settings.usmap_status_error')}`;
+    }
+  }
+}
+

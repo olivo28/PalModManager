@@ -289,10 +289,20 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
     }
 }
 
-fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<ModInfo>) {
+fn scan_pak_mods(
+    dir: &Path,
+    pak_type: &str,
+    results: &mut Vec<ModInfo>,
+    registered_patches: &[crate::pak_patcher::RegisteredPatch],
+) {
     if !dir.exists() { return; }
     for entry in WalkDir::new(dir).max_depth(1).into_iter().filter_map(|e| e.ok()) {
         if !entry.file_type().is_file() { continue; }
+        let fname = entry.path().file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        if fname.ends_with(".pmm.json.pmm.json") || fname.ends_with(".json.pmm.json") {
+            let _ = fs::remove_file(entry.path());
+            continue;
+        }
         let ext = entry.path().extension().map(|e| e.to_string_lossy().into_owned()).unwrap_or_default();
         if ext != "pak" { continue; }
 
@@ -303,6 +313,14 @@ fn scan_pak_mods(dir: &Path, pak_type: &str, results: &mut Vec<ModInfo>) {
         }
 
         let file_stem = entry.path().file_stem().map(|s| s.to_string_lossy().into_owned()).unwrap_or_else(|| "unknown".to_string());
+        let filename = entry.path().file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let path_str = entry.path().to_string_lossy().to_string();
+
+        // Ignore internal compatibility patches (e.g. zzz_PMM_Patch_*, zzz_MergedMods_*, or in registry) from main mods list
+        if file_stem.starts_with("zzz_") || registered_patches.iter().any(|p| p.pak_filename == filename || p.pak_path == path_str) {
+            continue;
+        }
+
         let mod_name = file_stem.trim_end_matches("_P").to_string();
         let mod_path = entry.path();
         let install_date = file_install_date(mod_path);
@@ -467,14 +485,16 @@ pub fn scan_mods_internal(
         scan_palschema_mods(&palschema_dir, &mut fs_mods, &workshop_package_names);
     }
 
+    let registered_patches = crate::pak_patcher::load_profile_patches_registry(program_path, current_profile_id);
+
     let pak_mods_dir = gp.paks_dir.clone();
     if pak_mods_dir.exists() {
-        scan_pak_mods(&pak_mods_dir, "pak", &mut fs_mods);
+        scan_pak_mods(&pak_mods_dir, "pak", &mut fs_mods, &registered_patches);
     }
 
     let logic_mods_dir = gp.logic_mods_dir.clone();
     if logic_mods_dir.exists() {
-        scan_pak_mods(&logic_mods_dir, "logicmods", &mut fs_mods);
+        scan_pak_mods(&logic_mods_dir, "logicmods", &mut fs_mods, &registered_patches);
     }
 
     let disabled_base = PathBuf::from(program_path)

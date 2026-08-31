@@ -6,7 +6,7 @@ import { highlightText } from '../../utils/syntax';
 import { t } from '../../utils/i18n';
 import { marked } from 'marked';
 import { confirmDiscardOrSave } from './unsaved';
-import { renderFileTree } from './tree';
+import { renderFileTree, refreshEditorFileTree } from './tree';
 import { resetFindMatches, getFindMatchesText } from './search';
 import { editorDom, bus } from '../../framework';
 
@@ -118,6 +118,8 @@ export async function loadFileContent(filePath: string): Promise<void> {
   const editorStatus = editorDom.el('editor-status');
   const formatBtn = editorDom.el('editor-format-btn');
   const previewBtn = editorDom.el('editor-preview-btn');
+  const diffBtn = editorDom.elMaybe('editor-diff-btn');
+  const restoreBtn = editorDom.elMaybe('editor-restore-btn');
   const preview = editorDom.el('editor-preview');
   const highlight = editorDom.el('editor-highlight');
   const gutter = editorDom.el('editor-gutter');
@@ -132,6 +134,10 @@ export async function loadFileContent(filePath: string): Promise<void> {
   previewBtn.style.display = 'none';
   previewBtn.textContent = 'Preview';
 
+  const isBak = filePath.toLowerCase().includes('.bak');
+  if (diffBtn) diffBtn.style.display = isBak ? '' : 'none';
+  if (restoreBtn) restoreBtn.style.display = isBak ? '' : 'none';
+
   try {
     const result = await readModFile(state.editorModId, filePath);
     if (!result.content) {
@@ -141,6 +147,8 @@ export async function loadFileContent(filePath: string): Promise<void> {
       formatBtn.style.display = 'none';
       _originalContent = null;
       gutter.style.display = 'none';
+      if (diffBtn) diffBtn.style.display = 'none';
+      if (restoreBtn) restoreBtn.style.display = 'none';
     } else if (result.configType === 'image') {
       editorPath.textContent = result.path || filePath;
       preview.innerHTML = `
@@ -156,6 +164,8 @@ export async function loadFileContent(filePath: string): Promise<void> {
       _originalContent = null;
       formatBtn.style.display = 'none';
       previewBtn.style.display = 'none';
+      if (diffBtn) diffBtn.style.display = 'none';
+      if (restoreBtn) restoreBtn.style.display = 'none';
       editorStatus.textContent = '';
       return;
     } else {
@@ -163,7 +173,7 @@ export async function loadFileContent(filePath: string): Promise<void> {
       editorContent.value = result.content;
       _originalContent = result.content;
       editorContent.disabled = false;
-      formatBtn.style.display = result.configType === 'json' || result.configType === 'jsonc' ? '' : 'none';
+      formatBtn.style.display = (result.configType === 'json' || result.configType === 'jsonc') && !isBak ? '' : 'none';
       if (filePath.endsWith('.md')) {
         previewBtn.style.display = '';
         preview.style.display = 'none';
@@ -224,6 +234,8 @@ export async function handleEditorSave(): Promise<void> {
     editorStatus.textContent = t('editor.status_saved');
     bus.emit('editor:saved', { filePath: state.editorSelectedFile });
     showToast(t('editor.toast_saved'), 'success');
+
+    await refreshEditorFileTree(state.editorModId);
 
     setTimeout(() => { editorStatus.textContent = ''; }, 2000);
   } catch (e) {

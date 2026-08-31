@@ -246,6 +246,30 @@
               </div>
             </div>
 
+            <!-- UNREAL ENGINE SCHEMA MAPPINGS (.USMAP) -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.usmap_title">Unreal Engine Schema Mappings (.usmap)</span>
+                </div>
+                <span id="settings-usmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.usmap_hint">Structural schema mappings used by PalModManager for deep cooked asset inspection, DataTable decoding, and mod compatibility verification. Synced directly from official GitHub repository.</div>
+              
+              <div id="settings-usmap-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong>Game Version:</strong> <span id="settings-usmap-game-ver">Detecting...</span></div>
+                <div><strong>Active Mapping:</strong> <span id="settings-usmap-active-file">Palworld.usmap</span></div>
+                <div><strong>Checksum (SHA-256):</strong> <span id="settings-usmap-hash" style="font-family:monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="btn-sync-usmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-usmap-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_usmap">Sync Mappings Now</span>
+                </button>
+              </div>
+            </div>
+
             <!-- IMAGE CACHE -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">

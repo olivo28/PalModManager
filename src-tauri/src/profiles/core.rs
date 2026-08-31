@@ -3,6 +3,17 @@ use std::path::{Path, PathBuf};
 use crate::models::{AppData, Profile, DependencyMode};
 use super::utils::{get_profile_dir, ensure_profile_structure};
 
+fn dedup_vec(vec: &mut Vec<String>) {
+    let mut seen = std::collections::HashSet::new();
+    vec.retain(|item| {
+        let key = item.trim().to_lowercase();
+        if key.is_empty() {
+            return false;
+        }
+        seen.insert(key)
+    });
+}
+
 pub fn migrate_profile_uuids_to_stable_ids(data: &mut AppData) {
     let mods = data.mods.clone();
     for profile in &mut data.profiles {
@@ -30,8 +41,8 @@ pub fn migrate_profile_uuids_to_stable_ids(data: &mut AppData) {
             }
         }
 
-        profile.installed_mod_ids.dedup();
-        profile.enabled_mod_ids.dedup();
+        dedup_vec(&mut profile.installed_mod_ids);
+        dedup_vec(&mut profile.enabled_mod_ids);
     }
 }
 
@@ -89,20 +100,33 @@ pub fn sync_current_profile_states(data: &mut AppData) {
 }
 
 pub fn cleanup_profile_mod_lists(data: &mut AppData) {
-    let needs_dep_check = data.profiles.iter().any(|p| {
-        (p.id == "default" && !p.ue4ss_enabled) || (p.dependency_mode == DependencyMode::None && p.ue4ss_enabled)
-    });
-
-    let dep = if needs_dep_check && !data.settings.game_path.is_empty() {
+    let dep = if !data.settings.game_path.is_empty() {
         Some(crate::dependency_checker::check_dependencies(&data.settings.game_path))
     } else {
         None
     };
 
+    let program_path = data.settings.program_path.clone();
+    let has_mods = !data.mods.is_empty();
+
     for profile in &mut data.profiles {
+        dedup_vec(&mut profile.installed_mod_ids);
+        dedup_vec(&mut profile.enabled_mod_ids);
+
+        // Prune orphan IDs that do not exist in data.mods
+        if has_mods {
+            profile.installed_mod_ids.retain(|entry| {
+                data.mods.iter().any(|m| mod_matches_profile_entry(m, entry))
+            });
+            profile.enabled_mod_ids.retain(|entry| {
+                data.mods.iter().any(|m| mod_matches_profile_entry(m, entry))
+            });
+        }
+
         if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
             profile.installed_mod_ids = profile.enabled_mod_ids.clone();
         }
+
         if let Some(ref d) = dep {
             if profile.id == "default" && !profile.ue4ss_enabled {
                 if d.ue4ss_installed {
@@ -118,6 +142,36 @@ pub fn cleanup_profile_mod_lists(data: &mut AppData) {
                 } else {
                     DependencyMode::Standard
                 };
+            }
+
+            // Sync versions to profile struct
+            if profile.ue4ss_enabled && d.ue4ss_installed {
+                profile.ue4ss_version = d.ue4ss_version.clone();
+            } else {
+                profile.ue4ss_version = None;
+            }
+            if profile.palschema_enabled && d.palschema_installed {
+                profile.palschema_version = d.palschema_version.clone();
+            } else {
+                profile.palschema_version = None;
+            }
+        }
+
+        // Sync compatibility patches for this profile (compact filenames only)
+        let patches = crate::pak_patcher::load_profile_patches_registry(&program_path, &profile.id);
+        profile.compatibility_patches = if patches.is_empty() {
+            None
+        } else {
+            Some(patches.into_iter().map(|p| p.pak_filename).collect())
+        };
+
+        // Persist clean profile.json to disk
+        if !program_path.is_empty() {
+            let p_dir = get_profile_dir(&program_path, &profile.id);
+            if p_dir.exists() {
+                if let Ok(json) = serde_json::to_string_pretty(profile) {
+                    let _ = fs::write(p_dir.join("profile.json"), json);
+                }
             }
         }
     }
@@ -172,6 +226,9 @@ pub fn ensure_default_profile(data: &mut AppData) {
             force_load_order_ue4ss: None,
             force_load_order_palschema: None,
             hide_native_mods: None,
+            ue4ss_version: None,
+            palschema_version: None,
+            compatibility_patches: None,
         });
     }
 

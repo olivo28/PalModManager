@@ -7,6 +7,8 @@ export interface EditorDomMap {
   'editor-current-mod-name': HTMLElement;
   'editor-format-btn': HTMLButtonElement;
   'editor-preview-btn': HTMLButtonElement;
+  'editor-diff-btn': HTMLButtonElement;
+  'editor-restore-btn': HTMLButtonElement;
   'editor-save-btn': HTMLButtonElement;
   'editor-cursor-pos': HTMLElement;
   'editor-status': HTMLElement;
@@ -28,6 +30,21 @@ export interface EditorDomMap {
   'editor-find-prev': HTMLButtonElement;
   'editor-find-next': HTMLButtonElement;
   'editor-find-close': HTMLButtonElement;
+  'diff-modal': HTMLElement;
+  'diff-modal-title': HTMLElement;
+  'diff-modal-subtitle': HTMLElement;
+  'diff-modal-version': HTMLElement;
+  'diff-modal-close-x': HTMLButtonElement;
+  'diff-left-label': HTMLElement;
+  'diff-left-time': HTMLElement;
+  'diff-right-label': HTMLElement;
+  'diff-right-time': HTMLElement;
+  'diff-stat-additions': HTMLElement;
+  'diff-stat-deletions': HTMLElement;
+  'diff-modal-container': HTMLElement;
+  'diff-modal-restore-btn': HTMLButtonElement;
+  'diff-modal-merge-btn': HTMLButtonElement;
+  'diff-modal-close-btn': HTMLButtonElement;
 }
 
 export const editorDom = createScope<EditorDomMap>('editor');

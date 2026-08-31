@@ -3,6 +3,7 @@ pub mod isolation;
 pub mod actions;
 pub mod core_lifecycle;
 pub mod core;
+pub mod export_import;
 
 // Re-export public functions to keep existing client interfaces unbroken
 pub use utils::{
@@ -26,6 +27,11 @@ pub use core::{
 pub use core_lifecycle::{
     set_profile_mod_state, switch_profile, create_profile, clone_profile,
     delete_profile, clear_profile, rename_profile,
+};
+
+pub use export_import::{
+    export_profile_pack_internal, import_profile_pack_internal,
+    ImportProfileResult,
 };
 
 use crate::models::AppData;

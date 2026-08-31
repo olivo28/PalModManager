@@ -5,6 +5,7 @@ export let _pendingBatchPaths: string[] = [];
 export let _batchItems: BatchItem[] = [];
 export let _onInstallCompleteCallback: ((success: boolean) => void) | null = null;
 export let _lastInstallSuccess = false;
+export let _isProcessingInstall = false;
 
 export function setPendingUpdateModId(id: string | null): void {
   _pendingUpdateModId = id;
@@ -22,7 +23,12 @@ export function setLastInstallSuccess(success: boolean): void {
   _lastInstallSuccess = success;
 }
 
+export function setIsProcessingInstall(val: boolean): void {
+  _isProcessingInstall = val;
+}
+
 export function setInstallModalCallback(cb: ((success: boolean) => void) | null): void {
   _onInstallCompleteCallback = cb;
   _lastInstallSuccess = false;
+  _isProcessingInstall = false;
 }

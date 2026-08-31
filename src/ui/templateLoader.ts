@@ -17,6 +17,8 @@ import aboutModalHtml from '../templates/modals/aboutModal.html?raw';
 import nexusProfileModalHtml from '../templates/modals/nexusProfileModal.html?raw';
 import downloadQueuePanelHtml from '../templates/modals/downloadQueuePanel.html?raw';
 import discoveryModModalHtml from '../templates/modals/discoveryModModal.html?raw';
+import dependencyModalHtml from '../templates/modals/dependencyModal.html?raw';
+import diffModalHtml from '../templates/modals/diffModal.html?raw';
 import { mainDom } from '../framework';
 
 export function loadAppTemplates(): void {
@@ -47,6 +49,8 @@ export function loadAppTemplates(): void {
       nexusProfileModalHtml,
       downloadQueuePanelHtml,
       discoveryModModalHtml,
+      dependencyModalHtml,
+      diffModalHtml,
     ].join('\n');
   }
 }

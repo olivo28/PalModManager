@@ -1,10 +1,11 @@
 // Re-export all features from editor submodules.
-export { renderEditorModTree, switchEditorMod, renderFileTree, populateEditorModSelect } from './tree';
+export { renderEditorModTree, switchEditorMod, renderFileTree, populateEditorModSelect, refreshEditorFileTree } from './tree';
 export { _originalContent, _lastFilePerMod, clearOriginalContent, syncHighlight, loadFileContent, stripJsonComments, handleEditorSave, handleEditorFormat, handleEditorPreview, loadEditorData } from './viewer';
 export { findMatches, findCurrentMatch, resetFindMatches, openFind, closeFind, updateFindMatches, scrollToMatch, findNext, findPrev, setupEditorFindHandlers } from './search';
 export { hasUnsavedChanges, confirmDiscardOrSave } from './unsaved';
 export { setupEditorKeybindings, handleEditorModChange, switchTab, openFileAtLine } from './keybindings';
 export { setupEditorFsWatcher } from './watcher';
+export { openEditorDiffModal, hideDiffModal } from './diffModal';
 
 // Originally openConfigEditor was defined in editorView.ts:
 import { updateState } from '../../state';

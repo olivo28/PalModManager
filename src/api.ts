@@ -244,12 +244,31 @@ export async function listModFiles(modId: string): Promise<string[]> {
   return invoke('list_mod_files', { modId });
 }
 
-export async function readModFile(modId: string, filePath: string): Promise<{ content: string | null; path: string | null; configType: string | null }> {
+export async function readModFile(modId: string, filePath: string): Promise<{
+  content: string | null;
+  path: string | null;
+  configType: string | null;
+  modifiedTime?: number;
+  fileSize?: number;
+  modVersion?: string;
+}> {
   return invoke('read_mod_file', { modId, filePath });
 }
 
 export async function saveModFile(modId: string, filePath: string, content: string): Promise<{ success: boolean }> {
   return invoke('save_mod_file', { modId, filePath, content });
+}
+
+export async function deleteModFile(modId: string, filePath: string): Promise<{ success: boolean }> {
+  return invoke('delete_mod_file', { modId, filePath });
+}
+
+export async function restoreModBackup(modId: string, backupFilePath: string): Promise<{ success: boolean; targetPath: string; content: string }> {
+  return invoke('restore_mod_backup', { modId, backupFilePath });
+}
+
+export async function mergeModBackup(modId: string, backupFilePath: string): Promise<{ success: boolean; targetPath: string; content: string }> {
+  return invoke('merge_mod_backup', { modId, backupFilePath });
 }
 
 export interface PakInternalItem {
@@ -286,6 +305,24 @@ export interface UAssetSummaryInfo {
   packageFlags: number;
 }
 
+export interface UAssetSchemaProperty {
+  name: string;
+  typeName: string;
+  structType?: string | null;
+  enumType?: string | null;
+  innerType?: string | null;
+  arrayDim: number;
+  index: number;
+}
+
+export interface UAssetSchemaResolvedInfo {
+  matchedStructName: string;
+  superType?: string | null;
+  properties: UAssetSchemaProperty[];
+  totalProperties: number;
+  gameVersion: string;
+}
+
 export interface UAssetInspectionDetails {
   assetName: string;
   assetPath: string;
@@ -295,6 +332,7 @@ export interface UAssetInspectionDetails {
   exports: UAssetExportItem[];
   imports: UAssetImportItem[];
   namesSample: string[];
+  resolvedSchema?: UAssetSchemaResolvedInfo | null;
 }
 
 export async function inspectPakAsset(modId: string, assetInternalPath: string): Promise<string[]> {
@@ -329,6 +367,52 @@ export async function convertModToGamepass(modId: string): Promise<string[]> {
 
 export async function convertAllGamepassMods(): Promise<number> {
   return invoke('convert_all_gamepass_mods');
+}
+
+export interface PatchAssetSelection {
+  assetPath: string;
+  sourcePakPath: string;
+  companionExtensions?: string[];
+}
+
+export interface PatchBuildRequest {
+  patchName: string;
+  targetProfileId?: string | null;
+  selections: PatchAssetSelection[];
+  isGamepass: boolean;
+}
+
+export interface PatchBuildResult {
+  outputPath: string;
+  patchName: string;
+  totalAssetsPacked: number;
+  fileSizeBytes: number;
+  isGamepass: boolean;
+  utocPath?: string | null;
+  ucasPath?: string | null;
+}
+
+export interface GeneratedPatchInfo {
+  id?: string | null;
+  displayName?: string | null;
+  fileName: string;
+  filePath: string;
+  fileSizeBytes: number;
+  createdAt: string;
+  isGamepass: boolean;
+  resolvedAssetsCount?: number;
+}
+
+export async function buildCompatibilityPak(request: PatchBuildRequest): Promise<PatchBuildResult> {
+  return invoke('build_compatibility_pak_cmd', { request });
+}
+
+export async function listGeneratedPatches(): Promise<GeneratedPatchInfo[]> {
+  return invoke('list_generated_patches_cmd');
+}
+
+export async function deleteGeneratedPatch(patchPath: string): Promise<void> {
+  return invoke('delete_generated_patch_cmd', { patchPath });
 }
 
 export interface SaveBackupSnapshot {
@@ -440,12 +524,21 @@ export interface SaveWorldSummary {
   levelSizeBytes: number;
   playerCount: number;
   backupCount: number;
+  pmmBackupCount?: number;
   latestBackupDate?: string | null;
   hasExternalEdits: boolean;
   healthStatus: 'healthy' | 'warning' | 'corrupt' | 'external_edits';
   detectedIssuesCount: number;
   customMeta?: WorldCustomMeta | null;
   worldOptions?: WorldOptionSettings | null;
+}
+
+export interface PmmWorldBackup {
+  fileName: string;
+  filePath: string;
+  fileSizeBytes: number;
+  createdAt: string;
+  worldNameHint?: string | null;
 }
 
 export interface OrphanedModRef {
@@ -473,6 +566,7 @@ export interface SaveHealthReport {
   backupCount: number;
   latestBackupDate?: string | null;
   availableBackups: SaveBackupSnapshot[];
+  pmmBackups?: PmmWorldBackup[];
   hasExternalEdits: boolean;
   externalEditDetails?: ExternalEditDiagnostic | null;
   canRepair: boolean;
@@ -505,6 +599,22 @@ export async function repairSaveHealth(worldDir: string): Promise<SaveRepairResu
 
 export async function restoreSaveBackup(worldDir: string, backupSlot: string): Promise<SaveRepairResult> {
   return invoke('restore_save_backup_cmd', { worldDir, backupSlot });
+}
+
+export async function listPmmWorldBackups(worldNameFilter?: string): Promise<PmmWorldBackup[]> {
+  return invoke('list_pmm_world_backups_cmd', { worldNameFilter: worldNameFilter || null });
+}
+
+export async function restorePmmWorldBackup(worldDir: string, backupFilePath: string): Promise<SaveRepairResult> {
+  return invoke('restore_pmm_world_backup_cmd', { worldDir, backupFilePath });
+}
+
+export async function deletePmmWorldBackup(backupFilePath: string): Promise<void> {
+  return invoke('delete_pmm_world_backup_cmd', { backupFilePath });
+}
+
+export async function openPmmWorldBackupsFolder(): Promise<void> {
+  return invoke('open_pmm_world_backups_folder_cmd');
 }
 
 export async function createWorldBackup(worldDir: string, customDest?: string): Promise<string> {
@@ -625,6 +735,21 @@ export async function clearProfile(profileId: string): Promise<Profile[]> {
   return invoke('clear_profile_command', { profileId });
 }
 
+export interface ImportProfileResult {
+  success: boolean;
+  profileId: string;
+  profileName: string;
+  modCount: number;
+  dependenciesInstalled: number;
+}
+
+export async function exportProfilePack(profileId: string, targetPath: string): Promise<string> {
+  return invoke('export_profile_pack_cmd', { profileId, targetPath });
+}
+
+export async function importProfilePack(sourcePath: string, customName?: string): Promise<ImportProfileResult> {
+  return invoke('import_profile_pack_cmd', { sourcePath, customName });
+}
 
 export async function setModProfileState(modId: string, enabled: boolean): Promise<{ success: boolean }> {
   return invoke('set_mod_profile_state', { modId, enabled });
@@ -677,6 +802,30 @@ export async function uninstallUe4ss(): Promise<string> {
 
 export async function uninstallPalschema(): Promise<string> {
   return invoke('uninstall_palschema');
+}
+
+export async function getDependencyVault(depType: 'ue4ss' | 'palschema'): Promise<import('./types').DependencyVaultEntry[]> {
+  return invoke('get_dependency_vault', { depType });
+}
+
+export async function installDependencyFromVault(depType: 'ue4ss' | 'palschema', filename: string): Promise<string> {
+  return invoke('install_dependency_from_vault', { depType, filename });
+}
+
+export async function installDependencyFromCustomZip(
+  depType: 'ue4ss' | 'palschema',
+  zipPath: string,
+  customVersion?: string
+): Promise<string> {
+  return invoke('install_dependency_from_custom_zip', { depType, zipPath, customVersion: customVersion || null });
+}
+
+export async function deleteDependencyVaultEntry(depType: 'ue4ss' | 'palschema', filename: string): Promise<void> {
+  return invoke('delete_dependency_vault_entry', { depType, filename });
+}
+
+export async function openDependencyVaultFolder(depType: 'ue4ss' | 'palschema'): Promise<void> {
+  return invoke('open_dependency_vault_folder', { depType });
 }
 
 export async function logFromJs(msg: string): Promise<void> {
@@ -1023,4 +1172,16 @@ export async function getImageCacheSize(): Promise<number> {
 
 export async function purgeImageCache(): Promise<void> {
   return invoke('purge_image_cache');
+}
+
+export async function getMappingsStatus(): Promise<import('./types').UsmapStatus> {
+  return invoke('get_mappings_status');
+}
+
+export async function syncMappingsNow(): Promise<import('./types').UsmapStatus> {
+  return invoke('sync_mappings_now');
+}
+
+export async function getUsmapSummary(): Promise<{ loaded: boolean; totalStructs: number; totalEnums: number; totalNames: number; gameVersion?: string }> {
+  return invoke('get_usmap_summary');
 }

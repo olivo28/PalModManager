@@ -312,149 +312,111 @@ fn find_extracted_root(src: &Path) -> PathBuf {
     src.to_path_buf()
 }
 
-#[tauri::command]
-pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> Result<String, String> {
-    crate::logger::log("install_ue4ss: Starting UE4SS installation process...");
-    let (game_path, program_path) = {
-        let locked = state.data.lock().map_err(|e| e.to_string())?;
-        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+pub fn get_vault_dir(program_path: &str, dep_type: &str) -> PathBuf {
+    let folder = match dep_type.to_lowercase().as_str() {
+        "palschema" => "PalSchema",
+        _ => "UE4SS",
     };
-    if game_path.is_empty() {
-        crate::logger::log("install_ue4ss: Error - Game path not configured.");
-        return Err("Game path not set".to_string());
+    PathBuf::from(program_path).join("mods-library").join("dependencies").join(folder)
+}
+
+pub fn sanitize_version_tag(raw: &str, _dep_type: &str) -> String {
+    let mut s = raw.trim();
+    if let Some(stripped) = s.strip_suffix(".zip").or_else(|| s.strip_suffix(".ZIP")) {
+        s = stripped.trim();
     }
 
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
-    if dep_status.ue4ss_installed && !force_download {
-        crate::logger::log("install_ue4ss: UE4SS is already installed and force_download is false. Skipping installation.");
-        return Ok("UE4SS is already installed.".to_string());
+    let prefixes = [
+        "palschema - ", "palschema_", "palschema-", "palschema ", "palschema.",
+        "ue4ss - ", "ue4ss_", "ue4ss-", "ue4ss ", "ue4ss.",
+        "re-ue4ss - ", "re-ue4ss_", "re-ue4ss-", "re-ue4ss ",
+        "ue4ss-palworld-", "ue4ss-palworld_", "ue4ss-palworld "
+    ];
+
+    let mut changed = true;
+    while changed {
+        changed = false;
+        let lower = s.to_lowercase();
+        for p in &prefixes {
+            if lower.starts_with(p) {
+                s = s[p.len()..].trim();
+                changed = true;
+                break;
+            }
+        }
     }
+
+    if s.starts_with('(') && s.ends_with(')') && s.len() > 2 {
+        s = s[1..s.len()-1].trim();
+    }
+
+    if s.is_empty() {
+        return "custom".to_string();
+    }
+
+    s.to_string()
+}
+
+pub fn extract_version_from_vault_filename(filename: &str, dep_type: &str) -> String {
+    sanitize_version_tag(filename, dep_type)
+}
+
+pub fn save_to_vault(program_path: &str, dep_type: &str, version: &str, zip_bytes: &[u8]) -> Result<PathBuf, String> {
+    let vault_dir = get_vault_dir(program_path, dep_type);
+    let _ = fs::create_dir_all(&vault_dir);
+    let clean_ver = sanitize_version_tag(version, dep_type);
+    let safe_ver = clean_ver.replace(['/', '\\', ':', '*', '?', '"', '<', '>', '|'], "_");
+    let filename = match dep_type.to_lowercase().as_str() {
+        "palschema" => format!("PalSchema - {}.zip", safe_ver),
+        _ => format!("UE4SS - {}.zip", safe_ver),
+    };
+    let target_path = vault_dir.join(&filename);
+    fs::write(&target_path, zip_bytes).map_err(|e| format!("Failed to save archive to vault: {}", e))?;
+    Ok(target_path)
+}
+
+fn migrate_legacy_dependency_zips(program_path: &str) {
+    let base = PathBuf::from(program_path).join("mods-library").join("dependencies");
+    let legacy_ue4ss = base.join("ue4ss.zip");
+    let legacy_ue4ss_ver = base.join("ue4ss.version");
+    if legacy_ue4ss.exists() {
+        let ver = fs::read_to_string(&legacy_ue4ss_ver).unwrap_or_else(|_| "10.08.2026".to_string()).trim().to_string();
+        let vault_dir = base.join("UE4SS");
+        let _ = fs::create_dir_all(&vault_dir);
+        let dest = vault_dir.join(format!("UE4SS - {}.zip", ver));
+        if !dest.exists() {
+            let _ = fs::copy(&legacy_ue4ss, &dest);
+        }
+    }
+
+    let legacy_ps = base.join("palschema.zip");
+    let legacy_ps_ver = base.join("palschema.version");
+    if legacy_ps.exists() {
+        let ver = fs::read_to_string(&legacy_ps_ver).unwrap_or_else(|_| "0.6.4".to_string()).trim().to_string();
+        let vault_dir = base.join("PalSchema");
+        let _ = fs::create_dir_all(&vault_dir);
+        let dest = vault_dir.join(format!("PalSchema - {}.zip", ver));
+        if !dest.exists() {
+            let _ = fs::copy(&legacy_ps, &dest);
+        }
+    }
+}
+
+pub async fn apply_ue4ss_zip_bytes(
+    zip_bytes: &[u8],
+    publish_date: &str,
+    program_path: &str,
+    game_path: &str,
+    state: &State<'_, AppState>,
+) -> Result<String, String> {
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
     let ue4ss_dir = win64.join("ue4ss");
-
-    let lib_dep_dir = PathBuf::from(&program_path).join("mods-library").join("dependencies");
-    let cached_zip = lib_dep_dir.join("ue4ss.zip");
-    let cached_ver_file = lib_dep_dir.join("ue4ss.version");
-
-    let mut publish_date = String::new();
-    let mut zip_bytes = Vec::new();
-    let mut use_cache = false;
-
-    if !force_download && cached_zip.exists() && cached_ver_file.exists() {
-        if let Ok(bytes) = fs::read(&cached_zip) {
-            if let Ok(ver) = fs::read_to_string(&cached_ver_file) {
-                crate::logger::log("install_ue4ss: Using cached UE4SS zip from local library.");
-                zip_bytes = bytes;
-                publish_date = ver.trim().to_string();
-                use_cache = true;
-            }
-        }
-    }
-
-    if !use_cache {
-        let client = reqwest::Client::builder()
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-            .build()
-            .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-
-        let mut asset_url = String::new();
-        let mut api_success = false;
-
-        let release_url = "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld";
-        crate::logger::log(&format!("install_ue4ss: Fetching GitHub API release from {}", release_url));
-        if let Ok(resp) = client.get(release_url).send().await {
-            if resp.status().is_success() {
-                if let Ok(json) = resp.json::<serde_json::Value>().await {
-                    if let Some(assets) = json["assets"].as_array() {
-                        if let Some(asset) = assets.iter().find(|a| {
-                            a["name"].as_str().map_or(false, |n| n.ends_with(".zip") && !n.contains("symbols"))
-                        }) {
-                            if let Some(url) = asset["browser_download_url"].as_str() {
-                                asset_url = url.to_string();
-                                let mut latest_asset_dt: Option<chrono::DateTime<chrono::FixedOffset>> = None;
-                                for a in assets {
-                                    if let Some(updated) = a["updated_at"].as_str() {
-                                        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
-                                            match latest_asset_dt {
-                                                Some(cur) if dt > cur => latest_asset_dt = Some(dt),
-                                                None => latest_asset_dt = Some(dt),
-                                                _ => {}
-                                            }
-                                        }
-                                    }
-                                }
-                                if let Some(dt) = latest_asset_dt {
-                                    publish_date = dt.format("%d.%m.%Y").to_string();
-                                }
-                                api_success = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if !api_success {
-            crate::logger::log("install_ue4ss: GitHub API rate limited or failed. Using HTML fallback...");
-            if let Ok(r) = client.get("https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld").send().await {
-                if let Ok(html) = r.text().await {
-                    let mut search_pos = 0;
-                    while let Some(pos) = html[search_pos..].find("/Okaetsu/RE-UE4SS/releases/download/experimental-palworld/") {
-                        let start = search_pos + pos;
-                        if let Some(end_quote) = html[start..].find('"') {
-                            let url_path = &html[start..start + end_quote];
-                            search_pos = start + end_quote;
-                            let lower = url_path.to_lowercase();
-                            if lower.ends_with(".zip") && !lower.contains("symbols") {
-                                asset_url = format!("https://github.com{}", url_path);
-                                if let Some(time_pos) = html.find("datetime=") {
-                                    let time_start = time_pos + 10;
-                                    if let Some(time_end) = html[time_start..].find('"') {
-                                        let dt_raw = &html[time_start..time_start + time_end];
-                                        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
-                                            publish_date = dt.format("%d.%m.%Y").to_string();
-                                        }
-                                    }
-                                }
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if asset_url.is_empty() {
-            return Err("Could not resolve UE4SS download URL".to_string());
-        }
-
-        if publish_date.is_empty() {
-            publish_date = "installed".to_string();
-        }
-
-        crate::logger::log(&format!("install_ue4ss: Downloading ZIP from {}", asset_url));
-        let bytes = client.get(&asset_url)
-            .send()
-            .await
-            .map_err(|e| format!("Download failed: {}", e))?
-            .bytes()
-            .await
-            .map_err(|e| format!("Download failed: {}", e))?;
-        
-        zip_bytes = bytes.to_vec();
-
-        let _ = fs::create_dir_all(&lib_dep_dir);
-        let _ = fs::write(&cached_zip, &zip_bytes);
-        let _ = fs::write(&cached_ver_file, &publish_date);
-    }
 
     let temp_dir = std::env::temp_dir().join("pmm_ue4ss");
     let zip_path = temp_dir.join("ue4ss.zip");
     crate::logger::log(&format!("install_ue4ss: Saving temporary ZIP to {}", zip_path.display()));
     fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
-    fs::write(&zip_path, &zip_bytes).map_err(|e| e.to_string())?;
+    fs::write(&zip_path, zip_bytes).map_err(|e| e.to_string())?;
 
     crate::logger::log("install_ue4ss: Extracting ZIP archive...");
     let extracted = zip_handler::extract_zip_to_temp(&zip_path.to_string_lossy(), &temp_dir.join("extracted"))?;
@@ -516,7 +478,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
 
     let version_file = ue4ss_dir.join("ue4ss.version");
     crate::logger::log(&format!("install_ue4ss: Writing version '{}' to {}", publish_date, version_file.display()));
-    let _ = fs::write(&version_file, &publish_date);
+    let _ = fs::write(&version_file, publish_date);
 
     // Escribir enabled.txt vacíos y registrar mods nativos de UE4SS en DB
     let dest_mods = ue4ss_dir.join("Mods");
@@ -526,11 +488,9 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         for entry in rd.filter_map(|e| e.ok()) {
             if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
                 let mod_name = entry.file_name().to_string_lossy().to_string();
-                if mod_name.to_lowercase() == "palschema" { continue; } // Omitir PalSchema
+                if mod_name.to_lowercase() == "palschema" { continue; }
 
                 let mod_path = entry.path();
-                
-                // Determinar el estado de activación en base a mods.txt
                 let is_enabled = if mods_txt_path.exists() {
                     let mut found_val = true;
                     if let Ok(content) = fs::read_to_string(&mods_txt_path) {
@@ -600,8 +560,11 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         }
     }
 
-
     {
+        let clean_ver = sanitize_version_tag(publish_date, "ue4ss");
+        let version_file = ue4ss_dir.join("ue4ss.version");
+        let _ = fs::write(&version_file, &clean_ver);
+
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
         for nm in native_mods_to_add {
             if !data.mods.iter().any(|m| m.name.to_lowercase() == nm.name.to_lowercase()) {
@@ -612,7 +575,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
             profile.ue4ss_enabled = true;
             profile.dependency_mode = crate::models::DependencyMode::Standard;
-            let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
+            let p_dir = crate::profiles::get_profile_dir(program_path, &profile.id);
             if let Ok(json) = serde_json::to_string_pretty(profile) {
                 let _ = fs::write(p_dir.join("profile.json"), json);
             }
@@ -628,151 +591,33 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         }
         let data_clone = data.clone();
         drop(data);
-        let _ = crate::db::save_db(&program_path, &data_clone);
+        let _ = crate::db::save_db(program_path, &data_clone);
     }
-
 
     crate::logger::log("install_ue4ss: Cleaning temporary directory...");
     let _ = fs::remove_dir_all(&temp_dir);
     crate::logger::log("install_ue4ss: Installation completed successfully.");
-    Ok("UE4SS installed successfully from GitHub (Okaetsu/UE4SS-Palworld)".to_string())
+    Ok(format!("UE4SS ({}) installed successfully.", publish_date))
 }
 
-#[tauri::command]
-pub async fn install_palschema(force_download: bool, state: State<'_, AppState>) -> Result<String, String> {
-    let (game_path, program_path) = {
-        let locked = state.data.lock().map_err(|e| e.to_string())?;
-        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
-    };
-    if game_path.is_empty() {
-        return Err("Game path not set".to_string());
-    }
-
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
-    
-    if dep_status.palschema_installed && !force_download {
-        crate::logger::log("install_palschema: PalSchema is already installed and force_download is false. Skipping installation.");
-        return Ok("PalSchema is already installed.".to_string());
-    }
-
-    if !dep_status.ue4ss_installed {
-        return Err("UE4SS is not installed. PalSchema requires UE4SS to operate.".to_string());
-    }
-
+pub async fn apply_palschema_zip_bytes(
+    zip_bytes: &[u8],
+    tag: &str,
+    program_path: &str,
+    game_path: &str,
+    state: &State<'_, AppState>,
+) -> Result<String, String> {
+    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
     let palschema_dir = if win64.join("dwmapi.dll").exists() {
         win64.join("ue4ss").join("Mods").join("PalSchema")
     } else {
-        // Workshop path fallback for local extraction if needed
-        Path::new(&game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema")
+        Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema")
     };
-
-    let lib_dep_dir = PathBuf::from(&program_path).join("mods-library").join("dependencies");
-    let cached_zip = lib_dep_dir.join("palschema.zip");
-    let cached_ver_file = lib_dep_dir.join("palschema.version");
-
-    let tag = match dependency_checker::check_palschema_latest().await {
-        Ok(t) => t,
-        Err(e) => return Err(format!("Could not determine latest PalSchema tag: {}", e)),
-    };
-
-    let mut zip_bytes = Vec::new();
-    let mut use_cache = false;
-
-    if !force_download && cached_zip.exists() && cached_ver_file.exists() {
-        if let Ok(bytes) = fs::read(&cached_zip) {
-            if let Ok(ver) = fs::read_to_string(&cached_ver_file) {
-                if ver.trim() == tag.trim() {
-                    crate::logger::log("install_palschema: Using cached PalSchema zip from local library.");
-                    zip_bytes = bytes;
-                    use_cache = true;
-                }
-            }
-        }
-    }
-
-    if !use_cache {
-        let client = reqwest::Client::builder()
-            .user_agent("Mozilla/5.0 (Windows NT 10.0; Win64; x64)")
-            .build()
-            .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
-
-        let mut asset_url = String::new();
-        let mut api_success = false;
-
-        let api_url = format!("https://api.github.com/repos/Okaetsu/PalSchema/releases/tags/{}", tag);
-        crate::logger::log(&format!("install_palschema: Fetching GitHub API release from {}", api_url));
-        if let Ok(resp) = client.get(&api_url).send().await {
-            if resp.status().is_success() {
-                if let Ok(json) = resp.json::<serde_json::Value>().await {
-                    if let Some(assets) = json["assets"].as_array() {
-                        if let Some(asset) = assets.iter().find(|a| {
-                            a["name"].as_str().map_or(false, |n| n.ends_with(".zip"))
-                        }) {
-                            if let Some(url) = asset["browser_download_url"].as_str() {
-                                asset_url = url.to_string();
-                                api_success = true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        if !api_success {
-            crate::logger::log("install_palschema: GitHub API rate limited or failed. Using HTML fallback...");
-            let release_page_url = format!("https://github.com/Okaetsu/PalSchema/releases/tag/{}", tag);
-            if let Ok(resp) = client.get(&release_page_url).send().await {
-                if let Ok(html) = resp.text().await {
-                    let download_prefix = format!("/Okaetsu/PalSchema/releases/download/{}/", tag);
-                    let mut search_pos = 0;
-                    while let Some(pos) = html[search_pos..].find(&download_prefix) {
-                        let start = search_pos + pos;
-                        if let Some(end_quote) = html[start..].find('"') {
-                            let url_path = &html[start..start + end_quote];
-                            search_pos = start + end_quote;
-                            if url_path.to_lowercase().ends_with(".zip") {
-                                asset_url = format!("https://github.com{}", url_path);
-                                break;
-                            }
-                        } else {
-                            break;
-                        }
-                    }
-                }
-            }
-        }
-
-        if asset_url.is_empty() {
-            asset_url = format!("https://github.com/Okaetsu/PalSchema/releases/download/{}/PalSchema_{}.zip", tag, tag.trim_start_matches('v'));
-            crate::logger::log(&format!("install_palschema: Fallback crítico - usando URL por defecto {}", asset_url));
-        }
-
-        crate::logger::log(&format!("install_palschema: Descargando desde {}", asset_url));
-        let resp = client.get(&asset_url)
-            .send()
-            .await
-            .map_err(|e| format!("Download request failed: {}", e))?;
-
-        if !resp.status().is_success() {
-            return Err(format!("Download failed. GitHub returned HTTP {}", resp.status()));
-        }
-
-        let bytes = resp.bytes()
-            .await
-            .map_err(|e| format!("Failed to read download bytes: {}", e))?;
-        
-        zip_bytes = bytes.to_vec();
-
-        let _ = fs::create_dir_all(&lib_dep_dir);
-        let _ = fs::write(&cached_zip, &zip_bytes);
-        let _ = fs::write(&cached_ver_file, &tag);
-    }
 
     let temp_dir = std::env::temp_dir().join("pmm_palschema");
     let zip_path = temp_dir.join("palschema.zip");
     fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
-    fs::write(&zip_path, &zip_bytes).map_err(|e| e.to_string())?;
+    fs::write(&zip_path, zip_bytes).map_err(|e| e.to_string())?;
 
     let extracted = zip_handler::extract_zip_to_temp(&zip_path.to_string_lossy(), &temp_dir.join("extracted"))?;
     let root = find_extracted_root(&extracted);
@@ -793,9 +638,10 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
         }
     }
 
+    let clean_tag = sanitize_version_tag(tag, "palschema");
     let version_file = palschema_dir.join("palschema.version");
-    crate::logger::log(&format!("install_palschema: Escribiendo versión '{}' en {}", tag, version_file.display()));
-    let _ = fs::write(&version_file, &tag);
+    crate::logger::log(&format!("install_palschema: Escribiendo versión '{}' en {}", clean_tag, version_file.display()));
+    let _ = fs::write(&version_file, &clean_tag);
 
     {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
@@ -805,7 +651,7 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
             if profile.dependency_mode == crate::models::DependencyMode::None {
                 profile.dependency_mode = crate::models::DependencyMode::Standard;
             }
-            let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
+            let p_dir = crate::profiles::get_profile_dir(program_path, &profile.id);
             if let Ok(json) = serde_json::to_string_pretty(profile) {
                 let _ = fs::write(p_dir.join("profile.json"), json);
             }
@@ -817,11 +663,404 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
         }
         let data_clone = data.clone();
         drop(data);
-        let _ = crate::db::save_db(&program_path, &data_clone);
+        let _ = crate::db::save_db(program_path, &data_clone);
     }
 
     let _ = fs::remove_dir_all(&temp_dir);
-    Ok("PalSchema installed successfully from GitHub (Okaetsu/PalSchema)".to_string())
+    Ok(format!("PalSchema ({}) installed successfully.", tag))
+}
+
+#[tauri::command]
+pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> Result<String, String> {
+    crate::logger::log("install_ue4ss: Starting UE4SS installation process...");
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if game_path.is_empty() {
+        crate::logger::log("install_ue4ss: Error - Game path not configured.");
+        return Err("Game path not set".to_string());
+    }
+
+    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
+    if dep_status.ue4ss_installed && !force_download {
+        crate::logger::log("install_ue4ss: UE4SS is already installed and force_download is false. Skipping installation.");
+        return Ok("UE4SS is already installed.".to_string());
+    }
+
+    migrate_legacy_dependency_zips(&program_path);
+
+    let client = reqwest::Client::builder()
+        .user_agent("PalModManager/1.7.0")
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let mut asset_url = String::new();
+    let mut publish_date = String::new();
+    let mut api_success = false;
+
+    let release_url = "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld";
+    crate::logger::log(&format!("install_ue4ss: Fetching GitHub API release from {}", release_url));
+    if let Ok(resp) = client.get(release_url).send().await {
+        if resp.status().is_success() {
+            if let Ok(json) = resp.json::<serde_json::Value>().await {
+                if let Some(assets) = json["assets"].as_array() {
+                    if let Some(asset) = assets.iter().find(|a| {
+                        a["name"].as_str().map_or(false, |n| n.ends_with(".zip") && !n.contains("symbols"))
+                    }) {
+                        if let Some(url) = asset["browser_download_url"].as_str() {
+                            asset_url = url.to_string();
+                            let mut latest_asset_dt: Option<chrono::DateTime<chrono::FixedOffset>> = None;
+                            for a in assets {
+                                if let Some(updated) = a["updated_at"].as_str() {
+                                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
+                                        match latest_asset_dt {
+                                            Some(cur) if dt > cur => latest_asset_dt = Some(dt),
+                                            None => latest_asset_dt = Some(dt),
+                                            _ => {}
+                                        }
+                                    }
+                                }
+                            }
+                            if let Some(dt) = latest_asset_dt {
+                                publish_date = dt.format("%d.%m.%Y").to_string();
+                            }
+                            api_success = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if !api_success {
+        crate::logger::log("install_ue4ss: GitHub API rate limited or failed. Using HTML fallback...");
+        if let Ok(r) = client.get("https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld").send().await {
+            if let Ok(html) = r.text().await {
+                let mut search_pos = 0;
+                while let Some(pos) = html[search_pos..].find("/Okaetsu/RE-UE4SS/releases/download/experimental-palworld/") {
+                    let start = search_pos + pos;
+                    if let Some(end_quote) = html[start..].find('"') {
+                        let url_path = &html[start..start + end_quote];
+                        search_pos = start + end_quote;
+                        let lower = url_path.to_lowercase();
+                        if lower.ends_with(".zip") && !lower.contains("symbols") {
+                            asset_url = format!("https://github.com{}", url_path);
+                            let mut latest_html_dt: Option<chrono::DateTime<chrono::Utc>> = None;
+                            let mut cursor = 0;
+                            while let Some(pos) = html[cursor..].find("datetime=\"") {
+                                let time_start = cursor + pos + 10;
+                                if let Some(len) = html[time_start..].find('"') {
+                                    let dt_raw = &html[time_start..time_start + len];
+                                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
+                                        let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
+                                        match latest_html_dt {
+                                            Some(cur) if dt_utc > cur => { latest_html_dt = Some(dt_utc); }
+                                            None => { latest_html_dt = Some(dt_utc); }
+                                            _ => {}
+                                        }
+                                    }
+                                    cursor = time_start + len;
+                                } else {
+                                    break;
+                                }
+                            }
+                            if let Some(dt) = latest_html_dt {
+                                publish_date = dt.format("%d.%m.%Y").to_string();
+                            }
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if asset_url.is_empty() {
+        return Err("Could not resolve UE4SS download URL".to_string());
+    }
+
+    if publish_date.is_empty() {
+        publish_date = chrono::Utc::now().format("%d.%m.%Y").to_string();
+    }
+
+    crate::logger::log(&format!("install_ue4ss: Downloading ZIP from {}", asset_url));
+    let bytes = client.get(&asset_url)
+        .send()
+        .await
+        .map_err(|e| format!("Download failed: {}", e))?
+        .bytes()
+        .await
+        .map_err(|e| format!("Download failed: {}", e))?;
+    
+    let zip_bytes = bytes.to_vec();
+
+    // Save into versioned vault
+    let _ = save_to_vault(&program_path, "ue4ss", &publish_date, &zip_bytes);
+
+    apply_ue4ss_zip_bytes(&zip_bytes, &publish_date, &program_path, &game_path, &state).await
+}
+
+#[tauri::command]
+pub async fn install_palschema(force_download: bool, state: State<'_, AppState>) -> Result<String, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if game_path.is_empty() {
+        return Err("Game path not set".to_string());
+    }
+
+    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
+    if dep_status.palschema_installed && !force_download {
+        crate::logger::log("install_palschema: PalSchema is already installed and force_download is false. Skipping installation.");
+        return Ok("PalSchema is already installed.".to_string());
+    }
+
+    if !dep_status.ue4ss_installed {
+        return Err("UE4SS is not installed. PalSchema requires UE4SS to operate.".to_string());
+    }
+
+    migrate_legacy_dependency_zips(&program_path);
+
+    let tag = match dependency_checker::check_palschema_latest().await {
+        Ok(t) => t,
+        Err(e) => return Err(format!("Could not determine latest PalSchema tag: {}", e)),
+    };
+
+    let client = reqwest::Client::builder()
+        .user_agent("PalModManager/1.7.0")
+        .build()
+        .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
+
+    let mut asset_url = String::new();
+    let mut api_success = false;
+
+    let api_url = format!("https://api.github.com/repos/Okaetsu/PalSchema/releases/tags/{}", tag);
+    crate::logger::log(&format!("install_palschema: Fetching GitHub API release from {}", api_url));
+    if let Ok(resp) = client.get(&api_url).send().await {
+        if resp.status().is_success() {
+            if let Ok(json) = resp.json::<serde_json::Value>().await {
+                if let Some(assets) = json["assets"].as_array() {
+                    if let Some(asset) = assets.iter().find(|a| {
+                        a["name"].as_str().map_or(false, |n| n.ends_with(".zip"))
+                    }) {
+                        if let Some(url) = asset["browser_download_url"].as_str() {
+                            asset_url = url.to_string();
+                            api_success = true;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if !api_success {
+        crate::logger::log("install_palschema: GitHub API rate limited or failed. Using HTML fallback...");
+        let release_page_url = format!("https://github.com/Okaetsu/PalSchema/releases/tag/{}", tag);
+        if let Ok(resp) = client.get(&release_page_url).send().await {
+            if let Ok(html) = resp.text().await {
+                let download_prefix = format!("/Okaetsu/PalSchema/releases/download/{}/", tag);
+                let mut search_pos = 0;
+                while let Some(pos) = html[search_pos..].find(&download_prefix) {
+                    let start = search_pos + pos;
+                    if let Some(end_quote) = html[start..].find('"') {
+                        let url_path = &html[start..start + end_quote];
+                        search_pos = start + end_quote;
+                        if url_path.to_lowercase().ends_with(".zip") {
+                            asset_url = format!("https://github.com{}", url_path);
+                            break;
+                        }
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if asset_url.is_empty() {
+        asset_url = format!("https://github.com/Okaetsu/PalSchema/releases/download/{}/PalSchema_{}.zip", tag, tag.trim_start_matches('v'));
+    }
+
+    crate::logger::log(&format!("install_palschema: Descargando desde {}", asset_url));
+    let resp = client.get(&asset_url)
+        .send()
+        .await
+        .map_err(|e| format!("Download request failed: {}", e))?;
+
+    if !resp.status().is_success() {
+        return Err(format!("Download failed. GitHub returned HTTP {}", resp.status()));
+    }
+
+    let bytes = resp.bytes()
+        .await
+        .map_err(|e| format!("Failed to read download bytes: {}", e))?;
+    
+    let zip_bytes = bytes.to_vec();
+
+    // Save into versioned vault
+    let _ = save_to_vault(&program_path, "palschema", &tag, &zip_bytes);
+
+    apply_palschema_zip_bytes(&zip_bytes, &tag, &program_path, &game_path, &state).await
+}
+
+#[tauri::command]
+pub fn get_dependency_vault(dep_type: String, state: State<'_, AppState>) -> Result<Vec<crate::models::DependencyVaultEntry>, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if program_path.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    migrate_legacy_dependency_zips(&program_path);
+
+    let vault_dir = get_vault_dir(&program_path, &dep_type);
+    let _ = fs::create_dir_all(&vault_dir);
+
+    // Get current installed version
+    let dep_status = crate::dependency_checker::check_dependencies(&game_path);
+    let installed_ver = if dep_type.to_lowercase() == "palschema" {
+        dep_status.palschema_version.unwrap_or_default()
+    } else {
+        dep_status.ue4ss_version.unwrap_or_default()
+    };
+
+    let mut entries = Vec::new();
+    if let Ok(rd) = fs::read_dir(&vault_dir) {
+        for entry in rd.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.is_file() && path.extension().map_or(false, |ext| ext.eq_ignore_ascii_case("zip")) {
+                let filename = entry.file_name().to_string_lossy().to_string();
+                let metadata = entry.metadata().ok();
+                let file_size = metadata.as_ref().map(|m| m.len()).unwrap_or(0);
+                let modified_time = metadata.and_then(|m| m.modified().ok())
+                    .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339())
+                    .unwrap_or_default();
+
+                let version = extract_version_from_vault_filename(&filename, &dep_type);
+                let canonical_name = match dep_type.to_lowercase().as_str() {
+                    "palschema" => format!("PalSchema - {}.zip", version),
+                    _ => format!("UE4SS - {}.zip", version),
+                };
+
+                let (final_path, final_filename) = if filename != canonical_name {
+                    let dest = vault_dir.join(&canonical_name);
+                    if !dest.exists() {
+                        let _ = fs::rename(&path, &dest);
+                        (dest, canonical_name)
+                    } else {
+                        (path, filename)
+                    }
+                } else {
+                    (path, filename)
+                };
+
+                let clean_installed = sanitize_version_tag(&installed_ver, &dep_type);
+                let is_installed = !clean_installed.is_empty() && (
+                    version.trim().eq_ignore_ascii_case(&clean_installed) ||
+                    version.trim_start_matches('v').eq_ignore_ascii_case(clean_installed.trim_start_matches('v'))
+                );
+                let is_custom = !final_filename.starts_with("UE4SS - ") && !final_filename.starts_with("PalSchema - ");
+
+                entries.push(crate::models::DependencyVaultEntry {
+                    dep_type: dep_type.clone(),
+                    version,
+                    filename: final_filename,
+                    file_path: final_path.to_string_lossy().to_string(),
+                    file_size,
+                    modified_time,
+                    is_installed,
+                    is_custom,
+                });
+            }
+        }
+    }
+
+    entries.sort_by(|a, b| b.modified_time.cmp(&a.modified_time));
+    Ok(entries)
+}
+
+#[tauri::command]
+pub async fn install_dependency_from_vault(dep_type: String, filename: String, state: State<'_, AppState>) -> Result<String, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if game_path.is_empty() || program_path.is_empty() {
+        return Err("Game path or program path not configured".to_string());
+    }
+    let vault_dir = get_vault_dir(&program_path, &dep_type);
+    let zip_file = vault_dir.join(&filename);
+    if !zip_file.exists() {
+        return Err(format!("Vault archive not found: {}", filename));
+    }
+    let zip_bytes = fs::read(&zip_file).map_err(|e| format!("Failed to read archive: {}", e))?;
+    let version = extract_version_from_vault_filename(&filename, &dep_type);
+
+    if dep_type.to_lowercase() == "palschema" {
+        apply_palschema_zip_bytes(&zip_bytes, &version, &program_path, &game_path, &state).await
+    } else {
+        apply_ue4ss_zip_bytes(&zip_bytes, &version, &program_path, &game_path, &state).await
+    }
+}
+
+#[tauri::command]
+pub async fn install_dependency_from_custom_zip(dep_type: String, zip_path: String, custom_version: Option<String>, state: State<'_, AppState>) -> Result<String, String> {
+    let (game_path, program_path) = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+    };
+    if game_path.is_empty() || program_path.is_empty() {
+        return Err("Game path or program path not configured".to_string());
+    }
+    let src_path = PathBuf::from(&zip_path);
+    if !src_path.exists() {
+        return Err("Selected ZIP file does not exist".to_string());
+    }
+    let zip_bytes = fs::read(&src_path).map_err(|e| format!("Failed to read ZIP: {}", e))?;
+    let raw_ver = custom_version.unwrap_or_else(|| {
+        src_path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "custom".to_string())
+    });
+    let clean_ver = sanitize_version_tag(&raw_ver, &dep_type);
+
+    let _ = save_to_vault(&program_path, &dep_type, &clean_ver, &zip_bytes);
+
+    if dep_type.to_lowercase() == "palschema" {
+        apply_palschema_zip_bytes(&zip_bytes, &clean_ver, &program_path, &game_path, &state).await
+    } else {
+        apply_ue4ss_zip_bytes(&zip_bytes, &clean_ver, &program_path, &game_path, &state).await
+    }
+}
+
+#[tauri::command]
+pub fn delete_dependency_vault_entry(dep_type: String, filename: String, state: State<'_, AppState>) -> Result<(), String> {
+    let program_path = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        locked.settings.program_path.clone()
+    };
+    let vault_dir = get_vault_dir(&program_path, &dep_type);
+    let target = vault_dir.join(&filename);
+    if target.exists() {
+        fs::remove_file(&target).map_err(|e| format!("Failed to delete archive: {}", e))?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn open_dependency_vault_folder(dep_type: String, state: State<'_, AppState>) -> Result<(), String> {
+    let program_path = {
+        let locked = state.data.lock().map_err(|e| e.to_string())?;
+        locked.settings.program_path.clone()
+    };
+    let vault_dir = get_vault_dir(&program_path, &dep_type);
+    let _ = fs::create_dir_all(&vault_dir);
+    open::that(&vault_dir).map_err(|e| format!("Failed to open directory: {}", e))?;
+    Ok(())
 }
 
 #[tauri::command]

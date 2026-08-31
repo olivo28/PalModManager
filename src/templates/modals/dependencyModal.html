@@ -1,0 +1,65 @@
+<!-- DEPENDENCY MANAGER & VAULT MODAL -->
+<div id="dependency-modal" class="modal-overlay">
+  <div class="modal" style="max-width: 620px; width: 92vw;">
+    <div class="modal-header">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <span id="dep-modal-icon" style="font-size:18px;">⚡</span>
+        <h3 id="dep-modal-title" style="margin:0; font-size:16px; font-weight:700;">Dependency Manager</h3>
+      </div>
+      <button class="modal-close-btn" id="dependency-modal-close-x">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px; display:flex; flex-direction:column; gap:16px;">
+      
+      <!-- Current Status & Remote Version Hero Card -->
+      <div class="settings-group" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; padding:14px 16px; display:flex; flex-direction:column; gap:10px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <div style="display:flex; flex-direction:column; gap:2px;">
+            <span style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);" data-i18n="dependencies.current_installed">Currently Installed</span>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span id="dep-current-version" style="font-size:16px; font-weight:700; color:var(--text-primary);">--</span>
+              <span id="dep-status-badge" class="badge" style="font-size:11px; padding:2px 8px; border-radius:4px;">Checking</span>
+            </div>
+          </div>
+          <div style="display:flex; flex-direction:column; gap:2px; text-align:right;">
+            <span style="font-size:11px; text-transform:uppercase; letter-spacing:0.5px; color:var(--text-muted);" data-i18n="dependencies.latest_remote">Latest Release</span>
+            <span id="dep-remote-version" style="font-size:14px; font-weight:600; color:var(--accent);">--</span>
+          </div>
+        </div>
+
+        <!-- Quick Action Bar -->
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; border-top:1px solid var(--border); padding-top:10px; margin-top:2px;">
+          <button id="dep-btn-download-latest" class="btn-primary" style="font-size:12px; padding:6px 14px; display:flex; align-items:center; gap:6px;">
+            <span>⬇</span> <span data-i18n="dependencies.download_latest">Download Latest</span>
+          </button>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button id="dep-btn-custom-zip" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:5px;" title="Install directly from a custom local ZIP file">
+              <span>📦</span> <span data-i18n="dependencies.install_custom_zip">Install from ZIP...</span>
+            </button>
+            <button id="dep-btn-open-vault" class="btn-secondary" style="font-size:11px; padding:6px 10px;" title="Open Vault folder in Explorer">
+              <span>📁</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Local Vault Section -->
+      <div style="display:flex; flex-direction:column; gap:8px;">
+        <div style="display:flex; align-items:center; justify-content:space-between;">
+          <span style="font-weight:700; font-size:13px; color:var(--text-primary);" data-i18n="dependencies.vault_title">Local Version Vault</span>
+          <span id="dep-vault-count" style="font-size:11px; color:var(--text-muted);">0 cached versions</span>
+        </div>
+        <div class="settings-hint" style="font-size:11px; color:var(--text-muted);" data-i18n="dependencies.vault_desc">
+          Archived installer packages kept locally. Roll back instantly if a new version causes issues.
+        </div>
+        <div id="dep-vault-list" style="display:flex; flex-direction:column; gap:8px; max-height:220px; overflow-y:auto; padding-right:4px; margin-top:4px;">
+          <!-- Populated dynamically with version cards -->
+        </div>
+      </div>
+
+    </div>
+    <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
+      <button id="dep-btn-uninstall" class="btn-danger-subtle" style="font-size:11px; padding:6px 12px; color:#ff4a4a; background:transparent; border:1px solid rgba(255,74,74,0.3); border-radius:4px; cursor:pointer;" data-i18n="common.uninstall">Uninstall</button>
+      <button id="dependency-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
+    </div>
+  </div>
+</div>

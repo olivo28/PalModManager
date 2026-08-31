@@ -4,7 +4,7 @@ import { initI18n, t } from './utils/i18n';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
 import { getState, updateState, subscribe } from './state';
 import type { AppState } from './state';
-import { openSettingsModal, handleInstall, handleSaveSettings, handleSettingsBrowse, handleConfirmInstall, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal, openAboutModal, closeAboutModal, setupAboutModal } from './ui/modal';
+import { openSettingsModal, handleSaveSettings, handleSettingsBrowse, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal, openAboutModal, closeAboutModal, setupAboutModal } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailOpenExtraFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers, setupEditorFsWatcher } from './ui/editorView';
@@ -52,7 +52,10 @@ function showApp(): void {
     loading.classList.add('fade-out');
     setTimeout(() => {
       loading.style.display = 'none';
+      bus.emit('app:ready', undefined);
     }, 380);
+  } else {
+    bus.emit('app:ready', undefined);
   }
 }
 
@@ -131,10 +134,6 @@ function setupEventListeners() {
     await loadDependencies();
   });
 
-  safeEl('install-btn')?.addEventListener('click', handleInstall);
-  safeEl('modal-close-x')?.addEventListener('click', closeInstallModal);
-  safeEl('modal-cancel')?.addEventListener('click', closeInstallModal);
-  safeEl('modal-confirm')?.addEventListener('click', handleConfirmInstall);
   safeEl('settings-btn')?.addEventListener('click', openSettingsModal);
   safeEl('settings-cancel')?.addEventListener('click', closeSettingsModal);
   safeEl('settings-save')?.addEventListener('click', handleSaveSettings);
@@ -397,6 +396,11 @@ function setupEventListeners() {
       }
     }
   });
+  safeEl('profile-import-btn')?.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    const { handleImportProfilePack } = await import('./ui/mods/profiles');
+    await handleImportProfilePack();
+  });
   function closeProfileModal(): void {
     document.getElementById('profile-modal')?.classList.remove('visible');
   }
@@ -558,7 +562,19 @@ function setupEventListeners() {
         return;
       }
 
-      // 7. Config Diff modal
+      // 7. Patch Builder & Existing Patches modals
+      const existingPatchesModal = document.getElementById('pmm-existing-patches-modal');
+      if (existingPatchesModal) {
+        existingPatchesModal.remove();
+        return;
+      }
+      const patchBuilderModal = document.getElementById('pmm-patch-builder-modal-overlay');
+      if (patchBuilderModal) {
+        patchBuilderModal.remove();
+        return;
+      }
+
+      // 8. Config Diff modal
       const configDiffOverlay = document.getElementById('config-diff-modal');
       if (configDiffOverlay) {
         configDiffOverlay.remove();

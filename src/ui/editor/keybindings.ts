@@ -104,6 +104,60 @@ export function setupEditorKeybindings(): void {
   if (previewBtn) {
     previewBtn.addEventListener('click', handleEditorPreview);
   }
+
+  const diffBtn = editorDom.elMaybe('editor-diff-btn');
+  if (diffBtn) {
+    diffBtn.addEventListener('click', async () => {
+      const state = getState();
+      if (state.editorModId && state.editorSelectedFile) {
+        const { openEditorDiffModal } = await import('./diffModal');
+        await openEditorDiffModal(state.editorModId, state.editorSelectedFile);
+      }
+    });
+  }
+
+  const restoreBtn = editorDom.elMaybe('editor-restore-btn');
+  if (restoreBtn) {
+    restoreBtn.addEventListener('click', async () => {
+      const state = getState();
+      if (!state.editorModId || !state.editorSelectedFile) return;
+
+      const backupPath = state.editorSelectedFile;
+      let targetPath = backupPath;
+      if (targetPath.endsWith('.bak')) {
+        targetPath = targetPath.slice(0, -4);
+      } else if (targetPath.endsWith('.bak1') || targetPath.endsWith('.bak2')) {
+        targetPath = targetPath.slice(0, -5);
+      }
+
+      const { showConfirm } = await import('../confirm');
+      const { t } = await import('../../utils/i18n');
+      const title = t('editor.confirm_restore_title') || 'Restore Backup';
+      const body = (t('editor.confirm_restore_body') || 'Are you sure you want to restore **{backup}** over **{target}**?\nA backup of the current file will be preserved.')
+        .replace('{backup}', backupPath)
+        .replace('{target}', targetPath);
+
+      const confirmed = await showConfirm(title, body);
+      if (!confirmed) return;
+
+      try {
+        const { restoreModBackup } = await import('../../api');
+        const { showToast } = await import('../toast');
+        const { refreshEditorFileTree } = await import('./tree');
+        const { loadFileContent } = await import('./viewer');
+
+        const res = await restoreModBackup(state.editorModId, backupPath);
+        if (res.success) {
+          showToast(t('editor.toast_restored') || 'Backup restored successfully', 'success');
+          await refreshEditorFileTree(state.editorModId);
+          await loadFileContent(targetPath);
+        }
+      } catch (err) {
+        const { showToast } = await import('../toast');
+        showToast(String(err), 'error');
+      }
+    });
+  }
 }
 
 export async function handleEditorModChange(): Promise<void> {

@@ -36,6 +36,13 @@ export interface SettingsDomMap {
   'settings-toolbar-scale-value': HTMLElement;
   'settings-pane-network': HTMLElement;
   'settings-dns-resolver-select': HTMLSelectElement;
+  'settings-usmap-badge': HTMLElement;
+  'settings-usmap-details': HTMLElement;
+  'settings-usmap-game-ver': HTMLElement;
+  'settings-usmap-active-file': HTMLElement;
+  'settings-usmap-hash': HTMLElement;
+  'btn-sync-usmap': HTMLButtonElement;
+  'btn-sync-usmap-icon': HTMLElement;
   'settings-image-cache-badge': HTMLElement;
   'btn-purge-image-cache': HTMLButtonElement;
   'settings-pane-safety': HTMLElement;

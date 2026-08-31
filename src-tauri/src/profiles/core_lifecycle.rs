@@ -622,6 +622,9 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
         force_load_order_ue4ss: None,
         force_load_order_palschema: None,
         hide_native_mods: None,
+        ue4ss_version: None,
+        palschema_version: None,
+        compatibility_patches: None,
     };
 
     let program_path = data.settings.program_path.clone();
@@ -663,6 +666,9 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
         force_load_order_ue4ss: source_profile.force_load_order_ue4ss,
         force_load_order_palschema: source_profile.force_load_order_palschema,
         hide_native_mods: source_profile.hide_native_mods,
+        ue4ss_version: source_profile.ue4ss_version.clone(),
+        palschema_version: source_profile.palschema_version.clone(),
+        compatibility_patches: source_profile.compatibility_patches.clone(),
     };
 
     let program_path = data.settings.program_path.clone();

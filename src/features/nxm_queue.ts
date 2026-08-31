@@ -11,6 +11,7 @@ import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
 import { openInstallModalForZip, setInstallModalCallback } from '../ui/modals/installer';
 import { mainDom, bus } from '../framework';
+import { getState } from '../state';
 
 export interface NxmQueueItem {
   id: string;
@@ -304,10 +305,18 @@ export async function checkNextInstall(): Promise<void> {
 
   setInstallModalCallback(async (success: boolean) => {
     isInstallingActive = false;
-    nextToInstall.status = success ? 'done' : 'cancelled';
+
+    // Check if the mod actually got installed into state
+    const state = getState();
+    const isActuallyInstalled = success || state.allMods.some(
+      (m) => (nextToInstall.modName && m.name && m.name.toLowerCase() === nextToInstall.modName.toLowerCase()) ||
+             (nextToInstall.modId && m.nexusModId === nextToInstall.modId)
+    );
+
+    nextToInstall.status = isActuallyInstalled ? 'done' : 'cancelled';
     renderQueueUI();
 
-    if (success) {
+    if (isActuallyInstalled) {
       showToast(t('nexus_profile.nxm_download_success'), 'success');
       const { loadMods } = await import('../ui/mods/loader');
       await loadMods();
@@ -413,12 +422,18 @@ export function renderQueueUI(): void {
     const thumbSrc = item.modPictureUrl || DEFAULT_NXM_THUMB;
 
     let actionBtnHtml = '';
-    if (item.status === 'awaiting_install' || item.status === 'installing') {
+    if (item.status === 'awaiting_install') {
       actionBtnHtml = `
         <button type="button" class="btn btn-primary btn-sm btn-queue-install" data-id="${item.id}" style="padding: 2px 8px !important; font-size: 10px !important;">
           ${t('nxm_queue.btn_install_now')}
         </button>
         <button type="button" class="nxm-tray-btn btn-queue-cancel" data-id="${item.id}" title="Cancel">✕</button>
+      `;
+    } else if (item.status === 'installing') {
+      actionBtnHtml = `
+        <div style="font-size: 10px; color: var(--accent); font-weight: 600; padding: 2px 6px; display: flex; align-items: center; gap: 4px;">
+          <span class="loading-spinner" style="width: 12px; height: 12px; border-width: 1.5px;"></span>
+        </div>
       `;
     } else if (item.status === 'done' || item.status === 'cancelled' || item.status === 'error') {
       actionBtnHtml = `

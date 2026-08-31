@@ -23,6 +23,7 @@ export interface AppEventMap {
   'profile:loaded': void;
 
   // Eventos de Navegación y Vistas
+  'app:ready': void;
   'tab:switched': { tab: AppState['activeTab'] };
   'toast:show': { message: string; type?: 'info' | 'success' | 'warning' | 'error' };
 

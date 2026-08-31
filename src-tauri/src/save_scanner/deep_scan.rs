@@ -302,7 +302,7 @@ pub fn calculate_storage_breakdown(world_dir: &Path, uncompressed_level_bytes: u
 }
 
 /// Deep inspection of a World Save (analyzes Level.sav for orphaned mod assets, external editor damage, and auto-backups)
-pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String]) -> Result<SaveHealthReport, String> {
+pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program_path: Option<&str>) -> Result<SaveHealthReport, String> {
     let world_path = Path::new(world_dir);
     let level_sav = world_path.join("Level.sav");
     let level_meta_sav = world_path.join("LevelMeta.sav");
@@ -343,6 +343,13 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String]) -> Resu
     let available_backups = list_available_backups(world_path);
     let can_restore_backup = !available_backups.is_empty();
 
+    let pmm_backups = if let Some(prog_p) = program_path {
+        super::repair::list_pmm_world_backups(prog_p, Some(&world_name))
+    } else {
+        Vec::new()
+    };
+    let pmm_backup_count = pmm_backups.len();
+
     let decompressed_bytes = match decompressed {
         Ok(d) => d,
         Err(e) => {
@@ -363,8 +370,10 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String]) -> Resu
                 raw_mod_paths_found: Vec::new(),
                 total_mod_references: 0,
                 backup_count,
+                pmm_backup_count,
                 latest_backup_date,
                 available_backups,
+                pmm_backups,
                 has_external_edits,
                 external_edit_details: None,
                 can_repair: false,
@@ -477,8 +486,10 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String]) -> Resu
         raw_mod_paths_found: raw_mod_paths,
         total_mod_references: total_refs,
         backup_count,
+        pmm_backup_count,
         latest_backup_date,
         available_backups,
+        pmm_backups,
         has_external_edits: has_ext_edits,
         external_edit_details,
         can_repair: has_orphans && is_valid_gvas,

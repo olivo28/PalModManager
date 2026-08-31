@@ -58,6 +58,7 @@ pub struct ScanResult {
     pub warnings: Vec<String>,
     pub mod_summaries: Vec<ModSummary>,
     pub gamepass_notices: Vec<crate::pak_scanner::GamePassPakNotice>,
+    pub schema_notices: Vec<crate::pak_scanner::DeprecatedSchemaNotice>,
     pub is_gamepass: bool,
 }
 
@@ -296,6 +297,8 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         (false, Vec::new())
     };
 
+    let schema_notices = crate::pak_scanner::check_mod_schema_compatibility(&profile_mods);
+
     Ok(ScanResult {
         total_scanned,
         palschema_scanned,
@@ -309,6 +312,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         warnings,
         mod_summaries,
         gamepass_notices,
+        schema_notices,
         is_gamepass,
     })
 }
@@ -1236,9 +1240,18 @@ pub async fn convert_all_gamepass_mods(
 
 #[tauri::command]
 pub fn list_save_worlds_cmd(
+    state: State<'_, AppState>,
     custom_dir: Option<String>,
 ) -> Result<Vec<crate::save_scanner::SaveWorldSummary>, String> {
-    crate::save_scanner::list_save_worlds(custom_dir.as_deref())
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+    crate::save_scanner::list_save_worlds(custom_dir.as_deref(), Some(&program_path))
 }
 
 #[tauri::command]
@@ -1246,13 +1259,19 @@ pub fn deep_scan_save_cmd(
     state: State<'_, AppState>,
     world_dir: String,
 ) -> Result<crate::save_scanner::SaveHealthReport, String> {
-    let active_mod_names = {
+    let (active_mod_names, program_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let p_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
-        p_mods.into_iter().filter(|m| m.enabled).map(|m| m.name).collect::<Vec<String>>()
+        let names = p_mods.into_iter().filter(|m| m.enabled).map(|m| m.name).collect::<Vec<String>>();
+        let prog_p = if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        };
+        (names, prog_p)
     };
 
-    crate::save_scanner::deep_scan_save(&world_dir, &active_mod_names)
+    crate::save_scanner::deep_scan_save(&world_dir, &active_mod_names, Some(&program_path))
 }
 
 #[tauri::command]
@@ -1308,6 +1327,65 @@ pub fn create_world_backup_cmd(
 }
 
 #[tauri::command]
+pub fn list_pmm_world_backups_cmd(
+    state: State<'_, AppState>,
+    world_name_filter: Option<String>,
+) -> Result<Vec<crate::save_scanner::PmmWorldBackup>, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+    Ok(crate::save_scanner::list_pmm_world_backups(&program_path, world_name_filter.as_deref()))
+}
+
+#[tauri::command]
+pub fn restore_pmm_world_backup_cmd(
+    state: State<'_, AppState>,
+    world_dir: String,
+    backup_file_path: String,
+) -> Result<crate::save_scanner::SaveRepairResult, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+    crate::save_scanner::restore_pmm_world_backup(&world_dir, &backup_file_path, &program_path)
+}
+
+#[tauri::command]
+pub fn delete_pmm_world_backup_cmd(
+    backup_file_path: String,
+) -> Result<(), String> {
+    crate::save_scanner::delete_pmm_world_backup(&backup_file_path)
+}
+
+#[tauri::command]
+pub fn open_pmm_world_backups_folder_cmd(
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if !data.settings.program_path.is_empty() {
+            data.settings.program_path.clone()
+        } else {
+            ".".to_string()
+        }
+    };
+    let backups_dir = Path::new(&program_path).join("backups").join("worlds");
+    if !backups_dir.exists() {
+        let _ = std::fs::create_dir_all(&backups_dir);
+    }
+    open::that(&backups_dir).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub fn open_world_folder_cmd(world_dir: String) -> Result<(), String> {
     crate::save_scanner::open_world_folder(&world_dir)
 }
@@ -1335,6 +1413,67 @@ pub fn get_world_custom_meta_cmd(world_dir: String) -> Result<crate::save_scanne
 #[tauri::command]
 pub fn inspect_snapshot_details_cmd(world_dir: String, slot_name: String) -> Result<crate::save_scanner::SaveBackupSnapshot, String> {
     crate::save_scanner::inspect_snapshot_details(Path::new(&world_dir), &slot_name)
+}
+
+#[tauri::command]
+pub async fn build_compatibility_pak_cmd(
+    request: crate::pak_patcher::PatchBuildRequest,
+    state: State<'_, AppState>,
+    app_handle: tauri::AppHandle,
+) -> Result<crate::pak_patcher::PatchBuildResult, String> {
+    use tauri::Manager;
+    let (game_path, program_path, current_profile_id) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (
+            data.settings.game_path.clone(),
+            data.settings.program_path.clone(),
+            data.current_profile_id.clone(),
+        )
+    };
+    if game_path.is_empty() {
+        return Err("Game path is not configured in Settings".to_string());
+    }
+    let app_data_dir = if !program_path.is_empty() {
+        PathBuf::from(&program_path)
+    } else {
+        app_handle.path().app_data_dir().unwrap_or_else(|_| PathBuf::from("."))
+    };
+
+    crate::pak_patcher::build_compatibility_pak_internal(
+        request,
+        &game_path,
+        &app_data_dir,
+        &program_path,
+        &current_profile_id,
+    ).await
+}
+
+#[tauri::command]
+pub fn list_generated_patches_cmd(state: State<'_, AppState>) -> Result<Vec<crate::pak_patcher::GeneratedPatchInfo>, String> {
+    let (game_path, program_path, current_profile_id) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (
+            data.settings.game_path.clone(),
+            data.settings.program_path.clone(),
+            data.current_profile_id.clone(),
+        )
+    };
+    if game_path.is_empty() {
+        return Ok(Vec::new());
+    }
+    crate::pak_patcher::list_generated_patches_internal(&game_path, &program_path, &current_profile_id)
+}
+
+#[tauri::command]
+pub fn delete_generated_patch_cmd(patch_path: String, state: State<'_, AppState>) -> Result<(), String> {
+    let (program_path, current_profile_id) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (
+            data.settings.program_path.clone(),
+            data.current_profile_id.clone(),
+        )
+    };
+    crate::pak_patcher::delete_generated_patch_internal(&patch_path, &program_path, &current_profile_id)
 }
 
 #[cfg(test)]

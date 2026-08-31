@@ -1,4 +1,5 @@
 import {
+  listSaveWorlds,
   deepScanSaveHealth,
   repairSaveHealth,
   restoreSaveBackup,
@@ -37,6 +38,17 @@ import {
   setIsRestoringBackup,
 } from './state';
 import { showSnapshotComparisonModal } from './snapshotModal';
+import { showPmmBackupsVaultModal } from './backupsVaultModal';
+
+async function refreshWorldsQuietly(): Promise<void> {
+  try {
+    const curCustomPath = customSavesPath || doctorState.customSavesPath;
+    const worlds = await listSaveWorlds(curCustomPath || undefined);
+    setCachedWorlds(worlds);
+  } catch (err) {
+    console.error('Failed to quietly refresh save worlds:', err);
+  }
+}
 
 export function attachSavesDoctorListeners(
   container: HTMLElement,
@@ -58,7 +70,7 @@ export function attachSavesDoctorListeners(
   const refreshBtn = container.querySelector('#doctor-refresh-btn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
-      setCachedWorlds(null);
+      await refreshWorldsQuietly();
       setCurrentHealthReport(null);
       await rerenderCallback(container);
       showToast(t('common.refreshed') || 'Saves list refreshed', 'info');
@@ -78,8 +90,9 @@ export function attachSavesDoctorListeners(
         });
         if (selected && typeof selected === 'string') {
           setCustomSavesPath(selected);
-          setCachedWorlds(null);
-          setSelectedWorldDir(null);
+          const worlds = await listSaveWorlds(selected);
+          setCachedWorlds(worlds);
+          setSelectedWorldDir(worlds.length > 0 ? worlds[0].worldDir : null);
           setCurrentHealthReport(null);
           await rerenderCallback(container);
           showToast('Loaded custom saves directory', 'success');
@@ -105,7 +118,7 @@ export function attachSavesDoctorListeners(
         const parts = backupZip.split(/[/\\]/);
         const fileName = parts[parts.length - 1] || backupZip;
         showToast((t('scanner.toast_backup_success') || 'Backup created successfully: {name}').replace('{name}', fileName), 'success');
-        setCachedWorlds(null);
+        await refreshWorldsQuietly();
       } catch (err: any) {
         showToast(`Backup failed: ${String(err)}`, 'error');
       } finally {
@@ -114,6 +127,18 @@ export function attachSavesDoctorListeners(
       }
     });
   }
+
+  // Open PMM Backups Vault Modal (Toolbar button and Stat Card)
+  const openPmmVault = async () => {
+    const curWorldDir = selectedWorldDir || doctorState.selectedWorldDir;
+    const curCached = cachedWorlds || doctorState.cachedWorlds;
+    const world = curCached?.find(w => w.worldDir === curWorldDir);
+    if (!world) return;
+    await showPmmBackupsVaultModal(world, container, rerenderCallback);
+  };
+
+  container.querySelector('#btn-pmm-vault')?.addEventListener('click', openPmmVault);
+  container.querySelector('.stat-card-pmm-vault')?.addEventListener('click', openPmmVault);
 
   // Open Save Folder in Explorer Button
   const openFolderBtn = container.querySelector('#btn-open-world-folder');
@@ -173,7 +198,7 @@ export function attachSavesDoctorListeners(
       try {
         const deleted = await pruneWorldBackups(curWorldDir, 5);
         showToast((t('scanner.toast_prune_success') || 'Cleaned {count} old snapshot backups.').replace('{count}', String(deleted)), 'success');
-        setCachedWorlds(null);
+        await refreshWorldsQuietly();
         if (currentHealthReport || doctorState.currentHealthReport) {
           const rep = await deepScanSaveHealth(curWorldDir);
           setCurrentHealthReport(rep);
@@ -215,7 +240,7 @@ export function attachSavesDoctorListeners(
       try {
         await saveWorldCustomMeta(curWorldDir, meta);
         showToast('World metadata saved successfully!', 'success');
-        setCachedWorlds(null);
+        await refreshWorldsQuietly();
         await rerenderCallback(container);
       } catch (err: any) {
         showToast(`Failed to save world metadata: ${String(err)}`, 'error');
@@ -269,7 +294,7 @@ export function attachSavesDoctorListeners(
         showToast(result.message, 'success');
         const rep = await deepScanSaveHealth(curWorldDir);
         setCurrentHealthReport(rep);
-        setCachedWorlds(null);
+        await refreshWorldsQuietly();
       } catch (err: any) {
         showToast(`Repair failed: ${String(err)}`, 'error');
       } finally {
@@ -334,7 +359,7 @@ export function attachSavesDoctorListeners(
         showToast((t('scanner.toast_restore_success') || 'World successfully restored from snapshot {timestamp}.').replace('{timestamp}', time || slot), 'success');
         const rep = await deepScanSaveHealth(curWorldDir);
         setCurrentHealthReport(rep);
-        setCachedWorlds(null);
+        await refreshWorldsQuietly();
       } catch (err: any) {
         showToast(`Restore failed: ${String(err)}`, 'error');
       } finally {

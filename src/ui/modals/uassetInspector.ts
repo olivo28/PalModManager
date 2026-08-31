@@ -76,6 +76,9 @@ export async function openUAssetInspectorModal(params: {
         <button class="uasset-tab-btn" data-tab="tab-names" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
           🔤 ${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map')} (${details.summary.nameCount})
         </button>
+        <button class="uasset-tab-btn" data-tab="tab-schema" style="background: none; border: 1px solid transparent; color: #38bdf8; font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+          ⚡ ${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema (USMAP)')} ${details.resolvedSchema ? `(${details.resolvedSchema.totalProperties})` : ''}
+        </button>
       </div>
 
       <!-- Tab Content Area -->
@@ -149,6 +152,11 @@ export async function openUAssetInspectorModal(params: {
               <div style="font-size: 16px; font-weight: 700; color: #ffd166;">${details.summary.nameCount}</div>
               <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map Tokens')}</div>
             </div>
+            <div style="width: 1px; height: 24px; background: var(--border);"></div>
+            <div>
+              <div style="font-size: 16px; font-weight: 700; color: #38bdf8;">${details.resolvedSchema ? details.resolvedSchema.totalProperties : '—'}</div>
+              <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema Properties')}</div>
+            </div>
           </div>
         </div>
 
@@ -215,6 +223,52 @@ export async function openUAssetInspectorModal(params: {
               `;
             }).join('')}
           </div>
+        </div>
+
+        <!-- Tab 5: Schema Structure (USMAP Resolved) -->
+        <div id="tab-schema" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: 8px;">
+          ${details.resolvedSchema ? `
+            <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+              <div style="display: flex; flex-direction: column; gap: 2px;">
+                <div style="font-size: 12.5px; font-weight: 700; color: #38bdf8; font-family: monospace;">${escapeHtml(details.resolvedSchema.matchedStructName)}</div>
+                <div style="font-size: 10px; color: var(--text-muted);">${details.resolvedSchema.superType ? `Extends: <span style="color: var(--text-primary); font-family: monospace;">${escapeHtml(details.resolvedSchema.superType)}</span> • ` : ''}${escapeHtml(details.resolvedSchema.gameVersion)}</div>
+              </div>
+              <span class="badge" style="font-size: 10px; padding: 2px 8px; background: rgba(56,189,248,0.15); color: #38bdf8; border: 1px solid rgba(56,189,248,0.3); font-weight: 700;">${details.resolvedSchema.totalProperties} ${escapeHtml(t('scanner.uasset_schema_props_count') || 'Properties Resolved')}</span>
+            </div>
+
+            <input type="text" id="uasset-schema-filter" placeholder="${escapeHtml(t('scanner.uasset_search_schema') || 'Filter schema properties by name or type...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 11px; outline: none;" />
+
+            <div id="uasset-schema-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px; max-height: 240px; min-height: 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+              ${details.resolvedSchema.properties.map(prop => `
+                <div class="uasset-schema-row" data-search="${escapeHtml((prop.name + ' ' + prop.typeName + ' ' + (prop.structType || '') + ' ' + (prop.enumType || '')).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: monospace; font-size: 11px;">
+                  <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
+                    <span style="font-size: 9px; color: var(--text-muted); min-width: 24px;">#${prop.index}</span>
+                    <strong style="color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(prop.name)}</strong>
+                  </div>
+                  <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
+                    ${prop.structType ? `<span style="font-size: 9.5px; color: #c084fc;">📦 ${escapeHtml(prop.structType)}</span>` : ''}
+                    ${prop.enumType ? `<span style="font-size: 9.5px; color: #ffd166;">🔢 ${escapeHtml(prop.enumType)}</span>` : ''}
+                    ${prop.innerType ? `<span style="font-size: 9.5px; color: #4ade80;">[${escapeHtml(prop.innerType)}]</span>` : ''}
+                    <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(prop.typeName)}</span>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          ` : `
+            <div style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.18); border-radius: 8px; padding: 18px 20px; display: flex; flex-direction: column; gap: 8px; text-align: left;">
+              <div style="display: flex; align-items: center; gap: 8px; color: #38bdf8; font-weight: 700; font-size: 12.5px;">
+                <span>ℹ️</span>
+                <span>${escapeHtml(t('scanner.uasset_schema_custom_blueprint_title') || 'Custom Blueprint / UI Widget Asset')}</span>
+              </div>
+              <div style="font-size: 11px; color: var(--text-secondary); line-height: 1.5;">
+                ${escapeHtml(t('scanner.uasset_schema_custom_blueprint_desc') || 'This asset is a custom visual Blueprint or Widget generated by the mod. Unversioned property schemas from USMAP are actively mapped for Unreal Engine DataTables, game structs, characters, items, and native C++ classes.')}
+              </div>
+              <div style="margin-top: 4px; padding: 8px 12px; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; justify-content: space-between;">
+                <span>📚 ${escapeHtml(t('scanner.uasset_active_schema_label') || 'Active Schema Catalog')}: <strong style="color: var(--text-primary);">Palworld v1.0.3</strong></span>
+                <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(74, 246, 38, 0.12); color: #4af626; border: 1px solid rgba(74, 246, 38, 0.25);">54,800+ Tokens Active</span>
+              </div>
+            </div>
+          `}
         </div>
 
       </div>

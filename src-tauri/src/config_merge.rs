@@ -224,16 +224,20 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_key
 
         let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
         if let Ok(new_content) = fs::read_to_string(&new_file) {
-            let merged = match ext.as_str() {
-                "json" | "jsonc" => merge_json(old_content, &new_content, ignored_keys),
-                "ini" | "cfg" | "txt" => merge_kv(old_content, &new_content, ignored_keys),
-                "lua" => merge_lua(old_content, &new_content, ignored_keys),
-                _ => None,
-            };
+            let merged = merge_file_contents(old_content, &new_content, &ext, ignored_keys);
             if let Some(result) = merged {
                 let _ = fs::write(&new_file, result);
             }
         }
+    }
+}
+
+pub fn merge_file_contents(old_content: &str, new_content: &str, ext: &str, ignored_keys: &[String]) -> Option<String> {
+    match ext.to_lowercase().as_str() {
+        "json" | "jsonc" => merge_json(old_content, new_content, ignored_keys),
+        "ini" | "cfg" | "txt" | "toml" | "yaml" | "yml" => merge_kv(old_content, new_content, ignored_keys),
+        "lua" => merge_lua(old_content, new_content, ignored_keys),
+        _ => None,
     }
 }
 

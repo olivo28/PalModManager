@@ -67,16 +67,25 @@ export function renderProfileList(): void {
     const modCount = p.enabled_mod_ids ? p.enabled_mod_ids.length : 0;
     const isActive = p.id === currentProfileId;
 
-    const ue4ssText = p.force_load_order_ue4ss ? 'UE4SS (FLO)' : 'UE4SS';
-    const palschemaText = p.force_load_order_palschema ? 'PalSchema (FLO)' : 'PalSchema';
+    const ue4ssVer = p.ue4ss_version || (isActive && dependencies?.ue4ss_installed ? dependencies.ue4ss_version : null);
+    const palschemaVer = p.palschema_version || (isActive && dependencies?.palschema_installed ? dependencies.palschema_version : null);
 
     const isProfileWorkshop = p.dependency_mode === 'workshop';
     const ue4ssClass = `profile-badge ue4ss ${isProfileWorkshop ? 'workshop' : ''}`;
     const palschemaClass = `profile-badge palschema ${isProfileWorkshop ? 'workshop' : ''}`;
 
-    const ue4ssBadge = p.ue4ss_enabled ? `<span class="${ue4ssClass}">${ue4ssText}</span>` : '';
-    const palschemaBadge = p.palschema_enabled ? `<span class="${palschemaClass}">${palschemaText}</span>` : '';
+    const ue4ssVerStr = ue4ssVer && ue4ssVer !== 'Installed' && ue4ssVer !== 'None' ? ` ${ue4ssVer}` : (isProfileWorkshop ? ' Workshop' : '');
+    const palschemaVerStr = palschemaVer && palschemaVer !== 'Installed' && palschemaVer !== 'None' ? ` ${palschemaVer}` : (isProfileWorkshop ? ' Workshop' : '');
+
+    const ue4ssText = p.force_load_order_ue4ss ? `UE4SS (FLO)${ue4ssVerStr}` : `UE4SS${ue4ssVerStr}`;
+    const palschemaText = p.force_load_order_palschema ? `PalSchema (FLO)${palschemaVerStr}` : `PalSchema${palschemaVerStr}`;
+
+    const ue4ssBadge = p.ue4ss_enabled ? `<span class="${ue4ssClass}">${escapeHtml(ue4ssText)}</span>` : '';
+    const palschemaBadge = p.palschema_enabled ? `<span class="${palschemaClass}">${escapeHtml(palschemaText)}</span>` : '';
     const modCountBadge = `<span class="profile-badge count">${escapeHtml(t('profiles.mod_count_badge', { count: modCount }))}</span>`;
+
+    const patchCount = p.compatibility_patches ? p.compatibility_patches.length : 0;
+    const patchBadge = patchCount > 0 ? `<span class="profile-badge count" style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3);">📦 ${patchCount} ${patchCount === 1 ? 'patch' : 'patches'}</span>` : '';
 
     return `
     <div class="profile-item ${isActive ? 'active' : ''}" data-id="${p.id}">
@@ -89,9 +98,11 @@ export function renderProfileList(): void {
           ${ue4ssBadge}
           ${palschemaBadge}
           ${modCountBadge}
+          ${patchBadge}
         </div>
       </div>
       <div class="profile-actions">
+        <button class="btn-secondary btn-sm profile-export-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_export_pack_title'))}">📤 ${escapeHtml(t('profiles.btn_export_pack'))}</button>
         <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clone'))}</button>
         <button class="btn-secondary btn-sm profile-clear-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clear'))}</button>
         ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_switch'))}</button>` : ''}
@@ -105,11 +116,20 @@ export function renderProfileList(): void {
       if (
         (e.target as HTMLElement).closest('.profile-item-delete') ||
         (e.target as HTMLElement).closest('.profile-clone-btn') ||
-        (e.target as HTMLElement).closest('.profile-clear-btn')
+        (e.target as HTMLElement).closest('.profile-clear-btn') ||
+        (e.target as HTMLElement).closest('.profile-export-btn')
       ) return;
       const id = (item as HTMLElement).dataset.id!;
       if (id === getState().currentProfileId) return;
       await handleProfileChange(id);
+    });
+  });
+
+  list.querySelectorAll('.profile-export-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      await handleExportProfilePack(id);
     });
   });
 
@@ -349,5 +369,72 @@ export async function handleCreateProfile(name: string): Promise<void> {
     }
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+  }
+}
+
+export async function handleExportProfilePack(profileId: string): Promise<void> {
+  try {
+    const { profiles } = getState();
+    const profile = profiles.find(p => p.id === profileId);
+    const profileName = profile ? profile.name : profileId;
+
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const defaultZipName = `PMM_Profile_${profileName.replace(/[^\w\s-]/g, '_')}_CoopPack.zip`;
+
+    const destPath = await save({
+      defaultPath: defaultZipName,
+      filters: [{ name: 'Zip Archive / Co-op Pack', extensions: ['zip', 'pmmprofile'] }],
+      title: t('profiles.dialog_export_title', { name: profileName }),
+    });
+
+    if (!destPath) return;
+
+    showToast(t('profiles.exporting_pack_toast', { name: profileName }), 'info');
+
+    const { exportProfilePack } = await import('../../api');
+    const resultPath = await exportProfilePack(profileId, destPath);
+
+    showToast(t('profiles.exported_pack_toast', { path: resultPath }), 'success');
+  } catch (err) {
+    console.error('Failed to export profile pack:', err);
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+  }
+}
+
+export async function handleImportProfilePack(): Promise<void> {
+  try {
+    const { open } = await import('@tauri-apps/plugin-dialog');
+    const selected = await open({
+      multiple: false,
+      directory: false,
+      filters: [{ name: 'Zip Archive / Co-op Pack', extensions: ['zip', 'pmmprofile'] }],
+      title: t('profiles.dialog_import_title'),
+    });
+
+    if (!selected || typeof selected !== 'string') return;
+
+    const confirmed = await showConfirm(t('profiles.confirm_import_body'));
+    if (!confirmed) return;
+
+    showToast(t('profiles.importing_pack_toast'), 'info');
+
+    const { importProfilePack } = await import('../../api');
+    const result = await importProfilePack(selected);
+
+    if (result && result.success) {
+      await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
+      const { getMods } = await import('../../api');
+      const mods = await getMods();
+      updateState({ allMods: mods });
+      renderModsView();
+
+      showToast(t('profiles.imported_pack_toast', {
+        name: result.profileName,
+        count: result.modCount,
+      }), 'success');
+    }
+  } catch (err) {
+    console.error('Failed to import profile pack:', err);
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
   }
 }

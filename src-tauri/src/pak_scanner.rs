@@ -20,6 +20,8 @@ pub struct PakConflict {
     pub asset_name: String,
     pub asset_type: String, // "DataTable", "Blueprint", "Texture", "Mesh", "Asset"
     pub mods: Vec<PakModSource>,
+    #[serde(default)]
+    pub resolved_by_patch: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -145,6 +147,28 @@ pub struct UAssetSummaryInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct UAssetSchemaProperty {
+    pub name: String,
+    pub type_name: String,
+    pub struct_type: Option<String>,
+    pub enum_type: Option<String>,
+    pub inner_type: Option<String>,
+    pub array_dim: u8,
+    pub index: u16,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UAssetSchemaResolvedInfo {
+    pub matched_struct_name: String,
+    pub super_type: Option<String>,
+    pub properties: Vec<UAssetSchemaProperty>,
+    pub total_properties: usize,
+    pub game_version: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UAssetInspectionDetails {
     pub asset_name: String,
     pub asset_path: String,
@@ -154,6 +178,94 @@ pub struct UAssetInspectionDetails {
     pub exports: Vec<UAssetExportItem>,
     pub imports: Vec<UAssetImportItem>,
     pub names_sample: Vec<String>,
+    pub resolved_schema: Option<UAssetSchemaResolvedInfo>,
+}
+
+pub fn resolve_usmap_schema(
+    asset_name: &str,
+    exports: &[UAssetExportItem],
+    imports: &[UAssetImportItem],
+    names_sample: &[String],
+) -> Option<UAssetSchemaResolvedInfo> {
+    let schema = crate::usmap::get_or_load_schema("")?;
+
+    let mut candidate_names: Vec<String> = Vec::new();
+
+    // 1. Clean asset name & stripped prefixes (WBP_, BP_, DT_, DA_, etc.)
+    let clean_asset = asset_name
+        .trim_end_matches(".uasset")
+        .trim_end_matches(".uexp")
+        .trim_end_matches(".ubulk")
+        .to_string();
+    candidate_names.push(clean_asset.clone());
+
+    for prefix in &["WBP_", "BP_", "DT_", "DA_", "BPI_", "UI_", "W_", "Pal"] {
+        if clean_asset.starts_with(prefix) {
+            let stripped = clean_asset[prefix.len()..].to_string();
+            if !stripped.is_empty() {
+                candidate_names.push(stripped.clone());
+                candidate_names.push(format!("Pal{}", stripped));
+                candidate_names.push(format!("FPal{}", stripped));
+                candidate_names.push(format!("UPal{}", stripped));
+            }
+        }
+    }
+
+    // 2. Export classes and object names
+    for exp in exports {
+        candidate_names.push(exp.class_name.clone());
+        candidate_names.push(exp.object_name.clone());
+        if exp.object_name.ends_with("_C") {
+            let stripped = exp.object_name.trim_end_matches("_C").to_string();
+            candidate_names.push(stripped.clone());
+            if stripped.starts_with("WBP_") || stripped.starts_with("BP_") {
+                candidate_names.push(stripped[stripped.find('_').unwrap() + 1..].to_string());
+            }
+        }
+    }
+
+    // 3. Import object & class names
+    for imp in imports {
+        candidate_names.push(imp.object_name.clone());
+        candidate_names.push(imp.class_name.clone());
+    }
+
+    // 4. Sample names with Pal/Engine prefixes (full sample)
+    for n in names_sample.iter() {
+        if n.starts_with("Pal") || n.starts_with("FPal") || n.starts_with("UPal") || n.starts_with("APal") || n.starts_with("UserWidget") {
+            candidate_names.push(n.clone());
+        }
+    }
+
+    for candidate in candidate_names {
+        if candidate.is_empty() || candidate == "Package" || candidate == "Object" || candidate == "Class" || candidate == "None" {
+            continue;
+        }
+        if let Some(st) = schema.find_struct(&candidate) {
+            let properties: Vec<UAssetSchemaProperty> = st.properties.iter().map(|p| {
+                UAssetSchemaProperty {
+                    name: p.name.clone(),
+                    type_name: p.type_name.clone(),
+                    struct_type: p.struct_type.clone(),
+                    enum_type: p.enum_type.clone(),
+                    inner_type: p.inner_type.clone(),
+                    array_dim: p.array_dim,
+                    index: p.index,
+                }
+            }).collect();
+
+            let total_properties = properties.len();
+            return Some(UAssetSchemaResolvedInfo {
+                matched_struct_name: st.name.clone(),
+                super_type: st.super_type.clone(),
+                properties,
+                total_properties,
+                game_version: schema.game_version.clone(),
+            });
+        }
+    }
+
+    None
 }
 
 /// Deep inspection of an internal .uasset (and companion .uexp) from a .pak archive
@@ -270,6 +382,8 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
                 package_flags: asset.asset_data.package_flags.bits(),
             };
 
+            let resolved_schema = resolve_usmap_schema(&asset_name, &exports, &imports, &names_sample);
+
             return Ok(UAssetInspectionDetails {
                 asset_name,
                 asset_path: uasset_internal_path.to_string(),
@@ -279,6 +393,7 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
                 exports,
                 imports,
                 names_sample,
+                resolved_schema,
             });
         }
     }
@@ -332,6 +447,8 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
         package_flags: 0,
     };
 
+    let resolved_schema = resolve_usmap_schema(&asset_name, &exports, &imports, &names_sample);
+
     Ok(UAssetInspectionDetails {
         asset_name,
         asset_path: uasset_internal_path.to_string(),
@@ -341,6 +458,7 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
         exports,
         imports,
         names_sample,
+        resolved_schema,
     })
 }
 
@@ -381,7 +499,7 @@ pub fn classify_asset_type(internal_path: &str) -> String {
     }
 }
 
-/// Scans all active .pak files in Palworld (~mods and LogicMods) and detects asset path collisions
+/// Scans all active .pak files in Palworld (~mods, LogicMods, and Paks) and detects asset path collisions
 pub fn scan_pak_conflicts(
     game_path: &Path,
     active_mods: &[ModInfo],
@@ -390,10 +508,11 @@ pub fn scan_pak_conflicts(
     let mods_dir = paks_dir.join("~mods");
     let logic_dir = paks_dir.join("LogicMods");
 
-    // Collect all active .pak files on disk
+    // Collect all active .pak files on disk, separating active compatibility patches
     let mut pak_files: Vec<PathBuf> = Vec::new();
+    let mut patch_files: Vec<PathBuf> = Vec::new();
 
-    let scan_dir = |dir: &Path, list: &mut Vec<PathBuf>| {
+    let scan_dir = |dir: &Path, list: &mut Vec<PathBuf>, patches: &mut Vec<PathBuf>| {
         if dir.exists() {
             if let Ok(entries) = fs::read_dir(dir) {
                 for entry in entries.flatten() {
@@ -407,7 +526,13 @@ pub fn scan_pak_conflicts(
                         if is_target {
                             let filename = p.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
                             // Ignore official base game paks if present
-                            if !filename.starts_with("Pal-Windows") {
+                            if filename.starts_with("Pal-Windows") {
+                                continue;
+                            }
+                            // Detect compatibility patches (starting with zzz_)
+                            if filename.starts_with("zzz_") && filename.to_lowercase().ends_with(".pak") {
+                                patches.push(p);
+                            } else {
                                 list.push(p);
                             }
                         }
@@ -417,12 +542,35 @@ pub fn scan_pak_conflicts(
         }
     };
 
-    scan_dir(&mods_dir, &mut pak_files);
-    scan_dir(&logic_dir, &mut pak_files);
+    scan_dir(&mods_dir, &mut pak_files, &mut patch_files);
+    scan_dir(&logic_dir, &mut pak_files, &mut patch_files);
+    scan_dir(&paks_dir, &mut pak_files, &mut patch_files);
 
-    let total_paks_scanned = pak_files.len() as u32;
+    let total_paks_scanned = (pak_files.len() + patch_files.len()) as u32;
     if pak_files.len() < 2 {
         return (Vec::new(), total_paks_scanned);
+    }
+
+    // Index all assets covered by existing compatibility patches
+    let mut patch_covered_assets: HashMap<String, String> = HashMap::new();
+    for patch_path in &patch_files {
+        let patch_filename = patch_path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        if let Ok(entries) = list_pak_entries(patch_path) {
+            for entry in entries {
+                let entry_lower = entry.to_lowercase();
+                if !entry_lower.ends_with(".uasset") && !entry_lower.ends_with(".uexp") && !entry_lower.ends_with(".ubulk") {
+                    continue;
+                }
+                let norm = if entry_lower.ends_with(".uexp") {
+                    format!("{}.uasset", &entry[..entry.len() - 5])
+                } else if entry_lower.ends_with(".ubulk") {
+                    format!("{}.uasset", &entry[..entry.len() - 6])
+                } else {
+                    entry.clone()
+                };
+                patch_covered_assets.insert(norm, patch_filename.clone());
+            }
+        }
     }
 
     // Map: internal_path -> Vec<PakModSource>
@@ -489,19 +637,27 @@ pub fn scan_pak_conflicts(
                 .unwrap_or_default();
 
             let asset_type = classify_asset_type(&internal_path);
+            let resolved_by_patch = patch_covered_assets.get(&internal_path).cloned();
 
             conflicts.push(PakConflict {
                 internal_path,
                 asset_name,
                 asset_type,
                 mods: sources,
+                resolved_by_patch,
             });
         }
     }
 
-    // Sort conflicts: DataTables first (most critical), then alphabetically
+    // Sort conflicts: Unresolved first, then DataTables (most critical), then alphabetically
     conflicts.sort_by(|a, b| {
-        if a.asset_type == "DataTable" && b.asset_type != "DataTable" {
+        let a_resolved = a.resolved_by_patch.is_some();
+        let b_resolved = b.resolved_by_patch.is_some();
+        if !a_resolved && b_resolved {
+            std::cmp::Ordering::Less
+        } else if a_resolved && !b_resolved {
+            std::cmp::Ordering::Greater
+        } else if a.asset_type == "DataTable" && b.asset_type != "DataTable" {
             std::cmp::Ordering::Less
         } else if a.asset_type != "DataTable" && b.asset_type == "DataTable" {
             std::cmp::Ordering::Greater
@@ -596,5 +752,80 @@ pub fn check_gamepass_pak_compatibility(
 
     (true, notices)
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DeprecatedSchemaNotice {
+    pub mod_id: String,
+    pub mod_name: String,
+    pub asset_path: String,
+    pub struct_name: String,
+    pub message: String,
+}
+
+/// Validates active mods against the loaded USMAP engine schema for Palworld
+pub fn check_mod_schema_compatibility(active_mods: &[ModInfo]) -> Vec<DeprecatedSchemaNotice> {
+    let schema = match crate::usmap::get_or_load_schema("") {
+        Some(s) => s,
+        None => return Vec::new(),
+    };
+
+    let mut notices = Vec::new();
+    let mut seen_keys = std::collections::HashSet::new();
+
+    for m in active_mods {
+        if !m.enabled || m.game_path.is_empty() {
+            continue;
+        }
+
+        let mut candidate_paks = Vec::new();
+        let is_pak = |s: &str| s.to_lowercase().ends_with(".pak");
+        if is_pak(&m.game_path) {
+            candidate_paks.push(PathBuf::from(&m.game_path));
+        }
+        for extra in &m.extra_files {
+            if is_pak(extra) {
+                candidate_paks.push(PathBuf::from(extra));
+            }
+        }
+
+        for pak_path in candidate_paks {
+            if !pak_path.exists() { continue; }
+            if let Ok(entries) = list_pak_entries(&pak_path) {
+                for entry in entries {
+                    let lower = entry.to_lowercase();
+                    if lower.ends_with(".uasset") && (lower.contains("datatable") || lower.contains("dt_") || lower.contains("character") || lower.contains("save")) {
+                        if let Ok(uasset_bytes) = extract_pak_entry(&pak_path, &entry) {
+                            let text = String::from_utf8_lossy(&uasset_bytes);
+                            for token in text.split(|c: char| c == '\0' || c < ' ' || c > '~') {
+                                let trimmed = token.trim();
+                                if trimmed.starts_with("Pal") && trimmed.len() > 6 && trimmed.len() < 64 {
+                                    if !schema.names.iter().any(|n| n.eq_ignore_ascii_case(trimmed)) && !schema.structs.contains_key(trimmed) {
+                                        if trimmed.ends_with("Parameter") || trimmed.ends_with("Data") || trimmed.ends_with("SaveData") {
+                                            let dedup_key = format!("{}:{}:{}", m.id, entry, trimmed);
+                                            if seen_keys.insert(dedup_key) {
+                                                notices.push(DeprecatedSchemaNotice {
+                                                    mod_id: m.id.clone(),
+                                                    mod_name: m.name.clone(),
+                                                    asset_path: entry.clone(),
+                                                    struct_name: trimmed.to_string(),
+                                                    message: format!("Asset references unmapped or legacy engine structure '{}'", trimmed),
+                                                });
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    notices
+}
+
 
 

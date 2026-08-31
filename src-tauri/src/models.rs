@@ -236,6 +236,12 @@ pub struct Profile {
     pub force_load_order_palschema: Option<bool>,
     #[serde(default)]
     pub hide_native_mods: Option<bool>,
+    #[serde(default)]
+    pub ue4ss_version: Option<String>,
+    #[serde(default)]
+    pub palschema_version: Option<String>,
+    #[serde(default)]
+    pub compatibility_patches: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -386,6 +392,19 @@ pub struct WorkshopOnlineCheckResult {
     pub total_checked: usize,
     pub pending_steam_downloads: Vec<WorkshopOnlineModItem>,
     pub ready_to_install_updates: Vec<WorkshopOnlineModItem>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DependencyVaultEntry {
+    pub dep_type: String,       // "ue4ss" | "palschema"
+    pub version: String,        // "28.08.2026", "0.6.5", etc.
+    pub filename: String,       // "UE4SS - 28.08.2026.zip"
+    pub file_path: String,      // absolute path
+    pub file_size: u64,         // size in bytes
+    pub modified_time: String,  // ISO formatted datetime
+    pub is_installed: bool,     // matches active version
+    pub is_custom: bool,        // user custom zip
 }
 
 

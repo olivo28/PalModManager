@@ -3,44 +3,40 @@
 
 [size=4][b]Added[/b][/size]
 [list]
-[*] [b]PMM-Core Reactive Engine:[/b] Custom ultra-lightweight, Svelte-like reactive framework built specifically for PalModManager with zero Virtual DOM overhead, compile-time typed DOM elements, and instant UI response times.
-[*] [b]Download Speed & ETA:[/b] Live download speed indicator ([font=monospace]⚡ 3.4 MB/s[/font]) and time remaining ([font=monospace]⏳ 42s[/font]) in the Nexus download queue.
-[*] [b]Save Health Doctor & World Hub:[/b] Full Palworld savegame diagnostic and repair suite under the [b]Scan[/b] tab.
-[list]
-[*] Automatically discovers saves across Steam, Xbox Game Pass, and Linux Proton.
-[*] Fixes startup crashes by cleaning orphaned mod data with 1-click automatic backups.
-[*] Backup snapshot history with side-by-side diff comparisons and 1-click restore.
-[*] Inspects world difficulty multipliers, player roster levels, and save analytics.
-[/list]
-[*] [b]Deep Pak & UAsset Inspector:[/b] Pure-Rust inspection of [font=monospace].pak[/font] files, Unreal Engine assets ([font=monospace].uasset[/font] / [font=monospace].uexp[/font]), and textures (DDS).
-[*] [b]Nexus Mods Creator Badges:[/b] Added [b]✔ Mod Author[/b] badge and total accumulated downloads counter for mod creators.
-[*] [b]Config Editor Upgrades:[/b] Smart auto-indentation, live cursor line/column counter, and unsaved changes indicator.
-[*] [b]More File Syntax Highlighting:[/b] Added syntax highlighting for [font=monospace].ini[/font], [font=monospace].cfg[/font], [font=monospace].toml[/font], [font=monospace].yaml[/font], [font=monospace].xml[/font], [font=monospace].py[/font], and [font=monospace].md[/font] files.
-[*] [b]Automated Pak Patch Engine:[/b] Detects conflicting mod assets and generates 1-click merged compatibility patches ([font=monospace]zzz_Patch_*.pak[/font]).
-[*] [b]Xbox Game Pass (WinGDK) Support:[/b] Automatic detection and 1-click [font=monospace].utoc[/font] / [font=monospace].ucas[/font] table-of-contents generation ([font=monospace]retoc[/font]).
-[*] [b]Altermatic Engine Support:[/b] Built-in support for dynamic alteration manifests and runtime mod asset overrides.
-[*] [b]Virtual Folder Startup Modes:[/b] Added a new Interface setting to configure how mod folders behave on startup ([i]Always Expanded[/i], [i]Always Collapsed[/i], or [i]Remember Last State[/i]).
-[*] [b]Cache Cleaner:[/b] Added [font=monospace]pnpm clean[/font] tool to easily purge intermediate build and compiler cache.
-[*] [b]Full 6-Language Localization:[/b] 100% translated across English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
+[*] [b]PMM World Backups Vault:[/b] Manage and restore PalModManager world backups with 1-click safety restoration.
+[*] [b]Co-op Profile Packs:[/b] Export and import complete mod setups with dependencies and configs in a single [font=monospace].zip[/font] / [font=monospace].pmmprofile[/font].
+[*] [b]Config Merge & Backup Diff:[/b] Visual side-by-side file comparison with smart merge that preserves custom settings during updates.
+[*] [b]Dependency Version Vault:[/b] Archive and rollback UE4SS and PalSchema versions with 1-click, preserving mod configs.
+[*] [b]PMM-Core Engine:[/b] Ultra-fast reactive framework with typed DOM elements and instant UI response times.
+[*] [b]Download Speed & ETA:[/b] Live download speed ([font=monospace]⚡ MB/s[/font]) and remaining time in the Nexus queue.
+[*] [b]Save Health Doctor:[/b] Detect and clean orphaned mod classes to fix loading crashes, with world settings inspector.
+[*] [b]Deep Pak & UAsset Inspector:[/b] Pure-Rust inspection of [font=monospace].pak[/font] files, [font=monospace].uasset[/font] / [font=monospace].uexp[/font], and DDS textures.
+[*] [b]Nexus Creator Badges:[/b] Added Mod Author badge and total accumulated download counters.
+[*] [b]Enhanced Code Editor:[/b] Auto-indentation, line/column counter, and syntax highlighting for [font=monospace].ini[/font], [font=monospace].cfg[/font], [font=monospace].toml[/font], [font=monospace].yaml[/font], [font=monospace].xml[/font], [font=monospace].py[/font], [font=monospace].md[/font].
+[*] [b]Unreal Engine Schema Mappings (.usmap):[/b] Pure-Rust USMAP v4 parser and dynamic GitHub synchronization engine for deep cooked asset inspection and DataTable decoding with offline Steam ACF build detection.
+[*] [b]Manual Compatibility Patch Builder (Beta):[/b] Resolve overlapping [font=monospace].pak[/font] asset collisions by selecting winning assets and compiling unified priority patches ([font=monospace]zzz_PMM_Patch_*_P.pak[/font]) with native [font=monospace]repak[/font] and [font=monospace]retoc[/font]. [i](Experimental testing; compatibility depends on mod structure and companions)[/i].
+[*] [b]Conflict & Collision Scanner:[/b] Multi-layer detection of Pak asset collisions, PalSchema table collisions, and Lua hook collisions.
+[*] [b]Xbox Game Pass & Altermatic (Beta):[/b] Built-in IoStore ([font=monospace].utoc[/font]/[font=monospace].ucas[/font]) conversion and dynamic alteration manifest support. [i](Experimental testing)[/i].
+[*] [b]Virtual Folder Startup Modes:[/b] Configurable folder behavior on startup (Expanded, Collapsed, Remember).
+[*] [b]6-Language Localization:[/b] English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
 [/list]
 
 [size=4][b]Changed[/b][/size]
 [list]
-[*] [b]Faster & Smoother Startup:[/b] Streamlined the application startup order for faster launch times and eliminated background rescan lag when switching windows.
-[*] [b]100% PMM-Core Rollout:[/b] Completely modernized all app views and modals using the new Svelte-like typed architecture.
-[*] [b]Modular Codebase:[/b] Restructured large monolithic files into clean, decoupled domain modules.
-[*] [b]Instant Settings Updates:[/b] Visibility and behavior toggles now apply immediately without reloading the app.
-[*] [b]Cleaner Mod Installer:[/b] More compact and balanced layout for preview cards and config diffs.
-[*] [b]Faster Code Editor:[/b] Smooth, lag-free typing with asynchronous syntax highlighting.
-[*] [b]Enhanced Logging:[/b] Standardized structured logging across all backend and frontend operations.
+[*] [b]Faster Startup:[/b] Streamlined initialization and eliminated background rescan lag.
+[*] [b]Modular Codebase:[/b] Decoupled monolithic files into clean, maintainable domain modules.
+[*] [b]Instant Settings:[/b] UI toggles now apply immediately without reloading.
+[*] [b]Streamlined UI:[/b] More compact layouts for installer preview cards and savegame world lists.
+[*] [b]Structured Logging:[/b] Standardized dual-layer frontend and backend logging.
 [/list]
 
 [size=4][b]Fixed[/b][/size]
 [list]
-[*] [b]Filesystem Watcher:[/b] Paused file watchers during profile switches to avoid duplicate scans and event storms.
-[*] [b]Database Write Hygiene:[/b] Prevented redundant database disk writes when mod metadata is unchanged.
-[*] [b]Toast Notifications Layering:[/b] Fixed toast alerts appearing behind open modal dialogs.
-[*] [b]Translation Cleanup:[/b] Cleaned up obsolete and duplicate translation keys across all language files.
+[*] [b]Watcher Storms:[/b] Paused filesystem watchers during profile switches to avoid duplicate rescans.
+[*] [b]UE4SS Update Checks:[/b] Fixed asset timestamp detection for GitHub releases with updated binaries.
+[*] [b]Modal Layering:[/b] Fixed toast alerts appearing behind open modals.
+[*] [b]Database Hygiene:[/b] Prevented redundant database disk writes when metadata is unchanged.
+[*] [b]Translation Keys:[/b] Audited and fixed missing and duplicate translation keys.
 [/list]
 
 [hr]

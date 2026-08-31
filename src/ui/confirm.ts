@@ -1,6 +1,38 @@
 import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
 
+function formatConfirmText(text: string): string {
+  return text.split('\n\n').map(para => {
+    const trimmed = para.trim();
+    if (!trimmed) return '';
+
+    let safe = escapeHtml(trimmed);
+
+    // Parse **bold** into <strong>
+    safe = safe.replace(/\*\*([^*]+)\*\*/g, '<strong style="color:var(--text-primary); font-weight:600;">$1</strong>');
+
+    // Parse *italic* into <em>
+    safe = safe.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+
+    // Parse `code` into <code>
+    safe = safe.replace(/`([^`]+)`/g, '<code style="background:rgba(255,255,255,0.08); padding:1px 5px; border-radius:3px; font-size:11px; font-family:monospace; color:var(--text-primary);">$1</code>');
+
+    // Handle single newlines inside paragraph
+    safe = safe.replace(/\n/g, '<br/>');
+
+    // Render alert / warning notices in dedicated callout cards
+    if (/^(📢|⚠️|ℹ️|🚨)/u.test(trimmed)) {
+      return `
+        <div style="background:rgba(245, 158, 11, 0.09); border:1px solid rgba(245, 158, 11, 0.28); border-left:3px solid #f59e0b; border-radius:6px; padding:10px 12px; margin-bottom:14px; font-size:12px; line-height:1.55; color:var(--text-secondary);">
+          ${safe}
+        </div>
+      `;
+    }
+
+    return `<p style="margin:0 0 10px 0; font-size:12px; line-height:1.5; color:var(--text-muted);">${safe}</p>`;
+  }).join('');
+}
+
 export function showConfirm(
   titleOrMessage: string,
   message?: string,
@@ -16,18 +48,18 @@ export function showConfirm(
     const displayBody = hasTitle ? message : titleOrMessage;
     const btnConfirmText = confirmText || t('common.confirm');
     const btnCancelText = cancelText || t('common.cancel');
-    const formattedBody = displayBody.split('\n\n').map(para => `<p style="margin:0 0 10px 0; font-size:12px; line-height:1.5; color:var(--text-muted);">${para.replace(/\n/g, '<br/>')}</p>`).join('');
+    const formattedBody = formatConfirmText(displayBody);
 
     const overlay = document.createElement('div');
     overlay.className = 'confirm-overlay';
-    overlay.style.zIndex = '99999';
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:99999;';
     overlay.innerHTML = `
-      <div class="confirm-box" style="min-width:320px; max-width:440px; background:var(--bg-secondary); border:1px solid var(--border); padding:20px; border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
-        <h4 style="margin:0 0 12px 0; font-size:15px; font-weight:700; color:var(--text-primary); border-bottom:1px solid var(--border); padding-bottom:8px;">${escapeHtml(displayTitle)}</h4>
+      <div class="confirm-box" style="min-width:340px; max-width:460px; background:var(--bg-secondary); border:1px solid var(--border); padding:22px; border-radius:10px; box-shadow:0 16px 40px rgba(0,0,0,0.6);">
+        <h4 style="margin:0 0 14px 0; font-size:15px; font-weight:700; color:var(--text-primary); border-bottom:1px solid var(--border); padding-bottom:10px;">${escapeHtml(displayTitle)}</h4>
         <div class="confirm-body" style="margin-bottom:18px;">${formattedBody}</div>
         <div class="confirm-actions" style="display:flex; justify-content:flex-end; gap:8px;">
-          <button class="confirm-cancel" style="padding:6px 12px; background:transparent; border:1px solid var(--border); border-radius:4px; color:var(--text-muted); font-size:11px; font-weight:600; cursor:pointer;">${escapeHtml(btnCancelText)}</button>
-          <button class="confirm-danger" style="padding:6px 12px; background:var(--accent); border:none; border-radius:4px; color:#fff; font-size:11px; font-weight:600; cursor:pointer;">${escapeHtml(btnConfirmText)}</button>
+          <button class="confirm-cancel" style="padding:7px 14px; background:transparent; border:1px solid var(--border); border-radius:6px; color:var(--text-muted); font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s ease;">${escapeHtml(btnCancelText)}</button>
+          <button class="confirm-danger" style="padding:7px 16px; background:var(--accent); border:none; border-radius:6px; color:#fff; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s ease;">${escapeHtml(btnConfirmText)}</button>
         </div>
       </div>
     `;

@@ -142,9 +142,15 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
                       <span style="font-size: 10px; color: var(--text-muted);">${w.saveDate || ''}</span>
                     </div>
 
-                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-muted);">
-                      <span>📁 ${formatBytes(w.levelSizeBytes)} (${w.playerCount} ${escapeHtml(t('scanner.players_title') || 'Players')})</span>
-                      <span>💾 ${w.backupCount} Snapshots</span>
+                    <div style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; color: var(--text-muted); gap: 6px; white-space: nowrap;">
+                      <span style="overflow: hidden; text-overflow: ellipsis;">📁 ${formatBytes(w.levelSizeBytes)} (${w.playerCount} ${escapeHtml(w.playerCount === 1 ? (t('scanner.player_single') || 'Player') : (t('scanner.player_plural') || 'Players'))})</span>
+                      <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
+                        <span title="${w.backupCount} Game Snapshots">💾 ${w.backupCount}</span>
+                        ${w.pmmBackupCount ? `
+                          <span style="opacity: 0.5;">•</span>
+                          <span title="${w.pmmBackupCount} PMM Backups" style="color: #c084fc; font-weight: 600;">📦 ${w.pmmBackupCount}</span>
+                        ` : ''}
+                      </div>
                     </div>
 
                     ${w.customMeta?.boundProfileName ? `
@@ -188,6 +194,11 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
                       <span>${curCreating ? 'Saving...' : escapeHtml(t('scanner.btn_backup_now') || 'Backup World Now')}</span>
                     </button>
 
+                    <button id="btn-pmm-vault" class="btn-secondary" style="padding: 6px 12px; font-size: 11.5px; display: flex; align-items: center; gap: 6px;" title="${escapeHtml(t('scanner.btn_pmm_vault_title') || 'View, restore, or delete PMM manual ZIP backups')}">
+                      <span>📦</span>
+                      <span>${escapeHtml(t('scanner.btn_pmm_vault') || 'PMM Backups')} (${selectedWorld.pmmBackupCount || 0})</span>
+                    </button>
+
                     <button id="btn-open-world-folder" class="btn-secondary" style="padding: 6px 12px; font-size: 11.5px; display: flex; align-items: center; gap: 6px;" title="${escapeHtml(t('scanner.btn_open_folder') || 'Open save folder in Explorer')}">
                       <span>📂</span>
                       <span>${escapeHtml(t('scanner.btn_open_folder') || 'Open in Explorer')}</span>
@@ -212,7 +223,7 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
               </div>
 
               <!-- World Quick Stats Grid -->
-              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; flex-shrink: 0;">
+              <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; flex-shrink: 0;">
                 <div class="premium-stat-card">
                   <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">${escapeHtml(t('scanner.stat_in_game_day') || 'In-Game Day')}</div>
                   <div class="premium-stat-value">${selectedWorld.inGameDay ? `Day ${selectedWorld.inGameDay}` : 'N/A'}</div>
@@ -230,6 +241,15 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
                 <div class="premium-stat-card">
                   <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase;">${escapeHtml(t('scanner.stat_auto_backups') || 'Game Auto-Backups')}</div>
                   <div class="premium-stat-value" style="font-size: 15px; color: #38bdf8;">${selectedWorld.backupCount} Snapshots</div>
+                </div>
+                <div class="premium-stat-card stat-card-pmm-vault" style="cursor: pointer; transition: transform 0.15s, border-color 0.15s;" title="${escapeHtml(t('scanner.btn_pmm_vault_title') || 'View, restore, or delete PMM manual ZIP backups')}">
+                  <div style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: flex; justify-content: space-between; align-items: center;">
+                    <span>${escapeHtml(t('scanner.stat_pmm_backups') || 'PMM Backups')}</span>
+                    <span style="font-size: 11px; opacity: 0.7;">↗</span>
+                  </div>
+                  <div class="premium-stat-value" style="font-size: 15px; color: #a855f7;">
+                    📦 ${selectedWorld.pmmBackupCount || 0} ${escapeHtml(t('scanner.vault_count_label') || 'Backups')}
+                  </div>
                 </div>
               </div>
 

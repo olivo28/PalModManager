@@ -90,6 +90,7 @@ export interface MainDomMap {
   'profile-list': HTMLElement;
   'profile-new-name': HTMLInputElement;
   'profile-create-btn': HTMLButtonElement;
+  'profile-import-btn': HTMLButtonElement;
   'profile-modal-close': HTMLButtonElement;
 
   'about-modal': HTMLElement;

@@ -2,6 +2,7 @@ import { listModFiles } from '../../api';
 import { getState, updateState } from '../../state';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
+import { showConfirm } from '../confirm';
 import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData } from './viewer';
 
 export function renderEditorModTree(): void {
@@ -156,6 +157,8 @@ function getFileIcon(ext: string): string {
   if (lower === 'yaml' || lower === 'yml') return 'YML';
   if (lower === 'py') return 'PY';
   if (lower === 'xml' || lower === 'html') return 'XML';
+  if (lower.startsWith('bak')) return 'BAK';
+  if (lower === 'log') return 'LOG';
   return '--';
 }
 
@@ -186,11 +189,30 @@ function renderNodeHTML(node: FileTreeNode): string {
       const ext = child.name.split('.').pop() || '';
       const icon = getFileIcon(ext);
       const isSelected = currentSelected === child.path;
+      const isBak = ext.toLowerCase().startsWith('bak');
+
+      let actionButtons = '';
+      if (isBak) {
+        actionButtons += `
+          <button class="editor-file-action-btn editor-file-diff-btn" data-path="${escapeHtml(child.path)}" title="${escapeHtml(t('editor.btn_diff') || 'Compare Diff')}">
+            🔍
+          </button>
+        `;
+      }
+      actionButtons += `
+        <button class="editor-file-action-btn editor-file-delete-btn" data-path="${escapeHtml(child.path)}" title="${escapeHtml(t('editor.btn_delete_file') || 'Delete File')}">
+          🗑️
+        </button>
+      `;
+
       return `
       <div class="editor-file-item${isSelected ? ' selected' : ''}" data-path="${escapeHtml(child.path)}" data-ext="${escapeHtml(ext)}">
         <span class="editor-file-icon">${icon}</span>
         <span class="editor-file-name" title="${escapeHtml(child.name)}">${escapeHtml(child.name)}</span>
         <span class="editor-file-dirty-dot" title="${escapeHtml(t('editor.unsaved_changes') || 'Unsaved changes')}">●</span>
+        <div class="editor-file-actions">
+          ${actionButtons}
+        </div>
       </div>`;
     }
   }).join('');
@@ -225,6 +247,60 @@ export function renderFileTree(files: string[]): void {
     });
   });
 
+  // Diff Action Buttons
+  tree.querySelectorAll('.editor-file-diff-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const path = (btn as HTMLElement).dataset.path;
+      const state = getState();
+      if (state.editorModId && path) {
+        const { openEditorDiffModal } = await import('./diffModal');
+        await openEditorDiffModal(state.editorModId, path);
+      }
+    });
+  });
+
+  // Delete Action Buttons
+  tree.querySelectorAll('.editor-file-delete-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const path = (btn as HTMLElement).dataset.path;
+      const state = getState();
+      if (!state.editorModId || !path) return;
+
+      const title = t('editor.confirm_delete_title') || 'Delete File';
+      const body = (t('editor.confirm_delete_body') || 'Are you sure you want to permanently delete **{file}**?').replace('{file}', path);
+
+      const confirmed = await showConfirm(title, body);
+      if (!confirmed) return;
+
+      try {
+        const { deleteModFile } = await import('../../api');
+        const { showToast } = await import('../toast');
+        const res = await deleteModFile(state.editorModId, path);
+        if (res.success) {
+          showToast(t('editor.toast_deleted') || 'File deleted successfully', 'success');
+          if (state.editorSelectedFile === path) {
+            updateState({ editorSelectedFile: null });
+            const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+            if (editorContent) {
+              editorContent.value = '';
+              editorContent.disabled = true;
+            }
+            const codeEl = document.getElementById('editor-highlight-code');
+            if (codeEl) codeEl.innerHTML = '';
+            const pathEl = document.getElementById('editor-file-path');
+            if (pathEl) pathEl.textContent = '';
+          }
+          await refreshEditorFileTree(state.editorModId);
+        }
+      } catch (err) {
+        const { showToast } = await import('../toast');
+        showToast(String(err), 'error');
+      }
+    });
+  });
+
   tree.querySelectorAll('.editor-file-item').forEach(item => {
     item.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -253,4 +329,14 @@ export function populateEditorModSelect(): void {
       .filter(m => m.type !== 'pak' && m.type !== 'logicmods' && m.nexusAuthor !== 'UE4SS Native Mod')
       .map(m => `<option value="${m.id}">${escapeHtml(m.name)}</option>`).join('');
   renderEditorModTree();
+}
+
+export async function refreshEditorFileTree(modId: string): Promise<void> {
+  try {
+    const files = await listModFiles(modId);
+    updateState({ editorFiles: files });
+    renderFileTree(files);
+  } catch (err) {
+    console.error('Failed to refresh editor file tree:', err);
+  }
 }

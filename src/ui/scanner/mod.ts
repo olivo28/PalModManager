@@ -46,6 +46,7 @@ export interface PakConflict {
   assetName: string;
   assetType: string;
   mods: PakModSource[];
+  resolvedByPatch?: string | null;
 }
 
 export interface GamePassPakNotice {
@@ -54,6 +55,14 @@ export interface GamePassPakNotice {
   pakFilename: string;
   pakPath: string;
   missingContainers: string[];
+}
+
+export interface DeprecatedSchemaNotice {
+  modId: string;
+  modName: string;
+  assetPath: string;
+  structName: string;
+  message: string;
 }
 
 export interface ScanResult {
@@ -69,6 +78,7 @@ export interface ScanResult {
   warnings: string[];
   modSummaries: ModSummary[];
   gamepassNotices?: GamePassPakNotice[];
+  schemaNotices?: DeprecatedSchemaNotice[];
   isGamepass?: boolean;
 }
 

@@ -32,4 +32,5 @@ pub use deep_scan::{
 pub use repair::{
     repair_and_sanitize_save, restore_save_from_backup,
     create_manual_world_backup, prune_world_backups,
+    list_pmm_world_backups, restore_pmm_world_backup, delete_pmm_world_backup,
 };

@@ -123,12 +123,23 @@ pub struct SaveWorldSummary {
     pub level_size_bytes: u64,
     pub player_count: usize,
     pub backup_count: usize,
+    pub pmm_backup_count: usize,
     pub latest_backup_date: Option<String>,
     pub has_external_edits: bool,
     pub health_status: String, // "healthy", "warning", "corrupt"
     pub detected_issues_count: usize,
     pub custom_meta: Option<WorldCustomMeta>,
     pub world_options: Option<WorldOptionSettings>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PmmWorldBackup {
+    pub file_name: String,
+    pub file_path: String,
+    pub file_size_bytes: u64,
+    pub created_at: String,
+    pub world_name_hint: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -158,8 +169,10 @@ pub struct SaveHealthReport {
     pub raw_mod_paths_found: Vec<String>,
     pub total_mod_references: usize,
     pub backup_count: usize,
+    pub pmm_backup_count: usize,
     pub latest_backup_date: Option<String>,
     pub available_backups: Vec<SaveBackupSnapshot>,
+    pub pmm_backups: Vec<PmmWorldBackup>,
     pub has_external_edits: bool,
     pub external_edit_details: Option<ExternalEditDiagnostic>,
     pub can_repair: bool,

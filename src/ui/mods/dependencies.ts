@@ -5,13 +5,86 @@ import { showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
 import { loadMods } from './loader';
 import { loadProfiles } from './profiles';
-
+import { bus } from '../../framework';
 import { renderConflictBanner, removeConflictBanner } from '../conflictBanner';
 
 let _isPromptingUe4ss = false;
 let _isPromptingPalschema = false;
 let _loadDepsPromise: Promise<void> | null = null;
 let _lastLoadDepsTime = 0;
+
+async function waitUntilAppReady(): Promise<void> {
+  const loading = document.getElementById('app-loading');
+  const app = document.getElementById('app');
+  const isAppVisible = app && app.style.display === 'flex' && (!loading || loading.style.display === 'none');
+  if (isAppVisible) {
+    return;
+  }
+  return new Promise((resolve) => {
+    let resolved = false;
+    const unsub = bus.on('app:ready', () => {
+      if (!resolved) {
+        resolved = true;
+        unsub();
+        setTimeout(resolve, 150);
+      }
+    });
+    setTimeout(() => {
+      if (!resolved) {
+        resolved = true;
+        unsub();
+        resolve();
+      }
+    }, 5000);
+  });
+}
+
+async function checkAndPromptUpdates(fullDeps: any): Promise<void> {
+  await waitUntilAppReady();
+
+  // Check if UE4SS needs update and ask user (only for GitHub / Standalone mode)
+  if (fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop') {
+    const latestTarget = fullDeps.ue4ss_latest_date || fullDeps.ue4ss_latest_tag || 'latest';
+    if (!_isPromptingUe4ss && sessionStorage.getItem('dismissed_ue4ss_update') !== latestTarget) {
+      _isPromptingUe4ss = true;
+      sessionStorage.setItem('dismissed_ue4ss_update', latestTarget);
+      try {
+        const confirmed = await showConfirm(
+          t('dependencies.prompt_body_ue4ss', { installed: fullDeps.ue4ss_version || 'installed', latest: latestTarget }),
+          t('dependencies.prompt_title_ue4ss')
+        );
+        _isPromptingUe4ss = false;
+        if (confirmed) {
+          executeInstallOrUpdate('ue4ss', true);
+          return;
+        }
+      } catch {
+        _isPromptingUe4ss = false;
+      }
+    }
+  }
+
+  // Check if PalSchema needs update and ask user (only for GitHub / Standalone mode)
+  if (fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop' && fullDeps.palschema_version !== 'Workshop') {
+    const latestVer = fullDeps.palschema_latest_version || 'latest';
+    if (!_isPromptingPalschema && sessionStorage.getItem('dismissed_palschema_update') !== latestVer) {
+      _isPromptingPalschema = true;
+      sessionStorage.setItem('dismissed_palschema_update', latestVer);
+      try {
+        const confirmed = await showConfirm(
+          t('dependencies.prompt_body_palschema', { installed: fullDeps.palschema_version || 'installed', latest: latestVer }),
+          t('dependencies.prompt_title_palschema')
+        );
+        _isPromptingPalschema = false;
+        if (confirmed) {
+          executeInstallOrUpdate('palschema', true);
+        }
+      } catch {
+        _isPromptingPalschema = false;
+      }
+    }
+  }
+}
 
 export async function loadDependencies(force = false): Promise<void> {
   const now = Date.now();
@@ -43,41 +116,8 @@ export async function loadDependencies(force = false): Promise<void> {
       updateState({ dependencies: fullDeps });
       renderDependencyBadges(fullDeps);
 
-      // Check if UE4SS needs update and ask user (only for GitHub / Standalone mode)
-      if (fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop') {
-        const latestTarget = fullDeps.ue4ss_latest_date || fullDeps.ue4ss_latest_tag || 'latest';
-        if (!_isPromptingUe4ss && sessionStorage.getItem('dismissed_ue4ss_update') !== latestTarget) {
-          _isPromptingUe4ss = true;
-          sessionStorage.setItem('dismissed_ue4ss_update', latestTarget);
-          showConfirm(
-            t('dependencies.prompt_body_ue4ss', { installed: fullDeps.ue4ss_version || 'installed', latest: latestTarget }),
-            t('dependencies.prompt_title_ue4ss')
-          ).then((confirmed) => {
-            _isPromptingUe4ss = false;
-            if (confirmed) {
-              executeInstallOrUpdate('ue4ss', true);
-            }
-          }).catch(() => { _isPromptingUe4ss = false; });
-        }
-      }
-
-      // Check if PalSchema needs update and ask user (only for GitHub / Standalone mode)
-      if (fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop' && fullDeps.palschema_version !== 'Workshop') {
-        const latestVer = fullDeps.palschema_latest_version || 'latest';
-        if (!_isPromptingPalschema && sessionStorage.getItem('dismissed_palschema_update') !== latestVer) {
-          _isPromptingPalschema = true;
-          sessionStorage.setItem('dismissed_palschema_update', latestVer);
-          showConfirm(
-            t('dependencies.prompt_body_palschema', { installed: fullDeps.palschema_version || 'installed', latest: latestVer }),
-            t('dependencies.prompt_title_palschema')
-          ).then((confirmed) => {
-            _isPromptingPalschema = false;
-            if (confirmed) {
-              executeInstallOrUpdate('palschema', true);
-            }
-          }).catch(() => { _isPromptingPalschema = false; });
-        }
-      }
+      // Defer interactive update prompt until the main app UI is visible and loaded
+      checkAndPromptUpdates(fullDeps);
     } catch (e) {
       console.error('Failed to check dependencies:', e);
     } finally {
@@ -101,63 +141,11 @@ export function executeInstallOrUpdate(type: 'ue4ss' | 'palschema', isUpdate: bo
 }
 
 export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
-  const deps = getState().dependencies;
-  if (!deps) return;
-  const isInstalled = type === 'ue4ss' ? deps.ue4ss_installed : deps.palschema_installed;
-  const needsUpdate = type === 'ue4ss' ? deps.ue4ss_needs_update : deps.palschema_needs_update;
-
-  if (type === 'palschema' && !deps.ue4ss_installed) {
-    showConfirm(t('dependencies.missing_ue4ss_for_palschema'))
-      .then(async (confirmed) => {
-        if (!confirmed) return;
-        try {
-          showToast(t('toasts.installing_dep', { dep: 'UE4SS' }), 'info');
-          await installUe4ss();
-          showToast(t('dependencies.up_to_date'), 'success');
-          await loadDependencies();
-
-          showToast(t('toasts.installing_dep', { dep: 'PalSchema' }), 'info');
-          await installPalschema();
-          showToast(t('dependencies.up_to_date'), 'success');
-          await loadDependencies();
-          await loadMods();
-        } catch (e) {
-          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
-        }
-      });
-    return;
-  }
-
-  if (!isInstalled || needsUpdate) {
-    const isWorkshop = deps.ue4ss_install_mode === 'Workshop';
-    if (isWorkshop && needsUpdate) {
-      const packageName = type === 'ue4ss' ? 'UE4SSExperimentalPW' : 'PalSchema';
-      import('../../api').then(async ({ getWorkshopState, activateWorkshopMod }) => {
-        showToast(t('toasts.updating_dep', { dep: type === 'ue4ss' ? 'UE4SS' : 'PalSchema' }), 'info');
-        const wState = await getWorkshopState();
-        const targetMod = wState.mods.find((m: any) => m.packageName.toLowerCase() === packageName.toLowerCase());
-        if (targetMod) {
-          await activateWorkshopMod(targetMod.packageName);
-          showToast(t('dependencies.up_to_date'), 'success');
-          await loadDependencies();
-          await loadMods();
-        }
-      }).catch(err => showToast(t('toasts.export_failed', { error: String(err) }), 'error'));
-      return;
-    }
-
-    const action = isInstalled ? t('common.update') : t('common.install');
-    const depName = type === 'ue4ss' ? 'UE4SS' : 'PalSchema';
-    const sourceInfo = type === 'ue4ss' ? 'Okaetsu/UE4SS-Palworld' : 'Okaetsu/PalSchema';
-
-    showConfirm(
-      t('dependencies.install_source_prompt_body', { action: action.toLowerCase(), depName, sourceInfo }),
-      t('dependencies.install_source_prompt_title', { action, depName })
-    ).then((confirmed) => {
-      if (!confirmed) return;
-      executeInstallOrUpdate(type, isInstalled);
-    });
-  }
+  import('../modals/dependencyModal').then(({ showDependencyModal }) => {
+    showDependencyModal(type);
+  }).catch((err) => {
+    console.error('Failed to open dependency modal:', err);
+  });
 }
 
 import { mainDom } from '../../framework';
@@ -202,7 +190,7 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
     ue4ssEl.textContent = `UE4SS${verDisplay}${workshopSuffix}${ue4ssFlo}`;
     ue4ssEl.className = `dep-badge ${isWorkshop ? 'workshop' : (deps.ue4ss_needs_update ? 'warn' : 'ok')}`;
     ue4ssEl.style.display = '';
-    ue4ssEl.style.cursor = (deps.ue4ss_needs_update && !isWorkshop) ? 'pointer' : 'default';
+    ue4ssEl.style.cursor = 'pointer';
     if (isWorkshop) {
       ue4ssEl.title = `UE4SS${verDisplay} (Steam Workshop) — ${t('dependencies.managed_by_steam')}`;
     } else if (deps.ue4ss_needs_update) {
@@ -232,7 +220,7 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
     psEl.textContent = `PalSchema${ver}${workshopSuffix}${palschemaFlo}`;
     psEl.className = `dep-badge ${isWorkshop ? 'workshop' : (deps.palschema_needs_update ? 'warn' : 'ok')}`;
     psEl.style.display = '';
-    psEl.style.cursor = (deps.palschema_needs_update && !isWorkshop) ? 'pointer' : 'default';
+    psEl.style.cursor = 'pointer';
     psEl.title = isWorkshop ? `PalSchema${ver} (Steam Workshop) — ${t('dependencies.managed_by_steam')}` : (deps.palschema_needs_update ? t('dependencies.update_available_palschema') : t('dependencies.up_to_date'));
   } else {
     psEl.textContent = 'PalSchema ✕';

@@ -52,7 +52,7 @@ pub fn detect_palworld_save_roots() -> Vec<PathBuf> {
 }
 
 /// Lists all save game worlds inside a base SaveGames directory or custom path
-pub fn list_save_worlds(custom_root: Option<&str>) -> Result<Vec<SaveWorldSummary>, String> {
+pub fn list_save_worlds(custom_root: Option<&str>, program_path: Option<&str>) -> Result<Vec<SaveWorldSummary>, String> {
     let root_dirs = if let Some(cr) = custom_root {
         vec![PathBuf::from(cr)]
     } else {
@@ -112,6 +112,12 @@ pub fn list_save_worlds(custom_root: Option<&str>) -> Result<Vec<SaveWorldSummar
                             dt.format("%Y-%m-%d %H:%M").to_string()
                         });
 
+                    let pmm_backup_count = if let Some(prog_p) = program_path {
+                        super::repair::list_pmm_world_backups(prog_p, Some(&world_name)).len()
+                    } else {
+                        0
+                    };
+
                     let (health_status, detected_issues) = quick_check_save_health(dir_path, &level_sav);
                     let custom_meta = Some(load_world_custom_meta(dir_path));
                     let world_options = parse_world_options(dir_path);
@@ -128,6 +134,7 @@ pub fn list_save_worlds(custom_root: Option<&str>) -> Result<Vec<SaveWorldSummar
                         level_size_bytes: level_size,
                         player_count,
                         backup_count,
+                        pmm_backup_count,
                         latest_backup_date,
                         has_external_edits,
                         health_status,

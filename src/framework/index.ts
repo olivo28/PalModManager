@@ -42,5 +42,8 @@ export type { LoadOrderDomMap } from './scopes/loadOrder';
 export { dbDom } from './scopes/db';
 export type { DbDomMap } from './scopes/db';
 
+export { dependencyDom } from './scopes/dependency';
+export type { DependencyDomMap } from './scopes/dependency';
+
 export { mainDom } from './scopes/main';
 export type { MainDomMap } from './scopes/main';

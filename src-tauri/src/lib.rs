@@ -18,8 +18,10 @@ pub mod safety_backup;
 pub mod image_proxy;
 pub mod altermatic;
 pub mod pak_scanner;
+pub mod pak_patcher;
 pub mod retoc_runner;
 pub mod save_scanner;
+pub mod usmap;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -37,6 +39,7 @@ use commands::load_order_commands;
 use commands::workshop_commands;
 use commands::discovery_commands;
 use commands::altermatic_commands;
+use commands::usmap_commands;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -174,6 +177,9 @@ pub fn run() {
             config_commands::list_mod_files,
             config_commands::read_mod_file,
             config_commands::save_mod_file,
+            config_commands::delete_mod_file,
+            config_commands::restore_mod_backup,
+            config_commands::merge_mod_backup,
             nexus_commands::fetch_nexus_info_async,
             nexus_commands::refresh_nexus_cache,
             nexus_commands::set_nexus_mod_id,
@@ -229,6 +235,11 @@ pub fn run() {
             dependency_commands::install_palschema,
             dependency_commands::uninstall_ue4ss,
             dependency_commands::uninstall_palschema,
+            dependency_commands::get_dependency_vault,
+            dependency_commands::install_dependency_from_vault,
+            dependency_commands::install_dependency_from_custom_zip,
+            dependency_commands::delete_dependency_vault_entry,
+            dependency_commands::open_dependency_vault_folder,
             dependency_commands::get_storage_usage_command,
             dependency_commands::clear_temp_downloads_command,
             dependency_commands::open_temp_folder_command,
@@ -236,6 +247,8 @@ pub fn run() {
             settings_commands::log_from_js,
             mod_commands::create_backup,
             mod_commands::change_pak_destination,
+            mod_commands::export_profile_pack_cmd,
+            mod_commands::import_profile_pack_cmd,
 
             mod_commands::restore_backup,
             mod_commands::analyze_backup,
@@ -258,12 +271,19 @@ pub fn run() {
             scanner_commands::repair_save_cmd,
             scanner_commands::restore_save_backup_cmd,
             scanner_commands::create_world_backup_cmd,
+            scanner_commands::list_pmm_world_backups_cmd,
+            scanner_commands::restore_pmm_world_backup_cmd,
+            scanner_commands::delete_pmm_world_backup_cmd,
+            scanner_commands::open_pmm_world_backups_folder_cmd,
             scanner_commands::open_world_folder_cmd,
             scanner_commands::export_world_zip_cmd,
             scanner_commands::prune_world_backups_cmd,
             scanner_commands::save_world_custom_meta_cmd,
             scanner_commands::get_world_custom_meta_cmd,
             scanner_commands::inspect_snapshot_details_cmd,
+            scanner_commands::build_compatibility_pak_cmd,
+            scanner_commands::list_generated_patches_cmd,
+            scanner_commands::delete_generated_patch_cmd,
             db_commands::db_get_all,
             db_commands::db_write_record,
             load_order_commands::get_ue4ss_load_order,
@@ -289,6 +309,10 @@ pub fn run() {
             discovery_commands::install_discovery_file,
             altermatic_commands::sync_altermatic_load_list,
             altermatic_commands::get_altermatic_dep_status,
+            usmap_commands::get_mappings_status,
+            usmap_commands::sync_mappings_now,
+            usmap_commands::get_usmap_struct_info,
+            usmap_commands::get_usmap_summary,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();
