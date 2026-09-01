@@ -6,6 +6,7 @@ import { showConfirm } from '../confirm';
 import { renderModsView } from './renderer';
 import { loadMods } from './loader';
 import { loadProfiles, showInputModal } from './profiles';
+import { loadDependencies } from './dependencies';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { bus, mainDom } from '../../framework';
@@ -109,7 +110,7 @@ export function attachCardEvents(container: HTMLElement): void {
         }
         bus.emit('mod:toggled', { id, enabled: isEnabled });
         showToast(isEnabled ? t('toasts.mod_enabled') : t('toasts.mod_disabled'), isEnabled ? 'success' : 'info');
-        await loadMods();
+        await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
         const state = getState();
         if (state.currentDetailMod?.id === id) {
           openDetailPanel(id);
@@ -204,7 +205,7 @@ export function attachCardEvents(container: HTMLElement): void {
         try {
           await removeMod(id);
           closeDetailPanel();
-          await loadMods();
+          await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
           showToast(t('toasts.mod_removed'), 'success');
         } catch (e) {
           console.error('Error removing mod:', e);

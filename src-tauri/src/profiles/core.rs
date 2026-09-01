@@ -91,6 +91,13 @@ pub fn sync_current_profile_states(data: &mut AppData) {
             if mod_info.nexus_author.as_deref() == Some("UE4SS Native Mod") {
                 continue;
             }
+            // Workshop mods track their own enabled state via PalModSettings.ini on disk.
+            // Don't overwrite that here — it gets set correctly by scan_mods_internal.
+            let is_workshop = mod_info.nexus_summary.as_deref()
+                .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
+            if is_workshop {
+                continue;
+            }
             let is_enabled = profile.enabled_mod_ids.iter().any(|entry| {
                 mod_matches_profile_entry(mod_info, entry)
             });
@@ -144,19 +151,31 @@ pub fn cleanup_profile_mod_lists(data: &mut AppData) {
                 };
             }
 
-            // Sync versions to profile struct
-            if profile.ue4ss_enabled && d.ue4ss_installed {
-                profile.ue4ss_version = d.ue4ss_version.clone();
-            } else {
-                profile.ue4ss_version = None;
-            }
-            if profile.palschema_enabled && d.palschema_installed {
-                profile.palschema_version = d.palschema_version.clone();
-            } else {
-                profile.palschema_version = None;
-            }
-
             let is_current = profile.id == data.current_profile_id;
+
+            // Only overwrite UE4SS/PalSchema versions for the ACTIVE profile.
+            // Non-active profiles already have their own stored versions — don't clobber them
+            // with whatever happens to be on disk right now (which reflects the active profile's install).
+            if is_current {
+                if profile.ue4ss_enabled && d.ue4ss_installed {
+                    profile.ue4ss_version = d.ue4ss_version.clone();
+                } else {
+                    profile.ue4ss_version = None;
+                }
+                if profile.palschema_enabled && d.palschema_installed {
+                    profile.palschema_version = d.palschema_version.clone();
+                } else {
+                    profile.palschema_version = None;
+                }
+            } else {
+                // For non-active profiles, just clear version if the dep is marked disabled.
+                if !profile.ue4ss_enabled {
+                    profile.ue4ss_version = None;
+                }
+                if !profile.palschema_enabled {
+                    profile.palschema_version = None;
+                }
+            }
 
             let alt_mod = data.mods.iter().find(|m| {
                 (m.nexus_mod_id == Some(1626) || m.name.to_lowercase().contains("altermatic")) &&
@@ -266,12 +285,26 @@ pub fn ensure_default_profile(data: &mut AppData) {
         data.current_profile_id = "default".to_string();
     }
 
+    // Migration: clear UE4SS/PalSchema versions from non-active profiles.
+    // The old bug caused every profile switch to overwrite ALL profiles with the
+    // active profile's disk-scanned versions. This one-time pass resets non-active
+    // profiles so their versions get correctly populated when they are activated.
+    let current_id = data.current_profile_id.clone();
+    for profile in data.profiles.iter_mut() {
+        if profile.id != current_id {
+            // Reset to None so the correct value loads from disk snapshot when switching
+            profile.ue4ss_version = None;
+            profile.palschema_version = None;
+        }
+    }
+
     for p in &data.profiles {
         let p_dir = ensure_profile_structure(&program_path, &p.id);
         if let Ok(json) = serde_json::to_string_pretty(p) {
             let _ = fs::write(p_dir.join("profile.json"), json);
         }
     }
+
 
     cleanup_profile_mod_lists(data);
 }
@@ -287,6 +320,14 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
 
         for m in &data.mods {
             if m.nexus_author.as_deref() == Some("UE4SS Native Mod") {
+                continue;
+            }
+
+            // Workshop mods are managed by Steam/PalModSettings.ini, not by PMM profile installs.
+            // Their presence on disk does NOT mean they belong to this profile's managed list.
+            let is_workshop = m.nexus_summary.as_deref()
+                .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
+            if is_workshop {
                 continue;
             }
 
@@ -335,3 +376,4 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
         }
     }
 }
+

@@ -5,7 +5,8 @@ import { showConfirm } from '../../confirm';
 import { openDetailPanel, closeDetailPanel, getModComponentFolders } from '../../detailPanel';
 import { openConfigEditor } from '../../editorView';
 import { loadMods } from '../loader';
-import { showInputModal } from '../profiles';
+import { loadProfiles, showInputModal } from '../profiles';
+import { loadDependencies } from '../dependencies';
 import { renderModsView } from '../renderer';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
@@ -170,7 +171,7 @@ export function runContextAction(action: string, modId: string): void {
           if (mod.enabled) { await disableMod(modId); } else { await enableMod(modId); }
           try { await setModProfileState(modId, !mod.enabled); } catch { }
           showToast(mod.enabled ? t('toasts.mod_disabled') : t('toasts.mod_enabled'), mod.enabled ? 'info' : 'success');
-          await loadMods();
+          await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
         } catch (e) { showToast(t('toasts.export_failed', { error: String(e) }), 'error'); }
       })();
       break;
@@ -209,13 +210,16 @@ export function runContextAction(action: string, modId: string): void {
       break;
     }
     case 'remove':
-      showConfirm(t('dialogs.confirm_remove_mod', { name: mod.name })).then(confirmed => {
+      showConfirm(t('dialogs.confirm_remove_mod', { name: mod.name })).then(async (confirmed) => {
         if (!confirmed) return;
-        removeMod(modId).then(() => {
+        try {
+          await removeMod(modId);
           closeDetailPanel();
-          loadMods();
+          await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
           showToast(t('toasts.mod_removed'), 'success');
-        }).catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
+        } catch (e) {
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+        }
       });
       break;
   }

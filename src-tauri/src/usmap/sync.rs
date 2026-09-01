@@ -4,26 +4,36 @@ use sha2::{Sha256, Digest};
 use super::models::{MappingsManifest, MappingEntry, UsmapStatus};
 use super::build_detector::detect_installed_game_build;
 
-const REMOTE_MANIFEST_URL: &str = "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/mappings/manifest.json";
+const REMOTE_MANIFEST_URLS: &[&str] = &[
+    "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/mappings/manifest.json",
+    "https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/mappings/manifest.json",
+    "https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/mappings/manifest.json",
+];
+const DEFAULT_EMBEDDED_MANIFEST: &str = include_str!("../../../resources/mappings/manifest.json");
 
 pub fn find_bundled_resource(subpath: &str) -> Option<PathBuf> {
     // 1. Direct path from current working directory
     let p1 = PathBuf::from(subpath);
     if p1.exists() { return Some(p1); }
 
-    // 2. Parent directory (e.g. when cwd is src-tauri during cargo run)
+    // 2. Parent directory traversal (cwd is src-tauri or subfolder)
     let p2 = PathBuf::from("..").join(subpath);
     if p2.exists() { return Some(p2); }
 
-    // 3. Relative to current executable directory (production bundle)
+    let p2_b = PathBuf::from("..").join("..").join(subpath);
+    if p2_b.exists() { return Some(p2_b); }
+
+    // 3. Multi-parent traversal relative to current executable directory
     if let Ok(exe_path) = std::env::current_exe() {
-        if let Some(parent) = exe_path.parent() {
-            let p3 = parent.join(subpath);
-            if p3.exists() { return Some(p3); }
-            let p4 = parent.join("..").join(subpath);
-            if p4.exists() { return Some(p4); }
-            let p5 = parent.join("..").join("..").join(subpath);
-            if p5.exists() { return Some(p5); }
+        let mut cur = exe_path.parent();
+        for _ in 0..6 {
+            if let Some(parent) = cur {
+                let candidate = parent.join(subpath);
+                if candidate.exists() { return Some(candidate); }
+                cur = parent.parent();
+            } else {
+                break;
+            }
         }
     }
 
@@ -56,6 +66,16 @@ pub fn get_active_usmap_path(program_path: &str) -> PathBuf {
         return target;
     }
 
+    // Check if any custom-named .usmap file exists in the directory
+    if let Ok(entries) = fs::read_dir(&dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let p = entry.path();
+            if p.is_file() && p.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()) == Some("usmap".to_string()) {
+                return p;
+            }
+        }
+    }
+
     // Auto-seed from bundled repository resource if missing in LocalAppData
     if let Some(bundled) = find_bundled_resource("resources/mappings/Palworld.usmap") {
         let _ = fs::create_dir_all(&dir);
@@ -80,7 +100,7 @@ pub fn load_local_manifest(program_path: &str) -> Option<MappingsManifest> {
         }
     }
 
-    // Auto-seed from bundled repository resource if missing in LocalAppData
+    // 1. Auto-seed from bundled repository resource if missing in LocalAppData
     if let Some(bundled) = find_bundled_resource("resources/mappings/manifest.json") {
         if let Ok(content) = fs::read_to_string(&bundled) {
             if let Ok(manifest) = serde_json::from_str::<MappingsManifest>(&content) {
@@ -89,6 +109,13 @@ pub fn load_local_manifest(program_path: &str) -> Option<MappingsManifest> {
                 return Some(manifest);
             }
         }
+    }
+
+    // 2. Embedded compile-time manifest fallback
+    if let Ok(manifest) = serde_json::from_str::<MappingsManifest>(DEFAULT_EMBEDDED_MANIFEST) {
+        let _ = fs::create_dir_all(&dir);
+        let _ = fs::write(&local_file, DEFAULT_EMBEDDED_MANIFEST);
+        return Some(manifest);
     }
 
     None
@@ -164,31 +191,25 @@ pub async fn sync_mappings_async(program_path: String, game_path: String) -> Res
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
 
-    let remote_manifest = match client.get(REMOTE_MANIFEST_URL).send().await {
-        Ok(res) if res.status().is_success() => {
-            match res.json::<MappingsManifest>().await {
-                Ok(m) => {
-                    // Save downloaded manifest locally
+    let mut remote_manifest: Option<MappingsManifest> = None;
+
+    for url in REMOTE_MANIFEST_URLS {
+        if let Ok(res) = client.get(*url).send().await {
+            if res.status().is_success() {
+                if let Ok(m) = res.json::<MappingsManifest>().await {
                     if let Ok(json_str) = serde_json::to_string_pretty(&m) {
                         let _ = fs::write(mappings_dir.join("manifest.json"), json_str);
                     }
-                    Some(m)
-                }
-                Err(e) => {
-                    crate::logger::log(&format!("Failed to parse remote USMAP manifest: {}", e));
-                    load_local_manifest(&program_path)
+                    remote_manifest = Some(m);
+                    break;
                 }
             }
         }
-        Ok(res) => {
-            crate::logger::log(&format!("Remote USMAP manifest HTTP status: {}", res.status()));
-            load_local_manifest(&program_path)
-        }
-        Err(e) => {
-            crate::logger::log(&format!("Could not reach remote USMAP manifest: {}", e));
-            load_local_manifest(&program_path)
-        }
-    };
+    }
+
+    if remote_manifest.is_none() {
+        remote_manifest = load_local_manifest(&program_path);
+    }
 
     let manifest = remote_manifest.ok_or_else(|| "No USMAP mappings manifest available (remote unreachable and no local manifest found).".to_string())?;
 
@@ -222,33 +243,40 @@ pub async fn sync_mappings_async(program_path: String, game_path: String) -> Res
 
         if !synced_from_bundle {
             crate::logger::log(&format!("Downloading updated USMAP from {} for game version {}", best_entry.usmap_url, best_entry.game_version));
-            let res = client.get(&best_entry.usmap_url).send().await
-                .map_err(|e| format!("Failed to download USMAP: {}", e))?;
+            let res_result = client.get(&best_entry.usmap_url).send().await;
+            
+            match res_result {
+                Ok(res) if res.status().is_success() => {
+                    if let Ok(bytes) = res.bytes().await {
+                        // Verify SHA-256 of downloaded payload
+                        let mut hasher = Sha256::new();
+                        hasher.update(&bytes);
+                        let downloaded_hash = format!("{:x}", hasher.finalize());
 
-            if !res.status().is_success() {
-                return Err(format!("Download failed with HTTP status {}", res.status()));
+                        if downloaded_hash.to_lowercase() == best_entry.sha256.to_lowercase() {
+                            let temp_path = mappings_dir.join("Palworld.usmap.tmp");
+                            if fs::write(&temp_path, &bytes).is_ok() {
+                                let _ = fs::rename(&temp_path, &target_usmap_path);
+                                crate::logger::log(&format!("USMAP successfully synchronized! Path: {:?} ({} bytes)", target_usmap_path, bytes.len()));
+                            }
+                        } else {
+                            crate::logger::log(&format!("SHA-256 checksum mismatch! Expected: {}, Downloaded: {}", best_entry.sha256, downloaded_hash));
+                        }
+                    }
+                }
+                Ok(res) => {
+                    crate::logger::log(&format!("Remote USMAP binary download returned HTTP status {}", res.status()));
+                    if !target_usmap_path.exists() {
+                        return Err(format!("Download failed with HTTP status {}", res.status()));
+                    }
+                }
+                Err(e) => {
+                    crate::logger::log(&format!("Could not reach remote USMAP binary: {}", e));
+                    if !target_usmap_path.exists() {
+                        return Err(format!("Failed to download USMAP: {}", e));
+                    }
+                }
             }
-
-            let bytes = res.bytes().await
-                .map_err(|e| format!("Failed to read USMAP response bytes: {}", e))?;
-
-            // Verify SHA-256 of downloaded payload
-            let mut hasher = Sha256::new();
-            hasher.update(&bytes);
-            let downloaded_hash = format!("{:x}", hasher.finalize());
-
-            if downloaded_hash.to_lowercase() != best_entry.sha256.to_lowercase() {
-                return Err(format!("SHA-256 checksum mismatch! Expected: {}, Downloaded: {}", best_entry.sha256, downloaded_hash));
-            }
-
-            let temp_path = mappings_dir.join("Palworld.usmap.tmp");
-            fs::write(&temp_path, &bytes)
-                .map_err(|e| format!("Failed to write temporary USMAP file: {}", e))?;
-
-            fs::rename(&temp_path, &target_usmap_path)
-                .map_err(|e| format!("Failed to finalize USMAP file: {}", e))?;
-
-            crate::logger::log(&format!("USMAP successfully synchronized! Path: {:?} ({} bytes)", target_usmap_path, bytes.len()));
         }
     } else {
         crate::logger::log("USMAP is already up to date and verified against checksum.");

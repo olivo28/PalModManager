@@ -3,24 +3,35 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MappingEntry {
+    #[serde(alias = "game_version")]
     pub game_version: String,
+    #[serde(alias = "steam_build_id")]
     pub steam_build_id: Option<String>,
+    #[serde(alias = "app_id")]
     pub app_id: Option<u32>,
+    #[serde(alias = "usmap_filename")]
     pub usmap_filename: String,
+    #[serde(alias = "usmap_url")]
     pub usmap_url: String,
     pub sha256: String,
+    #[serde(alias = "file_size_bytes")]
     pub file_size_bytes: u64,
+    #[serde(alias = "engine_version")]
     pub engine_version: String,
+    #[serde(alias = "build_id")]
     pub build_id: String,
-    #[serde(default)]
+    #[serde(default, alias = "is_latest")]
     pub is_latest: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MappingsManifest {
+    #[serde(alias = "schema_version")]
     pub schema_version: String,
+    #[serde(alias = "latest_game_version")]
     pub latest_game_version: String,
+    #[serde(alias = "updated_at")]
     pub updated_at: String,
     pub mappings: Vec<MappingEntry>,
 }

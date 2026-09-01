@@ -159,9 +159,40 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     delete_path_and_sidecar(&mod_info.game_path);
     delete_path_and_sidecar(&mod_info.disabled_path);
 
+    let mut match_stems: Vec<String> = Vec::new();
+    match_stems.push(mod_info.name.to_lowercase());
+    let clean_name = mod_info.name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+    if !clean_name.is_empty() {
+        match_stems.push(clean_name);
+    }
+    match_stems.push(mod_info.id.to_lowercase());
+
+    if let Some(ref cfg) = mod_info.config_path {
+        delete_path_and_sidecar(cfg);
+        if let Some(stem) = Path::new(cfg).file_stem().map(|s| s.to_string_lossy().to_string()) {
+            let stem_lower = stem.to_lowercase();
+            let stem_clean = stem_lower.replace(|c: char| !c.is_alphanumeric(), "");
+            match_stems.push(stem_lower);
+            if !stem_clean.is_empty() {
+                match_stems.push(stem_clean);
+            }
+        }
+    }
+
     for extra in &mod_info.extra_files {
         delete_path_and_sidecar(extra);
+        if let Some(stem) = Path::new(extra).file_stem().map(|s| s.to_string_lossy().to_string()) {
+            let stem_lower = stem.to_lowercase();
+            let stem_clean = stem_lower.replace(|c: char| !c.is_alphanumeric(), "");
+            match_stems.push(stem_lower);
+            if !stem_clean.is_empty() {
+                match_stems.push(stem_clean);
+            }
+        }
     }
+
+    let is_altermatic_framework = mod_info.nexus_mod_id == Some(1626) || mod_info.name.to_lowercase().contains("altermatic");
+    let is_unipalui_framework = mod_info.nexus_mod_id == Some(1894) || mod_info.name.to_lowercase().contains("unipalui");
 
     // Clean up PalSchema storage and junction artifacts if PalSchema/Hybrid
     if !game_path_str.is_empty() {
@@ -220,21 +251,41 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         }
     }
 
-    if mod_info.mod_type == ModType::Pak || mod_info.mod_type == ModType::LogicMods {
+    if mod_info.mod_type == ModType::Pak || mod_info.mod_type == ModType::LogicMods || mod_info.mod_type == ModType::Altermatic {
         if !game_path_str.is_empty() {
             let game_base = PathBuf::from(&game_path_str);
             let check_dirs = vec![
                 game_base.join("Pal").join("Content").join("Paks").join("~mods"),
                 game_base.join("Pal").join("Content").join("Paks").join("LogicMods"),
+                game_base.join("Pal").join("Content").join("Paks").join("~mods").join("SwapJSON"),
+                game_base.join("Pal").join("Content").join("Paks").join("~mods").join("AlterConfig"),
+                game_base.join("Pal").join("Content").join("Paks").join("~mods").join("JSON_Templates"),
                 PathBuf::from(&program_path).join("profiles").join(&current_profile_id).join("disabled_mods").join("pak"),
                 PathBuf::from(&program_path).join("profiles").join(&current_profile_id).join("disabled_mods").join("logicmods"),
+                PathBuf::from(&program_path).join("profiles").join(&current_profile_id).join("disabled_mods").join("altermatic"),
+                PathBuf::from(&program_path).join("profiles").join(&current_profile_id).join("disabled_mods").join("altermatic").join("SwapJSON"),
             ];
             for dir in check_dirs {
                 if dir.exists() {
                     if let Ok(entries) = fs::read_dir(&dir) {
                         for entry in entries.filter_map(|e| e.ok()) {
-                            let name = entry.file_name().to_string_lossy().to_string();
-                            if name.to_lowercase().starts_with(&mod_info.name.to_lowercase()) {
+                            let file_name = entry.file_name().to_string_lossy().to_string();
+                            let file_name_lower = file_name.to_lowercase();
+                            let file_stem_lower = entry.path().file_stem().map(|s| s.to_string_lossy().to_lowercase()).unwrap_or_default();
+                            let file_stem_clean = file_stem_lower.replace(|c: char| !c.is_alphanumeric(), "");
+
+                            let is_match = (is_altermatic_framework && (file_name_lower.starts_with("altermatic") || file_name_lower == "_loadlist.json"))
+                                || (is_unipalui_framework && file_name_lower.starts_with("unipalui"))
+                                || match_stems.iter().any(|stem| {
+                                    !stem.is_empty() && (
+                                        file_stem_lower == *stem
+                                        || file_stem_clean == *stem
+                                        || file_name_lower.starts_with(stem)
+                                        || (!file_stem_clean.is_empty() && stem.contains(&file_stem_clean))
+                                    )
+                                });
+
+                            if is_match {
                                 let _ = fs::remove_file(entry.path());
                             }
                         }
@@ -247,14 +298,12 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     for profile in &mut data.profiles {
         profile.installed_mod_ids.retain(|id| id != &mod_info.id && id.to_lowercase() != mod_info.name.to_lowercase());
         profile.enabled_mod_ids.retain(|id| id != &mod_info.id && id.to_lowercase() != mod_info.name.to_lowercase());
-        
-        let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
-        if let Ok(json) = serde_json::to_string_pretty(profile) {
-            let _ = fs::write(p_dir.join("profile.json"), json);
-        }
     }
 
     data.mods.retain(|m| m.id != mod_info.id);
+
+    crate::profiles::cleanup_profile_mod_lists(&mut data);
+    crate::profiles::sync_current_profile_states(&mut data);
 
     let data_clone = data.clone();
     drop(data);
@@ -283,6 +332,7 @@ pub fn disable_mod(mod_id: String, state: State<AppState>) -> Result<Value, Stri
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let program_path = data.settings.program_path.clone();
     crate::profiles::disable_mod_internal(&mut data, &program_path, &mod_id)?;
+    crate::profiles::sync_current_profile_states(&mut data);
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&program_path, &data_clone);
@@ -295,6 +345,7 @@ pub fn enable_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let program_path = data.settings.program_path.clone();
     crate::profiles::enable_mod_internal(&mut data, &program_path, &mod_id)?;
+    crate::profiles::sync_current_profile_states(&mut data);
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&program_path, &data_clone);

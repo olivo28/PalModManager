@@ -1,7 +1,7 @@
 import { disableMod, enableMod, removeMod, refreshNexusCache, setModConfig, openModFolder, renameMod } from '../../api';
 import { getState, updateState } from '../../state';
 import { openConfigEditor } from '../editorView';
-import { loadMods, renderModsView } from '../modsView';
+import { loadMods, renderModsView, loadProfiles, loadDependencies } from '../modsView';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
@@ -63,7 +63,7 @@ export async function handleDetailToggle(): Promise<void> {
       if (state.currentDetailMod.enabled) { await disableMod(state.currentDetailMod.id); }
       else { await enableMod(state.currentDetailMod.id); }
     }
-    await loadMods();
+    await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
     const { openDetailPanel } = await import('./panel');
     openDetailPanel(state.currentDetailMod.id);
   } catch (e) {
@@ -79,7 +79,7 @@ export async function handleDetailRemove(): Promise<void> {
     try {
       await removeMod(state.currentDetailMod.id);
       closeDetailPanel();
-      await loadMods();
+      await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
       showToast(t('toasts.mod_removed'), 'success');
     } catch (e) {
       showToast(t('toasts.export_failed', { error: String(e) }), 'error');

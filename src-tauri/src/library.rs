@@ -65,18 +65,25 @@ pub fn copy_to_library(
         .map(|v| v.trim())
         .filter(|v| !v.is_empty() && *v != "unknown");
 
+    let orig_ext = zip_path.extension().and_then(|e| e.to_str()).map(|e| e.to_lowercase()).unwrap_or_else(|| "zip".to_string());
+    let clean_ext = if orig_ext == "rar" || orig_ext == "7z" || orig_ext == "pak" { orig_ext } else { "zip".to_string() };
+
     let zip_name = if let Some(target) = target_filename {
         let sanitized_target = sanitize_filename(target);
         if is_temp_or_nexus(&sanitized_target) {
             if let Some(v) = clean_version {
-                format!("{} - {}.zip", safe_folder_name, sanitize_filename(v))
+                format!("{} - {}.{}", safe_folder_name, sanitize_filename(v), clean_ext)
             } else {
-                format!("{}.zip", safe_folder_name)
+                format!("{}.{}", safe_folder_name, clean_ext)
             }
         } else if let Some(v) = clean_version {
-            let target_stem = sanitized_target.strip_suffix(".zip").unwrap_or(&sanitized_target);
+            let target_stem = sanitized_target.strip_suffix(".zip")
+                .or_else(|| sanitized_target.strip_suffix(".rar"))
+                .or_else(|| sanitized_target.strip_suffix(".7z"))
+                .or_else(|| sanitized_target.strip_suffix(".pak"))
+                .unwrap_or(&sanitized_target);
             if !target_stem.to_lowercase().contains(&v.to_lowercase()) {
-                format!("{} - {}.zip", target_stem, sanitize_filename(v))
+                format!("{} - {}.{}", target_stem, sanitize_filename(v), clean_ext)
             } else {
                 sanitized_target
             }
@@ -87,15 +94,16 @@ pub fn copy_to_library(
         let orig_stem = original_name.strip_suffix(".zip")
             .or_else(|| original_name.strip_suffix(".rar"))
             .or_else(|| original_name.strip_suffix(".7z"))
+            .or_else(|| original_name.strip_suffix(".pak"))
             .unwrap_or(&original_name);
 
         if is_temp_or_nexus(&original_name) || !orig_stem.to_lowercase().contains(&v.to_lowercase()) {
-            format!("{} - {}.zip", safe_folder_name, sanitize_filename(v))
+            format!("{} - {}.{}", safe_folder_name, sanitize_filename(v), clean_ext)
         } else {
             sanitize_filename(&original_name)
         }
     } else if is_temp_or_nexus(&original_name) {
-        format!("{}.zip", safe_folder_name)
+        format!("{}.{}", safe_folder_name, clean_ext)
     } else {
         sanitize_filename(&original_name)
     };

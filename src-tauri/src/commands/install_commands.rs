@@ -781,13 +781,8 @@ pub async fn install_mod_with_manifest(
             }
         }
 
-        // Persist the updated profile.json
-        let p_dir = crate::profiles::get_profile_dir(&program_path, &data.current_profile_id);
-        if let Some(profile) = data.profiles.iter().find(|p| p.id == data.current_profile_id) {
-            if let Ok(json) = serde_json::to_string_pretty(profile) {
-                let _ = std::fs::write(p_dir.join("profile.json"), json);
-            }
-        }
+        crate::profiles::cleanup_profile_mod_lists(&mut data);
+        crate::profiles::sync_current_profile_states(&mut data);
 
         let data_clone = data.clone();
         let _ = db::save_db(&program_path, &data_clone);

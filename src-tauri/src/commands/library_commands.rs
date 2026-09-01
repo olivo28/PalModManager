@@ -37,7 +37,11 @@ pub fn install_mod_from_library(
                     if path.is_file()
                         && path
                             .extension()
-                            .map(|e| e == "zip" || e == "rar")
+                            .and_then(|e| e.to_str())
+                            .map(|e| {
+                                let el = e.to_lowercase();
+                                el == "zip" || el == "rar" || el == "7z" || el == "pak"
+                            })
                             .unwrap_or(false)
                     {
                         found = Some(path.to_string_lossy().to_string());
@@ -46,7 +50,7 @@ pub fn install_mod_from_library(
                 }
             }
         }
-        found.ok_or_else(|| "No ZIP file found in library for this mod".to_string())?
+        found.ok_or_else(|| "No archive (.zip, .7z, .rar, .pak) found in library for this mod".to_string())?
     };
 
     // Re-run the install using existing install command logic

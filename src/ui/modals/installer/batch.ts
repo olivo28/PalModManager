@@ -546,9 +546,8 @@ async function executeModInstallation(
     statusEl.textContent = _pendingUpdateModId ? 'Updated successfully!' : 'Installed successfully!';
     setTimeout(async () => {
       closeInstallModal();
-      const { loadMods, loadLibrary } = await import('../../modsView');
-      await loadMods();
-      await loadLibrary();
+      const { loadMods, loadLibrary, loadProfiles, loadDependencies } = await import('../../modsView');
+      await Promise.all([loadMods(), loadLibrary(), loadProfiles(), loadDependencies(true)]);
     }, 1500);
   } catch (e) {
     setIsProcessingInstall(false);

@@ -1,5 +1,5 @@
 import { getState, updateState } from '../state';
-import { renderModsView, loadMods } from '../ui/modsView';
+import { renderModsView, loadMods, loadProfiles, loadDependencies } from '../ui/modsView';
 import { enableMod, disableMod, removeMod, setModProfileState } from '../api';
 import { showToast } from '../ui/toast';
 import { showConfirm } from '../ui/confirm';
@@ -324,7 +324,7 @@ async function handleBulkEnable(enable: boolean): Promise<void> {
 
   showToast(`${enable ? t('toasts.enabled_all_success', { count: successCount }) : t('toasts.disabled_all_success', { count: successCount })}`, 'success');
   clearSelection();
-  await loadMods();
+  await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
 }
 
 async function handleBulkRemove(): Promise<void> {
@@ -348,5 +348,5 @@ async function handleBulkRemove(): Promise<void> {
 
   showToast(t('toasts.removed_all_success', { count: successCount }), 'success');
   clearSelection();
-  await loadMods();
+  await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
 }
