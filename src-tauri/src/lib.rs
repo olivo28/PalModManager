@@ -22,6 +22,7 @@ pub mod pak_patcher;
 pub mod retoc_runner;
 pub mod save_scanner;
 pub mod usmap;
+pub mod texture_decoder;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -262,6 +263,7 @@ pub fn run() {
             scanner_commands::update_mod_hotkey,
             scanner_commands::inspect_pak_asset,
             scanner_commands::inspect_uasset_deep_cmd,
+            scanner_commands::decode_uasset_texture_cmd,
             scanner_commands::inspect_pak_file_tree,
             scanner_commands::inspect_mod_pak_contents,
             scanner_commands::convert_mod_to_gamepass,

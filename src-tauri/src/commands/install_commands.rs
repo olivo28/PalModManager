@@ -37,6 +37,19 @@ fn check_mod_dependencies(game_path: &str, mod_type: &str, analysis: &zip_handle
     Ok(())
 }
 
+fn sync_altermatic_helper(data: &crate::models::AppData) {
+    if !data.settings.game_path.is_empty() {
+        let game_path = PathBuf::from(&data.settings.game_path);
+        let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let enabled_ids: Vec<String> = if let Some(p) = current_profile {
+            p.enabled_mod_ids.clone()
+        } else {
+            data.mods.iter().filter(|m| m.enabled).map(|m| m.id.clone()).collect()
+        };
+        let _ = crate::altermatic::sync_load_list(&game_path, &enabled_ids, &data.mods);
+    }
+}
+
 #[tauri::command]
 pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result<Value, String> {
     crate::logger::log(&format!("analyze_zip: Analyzing archive '{}'", zip_path));
@@ -59,6 +72,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         zip_handler::DetectedModType::Pak => "pak",
         zip_handler::DetectedModType::LogicMods => "logicmods",
         zip_handler::DetectedModType::Hybrid => "hybrid",
+        zip_handler::DetectedModType::Altermatic => "altermatic",
         zip_handler::DetectedModType::Unknown => "unknown",
     };
 
@@ -162,6 +176,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         "hasJson": analysis.has_json,
         "hasPalSchemaJson": analysis.has_palschema_json,
         "hasPak": analysis.has_pak,
+        "hasAltermatic": analysis.has_altermatic,
         "hasInfoJson": analysis.has_info_json,
         "pakDestinationHint": analysis.pak_destination_hint,
         "rootFolder": analysis.root_folder,
@@ -201,6 +216,7 @@ pub async fn install_mod_command(
         zip_handler::DetectedModType::Pak => "pak",
         zip_handler::DetectedModType::LogicMods => "logicmods",
         zip_handler::DetectedModType::Hybrid => "hybrid",
+        zip_handler::DetectedModType::Altermatic => "altermatic",
         zip_handler::DetectedModType::Unknown => "unknown",
     });
 
@@ -365,20 +381,7 @@ pub async fn install_mod_command(
         let data_clone = data.clone();
         drop(data);
         let _ = db::save_db(&program_path, &data_clone);
-
-        if !data_clone.settings.game_path.is_empty() {
-            let current_profile = data_clone.profiles.iter().find(|p| p.id == data_clone.current_profile_id);
-            let enabled_ids: Vec<String> = if let Some(p) = current_profile {
-                p.enabled_mod_ids.clone()
-            } else {
-                data_clone.mods.iter().filter(|m| m.enabled).map(|m| m.id.clone()).collect()
-            };
-            let _ = crate::altermatic::sync_load_list(
-                &std::path::PathBuf::from(&data_clone.settings.game_path),
-                &enabled_ids,
-                &data_clone.mods,
-            );
-        }
+        sync_altermatic_helper(&data_clone);
     }
 
     let _ = crate::profiles::save_pmm_meta(&final_mod);
@@ -433,6 +436,7 @@ pub async fn check_mod_exists_command(
         zip_handler::DetectedModType::Pak => crate::models::ModType::Pak,
         zip_handler::DetectedModType::LogicMods => crate::models::ModType::LogicMods,
         zip_handler::DetectedModType::Hybrid => crate::models::ModType::Hybrid,
+        zip_handler::DetectedModType::Altermatic => crate::models::ModType::Altermatic,
         _ => crate::models::ModType::Pak,
     };
 
@@ -491,6 +495,7 @@ pub async fn update_mod_command(
             crate::models::ModType::Pak => "pak",
             crate::models::ModType::LogicMods => "logicmods",
             crate::models::ModType::Hybrid => "hybrid",
+            crate::models::ModType::Altermatic => "altermatic",
         }
         .to_string()
     };
@@ -584,6 +589,7 @@ pub async fn update_mod_command(
         let data_clone = data.clone();
         drop(data);
         let _ = db::save_db(&program_path, &data_clone);
+        sync_altermatic_helper(&data_clone);
         final_m
     };
 
@@ -761,17 +767,31 @@ pub async fn install_mod_with_manifest(
 
         // Update profile
         let current_profile_id = data.current_profile_id.clone();
+        let mod_name = final_mod.name.clone();
         if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
-            if !profile.installed_mod_ids.contains(&final_mod.id) {
-                profile.installed_mod_ids.push(final_mod.id.clone());
+            let in_installed = profile.installed_mod_ids.iter().any(|id| id.to_lowercase() == mod_name.to_lowercase() || id == &final_mod.id);
+            if !in_installed {
+                profile.installed_mod_ids.push(mod_name.clone());
             }
-            if !profile.enabled_mod_ids.contains(&final_mod.id) {
-                profile.enabled_mod_ids.push(final_mod.id.clone());
+            if final_mod.enabled {
+                let in_enabled = profile.enabled_mod_ids.iter().any(|id| id.to_lowercase() == mod_name.to_lowercase() || id == &final_mod.id);
+                if !in_enabled {
+                    profile.enabled_mod_ids.push(mod_name.clone());
+                }
+            }
+        }
+
+        // Persist the updated profile.json
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &data.current_profile_id);
+        if let Some(profile) = data.profiles.iter().find(|p| p.id == data.current_profile_id) {
+            if let Ok(json) = serde_json::to_string_pretty(profile) {
+                let _ = std::fs::write(p_dir.join("profile.json"), json);
             }
         }
 
         let data_clone = data.clone();
         let _ = db::save_db(&program_path, &data_clone);
+        sync_altermatic_helper(&data_clone);
     }
 
     let _ = crate::profiles::save_pmm_meta(&final_mod);

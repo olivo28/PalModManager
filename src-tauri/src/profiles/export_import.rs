@@ -183,6 +183,7 @@ pub fn export_profile_pack_internal(
             ModType::Pak => "pak",
             ModType::LogicMods => "logicmods",
             ModType::Hybrid => "hybrid",
+            ModType::Altermatic => "altermatic",
         };
 
         exported_mods.push(ExportedModMeta {
@@ -218,6 +219,7 @@ pub fn export_profile_pack_internal(
                 ModType::PalSchema => "mods/PalSchema",
                 ModType::Pak => "mods/Paks",
                 ModType::LogicMods => "mods/LogicMods",
+                ModType::Altermatic => "mods/Altermatic",
             };
 
             let mut paths_to_pack = vec![(src_path.clone(), cat_folder.to_string())];
@@ -531,6 +533,8 @@ pub fn import_profile_pack_internal(
         hide_native_mods: manifest.hide_native_mods,
         ue4ss_version: None,
         palschema_version: None,
+        altermatic_version: None,
+        unipalui_version: None,
         compatibility_patches: None,
     };
 

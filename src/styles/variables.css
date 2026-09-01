@@ -41,6 +41,8 @@
   --type-logicmods-dim: rgba(46, 160, 67, 0.15);
   --type-hybrid: #d63384;
   --type-hybrid-dim: rgba(214, 51, 132, 0.15);
+  --type-altermatic: #ff7675;
+  --type-altermatic-dim: rgba(255, 118, 117, 0.15);
 }
 
 /* ===== LIGHT THEME ===== */
@@ -79,4 +81,6 @@
   --type-logicmods-dim: rgba(35, 134, 54, 0.1);
   --type-hybrid: #b81d66;
   --type-hybrid-dim: rgba(184, 29, 102, 0.1);
+  --type-altermatic: #d63031;
+  --type-altermatic-dim: rgba(214, 48, 49, 0.1);
 }

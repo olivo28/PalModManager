@@ -1,5 +1,7 @@
 import { escapeHtml } from '../rendering';
 import { t } from '../../../utils/i18n';
+import { getState } from '../../../state';
+import type { ModInfo } from '../../../types';
 import {
   lastScanResult,
   subTabHeader,
@@ -51,8 +53,8 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       // All collisions are resolved by an active compatibility patch!
       const activePatchName = resolvedPakConflicts[0]?.resolvedByPatch || 'zzz_PMM_Patch_Compat_P.pak';
       pakConflictsHtml = `
-        <details class="scanner-card-section" style="width: 100%; cursor: pointer; margin-bottom: 20px; border-color: var(--success);" open>
-          <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: var(--success-dim); border-bottom: 1px solid var(--border);">
+        <div class="scanner-card-section" style="width: 100%; margin-bottom: 20px; border-color: var(--success);">
+          <div class="scanner-card-header" style="display: flex; align-items: center; justify-content: space-between; background: var(--success-dim); border-bottom: 1px solid var(--border); padding: 10px 16px;">
             <span style="color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 8px;">
               <span>✅</span>
               <span>${escapeHtml(t('scanner.pak_conflicts_resolved_title', { count: resolvedPakCount }) || `Pak Asset Conflicts: ${resolvedPakCount} Resolved`)}</span>
@@ -60,8 +62,8 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
             <span style="font-size: 10.5px; color: var(--success); font-weight: 600;">
               ${escapeHtml(activePatchName)}
             </span>
-          </summary>
-          <div class="scanner-card-body" style="cursor: default; gap: 12px; padding-top: 14px;">
+          </div>
+          <div class="scanner-card-body" style="gap: 12px; padding: 14px;">
             
             <div style="display: flex; justify-content: space-between; align-items: center; background: var(--bg-primary); padding: 12px 16px; border-radius: var(--card-radius); border: 1px solid var(--success); gap: 12px; flex-wrap: wrap;">
               <div style="font-size: 12px; color: var(--text-primary); display: flex; align-items: center; gap: 8px;">
@@ -78,40 +80,47 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
               </div>
             </div>
 
-            ${allPakConflicts.map(c => {
-              let badgeClass = 'lua';
-              if (c.assetType === 'DataTable') {
-                badgeClass = 'datatable';
-              } else if (c.assetType === 'Blueprint') {
-                badgeClass = 'blueprint';
-              }
+            <details style="margin-top: 4px; border: 1px solid var(--border); border-radius: var(--radius); padding: 6px 12px; background: rgba(0,0,0,0.15);">
+              <summary style="font-size: 11px; font-weight: 600; color: var(--text-muted); cursor: pointer; user-select: none;">
+                🔍 ${escapeHtml(t('scanner.btn_show_resolved_assets', { count: resolvedPakCount }) || `Show Detailed Resolved Assets (${resolvedPakCount})`)}
+              </summary>
+              <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 10px;">
+                ${allPakConflicts.map(c => {
+                  let badgeClass = 'lua';
+                  if (c.assetType === 'DataTable') {
+                    badgeClass = 'datatable';
+                  } else if (c.assetType === 'Blueprint') {
+                    badgeClass = 'blueprint';
+                  }
 
-              return `
-                <div class="scanner-conflict-item" style="border-left: 3px solid var(--success);">
-                  <div class="scanner-conflict-header">
-                    <span class="scanner-conflict-title">${escapeHtml(c.assetName)}</span>
-                    <span class="scanner-conflict-type ${badgeClass}">${escapeHtml(c.assetType)}</span>
-                    <span style="font-size: 10.5px; font-weight: 700; color: var(--success); background: var(--success-dim); padding: 2px 7px; border-radius: var(--radius); display: inline-flex; align-items: center; gap: 4px;">
-                      <span>✓</span> <span>${escapeHtml(t('scanner.resolved_by_tag', { patch: c.resolvedByPatch || activePatchName }) || `Resolved by ${c.resolvedByPatch || activePatchName}`)}</span>
-                    </span>
-                  </div>
-                  <div class="scanner-conflict-path">
-                    <span>📄</span> <span>${escapeHtml(c.internalPath)}</span>
-                  </div>
-                  <div class="scanner-conflict-mods">
-                    ${c.mods.map(m => `
-                      <div class="scanner-conflict-mod-row">
-                        <span style="font-size: 13px;">📦</span>
-                        <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
-                        <span class="scanner-conflict-mod-file">(${escapeHtml(m.pakFilename)})</span>
+                  return `
+                    <div class="scanner-conflict-item" style="border-left: 3px solid var(--success);">
+                      <div class="scanner-conflict-header">
+                        <span class="scanner-conflict-title">${escapeHtml(c.assetName)}</span>
+                        <span class="scanner-conflict-type ${badgeClass}">${escapeHtml(c.assetType)}</span>
+                        <span style="font-size: 10.5px; font-weight: 700; color: var(--success); background: var(--success-dim); padding: 2px 7px; border-radius: var(--radius); display: inline-flex; align-items: center; gap: 4px;">
+                          <span>✓</span> <span>${escapeHtml(t('scanner.resolved_by_tag', { patch: c.resolvedByPatch || activePatchName }) || `Resolved by ${c.resolvedByPatch || activePatchName}`)}</span>
+                        </span>
                       </div>
-                    `).join('')}
-                  </div>
-                </div>
-              `;
-            }).join('')}
+                      <div class="scanner-conflict-path">
+                        <span>📄</span> <span>${escapeHtml(c.internalPath)}</span>
+                      </div>
+                      <div class="scanner-conflict-mods">
+                        ${c.mods.map(m => `
+                          <div class="scanner-conflict-mod-row">
+                            <span style="font-size: 13px;">📦</span>
+                            <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
+                            <span class="scanner-conflict-mod-file">(${escapeHtml(m.pakFilename)})</span>
+                          </div>
+                        `).join('')}
+                      </div>
+                    </div>
+                  `;
+                }).join('')}
+              </div>
+            </details>
           </div>
-        </details>
+        </div>
       `;
     } else {
       // Unresolved collisions exist
@@ -569,10 +578,38 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     `;
   }
 
+  // Missing Frameworks Check (e.g. Altermatic runtime replacer framework missing)
+  const state = getState();
+  const allMods: ModInfo[] = state.allMods || [];
+  const isAltermaticInstalled = state.dependencies?.altermatic_installed || 
+    allMods.some((m: ModInfo) => m.enabled && (m.nexusModId === 1626 || m.name.toLowerCase().includes('altermatic - runtime') || (m.name.toLowerCase().startsWith('altermatic') && m.type === 'altermatic')));
+
+  const altermaticMods = allMods.filter((m: ModInfo) => m.enabled && m.type === 'altermatic' && m.nexusModId !== 1626 && !m.name.toLowerCase().includes('altermatic - runtime') && !m.name.toLowerCase().startsWith('altermatic'));
+  const isAltermaticMissing = altermaticMods.length > 0 && !isAltermaticInstalled;
+
+  let frameworkMissingHtml = '';
+  if (isAltermaticMissing) {
+    frameworkMissingHtml = `
+      <div style="width: 100%; margin-bottom: 20px; background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: var(--card-radius); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
+        <div style="display: flex; align-items: center; gap: 12px;">
+          <span style="font-size: 22px;">⚠️</span>
+          <div style="display: flex; flex-direction: column; gap: 2px;">
+            <span style="font-size: 13px; font-weight: 700; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title') || 'Altermatic Framework Required')}</span>
+            <span style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(t('scanner.altermatic_missing_body', { count: altermaticMods.length, names: altermaticMods.map(m => m.name).slice(0, 3).join(', ') }) || `You have ${altermaticMods.length} active Altermatic replacer mod(s) (${altermaticMods.map(m => m.name).slice(0, 3).join(', ')}), but the base Altermatic framework is not installed.`)}</span>
+          </div>
+        </div>
+        <button id="btn-scanner-download-altermatic" class="btn btn-secondary" style="font-size: 11px; font-weight: 700; padding: 6px 14px; border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap;">
+          <span>📦</span> <span>${escapeHtml(t('installer.btn_get_altermatic') || 'Get Altermatic (#1626)')}</span>
+        </button>
+      </div>
+    `;
+  }
+
   container.innerHTML = `
     ${subTabHeader()}
     <div class="scanner-scroll-panel" style="flex: 1 1 auto; min-height: 0; display: block; padding: 20px 24px; overflow-y: auto; overflow-x: hidden; box-sizing: border-box;">
       ${statCards}
+      ${frameworkMissingHtml}
       ${infoBannerHtml}
       ${gamepassNoticeHtml}
       ${schemaNoticesHtml}
@@ -582,6 +619,15 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       ${warningsHtml}
     </div>
   `;
+
+  const downloadAltermaticBtn = document.getElementById('btn-scanner-download-altermatic');
+  if (downloadAltermaticBtn) {
+    downloadAltermaticBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const { openUrl } = await import('../../../api');
+      openUrl('https://www.nexusmods.com/palworld/mods/1626');
+    });
+  }
 
   // Patch Builder button listeners
   const openPatchBuilderBtn = document.getElementById('btn-open-patch-builder');

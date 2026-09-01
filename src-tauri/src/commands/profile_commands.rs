@@ -26,9 +26,9 @@ pub fn get_current_profile(state: State<AppState>) -> Result<Profile, String> {
 }
 
 #[tauri::command]
-pub fn switch_profile_command(
+pub async fn switch_profile_command(
     profile_id: String,
-    state: State<AppState>,
+    state: State<'_, AppState>,
 ) -> Result<Value, String> {
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;

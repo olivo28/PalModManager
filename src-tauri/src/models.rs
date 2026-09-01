@@ -12,6 +12,8 @@ pub enum ModType {
     LogicMods,
     #[serde(rename = "hybrid")]
     Hybrid,
+    #[serde(rename = "altermatic")]
+    Altermatic,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -240,6 +242,10 @@ pub struct Profile {
     pub ue4ss_version: Option<String>,
     #[serde(default)]
     pub palschema_version: Option<String>,
+    #[serde(default)]
+    pub altermatic_version: Option<String>,
+    #[serde(default)]
+    pub unipalui_version: Option<String>,
     #[serde(default)]
     pub compatibility_patches: Option<Vec<String>>,
 }

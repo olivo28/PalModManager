@@ -84,19 +84,28 @@ export function renderProfileList(): void {
     const palschemaBadge = p.palschema_enabled ? `<span class="${palschemaClass}">${escapeHtml(palschemaText)}</span>` : '';
     const modCountBadge = `<span class="profile-badge count">${escapeHtml(t('profiles.mod_count_badge', { count: modCount }))}</span>`;
 
+    const altVer = p.altermatic_version;
+    const uniVer = p.unipalui_version;
+    const altVerStr = altVer && altVer !== 'Installed' && altVer !== 'None' ? ` v${altVer}` : '';
+    const uniVerStr = uniVer && uniVer !== 'Installed' && uniVer !== 'None' ? ` v${uniVer}` : '';
+    const altBadge = altVer ? `<span class="profile-badge altermatic">⚡ Altermatic${escapeHtml(altVerStr)}</span>` : '';
+    const uniBadge = uniVer ? `<span class="profile-badge unipalui">🎨 UniPalUI${escapeHtml(uniVerStr)}</span>` : '';
+
     const patchCount = p.compatibility_patches ? p.compatibility_patches.length : 0;
-    const patchBadge = patchCount > 0 ? `<span class="profile-badge count" style="background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.3);">📦 ${patchCount} ${patchCount === 1 ? 'patch' : 'patches'}</span>` : '';
+    const patchBadge = patchCount > 0 ? `<span class="profile-badge patches">📦 ${patchCount} ${patchCount === 1 ? 'patch' : 'patches'}</span>` : '';
 
     return `
     <div class="profile-item ${isActive ? 'active' : ''}" data-id="${p.id}">
-      <div style="display:flex;flex-direction:column;gap:4px;">
+      <div style="display:flex;flex-direction:column;gap:5px;min-width:0;flex:1;">
         <div style="display:flex;align-items:center;gap:8px;">
           <span class="profile-item-name">${escapeHtml(p.name)}</span>
           ${isActive ? `<span class="profile-item-badge-active">${escapeHtml(t('profiles.active_badge'))}</span>` : ''}
         </div>
-        <div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;">
+        <div style="display:flex;gap:5px;align-items:center;flex-wrap:wrap;">
           ${ue4ssBadge}
           ${palschemaBadge}
+          ${altBadge}
+          ${uniBadge}
           ${modCountBadge}
           ${patchBadge}
         </div>

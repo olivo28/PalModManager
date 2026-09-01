@@ -4,7 +4,7 @@ import { initI18n, t } from './utils/i18n';
 import { getSettings, exportModsJson, setModProfileState, logFromJs, createBackup, restoreBackup, analyzeBackup, checkDependencies, installUe4ss, installPalschema, launchGame } from './api';
 import { getState, updateState, subscribe } from './state';
 import type { AppState } from './state';
-import { openSettingsModal, handleSaveSettings, handleSettingsBrowse, closeInstallModal, closeSettingsModal, handleDataPathChange, openWorkshopModal, openAboutModal, closeAboutModal, setupAboutModal } from './ui/modal';
+import { openSettingsModal, closeInstallModal, closeSettingsModal, openWorkshopModal, openAboutModal, closeAboutModal, setupModalListeners } from './ui/modal';
 import { loadMods, handleSort, handleCheckUpdates, handleOpenAllUpdates, handleDisableAll, handleEnableAll, setupFilterListeners, renderModsView, populateAdvancedFilters, setupAdvancedFilterHandlers, setupStatusFilterHandlers, loadGameVersion, loadProfiles, loadLibrary, handleProfileChange, handleCreateProfile, setupContextMenu, loadDependencies, setupLibraryHandlers } from './ui/modsView';
 import { closeDetailPanel, handleRefreshDetail, handleDetailConfig, handleDetailToggle, handleDetailRemove, handleDetailSetConfig, handleDetailClearConfig, handleDetailOpenFolder, handleDetailOpenExtraFolder, handleDetailRename, openDetailPanel } from './ui/detailPanel';
 import { switchTab, handleEditorSave, handleEditorFormat, handleEditorModChange, setupEditorKeybindings, setupEditorFindHandlers, setupEditorFsWatcher } from './ui/editorView';
@@ -16,7 +16,7 @@ import { showToast } from './ui/toast';
 import { setupSelection } from './features/selection';
 import { initPackerView } from './ui/packerView';
 import { renderScannerView } from './ui/scannerView';
-import { mainDom, bind, createBinderGroup, bus } from './framework';
+import { mainDom, settingsDom, bind, createBinderGroup, bus } from './framework';
 
 const THEME_KEY = 'pmm-theme';
 
@@ -129,21 +129,15 @@ async function init() {
 }
 
 function setupEventListeners() {
-  safeEl('scan-btn')?.addEventListener('click', async () => {
+  setupModalListeners();
+
+  mainDom.elMaybe('scan-btn')?.addEventListener('click', async () => {
     await loadMods();
     await loadDependencies();
   });
 
-  safeEl('settings-btn')?.addEventListener('click', openSettingsModal);
-  safeEl('settings-cancel')?.addEventListener('click', closeSettingsModal);
-  safeEl('settings-save')?.addEventListener('click', handleSaveSettings);
-  safeEl('settings-browse-btn')?.addEventListener('click', handleSettingsBrowse);
-  safeEl('settings-data-path-select')?.addEventListener('change', handleDataPathChange);
-  
-  setupAboutModal();
-
-  const registerOpenFolderBtn = (id: string, type: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile') => {
-    safeEl(id)?.addEventListener('click', async () => {
+  const registerOpenFolderBtn = (id: 'open-folder-paks' | 'open-folder-ue4ss' | 'open-folder-palschema' | 'open-folder-appdata' | 'open-folder-profile', type: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile') => {
+    settingsDom.elMaybe(id)?.addEventListener('click', async () => {
       const { openFolderByType } = await import('./api');
       try {
         await openFolderByType(type);
@@ -508,6 +502,7 @@ function setupEventListeners() {
   setupEditorKeybindings();
   setupEditorFindHandlers();
   setupContextMenu();
+
   document.addEventListener('keydown', (e) => {
     if (e.key === 'Escape') {
       // 1. Confirm / Prompt custom overlays (highest z-index, handled by their own listeners)

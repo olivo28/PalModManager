@@ -37,11 +37,30 @@ pub fn get_logicmods_dir(game_path: &Path) -> PathBuf {
         .join("LogicMods")
 }
 
-/// Checks presence of `LogicMods/Altermatic.pak` and `LogicMods/UniPalUI.pak`
+/// Checks presence of Altermatic (Nexus #1626) and UniPalUI (Nexus #1894) across ~mods, LogicMods, and UE4SS mods
 pub fn check_altermatic_deps(game_path: &Path) -> AltermaticDepStatus {
-    let logic_dir = get_logicmods_dir(game_path);
-    let altermatic_present = logic_dir.join("Altermatic.pak").exists();
-    let unipalui_present = logic_dir.join("UniPalUI.pak").exists();
+    let paks_dir = game_path.join("Pal").join("Content").join("Paks");
+    let logic_dir = paks_dir.join("LogicMods");
+    let tildemods_dir = paks_dir.join("~mods");
+    let ue4ss_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
+
+    let altermatic_present = paks_dir.join("Altermatic.pak").exists()
+        || paks_dir.join("Altermatic_P.pak").exists()
+        || tildemods_dir.join("Altermatic.pak").exists()
+        || tildemods_dir.join("Altermatic_P.pak").exists()
+        || logic_dir.join("Altermatic.pak").exists()
+        || logic_dir.join("Altermatic_P.pak").exists()
+        || logic_dir.join("Altermatic").exists()
+        || ue4ss_dir.join("Altermatic").exists();
+
+    let unipalui_present = paks_dir.join("UniPalUI.pak").exists()
+        || paks_dir.join("UniPalUI_P.pak").exists()
+        || tildemods_dir.join("UniPalUI.pak").exists()
+        || tildemods_dir.join("UniPalUI_P.pak").exists()
+        || logic_dir.join("UniPalUI.pak").exists()
+        || logic_dir.join("UniPalUI_P.pak").exists()
+        || logic_dir.join("UniPalUI").exists()
+        || ue4ss_dir.join("UniPalUI").exists();
 
     AltermaticDepStatus {
         altermatic_present,
@@ -49,7 +68,7 @@ pub fn check_altermatic_deps(game_path: &Path) -> AltermaticDepStatus {
     }
 }
 
-/// Scans `~mods/SwapJSON/` for `.json` files (excluding `_LoadList.json`) and returns basenames without extension.
+/// Scans `~mods/SwapJSON/` for `.json` files (excluding `_LoadList.json`, `_LoadList_Example.json`, etc.) and returns basenames without extension.
 pub fn detect_swapjson_configs(game_path: &Path) -> Vec<String> {
     let swap_dir = get_swapjson_dir(game_path);
     if !swap_dir.exists() {
@@ -66,13 +85,21 @@ pub fn detect_swapjson_configs(game_path: &Path) -> Vec<String> {
                     .map(|s| s.to_string_lossy().to_string())
                     .unwrap_or_default();
                 
-                if file_name.eq_ignore_ascii_case("_LoadList.json") {
+                // Skip helper/template files and any file starting with '_'
+                if file_name.starts_with('_') || file_name.starts_with('.') {
                     continue;
                 }
 
                 if file_name.to_lowercase().ends_with(".json") {
                     if let Some(stem) = path.file_stem().map(|s| s.to_string_lossy().to_string()) {
-                        configs.push(stem);
+                        let clean_stem = if stem.to_lowercase().ends_with(".swap") {
+                            stem[..stem.len() - 5].to_string()
+                        } else {
+                            stem
+                        };
+                        if !clean_stem.is_empty() && !configs.contains(&clean_stem) {
+                            configs.push(clean_stem);
+                        }
                     }
                 }
             }
@@ -91,15 +118,33 @@ pub fn read_load_list(game_path: &Path) -> Vec<String> {
     }
 
     if let Ok(content) = fs::read_to_string(&load_list_path) {
+        if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+            if let Some(arr) = val.get("LoadList").and_then(|v| v.as_array()) {
+                return arr.iter()
+                    .filter_map(|v| v.as_str())
+                    .map(|s| s.trim().to_string())
+                    .filter(|s| !s.is_empty() && !s.starts_with('_'))
+                    .collect();
+            }
+        }
         if let Ok(list) = serde_json::from_str::<Vec<String>>(&content) {
-            return list;
+            return list.into_iter()
+                .map(|s| s.trim().to_string())
+                .filter(|s| !s.is_empty() && !s.starts_with('_'))
+                .collect();
         }
     }
 
     Vec::new()
 }
 
-/// Writes `_LoadList.json` formatted as a JSON array.
+/// Writes `_LoadList.json` formatted in the exact JSON format expected by Altermatic:
+/// {
+///   "LoadList": [
+///     "Config1",
+///     "Config2"
+///   ]
+/// }
 pub fn write_load_list(game_path: &Path, entries: &[String]) -> Result<(), String> {
     let swap_dir = get_swapjson_dir(game_path);
     if !swap_dir.exists() {
@@ -108,7 +153,16 @@ pub fn write_load_list(game_path: &Path, entries: &[String]) -> Result<(), Strin
     }
 
     let load_list_path = get_load_list_path(game_path);
-    let json_content = serde_json::to_string_pretty(entries)
+    let clean_entries: Vec<String> = entries.iter()
+        .map(|s| s.trim().to_string())
+        .filter(|s| !s.is_empty() && !s.starts_with('_'))
+        .collect();
+
+    let payload = serde_json::json!({
+        "LoadList": clean_entries
+    });
+
+    let json_content = serde_json::to_string_pretty(&payload)
         .map_err(|e| format!("Failed to serialize _LoadList.json: {}", e))?;
 
     fs::write(&load_list_path, json_content)
@@ -133,79 +187,65 @@ pub fn sync_load_list(
         return Ok(Vec::new());
     }
 
-    // Collect all JSON config stems that belong to currently enabled mods
-    let mut active_entries = Vec::new();
+    let mut disabled_configs = std::collections::HashSet::new();
+    let mut explicit_enabled_configs = std::collections::HashSet::new();
 
-    for config_stem in &available_configs {
-        let lower_stem = config_stem.to_lowercase();
-        let mut is_enabled = false;
+    for mod_info in all_mods {
+        let is_mod_enabled = mod_info.enabled && (
+            enabled_mod_ids.is_empty() 
+            || enabled_mod_ids.iter().any(|id| id == &mod_info.id || id.eq_ignore_ascii_case(&mod_info.name))
+        );
+        let mut mod_swap_stems = Vec::new();
 
-        // Check if any enabled mod claims or matches this SwapJSON config
-        for mod_info in all_mods {
-            if !enabled_mod_ids.contains(&mod_info.id) || !mod_info.enabled {
-                continue;
-            }
-
-            // 1. Check extra_files and config_path for explicit SwapJSON references
-            let mut matches_mod = false;
-
-            if let Some(cfg) = &mod_info.config_path {
-                let cfg_lower = cfg.to_lowercase().replace('\\', "/");
-                if cfg_lower.contains("swapjson") && cfg_lower.contains(&lower_stem) {
-                    matches_mod = true;
-                }
-            }
-
-            if !matches_mod {
-                for extra in &mod_info.extra_files {
-                    let extra_lower = extra.to_lowercase().replace('\\', "/");
-                    if extra_lower.contains("swapjson") && extra_lower.contains(&lower_stem) {
-                        matches_mod = true;
-                        break;
+        if let Some(cfg) = &mod_info.config_path {
+            let cfg_norm = cfg.replace('\\', "/");
+            if cfg_norm.to_lowercase().contains("swapjson") {
+                if let Some(stem) = Path::new(&cfg_norm).file_stem().map(|s| s.to_string_lossy().to_string()) {
+                    if !stem.starts_with('_') {
+                        mod_swap_stems.push(stem);
                     }
                 }
             }
+        }
 
-            // 2. Fallback: match by mod name / ID if it's a dedicated swap mod
-            if !matches_mod {
-                let mod_name_norm = mod_info.name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
-                let stem_norm = lower_stem.replace(|c: char| !c.is_alphanumeric(), "");
-                if !mod_name_norm.is_empty() && (mod_name_norm.contains(&stem_norm) || stem_norm.contains(&mod_name_norm)) {
-                    matches_mod = true;
+        for extra in &mod_info.extra_files {
+            let extra_norm = extra.replace('\\', "/");
+            if extra_norm.to_lowercase().contains("swapjson") && extra_norm.to_lowercase().ends_with(".json") {
+                if let Some(stem) = Path::new(&extra_norm).file_stem().map(|s| s.to_string_lossy().to_string()) {
+                    if !stem.starts_with('_') {
+                        mod_swap_stems.push(stem);
+                    }
                 }
-            }
-
-            if matches_mod {
-                is_enabled = true;
-                break;
             }
         }
 
-        // If the mod is not tracked as a distinct managed mod (e.g. manually dropped in SwapJSON),
-        // we keep it enabled if there are no conflicting disabled states
-        if is_enabled {
-            active_entries.push(config_stem.clone());
+        let mod_name_norm = mod_info.name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+        for cfg in &available_configs {
+            let cfg_norm = cfg.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+            if !mod_name_norm.is_empty() && (mod_name_norm.contains(&cfg_norm) || cfg_norm.contains(&mod_name_norm)) {
+                mod_swap_stems.push(cfg.clone());
+            }
+        }
+
+        for stem in mod_swap_stems {
+            if is_mod_enabled {
+                explicit_enabled_configs.insert(stem.to_lowercase());
+            } else {
+                disabled_configs.insert(stem.to_lowercase());
+            }
         }
     }
 
-    // If no specific mod mappings matched but configs exist, include all currently present configs in SwapJSON
-    // to prevent breaking existing manual installs
-    let final_entries = if active_entries.is_empty() && !enabled_mod_ids.is_empty() {
-        // Only fallback if no mods explicitly registered SwapJSON files
-        let any_mod_has_swapjson = all_mods.iter().any(|m| {
-            m.extra_files.iter().any(|f| f.to_lowercase().contains("swapjson"))
-                || m.config_path.as_deref().unwrap_or("").to_lowercase().contains("swapjson")
-        });
-
-        if any_mod_has_swapjson {
-            active_entries
-        } else {
-            available_configs
+    let mut active_entries = Vec::new();
+    for config_stem in &available_configs {
+        let lower = config_stem.to_lowercase();
+        if disabled_configs.contains(&lower) && !explicit_enabled_configs.contains(&lower) {
+            continue;
         }
-    } else {
-        active_entries
-    };
+        active_entries.push(config_stem.clone());
+    }
 
-    write_load_list(game_path, &final_entries)?;
-    Ok(final_entries)
+    write_load_list(game_path, &active_entries)?;
+    crate::logger::log(&format!("sync_load_list: Successfully updated _LoadList.json with {} active swap configs: {:?}", active_entries.len(), active_entries));
+    Ok(active_entries)
 }

@@ -169,6 +169,7 @@
 .mod-card-type.pak { color: var(--type-pak); border-color: var(--type-pak-dim); }
 .mod-card-type.logicmods { color: var(--type-logicmods); border-color: var(--type-logicmods-dim); }
 .mod-card-type.hybrid { color: var(--type-hybrid); border-color: var(--type-hybrid-dim); }
+.mod-card-type.altermatic { color: var(--type-altermatic); border-color: var(--type-altermatic-dim); }
 
 .mod-card-category {
   font-size: 8px;

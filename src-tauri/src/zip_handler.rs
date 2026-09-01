@@ -18,6 +18,7 @@ pub enum DetectedModType {
     Pak,
     LogicMods,
     Hybrid,
+    Altermatic,
     Unknown,
 }
 
@@ -28,6 +29,7 @@ pub struct ZipAnalysis {
     pub has_json: bool,
     pub has_palschema_json: bool,
     pub has_pak: bool,
+    pub has_altermatic: bool,
     #[allow(dead_code)]
     pub has_dll: bool,
     pub has_info_json: bool,
@@ -42,8 +44,7 @@ fn find_root_folder(files: &[String]) -> Option<String> {
     for name in files {
         if name.contains('/') {
             let first = name.split('/').next().unwrap_or("");
-            let first_lower = first.to_lowercase();
-            if !first.is_empty() && !FORBIDDEN_MOD_NAMES.contains(&first_lower.as_str()) {
+            if !first.is_empty() && !is_forbidden(first) {
                 return Some(first.to_string());
             }
         }
@@ -201,8 +202,18 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     let has_palschema = has_palschema_folder || has_palschema_json;
     let is_hybrid = (has_ue4ss && has_palschema) || (has_ue4ss && has_pak);
 
+    let has_altermatic = files.iter().any(|f| {
+        let fl = f.to_lowercase();
+        fl.contains("swapjson")
+            || fl.contains("alterconfig")
+            || fl.ends_with(".swap.json")
+            || (fl.ends_with(".json") && (fl.contains("skelmesh") || fl.contains("matreplace") || fl.contains("altermatic")))
+    });
+
     let detected_type_pre = if is_hybrid {
         DetectedModType::Hybrid
+    } else if has_altermatic {
+        DetectedModType::Altermatic
     } else if has_palschema_folder || has_palschema || has_palschema_json {
         DetectedModType::PalSchema
     } else if has_lua || has_dll {
@@ -227,6 +238,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
         has_json,
         has_palschema_json,
         has_pak,
+        has_altermatic,
         has_dll,
         has_info_json,
         pak_destination_hint,
@@ -347,15 +359,28 @@ const PALSCHEMA_FOLDERS: &[&str] = &[
 ];
 
 const FORBIDDEN_MOD_NAMES: &[&str] = &[
-    "pal", "mods", "win64", "wingdk", "binaries", "content", "paks", "~mods",
+    "pal", "palworld", "mods", "win64", "wingdk", "binaries", "content", "paks", "~mods",
     "logicmods", "ue4ss", "palschema", "plugins", "scripts", "nativemods",
-    "blueprints", "translations",
+    "blueprints", "translations", "steam", "(steam)", "xbox", "(xbox)", "gdk", "(gdk)",
+    "gamepass", "(gamepass)", "swapjson", "alterconfig", "release", "build", "dist",
 ];
-
 
 fn is_forbidden(name: &str) -> bool {
     let lower = name.to_lowercase();
-    FORBIDDEN_MOD_NAMES.contains(&lower.as_str()) || lower.is_empty()
+    let trimmed = lower.trim_matches(|c: char| c == '(' || c == ')' || c == '[' || c == ']' || c.is_whitespace());
+    FORBIDDEN_MOD_NAMES.contains(&lower.as_str())
+        || FORBIDDEN_MOD_NAMES.contains(&trimmed)
+        || lower.is_empty()
+        || lower.starts_with("(steam)")
+        || lower.starts_with("(xbox)")
+        || lower.starts_with("(gdk)")
+        || lower.starts_with("(gamepass)")
+        || lower.contains("mods folder")
+        || lower.contains("mod folder")
+        || lower.contains("ue4ss mods")
+        || lower.contains("palschema mods")
+        || lower.contains("mods directory")
+        || lower.contains("mod directory")
 }
 
 pub fn detect_folder_name_from_files(files: &[String], zip_filename: &str) -> String {
@@ -553,12 +578,26 @@ pub fn build_manifest_from_files(
     let has_both_platforms = has_steam_tags && has_xbox_tags;
 
     let mut folder_name = detect_folder_name_from_files(files, filename);
+    let is_forbidden_folder = is_forbidden(&folder_name);
     let is_uuid = folder_name.len() >= 32 && folder_name.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
-    if folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid {
+    if folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid || is_forbidden_folder {
         if let Some(ref disp) = custom_display_name {
             let cleaned = crate::installer::clean_zip_name(disp);
-            if !cleaned.is_empty() && cleaned != "unknown" {
+            if !cleaned.is_empty() && cleaned != "unknown" && !is_forbidden(&cleaned) {
                 folder_name = cleaned;
+            }
+        }
+        if folder_name.is_empty() || is_forbidden(&folder_name) {
+            if let Some(ref n_name) = parsed_nexus.name {
+                if !n_name.is_empty() && !is_forbidden(n_name) {
+                    folder_name = n_name.clone();
+                }
+            }
+        }
+        if folder_name.is_empty() || is_forbidden(&folder_name) {
+            let fallback = crate::installer::clean_zip_name(filename);
+            if !fallback.is_empty() && !is_forbidden(&fallback) {
+                folder_name = fallback;
             }
         }
     }
@@ -902,6 +941,8 @@ pub fn build_manifest_from_files(
                         paks_dest_dir.join("SwapJSON").join(filename)
                     } else if rel_lower.contains("alterconfig") {
                         paks_dest_dir.join("AlterConfig").join(filename)
+                    } else if rel_lower.contains("json_templates") || rel_lower.contains("jsontemplates") {
+                        paks_dest_dir.join("JSON_Templates").join(filename)
                     } else {
                         match primary_route_type {
                             RouteType::Ue4ss => {
@@ -941,6 +982,22 @@ pub fn build_manifest_from_files(
             }
         };
 
+        let is_doc_or_image = {
+            let fl = rel_lower.as_str();
+            (fl.ends_with(".txt") && !fl.ends_with("enabled.txt") && !fl.ends_with("mod.txt") && !fl.ends_with("info.txt"))
+                || fl.ends_with(".md")
+                || fl.ends_with(".url")
+                || fl.ends_with(".png")
+                || fl.ends_with(".jpg")
+                || fl.ends_with(".jpeg")
+                || fl.ends_with(".gif")
+                || fl.ends_with(".pdf")
+        };
+
+        if is_doc_or_image && (route_type == RouteType::Pak || route_type == RouteType::LogicMods || route_type == RouteType::Passthrough) {
+            continue;
+        }
+
         let dest_str = dest_path.to_string_lossy().to_string();
         #[cfg(windows)]
         let dest_str = dest_str.replace('/', "\\");
@@ -954,18 +1011,30 @@ pub fn build_manifest_from_files(
         });
     }
 
+    let has_altermatic = files.iter().any(|f| {
+        let fl = f.to_lowercase();
+        fl.contains("swapjson")
+            || fl.contains("alterconfig")
+            || fl.ends_with(".swap.json")
+            || (fl.ends_with(".json") && (fl.contains("skelmesh") || fl.contains("matreplace") || fl.contains("altermatic")))
+    });
+
     // Derive global mod type
-    let mod_type = match (has_ue4ss, has_palschema, has_pak) {
-        (true, false, false) => ModType::Ue4ss,
-        (false, true, false) => ModType::PalSchema,
-        (false, false, true) => {
-            if pak_destination.map(|d| d.to_lowercase() == "logicmods").unwrap_or(false) {
-                ModType::LogicMods
-            } else {
-                ModType::Pak
+    let mod_type = if has_altermatic {
+        ModType::Altermatic
+    } else {
+        match (has_ue4ss, has_palschema, has_pak) {
+            (true, false, false) => ModType::Ue4ss,
+            (false, true, false) => ModType::PalSchema,
+            (false, false, true) => {
+                if pak_destination.map(|d| d.to_lowercase() == "logicmods").unwrap_or(false) {
+                    ModType::LogicMods
+                } else {
+                    ModType::Pak
+                }
             }
+            _ => ModType::Hybrid,
         }
-        _ => ModType::Hybrid,
     };
 
     let mut display_name = custom_display_name

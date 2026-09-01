@@ -155,6 +155,32 @@ pub fn cleanup_profile_mod_lists(data: &mut AppData) {
             } else {
                 profile.palschema_version = None;
             }
+
+            let is_current = profile.id == data.current_profile_id;
+
+            let alt_mod = data.mods.iter().find(|m| {
+                (m.nexus_mod_id == Some(1626) || m.name.to_lowercase().contains("altermatic")) &&
+                (
+                    if is_current {
+                        m.enabled
+                    } else {
+                        profile.enabled_mod_ids.iter().any(|id| id == &m.id || id.eq_ignore_ascii_case(&m.name))
+                    }
+                )
+            });
+            profile.altermatic_version = alt_mod.map(|m| m.version.clone());
+
+            let uni_mod = data.mods.iter().find(|m| {
+                (m.nexus_mod_id == Some(1894) || m.name.to_lowercase().contains("unipalui")) &&
+                (
+                    if is_current {
+                        m.enabled
+                    } else {
+                        profile.enabled_mod_ids.iter().any(|id| id == &m.id || id.eq_ignore_ascii_case(&m.name))
+                    }
+                )
+            });
+            profile.unipalui_version = uni_mod.map(|m| m.version.clone());
         }
 
         // Sync compatibility patches for this profile (compact filenames only)
@@ -228,6 +254,8 @@ pub fn ensure_default_profile(data: &mut AppData) {
             hide_native_mods: None,
             ue4ss_version: None,
             palschema_version: None,
+            altermatic_version: None,
+            unipalui_version: None,
             compatibility_patches: None,
         });
     }

@@ -348,6 +348,7 @@ pub async fn create_backup(target_dir: String, state: State<'_, AppState>) -> Re
             ModType::PalSchema => "PalSchema",
             ModType::Pak => "Paks",
             ModType::LogicMods => "LogicMods",
+            ModType::Altermatic => "Altermatic",
         };
 
         let mut paths_to_backup = vec![(src_path, category_folder.to_string())];

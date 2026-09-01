@@ -22,7 +22,7 @@ export function openDetailPanel(modId: string): void {
   panel.dataset.id = modId;
 
   detailDom.el('detail-name-header').textContent = mod.name;
-  const typeLabel = mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase();
+  const typeLabel = mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : (mod.type.toLowerCase() === 'altermatic' ? 'ALTERMATIC' : mod.type.toUpperCase());
   detailDom.el('detail-type').textContent = typeLabel;
   detailDom.el('detail-type').className = `mod-type-badge ${mod.type}`;
   renderVersion(mod);

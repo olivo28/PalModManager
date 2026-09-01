@@ -22,6 +22,8 @@ fn empty_status() -> dependency_checker::DependencyStatus {
         conflicting_dlls: Vec::new(),
         ue4ss_updated_from: None,
         palschema_updated_from: None,
+        altermatic_installed: false,
+        unipalui_installed: false,
     }
 }
 

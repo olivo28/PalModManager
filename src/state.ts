@@ -37,7 +37,7 @@ export interface AppState {
 
 let state: AppState = {
   allMods: [],
-  activeFilters: new Set(['ue4ss', 'palschema', 'pak', 'logicmods', 'hybrid']),
+  activeFilters: new Set(['ue4ss', 'palschema', 'pak', 'logicmods', 'hybrid', 'altermatic']),
   tagFilters: new Set(),
   categoryFilters: new Set(),
   statusFilter: 'all',

@@ -26,6 +26,10 @@ pub struct DependencyStatus {
     pub ue4ss_updated_from: Option<String>,
     #[serde(default)]
     pub palschema_updated_from: Option<String>,
+    #[serde(default)]
+    pub altermatic_installed: bool,
+    #[serde(default)]
+    pub unipalui_installed: bool,
 }
 
 fn get_file_date(path: &str) -> Option<String> {
@@ -292,9 +296,34 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         (false, Vec::new())
     };
 
+    // Helper to check prefix in a directory
+    let has_pak_starting_with = |dir: &std::path::Path, prefix: &str| -> bool {
+        if let Ok(entries) = std::fs::read_dir(dir) {
+            for entry in entries.flatten() {
+                let name = entry.file_name().to_string_lossy().to_lowercase();
+                if name.starts_with(prefix) && (name.ends_with(".pak") || entry.path().is_dir()) {
+                    return true;
+                }
+            }
+        }
+        false
+    };
+
+    // Check Altermatic Framework (Nexus #1626)
+    let altermatic_installed = has_pak_starting_with(&profile.paks_dir, "altermatic")
+        || has_pak_starting_with(&profile.paks_dir.join("~mods"), "altermatic")
+        || has_pak_starting_with(&profile.logic_mods_dir, "altermatic")
+        || profile.ue4ss_mods_dir.join("Altermatic").exists();
+
+    // Check UniPalUI Framework (Nexus #1894)
+    let unipalui_installed = has_pak_starting_with(&profile.paks_dir, "unipalui")
+        || has_pak_starting_with(&profile.paks_dir.join("~mods"), "unipalui")
+        || has_pak_starting_with(&profile.logic_mods_dir, "unipalui")
+        || profile.ue4ss_mods_dir.join("UniPalUI").exists();
+
     use std::sync::Mutex;
     static LAST_LOGGED_STATUS: Mutex<Option<String>> = Mutex::new(None);
-    let log_msg = format!("check_dependencies: UE4SS installed={}, mode={}, ver={:?} | PalSchema installed={}, ver={:?}", ue4ss_installed, ue4ss_install_mode_str, ue4ss_version, palschema_installed, palschema_version);
+    let log_msg = format!("check_dependencies: UE4SS installed={}, mode={}, ver={:?} | PalSchema installed={}, ver={:?} | Altermatic={}, UniPalUI={}", ue4ss_installed, ue4ss_install_mode_str, ue4ss_version, palschema_installed, palschema_version, altermatic_installed, unipalui_installed);
     if let Ok(mut last) = LAST_LOGGED_STATUS.lock() {
         if last.as_deref() != Some(&log_msg) {
             crate::logger::log(&log_msg);
@@ -318,6 +347,8 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         conflicting_dlls,
         ue4ss_updated_from: None,
         palschema_updated_from: None,
+        altermatic_installed,
+        unipalui_installed,
     }
 }
 
@@ -370,31 +401,75 @@ pub async fn check_ue4ss_latest() -> Result<(String, String), String> {
         }
     }
 
-    // Priority 2: Fallback HTML scraping (scan ALL datetime tags across the page and pick the latest)
-    if let Ok(resp) = client.get("https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld").send().await {
-        if let Ok(html) = resp.text().await {
-            let mut latest_html_dt: Option<chrono::DateTime<chrono::Utc>> = None;
-            let mut cursor = 0;
-            while let Some(pos) = html[cursor..].find("datetime=\"") {
-                let time_start = cursor + pos + 10;
-                if let Some(len) = html[time_start..].find('"') {
-                    let dt_raw = &html[time_start..time_start + len];
-                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
-                        let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
-                        match latest_html_dt {
-                            Some(cur) if dt_utc > cur => { latest_html_dt = Some(dt_utc); }
-                            None => { latest_html_dt = Some(dt_utc); }
-                            _ => {}
+    // Priority 2: Fallback HTML scraping (scan ALL body dates and datetime tags, picking the latest)
+    let release_urls = [
+        "https://github.com/Okaetsu/RE-UE4SS/releases/latest",
+        "https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld",
+    ];
+
+    for target_url in release_urls {
+        if let Ok(resp) = client.get(target_url).send().await {
+            if let Ok(html) = resp.text().await {
+                let mut latest_dt: Option<chrono::NaiveDate> = None;
+
+                // 1. Scan text dates in markdown body (e.g. "Updated on 28th of August 2026")
+                let text_date_re = regex::Regex::new(r"(?i)(\d{1,2})(?:st|nd|rd|th)?\s+(?:of\s+)?(January|February|March|April|May|June|July|August|September|October|November|December)\s+(\d{4})").unwrap();
+                for cap in text_date_re.captures_iter(&html) {
+                    if let (Some(d_match), Some(m_match), Some(y_match)) = (cap.get(1), cap.get(2), cap.get(3)) {
+                        let month_opt = match m_match.as_str().to_lowercase().as_str() {
+                            "january" | "jan" => Some(1),
+                            "february" | "feb" => Some(2),
+                            "march" | "mar" => Some(3),
+                            "april" | "apr" => Some(4),
+                            "may" => Some(5),
+                            "june" | "jun" => Some(6),
+                            "july" | "jul" => Some(7),
+                            "august" | "aug" => Some(8),
+                            "september" | "sep" | "sept" => Some(9),
+                            "october" | "oct" => Some(10),
+                            "november" | "nov" => Some(11),
+                            "december" | "dec" => Some(12),
+                            _ => None,
+                        };
+                        if let (Ok(day), Some(month), Ok(year)) = (
+                            d_match.as_str().parse::<u32>(),
+                            month_opt,
+                            y_match.as_str().parse::<i32>(),
+                        ) {
+                            if let Some(nd) = chrono::NaiveDate::from_ymd_opt(year, month, day) {
+                                match latest_dt {
+                                    Some(cur) if nd > cur => { latest_dt = Some(nd); }
+                                    None => { latest_dt = Some(nd); }
+                                    _ => {}
+                                }
+                            }
                         }
                     }
-                    cursor = time_start + len;
-                } else {
-                    break;
                 }
-            }
 
-            if let Some(dt) = latest_html_dt {
-                return Ok((default_tag, dt.format("%d.%m.%Y").to_string()));
+                // 2. Scan datetime="..." attributes
+                let mut cursor = 0;
+                while let Some(pos) = html[cursor..].find("datetime=\"") {
+                    let time_start = cursor + pos + 10;
+                    if let Some(len) = html[time_start..].find('"') {
+                        let dt_raw = &html[time_start..time_start + len];
+                        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
+                            let nd = dt.date_naive();
+                            match latest_dt {
+                                Some(cur) if nd > cur => { latest_dt = Some(nd); }
+                                None => { latest_dt = Some(nd); }
+                                _ => {}
+                            }
+                        }
+                        cursor = time_start + len;
+                    } else {
+                        break;
+                    }
+                }
+
+                if let Some(nd) = latest_dt {
+                    return Ok((default_tag, nd.format("%d.%m.%Y").to_string()));
+                }
             }
         }
     }

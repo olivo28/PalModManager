@@ -228,14 +228,20 @@ pub fn disable_mod_internal(
             mod_info.game_path = String::new();
         }
         mod_info.enabled = false;
-    } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods {
+    } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods || mod_type == ModType::Altermatic {
         let mod_info = &mut data.mods[mod_index];
         let src_path = PathBuf::from(&mod_info.game_path);
+        let mut moved_files = Vec::new();
+        let mut moved_extras = Vec::new();
+
         if src_path.exists() {
-            let mut moved_files = Vec::new();
             if let Some(parent) = src_path.parent() {
                 let file_stem = src_path.file_stem().unwrap().to_string_lossy().to_string();
-                let type_dir = if mod_type == ModType::LogicMods { "logicmods" } else { "pak" };
+                let type_dir = match mod_type {
+                    ModType::LogicMods => "logicmods",
+                    ModType::Altermatic => "altermatic",
+                    _ => "pak",
+                };
                 let dest_dir = disabled_base.join(type_dir);
                 let _ = fs::create_dir_all(&dest_dir);
 
@@ -254,9 +260,44 @@ pub fn disable_mod_internal(
                 }
             }
             mod_info.disabled_path = moved_files.first().cloned().unwrap_or_default();
-            mod_info.extra_files = moved_files.into_iter().skip(1).collect();
             mod_info.game_path = String::new();
         }
+
+        if mod_type == ModType::Altermatic {
+            let swap_dest_dir = disabled_base.join("altermatic").join("SwapJSON");
+            let _ = fs::create_dir_all(&swap_dest_dir);
+
+            if let Some(cfg) = &mod_info.config_path {
+                let cfg_path = PathBuf::from(cfg);
+                if cfg_path.exists() {
+                    let filename = cfg_path.file_name().unwrap().to_string_lossy().to_string();
+                    let dest = swap_dest_dir.join(&filename);
+                    if let Ok(_) = move_path(&cfg_path, &dest) {
+                        mod_info.config_path = Some(dest.to_string_lossy().to_string());
+                    }
+                }
+            }
+
+            for extra in &mod_info.extra_files {
+                let extra_path = PathBuf::from(extra);
+                if extra_path.exists() {
+                    let filename = extra_path.file_name().unwrap().to_string_lossy().to_string();
+                    let dest = if extra.to_lowercase().contains("swapjson") {
+                        swap_dest_dir.join(&filename)
+                    } else {
+                        disabled_base.join("altermatic").join(&filename)
+                    };
+                    let _ = fs::create_dir_all(dest.parent().unwrap());
+                    if let Ok(_) = move_path(&extra_path, &dest) {
+                        moved_extras.push(dest.to_string_lossy().to_string());
+                    }
+                }
+            }
+            mod_info.extra_files = moved_extras;
+        } else {
+            mod_info.extra_files = moved_files.into_iter().skip(1).collect();
+        }
+
         mod_info.enabled = false;
     } else if mod_type == ModType::Hybrid {
         let mod_info = &mut data.mods[mod_index];
@@ -515,9 +556,10 @@ pub fn enable_mod_internal(
             mod_info.disabled_path = String::new();
         }
         mod_info.enabled = true;
-    } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods {
+    } else if mod_type == ModType::Pak || mod_type == ModType::LogicMods || mod_type == ModType::Altermatic {
         let mod_info = &mut data.mods[mod_index];
         let mut moved_back = Vec::new();
+        let mut moved_extras = Vec::new();
         let primary_disabled = PathBuf::from(&mod_info.disabled_path);
         let dest_subdir = if mod_type == ModType::LogicMods { "LogicMods" } else { "~mods" };
         let dest_dir = game_paks.join(dest_subdir);
@@ -529,17 +571,53 @@ pub fn enable_mod_internal(
             move_path(&primary_disabled, &dest)?;
             moved_back.push(dest.to_string_lossy().to_string());
         }
-        for extra_disabled_str in &mod_info.extra_files {
-            let extra_disabled = PathBuf::from(extra_disabled_str);
-            if extra_disabled.exists() {
-                let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
-                let dest = dest_dir.join(&filename);
-                move_path(&extra_disabled, &dest)?;
-                moved_back.push(dest.to_string_lossy().to_string());
+
+        if mod_type == ModType::Altermatic {
+            let swap_dir = game_paks.join("~mods").join("SwapJSON");
+            let _ = fs::create_dir_all(&swap_dir);
+
+            if let Some(cfg) = &mod_info.config_path {
+                let cfg_path = PathBuf::from(cfg);
+                if cfg_path.exists() {
+                    let filename = cfg_path.file_name().unwrap().to_string_lossy().to_string();
+                    let dest = swap_dir.join(&filename);
+                    if let Ok(_) = move_path(&cfg_path, &dest) {
+                        mod_info.config_path = Some(dest.to_string_lossy().to_string());
+                    }
+                }
             }
+
+            for extra_disabled_str in &mod_info.extra_files {
+                let extra_disabled = PathBuf::from(extra_disabled_str);
+                if extra_disabled.exists() {
+                    let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
+                    let dest = if extra_disabled_str.to_lowercase().contains("swapjson") {
+                        swap_dir.join(&filename)
+                    } else {
+                        dest_dir.join(&filename)
+                    };
+                    let _ = fs::create_dir_all(dest.parent().unwrap());
+                    if let Ok(_) = move_path(&extra_disabled, &dest) {
+                        moved_extras.push(dest.to_string_lossy().to_string());
+                    }
+                }
+            }
+            mod_info.extra_files = moved_extras;
+        } else {
+            for extra_disabled_str in &mod_info.extra_files {
+                let extra_disabled = PathBuf::from(extra_disabled_str);
+                if extra_disabled.exists() {
+                    let filename = extra_disabled.file_name().unwrap().to_string_lossy().to_string();
+                    let dest = dest_dir.join(&filename);
+                    move_path(&extra_disabled, &dest)?;
+                    moved_back.push(dest.to_string_lossy().to_string());
+                }
+            }
+            let extras: Vec<String> = moved_back.iter().skip(1).cloned().collect();
+            mod_info.extra_files = extras;
         }
+
         mod_info.game_path = moved_back.first().cloned().unwrap_or_default();
-        mod_info.extra_files = moved_back.into_iter().skip(1).collect();
         mod_info.disabled_path = String::new();
         mod_info.enabled = true;
     } else if mod_type == ModType::Hybrid {

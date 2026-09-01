@@ -624,6 +624,8 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
         hide_native_mods: None,
         ue4ss_version: None,
         palschema_version: None,
+        altermatic_version: None,
+        unipalui_version: None,
         compatibility_patches: None,
     };
 
@@ -668,6 +670,8 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
         hide_native_mods: source_profile.hide_native_mods,
         ue4ss_version: source_profile.ue4ss_version.clone(),
         palschema_version: source_profile.palschema_version.clone(),
+        altermatic_version: source_profile.altermatic_version.clone(),
+        unipalui_version: source_profile.unipalui_version.clone(),
         compatibility_patches: source_profile.compatibility_patches.clone(),
     };
 

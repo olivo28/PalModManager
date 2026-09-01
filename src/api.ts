@@ -323,6 +323,17 @@ export interface UAssetSchemaResolvedInfo {
   gameVersion: string;
 }
 
+export interface TexturePreviewInfo {
+  dataUrl: string;
+  width: number;
+  height: number;
+  formatName: string;
+  mipCount: number;
+  hasAlpha: boolean;
+  sourceFile: string;
+  sizeBytes: number;
+}
+
 export interface UAssetInspectionDetails {
   assetName: string;
   assetPath: string;
@@ -333,6 +344,7 @@ export interface UAssetInspectionDetails {
   imports: UAssetImportItem[];
   namesSample: string[];
   resolvedSchema?: UAssetSchemaResolvedInfo | null;
+  texturePreview?: TexturePreviewInfo | null;
 }
 
 export async function inspectPakAsset(modId: string, assetInternalPath: string): Promise<string[]> {
@@ -346,6 +358,20 @@ export async function inspectUAssetDeep(params: {
   zipPath?: string | null;
 }): Promise<UAssetInspectionDetails> {
   return invoke('inspect_uasset_deep_cmd', {
+    modId: params.modId || null,
+    pakPath: params.pakPath || null,
+    assetInternalPath: params.assetInternalPath,
+    zipPath: params.zipPath || null,
+  });
+}
+
+export async function decodeUAssetTexture(params: {
+  modId?: string | null;
+  pakPath?: string | null;
+  assetInternalPath: string;
+  zipPath?: string | null;
+}): Promise<TexturePreviewInfo> {
+  return invoke('decode_uasset_texture_cmd', {
     modId: params.modId || null,
     pakPath: params.pakPath || null,
     assetInternalPath: params.assetInternalPath,

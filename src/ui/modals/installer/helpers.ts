@@ -125,5 +125,9 @@ export function getCleanNameFromFilename(filename: string): string {
 
   const result = clean.join(' ').trim();
   const finalResult = result.replace(/[-\s_]+$/, '').trim();
+  const stemClean = stem.toLowerCase().replace(/[()[\]\s]/g, '');
+  if (["gamepass", "steam", "gdk", "xbox", "singleplayer", "sp"].includes(stemClean)) {
+    return '';
+  }
   return finalResult.length < 2 ? stem.trim() : finalResult;
 }

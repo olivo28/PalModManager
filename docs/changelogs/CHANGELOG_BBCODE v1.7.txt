@@ -1,8 +1,10 @@
-[size=5][b]PalModManager v1.7.0 Changelog[/b][/size]
-[b]Release Date:[/b] 2026-08-28
+[size=5][b]PalModManager - Changelog v1.7.0 (2026-08-31)[/b][/size]
+
+[i]Thanks to the low volume of bug reports this past week, I had the dedicated time to tackle several things that were on my todo list and finish implementing them! Many of them are now implemented, though some have not been 100% field-tested yet. However, the core foundation for many new and very useful features is now ready.[/i]
 
 [size=4][b]Added[/b][/size]
 [list]
+[*] [b]Full Altermatic & UniPalUI Framework Support:[/b] Complete out-of-the-box support for Altermatic runtime replacer mods and UniPalUI, automatically routing [font=monospace].pak[/font] files to [font=monospace]~mods/[/font] and configs to [font=monospace]SwapJSON/[/font], managing full physical enable/disable lifecycles per profile, and keeping [font=monospace]_LoadList.json[/font] synchronized automatically.
 [*] [b]PMM World Backups Vault:[/b] Manage and restore PalModManager world backups with 1-click safety restoration.
 [*] [b]Co-op Profile Packs:[/b] Export and import complete mod setups with dependencies and configs in a single [font=monospace].zip[/font] / [font=monospace].pmmprofile[/font].
 [*] [b]Config Merge & Backup Diff:[/b] Visual side-by-side file comparison with smart merge that preserves custom settings during updates.
@@ -10,19 +12,21 @@
 [*] [b]PMM-Core Engine:[/b] Ultra-fast reactive framework with typed DOM elements and instant UI response times.
 [*] [b]Download Speed & ETA:[/b] Live download speed ([font=monospace]⚡ MB/s[/font]) and remaining time in the Nexus queue.
 [*] [b]Save Health Doctor:[/b] Detect and clean orphaned mod classes to fix loading crashes, with world settings inspector.
-[*] [b]Deep Pak & UAsset Inspector:[/b] Pure-Rust inspection of [font=monospace].pak[/font] files, [font=monospace].uasset[/font] / [font=monospace].uexp[/font], and DDS textures.
+[*] [b]Deep Pak & UAsset Inspector:[/b] Pure-Rust inspection of [font=monospace].pak[/font] files, [font=monospace].uasset[/font] / [font=monospace].uexp[/font], and binary assets.
+[*] [b]GPU Texture Inspector:[/b] View mod textures and images directly inside the app with channel filters and PNG export.
+[*] [b]Library Mod Rollback:[/b] Keep older downloaded mod versions to rollback updates anytime with 1-click.
 [*] [b]Nexus Creator Badges:[/b] Added Mod Author badge and total accumulated download counters.
-[*] [b]Enhanced Code Editor:[/b] Auto-indentation, line/column counter, and syntax highlighting for [font=monospace].ini[/font], [font=monospace].cfg[/font], [font=monospace].toml[/font], [font=monospace].yaml[/font], [font=monospace].xml[/font], [font=monospace].py[/font], [font=monospace].md[/font].
+[*] [b]Enhanced Code Editor:[/b] Auto-indentation, line/column counter, and syntax highlighting for various file formats.
 [*] [b]Unreal Engine Schema Mappings (.usmap):[/b] Pure-Rust USMAP v4 parser and dynamic GitHub synchronization engine for deep cooked asset inspection and DataTable decoding with offline Steam ACF build detection.
 [*] [b]Manual Compatibility Patch Builder (Beta):[/b] Resolve overlapping [font=monospace].pak[/font] asset collisions by selecting winning assets and compiling unified priority patches ([font=monospace]zzz_PMM_Patch_*_P.pak[/font]) with native [font=monospace]repak[/font] and [font=monospace]retoc[/font]. [i](Experimental testing; compatibility depends on mod structure and companions)[/i].
 [*] [b]Conflict & Collision Scanner:[/b] Multi-layer detection of Pak asset collisions, PalSchema table collisions, and Lua hook collisions.
-[*] [b]Xbox Game Pass & Altermatic (Beta):[/b] Built-in IoStore ([font=monospace].utoc[/font]/[font=monospace].ucas[/font]) conversion and dynamic alteration manifest support. [i](Experimental testing)[/i].
+[*] [b]Xbox Game Pass (IoStore) Support:[/b] Built-in IoStore ([font=monospace].utoc[/font]/[font=monospace].ucas[/font]) conversion and detection.
 [*] [b]Virtual Folder Startup Modes:[/b] Configurable folder behavior on startup (Expanded, Collapsed, Remember).
-[*] [b]6-Language Localization:[/b] English, Spanish, Portuguese, Simplified Chinese, Japanese, and Korean.
 [/list]
 
 [size=4][b]Changed[/b][/size]
 [list]
+[*] [b]Zero-Freeze Async Profile Switching:[/b] Instantaneous profile switching powered by zero-copy NTFS hard-link fast paths and background async execution without UI locking.
 [*] [b]Faster Startup:[/b] Streamlined initialization and eliminated background rescan lag.
 [*] [b]Modular Codebase:[/b] Decoupled monolithic files into clean, maintainable domain modules.
 [*] [b]Instant Settings:[/b] UI toggles now apply immediately without reloading.

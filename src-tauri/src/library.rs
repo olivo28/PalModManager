@@ -58,31 +58,46 @@ pub fn copy_to_library(
         .unwrap_or_else(|| "unknown.zip".to_string());
 
     let is_temp_or_nexus = |name: &str| -> bool {
-        name.starts_with("nexus_") || name.starts_with("disc_") || name.starts_with("temp_") || name == "unknown.zip"
+        name.starts_with("nexus_") || name.starts_with("disc_") || name.starts_with("temp_") || name == "unknown.zip" || name.starts_with("download_")
     };
 
     let clean_version = mod_version
         .map(|v| v.trim())
-        .filter(|v| !v.is_empty() && *v != "unknown" && *v != "1.0.0" && *v != "1.0");
+        .filter(|v| !v.is_empty() && *v != "unknown");
 
     let zip_name = if let Some(target) = target_filename {
-        if is_temp_or_nexus(target) {
+        let sanitized_target = sanitize_filename(target);
+        if is_temp_or_nexus(&sanitized_target) {
             if let Some(v) = clean_version {
                 format!("{} - {}.zip", safe_folder_name, sanitize_filename(v))
             } else {
                 format!("{}.zip", safe_folder_name)
             }
+        } else if let Some(v) = clean_version {
+            let target_stem = sanitized_target.strip_suffix(".zip").unwrap_or(&sanitized_target);
+            if !target_stem.to_lowercase().contains(&v.to_lowercase()) {
+                format!("{} - {}.zip", target_stem, sanitize_filename(v))
+            } else {
+                sanitized_target
+            }
         } else {
-            sanitize_filename(target)
+            sanitized_target
         }
-    } else if is_temp_or_nexus(&original_name) {
-        if let Some(v) = clean_version {
+    } else if let Some(v) = clean_version {
+        let orig_stem = original_name.strip_suffix(".zip")
+            .or_else(|| original_name.strip_suffix(".rar"))
+            .or_else(|| original_name.strip_suffix(".7z"))
+            .unwrap_or(&original_name);
+
+        if is_temp_or_nexus(&original_name) || !orig_stem.to_lowercase().contains(&v.to_lowercase()) {
             format!("{} - {}.zip", safe_folder_name, sanitize_filename(v))
         } else {
-            format!("{}.zip", safe_folder_name)
+            sanitize_filename(&original_name)
         }
+    } else if is_temp_or_nexus(&original_name) {
+        format!("{}.zip", safe_folder_name)
     } else {
-        original_name
+        sanitize_filename(&original_name)
     };
     
     let dest = lib_path.join(&zip_name);

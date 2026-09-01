@@ -11,6 +11,7 @@ export function getTypeLabel(type: string): string {
     case 'pak': return 'PAK';
     case 'logicmods': return 'LM';
     case 'hybrid': return 'HY';
+    case 'altermatic': return 'ALT';
     default: return '??';
   }
 }

@@ -2,7 +2,8 @@ import {
   buildInstallManifest,
   fetchNexusInfoAsync,
   previewConfigDiff,
-  setModIgnoredKeys
+  setModIgnoredKeys,
+  openUrl
 } from '../../../api';
 import type { ZipAnalysis, InstallManifest } from '../../../api';
 import { getState, updateState } from '../../../state';
@@ -172,6 +173,63 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     </div>
   `;
 
+  const deps = getState().dependencies;
+  const allMods = getState().allMods;
+  const isAltermatic = manifest.modType === 'altermatic' || (analysis as any).hasAltermatic || (analysis as any).detectedType === 'altermatic';
+
+  const isSelfAltermatic = analysis.nexusModId === 1626
+    || cleanName.toLowerCase().includes('altermatic')
+    || manifest.folderName.toLowerCase().includes('altermatic')
+    || analysis.zipPath.toLowerCase().includes('altermatic');
+
+  const isSelfUniPalUI = analysis.nexusModId === 1894
+    || cleanName.toLowerCase().includes('unipalui')
+    || manifest.folderName.toLowerCase().includes('unipalui')
+    || analysis.zipPath.toLowerCase().includes('unipalui');
+
+  const isAltermaticPresent = Boolean(
+    deps?.altermatic_installed ||
+    allMods.some(m => m.enabled && (m.nexusModId === 1626 || m.name.toLowerCase().includes('altermatic') || m.id.toLowerCase().includes('altermatic')))
+  );
+
+  const isUniPalUIPresent = Boolean(
+    deps?.unipalui_installed ||
+    allMods.some(m => m.enabled && (m.nexusModId === 1894 || m.name.toLowerCase().includes('unipalui') || m.id.toLowerCase().includes('unipalui')))
+  );
+
+  const missingAltermatic = isAltermatic && !isSelfAltermatic && !isAltermaticPresent;
+  const missingUniPalUI = isAltermatic && !isSelfAltermatic && !isSelfUniPalUI && !isUniPalUIPresent;
+
+  let altermaticAlertHtml = '';
+  if (missingAltermatic) {
+    altermaticAlertHtml += `
+      <div style="background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 14px;">⚠️</span>
+          <div style="display: flex; flex-direction: column; text-align: left;">
+            <span style="font-size: 11px; font-weight: bold; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title'))}</span>
+            <span style="font-size: 9.5px; color: var(--text-secondary);">${escapeHtml(t('installer.altermatic_missing_desc'))}</span>
+          </div>
+        </div>
+        <button id="open-altermatic-nexus-btn" type="button" class="btn btn-secondary" style="font-size: 10px; padding: 3px 8px; border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap; height: auto; margin: 0;">${escapeHtml(t('installer.btn_get_altermatic'))}</button>
+      </div>
+    `;
+  }
+  if (missingUniPalUI) {
+    altermaticAlertHtml += `
+      <div style="background: rgba(0, 188, 255, 0.08); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span style="font-size: 14px;">ℹ️</span>
+          <div style="display: flex; flex-direction: column; text-align: left;">
+            <span style="font-size: 11px; font-weight: bold; color: var(--type-ue4ss);">${escapeHtml(t('installer.unipalui_recommended_title'))}</span>
+            <span style="font-size: 9.5px; color: var(--text-secondary);">${escapeHtml(t('installer.unipalui_recommended_desc'))}</span>
+          </div>
+        </div>
+        <button id="open-unipalui-nexus-btn" type="button" class="btn btn-secondary" style="font-size: 10px; padding: 3px 8px; border-color: var(--type-ue4ss); color: var(--type-ue4ss); white-space: nowrap; height: auto; margin: 0;">${escapeHtml(t('installer.btn_get_unipalui'))}</button>
+      </div>
+    `;
+  }
+
   content.innerHTML = `
     <div style="display:flex;gap:18px;align-items:flex-start;padding:2px 0;">
        <!-- Left Column: Card Preview (Nexus Info or Local Modinfo) -->
@@ -208,6 +266,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         <!-- Right Column: Settings Form -->
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;">
            ${updateHtml}
+           ${altermaticAlertHtml}
 
            <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 6px 10px; margin-top: -2px; margin-bottom: 2px; align-items: center; justify-content: space-between; gap: 12px;">
               <div style="display: flex; align-items: center; gap: 8px;">
@@ -261,6 +320,16 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         </div>
     </div>
   `;
+
+  // Wire up Altermatic & UniPalUI buttons
+  document.getElementById('open-altermatic-nexus-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openUrl('https://www.nexusmods.com/palworld/mods/1626');
+  });
+  document.getElementById('open-unipalui-nexus-btn')?.addEventListener('click', (e) => {
+    e.preventDefault();
+    openUrl('https://www.nexusmods.com/palworld/mods/1894');
+  });
 
   // Wire up Show Full List button
   const viewAllBtn = installerDom.elMaybe('view-all-files-btn');

@@ -61,6 +61,10 @@ pub fn clean_zip_name(zip_filename: &str) -> String {
 
     let result = clean.join(" ");
     let final_result = result.trim_end_matches(|c: char| c == '-' || c == '_' || c == '(' || c == ' ' || c == ')').trim().to_string();
+    let stem_clean = stem.trim_matches(|c: char| c == '(' || c == ')' || c == '[' || c == ']' || c.is_whitespace()).to_lowercase();
+    if ["gamepass", "steam", "gdk", "xbox", "singleplayer", "sp"].contains(&stem_clean.as_str()) {
+        return "unknown".to_string();
+    }
     if final_result.len() < 2 { stem } else { final_result }
 }
 
@@ -279,6 +283,16 @@ pub fn execute_manifest(
         }
     }
 
+    if config_path.is_none() {
+        for comp in &component_paths {
+            let comp_lower = comp.to_lowercase();
+            if comp_lower.contains("swapjson") && comp_lower.ends_with(".json") {
+                config_path = Some(comp.clone());
+                break;
+            }
+        }
+    }
+
     if manifest.has_ue4ss {
         primary_path = ue4ss_component.clone();
     } else if manifest.has_palschema {
@@ -486,6 +500,7 @@ pub fn determine_mod_id(
         crate::models::ModType::Pak => "pak",
         crate::models::ModType::LogicMods => "logicmods",
         crate::models::ModType::Hybrid => "hybrid",
+        crate::models::ModType::Altermatic => "altermatic",
     };
     if let Some(nexus_id) = nexus_mod_id {
         if let Some(file_id) = nexus_file_id {

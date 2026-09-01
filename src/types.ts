@@ -1,4 +1,4 @@
-export type ModType = 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'hybrid';
+export type ModType = 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'hybrid' | 'altermatic';
 
 export interface ModInfo {
   id: string;
@@ -162,6 +162,8 @@ export interface Profile {
   hide_native_mods?: boolean | null;
   ue4ss_version?: string | null;
   palschema_version?: string | null;
+  altermatic_version?: string | null;
+  unipalui_version?: string | null;
   compatibility_patches?: string[] | null;
 }
 
@@ -204,6 +206,8 @@ export interface DependencyStatus {
   conflicting_dlls?: string[];
   ue4ss_updated_from?: string | null;
   palschema_updated_from?: string | null;
+  altermatic_installed?: boolean;
+  unipalui_installed?: boolean;
 }
 
 export interface SafetyBackupInfo {

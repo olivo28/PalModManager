@@ -155,6 +155,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             <option value="palschema" ${item.type === 'palschema' ? 'selected' : ''}>PalSchema</option>
             <option value="pak" ${item.type === 'pak' || item.type === 'logicmods' ? 'selected' : ''}>Pak</option>
             <option value="hybrid" ${item.type === 'hybrid' ? 'selected' : ''}>${escapeHtml(t('card.type_hybrid'))}</option>
+            <option value="altermatic" ${item.type === 'altermatic' ? 'selected' : ''}>Altermatic</option>
           </select>
         </td>
         <td id="batch-pak-dest-container-${idx}" style="padding:6px;width:95px;">${pakDestSelectHtml}</td>
@@ -416,6 +417,10 @@ export async function handleInstallConfirm(): Promise<void> {
     cancelBtn.disabled = false;
     confirmBtn.textContent = _pendingUpdateModId ? t('installer.btn_update') : t('installer.btn_install');
 
+    // Allow the user to retry — unlock the processing guard so the Install
+    // button is responsive again if they dismiss the deps dialog.
+    setIsProcessingInstall(false);
+
     const retryBtn = installerDom.elMaybe('modal-install-deps-retry');
     if (retryBtn) {
       retryBtn.style.display = '';
@@ -565,6 +570,8 @@ export async function openInstallModalForZip(
   preferredVersion?: string
 ): Promise<void> {
   setLastInstallSuccess(false);
+  // Always reset the processing guard so a new install never silently no-ops.
+  setIsProcessingInstall(false);
 
   // Dismiss Discovery modal cleanly if currently open
   const discModal = discoveryDom.elMaybe('discovery-mod-modal');

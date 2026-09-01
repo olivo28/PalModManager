@@ -179,6 +179,7 @@ pub struct UAssetInspectionDetails {
     pub imports: Vec<UAssetImportItem>,
     pub names_sample: Vec<String>,
     pub resolved_schema: Option<UAssetSchemaResolvedInfo>,
+    pub texture_preview: Option<crate::texture_decoder::TexturePreviewInfo>,
 }
 
 pub fn resolve_usmap_schema(
@@ -394,6 +395,7 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
                 imports,
                 names_sample,
                 resolved_schema,
+                texture_preview: None,
             });
         }
     }
@@ -459,6 +461,7 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
         imports,
         names_sample,
         resolved_schema,
+        texture_preview: None,
     })
 }
 
