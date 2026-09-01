@@ -97,7 +97,14 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
                     .cloned()
                     .collect();
                     
+                let p_dir = crate::profiles::get_profile_dir(&data.settings.program_path, &current_profile_id);
+                let snapshot_file = p_dir.join("mods.txt.pre_flo_backup");
+
                 if enabled {
+                    if mods_txt.exists() && !snapshot_file.exists() {
+                        let _ = fs::copy(&mods_txt, &snapshot_file);
+                    }
+
                     let mut reconciled_items: Vec<(String, bool)> = Vec::new();
                     if let Some(ref metadata) = current_profile.load_order_metadata {
                         for (folder_name, is_enabled) in metadata {
@@ -167,7 +174,10 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
                         }
                     }
                 } else {
-                    if let Ok(content) = fs::read_to_string(&mods_txt) {
+                    if snapshot_file.exists() {
+                        let _ = fs::copy(&snapshot_file, &mods_txt);
+                        let _ = fs::remove_file(&snapshot_file);
+                    } else if let Ok(content) = fs::read_to_string(&mods_txt) {
                         let mut enabled_in_mods_txt = std::collections::HashSet::new();
                         for line in content.lines() {
                             let line_clean = line.trim();
@@ -193,7 +203,7 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
                                 } else {
                                     line_clean
                                 };
-                                if target_folder_names.iter().any(|f| f.to_lowercase() == name.to_lowercase())
+                                if target_folder_names.iter().any(|f| f.to_lowercase() == name.to_lowercase()) 
                                    || target_mods.iter().any(|m| m.name.to_lowercase() == name.to_lowercase()) {
                                     continue;
                                 }
@@ -588,5 +598,27 @@ pub fn set_folder_expand_mode(mode: String, state: State<AppState>) -> Result<Va
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
     Ok(result)
 }
+
+#[tauri::command]
+pub fn set_ue4ss_control_mode(mode: String, state: State<AppState>) -> Result<Value, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    data.settings.ue4ss_control_mode = Some(mode.clone());
+    let current_profile_id = data.current_profile_id.clone();
+    if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+        profile.ue4ss_control_mode = Some(mode.clone());
+    }
+    
+    let program_path = data.settings.program_path.clone();
+    let _ = crate::profiles::reconcile_ue4ss_control_mode(&mut data, &program_path, &mode);
+
+    save_current_profile(&data);
+    let settings = get_overridden_settings(&data);
+    let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    Ok(result)
+}
+
 
 

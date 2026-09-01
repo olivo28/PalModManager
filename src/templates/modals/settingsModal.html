@@ -145,6 +145,29 @@
 
             <div class="settings-section-card">
               <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.ue4ss_mode_title">UE4SS Activation Mode</span>
+              </div>
+              <div class="settings-hint" style="margin-bottom:8px;" data-i18n="settings.ue4ss_mode_hint">Choose how UE4SS mods are enabled and disabled:</div>
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <label class="settings-toggle-row">
+                  <input type="radio" name="ue4ss-control-mode" id="settings-ue4ss-mode-enabled-txt" value="enabled_txt" checked />
+                  <div>
+                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.ue4ss_mode_enabled_txt_label">PMM Native (Folder Isolation & enabled.txt)</span>
+                    <div class="settings-hint" data-i18n="settings.ue4ss_mode_enabled_txt_desc">Disabled mods are moved to profile storage. mods.txt is untouched unless Force Load Order is enabled.</div>
+                  </div>
+                </label>
+                <label class="settings-toggle-row">
+                  <input type="radio" name="ue4ss-control-mode" id="settings-ue4ss-mode-mods-txt" value="mods_txt" />
+                  <div>
+                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.ue4ss_mode_mods_txt_label">Direct mods.txt (In-place 1/0 toggle)</span>
+                    <div class="settings-hint" data-i18n="settings.ue4ss_mode_mods_txt_desc">Mods remain in ue4ss/Mods. Toggling edits mods.txt in-place without moving files or losing custom section comments.</div>
+                  </div>
+                </label>
+              </div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
                 <span class="settings-card-title" data-i18n="settings.flo_title">Force Load Order (Experimental)</span>
               </div>
               <div class="settings-hint" style="margin-bottom:6px;" data-i18n="settings.flo_hint">Select which load order system components you want to enforce:</div>

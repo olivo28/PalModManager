@@ -31,6 +31,54 @@ export function openSettingsModal(): void {
     forceLoadOrderPalschemaCheckbox.checked = false;
   }
 
+  // Bind UE4SS Activation Mode
+  const modeEnabledTxtRadio = settingsDom.elMaybe('settings-ue4ss-mode-enabled-txt');
+  const modeModsTxtRadio = settingsDom.elMaybe('settings-ue4ss-mode-mods-txt');
+  const activeProfile = state.currentProfile || state.profiles?.find(p => p.id === state.currentProfileId);
+  const currentMode = activeProfile?.ue4ssControlMode || state.currentSettings?.ue4ssControlMode || 'enabled_txt';
+
+  if (modeEnabledTxtRadio && modeModsTxtRadio) {
+    if (currentMode === 'mods_txt') {
+      modeModsTxtRadio.checked = true;
+    } else {
+      modeEnabledTxtRadio.checked = true;
+    }
+
+    modeEnabledTxtRadio.onchange = async () => {
+      if (modeEnabledTxtRadio.checked) {
+        try {
+          const { setUe4ssControlMode } = await import('../../../api');
+          const { loadMods, renderModsView } = await import('../../modsView');
+          const { loadProfiles } = await import('../../mods/profiles');
+          const { loadDependencies } = await import('../../mods/dependencies');
+          await setUe4ssControlMode('enabled_txt');
+          await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
+          renderModsView();
+          showToast(t('toasts.settings_saved'), 'success');
+        } catch (e) {
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+        }
+      }
+    };
+
+    modeModsTxtRadio.onchange = async () => {
+      if (modeModsTxtRadio.checked) {
+        try {
+          const { setUe4ssControlMode } = await import('../../../api');
+          const { loadMods, renderModsView } = await import('../../modsView');
+          const { loadProfiles } = await import('../../mods/profiles');
+          const { loadDependencies } = await import('../../mods/dependencies');
+          await setUe4ssControlMode('mods_txt');
+          await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
+          renderModsView();
+          showToast(t('toasts.settings_saved'), 'success');
+        } catch (e) {
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+        }
+      }
+    };
+  }
+
   if (forceLoadOrderUe4ssCheckbox && forceLoadOrderPalschemaCheckbox) {
     const newUe4ss = forceLoadOrderUe4ssCheckbox.cloneNode(true) as HTMLInputElement;
     forceLoadOrderUe4ssCheckbox.parentNode!.replaceChild(newUe4ss, forceLoadOrderUe4ssCheckbox);

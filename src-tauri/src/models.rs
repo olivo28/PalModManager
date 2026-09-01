@@ -73,6 +73,8 @@ pub struct ModInfo {
     pub has_pending_update: Option<bool>,
     #[serde(default)]
     pub origin_load_method: Option<String>,
+    #[serde(default)]
+    pub custom_notes: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -189,6 +191,8 @@ pub struct AppSettings {
     pub cache_remote_images: Option<bool>,
     #[serde(default)]
     pub folder_expand_mode: Option<String>,
+    #[serde(default)]
+    pub ue4ss_control_mode: Option<String>,
 }
 
 
@@ -248,6 +252,8 @@ pub struct Profile {
     pub unipalui_version: Option<String>,
     #[serde(default)]
     pub compatibility_patches: Option<Vec<String>>,
+    #[serde(default)]
+    pub ue4ss_control_mode: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -290,6 +296,7 @@ impl Default for AppData {
                 dns_resolver: Some("auto".to_string()),
                 cache_remote_images: Some(true),
                 folder_expand_mode: Some("always_expanded".to_string()),
+                ue4ss_control_mode: Some("enabled_txt".to_string()),
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

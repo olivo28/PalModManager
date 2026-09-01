@@ -14,7 +14,8 @@ pub use utils::{
 
 pub use actions::{
     get_mod_folder_name, update_mods_txt_load_order, remove_from_mods_txt,
-    disable_mod_internal, enable_mod_internal,
+    disable_mod_internal, enable_mod_internal, reconcile_ue4ss_control_mode,
+    sync_mods_txt_sections,
 };
 
 pub use core::{

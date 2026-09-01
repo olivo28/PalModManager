@@ -557,6 +557,7 @@ pub async fn apply_ue4ss_zip_bytes(
                     ignored_keys: None,
                     has_pending_update: None,
                     origin_load_method: Some("mods_txt".to_string()),
+                    custom_notes: None,
                 });
             }
         }

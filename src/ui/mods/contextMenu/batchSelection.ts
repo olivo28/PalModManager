@@ -21,7 +21,7 @@ export function showBulkContextMenu(x: number, y: number): void {
   `).join('');
 
   const html = `
-    <div style="font-size:9px;font-weight:700;color:var(--text-muted);padding:6px 16px 2px;text-transform:uppercase">${selectedCount} ${escapeHtml(t('common.selected_count_mods', { count: selectedCount }))}</div>
+    <div style="font-size:9px;font-weight:700;color:var(--text-muted);padding:6px 16px 2px;text-transform:uppercase">${escapeHtml(t('common.selected_count_mods', { count: selectedCount }))}</div>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="bulk-enable">
       <span class="ctx-icon">●</span>

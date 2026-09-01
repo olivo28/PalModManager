@@ -74,6 +74,7 @@ fn load_from_modinfo_pmm_json(path: &Path) -> Option<ModInfo> {
         ignored_keys: None,
         has_pending_update: None,
         origin_load_method: None,
+        custom_notes: None,
     })
 }
 
@@ -207,6 +208,7 @@ fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::
                 ignored_keys: None,
                 has_pending_update: None,
                 origin_load_method: origin_load,
+                custom_notes: None,
             });
         }
     }
@@ -283,6 +285,7 @@ fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
                     ignored_keys: None,
                     has_pending_update: None,
                     origin_load_method: None,
+                    custom_notes: None,
                 });
             }
         }
@@ -354,6 +357,7 @@ fn scan_pak_mods(
             ignored_keys: None,
             has_pending_update: None,
             origin_load_method: None,
+            custom_notes: None,
         });
     }
 }
@@ -404,6 +408,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     ignored_keys: None,
                     has_pending_update: None,
                     origin_load_method: None,
+                    custom_notes: None,
                 });
             }
         }
@@ -450,6 +455,7 @@ fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     ignored_keys: None,
                     has_pending_update: None,
                     origin_load_method: None,
+                    custom_notes: None,
                 });
             }
         }
@@ -581,6 +587,7 @@ pub fn scan_mods_internal(
             ignored_keys: None,
             has_pending_update: Some(wmod.has_pending_update),
             origin_load_method: None,
+            custom_notes: None,
         });
     }
 

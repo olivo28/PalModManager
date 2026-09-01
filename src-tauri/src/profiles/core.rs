@@ -276,6 +276,7 @@ pub fn ensure_default_profile(data: &mut AppData) {
             altermatic_version: None,
             unipalui_version: None,
             compatibility_patches: None,
+            ue4ss_control_mode: Some("enabled_txt".to_string()),
         });
     }
 
@@ -356,7 +357,7 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
                     modified = true;
                 }
 
-                if is_in_game {
+                if is_in_game && m.enabled {
                     let already_enabled = profile.enabled_mod_ids.iter().any(|id| {
                         id.to_lowercase() == m.id.to_lowercase() || id.to_lowercase() == m.name.to_lowercase()
                     });

@@ -450,6 +450,7 @@ pub fn execute_manifest(
         ignored_keys: None,
         has_pending_update: None,
         origin_load_method: if manifest.mod_type == ModType::Ue4ss { Some("enabled_txt".to_string()) } else { None },
+        custom_notes: None,
     })
 }
 

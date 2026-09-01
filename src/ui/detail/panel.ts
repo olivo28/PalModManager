@@ -1,4 +1,4 @@
-import { setNexusModId, openUrl, changePakDestination } from '../../api';
+import { setNexusModId, openUrl, changePakDestination, saveModNotes } from '../../api';
 import { getState, updateState } from '../../state';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { loadMods, renderModsView } from '../modsView';
@@ -32,6 +32,27 @@ export function openDetailPanel(modId: string): void {
   const toggleBtn = detailDom.el('detail-toggle');
   toggleBtn.textContent = mod.enabled ? t('common.disabled') : t('common.enabled');
   toggleBtn.dataset.enabled = String(mod.enabled);
+
+  // Setup Custom Notes
+  const notesTextarea = detailDom.el('detail-custom-notes');
+  const notesIndicator = detailDom.el('detail-notes-saved-indicator');
+  notesTextarea.value = mod.customNotes || '';
+  notesIndicator.style.opacity = '0';
+
+  notesTextarea.onblur = async () => {
+    const val = notesTextarea.value;
+    if ((mod.customNotes || '') !== val) {
+      mod.customNotes = val || null;
+      try {
+        await saveModNotes(mod.id, val);
+        notesIndicator.style.opacity = '1';
+        setTimeout(() => { notesIndicator.style.opacity = '0'; }, 1800);
+        renderModsView();
+      } catch (e) {
+        console.error('Failed to save mod notes:', e);
+      }
+    }
+  };
 
   const nexusSection = detailDom.el('detail-nexus');
   const descSection = detailDom.el('detail-description');

@@ -38,6 +38,7 @@ export interface ModInfo {
   ignoredKeys?: string[] | null;
   hasPendingUpdate?: boolean | null;
   originLoadMethod?: string | null;
+  customNotes?: string | null;
 }
 
 export interface NexusAccountInfo {
@@ -137,6 +138,7 @@ export interface AppSettings {
   dnsResolver?: string;
   cacheRemoteImages?: boolean;
   folderExpandMode?: 'always_expanded' | 'always_collapsed' | 'remember';
+  ue4ssControlMode?: 'enabled_txt' | 'mods_txt' | string | null;
 }
 
 export interface ModFolder {
@@ -165,6 +167,7 @@ export interface Profile {
   altermatic_version?: string | null;
   unipalui_version?: string | null;
   compatibility_patches?: string[] | null;
+  ue4ssControlMode?: 'enabled_txt' | 'mods_txt' | string | null;
 }
 
 export interface LibraryEntry {

@@ -506,6 +506,7 @@ pub fn import_profile_pack_internal(
                 ignored_keys: None,
                 has_pending_update: None,
                 origin_load_method: m_meta.origin_load_method.clone(),
+                custom_notes: None,
             });
         }
     }
@@ -536,6 +537,7 @@ pub fn import_profile_pack_internal(
         altermatic_version: None,
         unipalui_version: None,
         compatibility_patches: None,
+        ue4ss_control_mode: Some("enabled_txt".to_string()),
     };
 
     if let Ok(json) = serde_json::to_string_pretty(&new_profile) {

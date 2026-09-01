@@ -138,6 +138,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
         ${isMissingGp ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
         ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_update_available', { version: updateVer }))}</span>` : ''}
+        ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="margin-left: 6px; font-size: 11px; cursor: pointer;" title="${escapeHtml(mod.customNotes)}">📝</span>` : ''}
       </div>
       <div class="cell status-cell">
       </div>
@@ -202,7 +203,10 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     <div class="mod-card-body">
       <div class="mod-card-body-top">
         <span class="mod-card-name">${escapeHtml(mod.name)}</span>
-        <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
+        <div style="display: flex; align-items: center; gap: 4px;">
+          ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="font-size: 11px; cursor: pointer;" title="${escapeHtml(mod.customNotes)}">📝</span>` : ''}
+          <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
+        </div>
       </div>
       <div class="mod-card-meta">
         <span class="mod-card-type ${mod.type}">${escapeHtml(mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase())}</span>

@@ -5,7 +5,7 @@ use super::utils::{get_profile_dir, ensure_profile_structure, copy_dir_all, sani
 use super::isolation::sync_profile_dependencies;
 use super::actions::{enable_mod_internal, disable_mod_internal};
 use super::core::{
-    cleanup_profile_enabled_ids, sync_current_profile_states
+    cleanup_profile_enabled_ids, sync_current_profile_states, mod_matches_profile_entry
 };
 
 pub fn set_profile_mod_state(
@@ -32,9 +32,13 @@ pub fn set_profile_mod_state(
                 }
             }
         } else {
-            profile.enabled_mod_ids.retain(|id| id != mod_id);
-            if let Some(ref name) = mod_name {
-                profile.enabled_mod_ids.retain(|id| id.to_lowercase() != name.to_lowercase());
+            if let Some(ref m_info) = data.mods.iter().find(|m| m.id == mod_id) {
+                profile.enabled_mod_ids.retain(|id| !mod_matches_profile_entry(m_info, id));
+            } else {
+                profile.enabled_mod_ids.retain(|id| id.to_lowercase() != mod_id.to_lowercase());
+                if let Some(ref name) = mod_name {
+                    profile.enabled_mod_ids.retain(|id| id.to_lowercase() != name.to_lowercase());
+                }
             }
         }
     }
@@ -589,6 +593,12 @@ pub fn switch_profile(
     cleanup_profile_enabled_ids(data);
     sync_current_profile_states(data);
 
+    let target_mode = target_profile.ue4ss_control_mode.as_deref()
+        .or(data.settings.ue4ss_control_mode.as_deref())
+        .unwrap_or("enabled_txt")
+        .to_string();
+    let _ = crate::profiles::reconcile_ue4ss_control_mode(data, program_path, &target_mode);
+
     if let Ok(json) = serde_json::to_string_pretty(target_profile) {
         let _ = fs::write(target_dir.join("profile.json"), json);
     }
@@ -627,6 +637,7 @@ pub fn create_profile(data: &mut AppData, name: String) -> Result<Profile, Strin
         altermatic_version: None,
         unipalui_version: None,
         compatibility_patches: None,
+        ue4ss_control_mode: Some("enabled_txt".to_string()),
     };
 
     let program_path = data.settings.program_path.clone();
@@ -673,6 +684,7 @@ pub fn clone_profile(data: &mut AppData, source_profile_id: &str, new_name: Stri
         altermatic_version: source_profile.altermatic_version.clone(),
         unipalui_version: source_profile.unipalui_version.clone(),
         compatibility_patches: source_profile.compatibility_patches.clone(),
+        ue4ss_control_mode: source_profile.ue4ss_control_mode.clone(),
     };
 
     let program_path = data.settings.program_path.clone();

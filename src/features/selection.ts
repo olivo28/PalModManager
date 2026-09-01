@@ -305,7 +305,7 @@ async function handleBulkEnable(enable: boolean): Promise<void> {
   const ids = Array.from(getState().selectedModIds);
   if (ids.length === 0) return;
 
-  showToast(`${enable ? t('common.enable') : t('common.disable')} ${ids.length} ${t('common.selected_count_mods', { count: ids.length })}...`, 'info');
+  showToast(`${enable ? t('common.enable') : t('common.disable')} ${t('common.selected_count_mods', { count: ids.length })}...`, 'info');
   let successCount = 0;
 
   for (const id of ids) {
@@ -334,7 +334,7 @@ async function handleBulkRemove(): Promise<void> {
   const confirmed = await showConfirm(t('dialogs.confirm_remove_mods_bulk', { count: ids.length }));
   if (!confirmed) return;
 
-  showToast(`${t('common.delete')} ${ids.length} ${t('common.selected_count_mods', { count: ids.length })}...`, 'info');
+  showToast(`${t('common.delete')} ${t('common.selected_count_mods', { count: ids.length })}...`, 'info');
   let successCount = 0;
 
   for (const id of ids) {

@@ -184,6 +184,15 @@ export function runContextAction(action: string, modId: string): void {
     case 'edit-config':
       openConfigEditor(modId);
       break;
+    case 'edit-notes':
+      openDetailPanel(modId);
+      setTimeout(() => {
+        const notesArea = document.getElementById('detail-custom-notes') as HTMLTextAreaElement | null;
+        if (notesArea) {
+          notesArea.focus();
+        }
+      }, 100);
+      break;
     case 'detail':
       openDetailPanel(modId);
       break;
@@ -293,6 +302,10 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="edit-config">
       <span class="ctx-icon">⚙</span>
       ${escapeHtml(t('context.edit_config'))}
+    </button>
+    <button type="button" class="context-menu-item" data-action="edit-notes">
+      <span class="ctx-icon">📝</span>
+      ${escapeHtml(t('context.edit_notes'))}
     </button>
     <button type="button" class="context-menu-item" data-action="detail">
       <span class="ctx-icon">ℹ</span>

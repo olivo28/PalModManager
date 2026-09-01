@@ -11,6 +11,9 @@ export interface DetailDomMap {
   'detail-image-container': HTMLElement;
   'detail-image': HTMLImageElement;
   'detail-folder-select': HTMLSelectElement;
+  'detail-notes-section': HTMLElement;
+  'detail-custom-notes': HTMLTextAreaElement;
+  'detail-notes-saved-indicator': HTMLElement;
   'detail-description': HTMLElement;
   'detail-nexus': HTMLElement;
   'detail-github': HTMLElement;

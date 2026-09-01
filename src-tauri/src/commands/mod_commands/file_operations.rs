@@ -731,3 +731,34 @@ pub fn change_pak_destination(
 
     Ok(mod_info)
 }
+
+#[tauri::command]
+pub fn save_mod_notes(mod_id: String, notes: String, state: State<AppState>) -> Result<(), String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    let program_path = data.settings.program_path.clone();
+
+    let mod_index = data.mods.iter().position(|m| m.id == mod_id)
+        .ok_or_else(|| "Mod not found".to_string())?;
+
+    let trimmed = notes.trim();
+    let notes_val = if trimmed.is_empty() {
+        None
+    } else {
+        Some(notes.clone())
+    };
+
+    data.mods[mod_index].custom_notes = notes_val;
+    let mod_info = data.mods[mod_index].clone();
+
+    // Persist to .pmm.json sidecar file
+    let _ = crate::profiles::save_pmm_meta(&mod_info);
+
+    let data_clone = data.clone();
+    drop(data);
+
+    let _ = db::save_db(&program_path, &data_clone);
+    crate::logger::log(&format!("Saved custom notes for mod '{}' (length: {} chars)", mod_id, notes.len()));
+
+    Ok(())
+}
+

@@ -24,6 +24,18 @@
             <option value="" data-i18n="detail.folder_none">(None / Ungrouped)</option>
           </select>
         </div>
+        <div class="detail-section" id="detail-notes-section" style="margin-top: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
+            <span class="detail-label" style="font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--text-primary); font-size: 12px;">
+              <span>📝</span> <span data-i18n="detail.custom_notes_title">Custom Notes</span>
+            </span>
+            <span id="detail-notes-saved-indicator" style="font-size: 11px; color: #4ade80; opacity: 0; transition: opacity 0.3s; font-weight: 600;" data-i18n="detail.notes_saved">Saved</span>
+          </div>
+          <textarea id="detail-custom-notes" rows="3"
+            style="width: 100%; box-sizing: border-box; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; resize: vertical; outline: none; line-height: 1.4;"
+            data-i18n-placeholder="detail.custom_notes_placeholder"
+            placeholder="Add keybindings, custom config notes, or personal reminders for this mod..."></textarea>
+        </div>
         <div id="detail-description" class="detail-description"></div>
         <div id="detail-nexus" class="detail-section"></div>
         <div id="detail-github" class="detail-section"></div>

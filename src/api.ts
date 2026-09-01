@@ -240,6 +240,14 @@ export async function setModConfig(modId: string, configPath: string | null): Pr
   return invoke('set_mod_config', { modId, configPath });
 }
 
+export async function saveModNotes(modId: string, notes: string): Promise<void> {
+  return invoke('save_mod_notes', { modId, notes });
+}
+
+export async function setUe4ssControlMode(mode: string): Promise<AppSettings> {
+  return invoke('set_ue4ss_control_mode', { mode });
+}
+
 export async function listModFiles(modId: string): Promise<string[]> {
   return invoke('list_mod_files', { modId });
 }
