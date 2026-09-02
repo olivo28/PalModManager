@@ -241,9 +241,11 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
             && !fl.ends_with("metadata.json")
         {
             let parts: Vec<&str> = fl.split('/').collect();
-            // If the JSON is inside scripts/, dlls/, or a UE4SS folder, it is not a PalSchema data table
-            if parts.contains(&"scripts") || parts.contains(&"dlls") || fl.contains("/scripts/") || fl.contains("/dlls/") || fl.contains("ue4ss") {
+            // If the JSON is inside scripts/ or dlls/, it is not a PalSchema data table
+            if parts.contains(&"scripts") || parts.contains(&"dlls") || fl.contains("/scripts/") || fl.contains("/dlls/") {
                 false
+            } else if fl.contains("palschema") {
+                true
             } else {
                 parts.iter().any(|part| {
                     matches!(
@@ -911,36 +913,44 @@ pub fn build_manifest_from_files(
                 RouteType::Ue4ss
             }
         } else {
-            // Check if this file belongs to a UE4SS mod (inside scripts, dlls, or a detected UE4SS root)
-            let is_inside_ue4ss = rel_segments.contains(&"scripts")
+            let is_in_scripts_or_dlls = rel_segments.contains(&"scripts")
                 || rel_segments.contains(&"dlls")
                 || lower.contains("/scripts/")
-                || lower.contains("/dlls/")
-                || lower.contains("ue4ss/mods/")
-                || lower.contains("nativemods/ue4ss")
-                || rel_lower.ends_with("enabled.txt")
-                || rel_segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)));
+                || lower.contains("/dlls/");
 
-            // Check if any ancestor is a PalSchema folder (only if NOT inside a UE4SS folder)
+            // Check if this file belongs to PalSchema (palschema folder or loader data category)
             let mut is_palschema_asset = false;
             let is_standard_game_path = rel_segments.contains(&"content") || rel_segments.contains(&"~mods") || rel_segments.contains(&"logicmods");
-            if !is_standard_game_path && !is_inside_ue4ss {
-                for seg in &rel_segments {
-                    if PALSCHEMA_FOLDERS.contains(seg) {
-                        is_palschema_asset = true;
-                        break;
+            if !is_standard_game_path && !is_in_scripts_or_dlls {
+                if lower.contains("palschema") || rel_lower.contains("palschema") {
+                    is_palschema_asset = true;
+                } else {
+                    for seg in &rel_segments {
+                        if PALSCHEMA_FOLDERS.contains(seg) {
+                            is_palschema_asset = true;
+                            break;
+                        }
                     }
                 }
             }
 
-            if is_inside_ue4ss {
-                has_ue4ss = true;
-                RouteType::Ue4ss
-            } else if is_palschema_asset || lower.contains("palschema/") {
+            if is_palschema_asset {
                 has_palschema = true;
                 RouteType::PalSchema
             } else {
-                RouteType::Passthrough
+                // Check if this file belongs to a UE4SS mod (inside scripts, dlls, or a detected UE4SS root)
+                let is_inside_ue4ss = is_in_scripts_or_dlls
+                    || lower.contains("ue4ss/mods/")
+                    || lower.contains("nativemods/ue4ss")
+                    || rel_lower.ends_with("enabled.txt")
+                    || rel_segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)));
+
+                if is_inside_ue4ss {
+                    has_ue4ss = true;
+                    RouteType::Ue4ss
+                } else {
+                    RouteType::Passthrough
+                }
             }
         };
 
@@ -1237,6 +1247,7 @@ pub fn build_install_manifest(
 mod tests {
     use super::*;
     use std::path::PathBuf;
+    use crate::models::{ModType, RouteType};
 
     #[test]
     fn test_pal_insight_manifest_routing() {
@@ -1290,5 +1301,44 @@ mod tests {
             println!("  ROUTE: {} -> {} (type: {:?})", r.zip_path, r.dest_path, r.route_type);
         }
     }
+
+    #[test]
+    fn test_raid_and_trade_revival_routing() {
+        let files = vec![
+            "Pal/Binaries/Win64/ue4ss/Mods/PalSchema/mods/RaidTradeRevivalContent/raw/AllNewRaidGroups.json".to_string(),
+            "Pal/Binaries/Win64/ue4ss/Mods/PalSchema/mods/RaidTradeRevivalContent/raw/ExpandedVanillaRaidFamilies.json".to_string(),
+            "Pal/Binaries/Win64/ue4ss/Mods/RaidTradeRevival/Scripts/main.lua".to_string(),
+            "Pal/Binaries/Win64/ue4ss/Mods/RaidTradeRevival/config.txt".to_string(),
+            "Pal/Binaries/Win64/ue4ss/Mods/RaidTradeRevival/enabled.txt".to_string(),
+        ];
+        let game_path = PathBuf::from("C:/FakeGamePath");
+        let manifest = build_manifest_from_files(&files, "RaidTradeRevival.zip", &game_path, None, None, None)
+            .expect("Should generate manifest");
+
+        assert_eq!(manifest.mod_type, ModType::Hybrid);
+        assert_eq!(manifest.folder_name, "RaidTradeRevival");
+
+        for r in &manifest.routes {
+            if r.zip_path.ends_with("AllNewRaidGroups.json") {
+                assert_eq!(r.route_type, RouteType::PalSchema);
+                assert!(
+                    r.dest_path.contains("PalSchema\\mods\\RaidTradeRevivalContent\\raw\\AllNewRaidGroups.json")
+                    || r.dest_path.contains("PalSchema/mods/RaidTradeRevivalContent/raw/AllNewRaidGroups.json"),
+                    "PalSchema table must route to PalSchema/mods/RaidTradeRevivalContent, got: {}",
+                    r.dest_path
+                );
+            }
+            if r.zip_path.ends_with("main.lua") {
+                assert_eq!(r.route_type, RouteType::Ue4ss);
+                assert!(
+                    r.dest_path.contains("RaidTradeRevival\\Scripts\\main.lua")
+                    || r.dest_path.contains("RaidTradeRevival/Scripts/main.lua"),
+                    "UE4SS script must route to RaidTradeRevival/Scripts/main.lua, got: {}",
+                    r.dest_path
+                );
+            }
+        }
+    }
 }
+
 

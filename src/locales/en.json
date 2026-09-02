@@ -443,7 +443,20 @@
     "confirm_merge_title": "Merge Config Settings",
     "confirm_merge_body": "Intelligently merge your custom values from **{backup}** into **{target}**?\n\nThis preserves your personalized settings while keeping newly added options and structure from the active version.",
     "toast_merged": "Config settings merged successfully",
-    "diff_collapsed_lines": "Collapsed {count} unchanged lines"
+    "diff_collapsed_lines": "Collapsed {count} unchanged lines",
+    "suggested_fix": "Suggested Fix:",
+    "apply_fix": "Apply Fix",
+    "health_clean": "Valid (0 errors)",
+    "health_single_issue": "{count} Issue Found",
+    "health_multiple_issues": "{count} Issues Found",
+    "health_click_tooltip": "Click to toggle Problems panel",
+    "problems_tab_title": "Problems",
+    "problems_tab_file": "Current File",
+    "problems_tab_workspace": "Workspace",
+    "problems_scan_btn": "Scan Mod",
+    "problems_scan_btn_title": "Scan all script and config files in this mod",
+    "problems_empty": "No problems have been detected in the current file.",
+    "problems_workspace_empty": "No problems have been detected across the entire mod workspace."
   },
   "library": {
     "title": "Mod Library",

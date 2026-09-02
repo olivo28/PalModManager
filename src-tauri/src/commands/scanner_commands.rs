@@ -381,7 +381,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                     continue;
                 }
 
-                let (status, reason, suggestion) = validate_palschema_table_with_usmap(&entry.table_name, &schema, sdk_index.as_ref());
+                let (status, reason, suggestion) = validate_palschema_table_with_usmap(&entry.table_name, &schema, sdk_index.as_ref(), Path::new(&data.settings.game_path));
                 if status == "valid" || status == "blueprint_asset" {
                     valid_hooks += 1;
                 } else if status == "broken_table" || status == "broken_class" {
@@ -403,10 +403,15 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                 });
             }
 
-            // 3. Validate Pak Assets & Deprecated Schema Notices
+            // 3. Validate Pak Assets & Schema Notices
+            let mut seen_pak_assets = HashSet::new();
+            let mut broken_pak_entries = HashSet::new();
+
+            // First add broken schema notices
             for notice in &schema_notices {
                 let suggestion = sdk_index.as_ref().and_then(|s| s.suggest_similar_class(&notice.struct_name));
                 broken_hooks += 1;
+                broken_pak_entries.insert((notice.mod_id.clone(), notice.asset_path.clone()));
                 diagnostics.push(UsmapHookDiagnostic {
                     mod_id: notice.mod_id.clone(),
                     mod_name: notice.mod_name.clone(),
@@ -420,6 +425,58 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                     suggestion,
                     category: "pak".to_string(),
                 });
+            }
+
+            // Next validate all active pak assets
+            for m in &profile_mods {
+                if !m.enabled || m.game_path.is_empty() {
+                    continue;
+                }
+                let mut paks = Vec::new();
+                let is_pak_or_zen = |path_str: &str| {
+                    let lower = path_str.to_lowercase();
+                    lower.ends_with(".pak") || lower.ends_with(".utoc") || lower.ends_with(".ucas")
+                };
+                if is_pak_or_zen(&m.game_path) {
+                    paks.push(PathBuf::from(&m.game_path));
+                }
+                for extra in &m.extra_files {
+                    if is_pak_or_zen(extra) {
+                        paks.push(PathBuf::from(extra));
+                    }
+                }
+
+                for p in paks {
+                    if p.exists() {
+                        let ext = p.extension().and_then(|e| e.to_str()).unwrap_or("");
+                        if ext.eq_ignore_ascii_case("pak") {
+                            if let Ok(entries) = crate::pak_scanner::list_pak_entries(&p) {
+                                for entry in entries {
+                                    let entry_lower = entry.to_lowercase();
+                                    if entry_lower.ends_with(".uasset") {
+                                        let dedup = (m.id.clone(), entry.clone());
+                                        if seen_pak_assets.insert(dedup.clone()) && !broken_pak_entries.contains(&dedup) {
+                                            valid_hooks += 1;
+                                            diagnostics.push(UsmapHookDiagnostic {
+                                                mod_id: m.id.clone(),
+                                                mod_name: m.name.clone(),
+                                                file_path: entry.clone(),
+                                                line_number: 1,
+                                                hook_target: entry.clone(),
+                                                target_class: entry.clone(),
+                                                target_function: String::new(),
+                                                status: "valid".to_string(),
+                                                reason: "Verified Pak game asset in Palworld package hierarchy".to_string(),
+                                                suggestion: None,
+                                                category: "pak".to_string(),
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
             }
 
             diagnostics.sort_by(|a, b| {
@@ -472,7 +529,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
     })
 }
 
-fn validate_hook_with_usmap(
+pub fn validate_hook_with_usmap(
     target: &str,
     schema: &crate::usmap::parser::UsmapSchema,
     sdk: Option<&crate::usmap::SdkIndex>,
@@ -554,13 +611,17 @@ fn validate_hook_with_usmap(
     };
 
     let without_script = raw_class.trim_start_matches("/Script/");
-    let clean_class = if let Some(dot_idx) = without_script.rfind('.') {
+    let mut clean_class = if let Some(dot_idx) = without_script.rfind('.') {
         &without_script[dot_idx + 1..]
     } else if without_script.starts_with("PalPal") {
         &without_script[3..]
     } else {
         without_script
     }.trim();
+
+    if clean_class.starts_with("Default__") && clean_class.len() > 9 {
+        clean_class = &clean_class[9..];
+    }
 
     let clean_func = raw_func.trim();
 
@@ -776,33 +837,36 @@ fn validate_hook_with_usmap(
     )
 }
 
-fn validate_palschema_table_with_usmap(
+pub fn validate_palschema_table_with_usmap(
     table_name: &str,
     schema: &crate::usmap::parser::UsmapSchema,
     sdk: Option<&crate::usmap::SdkIndex>,
+    game_path: &Path,
 ) -> (String, String, Option<String>) {
     let raw = table_name.trim();
     if raw.is_empty() {
         return ("unknown".to_string(), "Empty table name".to_string(), None);
     }
 
-    // 1. Direct match in USMAP schema FNames (e.g. DT_PalCharacterParameter, DT_ItemData)
-    let in_schema_names = schema.names.iter().any(|n| n.eq_ignore_ascii_case(raw));
-    let in_schema_structs = schema.find_struct(raw).is_some();
-
-    // 2. Check stripped name without DT_ (e.g. PalIndividualCharacterParameter, ItemData)
     let clean = if raw.starts_with("DT_") {
+        &raw[3..]
+    } else if raw.starts_with("BP_") {
         &raw[3..]
     } else {
         raw
     };
-    let clean_in_structs = schema.find_struct(clean).is_some();
-    let clean_in_names = schema.names.iter().any(|n| n.eq_ignore_ascii_case(clean));
 
-    // 3. Check in C++ SDK
+    let raw_lower = raw.to_ascii_lowercase();
+    let clean_lower = clean.to_ascii_lowercase();
+
+    // 1. Direct match in USMAP schema FNames (e.g. DT_PalCharacterParameter, DT_ItemData)
+    let in_schema_names = schema.names.iter().any(|n| n.eq_ignore_ascii_case(raw) || n.eq_ignore_ascii_case(clean));
+    let in_schema_structs = schema.find_struct(raw).is_some() || schema.find_struct(clean).is_some();
+
+    // 2. Direct check in C++ SDK
     let class_in_sdk = sdk.and_then(|s| s.find_class(clean).or_else(|| s.find_class(raw)));
 
-    if in_schema_names || in_schema_structs || clean_in_structs || clean_in_names || class_in_sdk.is_some() {
+    if in_schema_names || in_schema_structs || class_in_sdk.is_some() {
         return (
             "valid".to_string(),
             format!("Verified DataTable '{}' in Palworld reflection schema", raw),
@@ -810,8 +874,81 @@ fn validate_palschema_table_with_usmap(
         );
     }
 
-    // If not found, it's a broken table name / obsolete table
-    // Try fuzzy match in schema.names (prioritizing DT_ entries or Pal... entries)
+    // 3. Check struct / class suffix and prefix variations (e.g. PalMonsterParameterTable, PalInvaderDataRow, PalVisitorNPCParameter)
+    let struct_match = schema.structs.keys().any(|s| {
+        let sl = s.to_ascii_lowercase();
+        sl == clean_lower
+            || sl == raw_lower
+            || sl.starts_with(&clean_lower)
+            || clean_lower.starts_with(&sl)
+            || sl.contains(&clean_lower)
+            || (clean_lower.starts_with("pal") && sl.contains(&clean_lower[3..]))
+    });
+
+    let sdk_class_match = if let Some(sdk_idx) = sdk {
+        sdk_idx.classes.keys().any(|c| {
+            let cl = c.to_ascii_lowercase();
+            cl == clean_lower
+                || cl == raw_lower
+                || cl.starts_with(&clean_lower)
+                || clean_lower.starts_with(&cl)
+                || cl.contains(&clean_lower)
+                || (clean_lower.starts_with("pal") && cl.contains(&clean_lower[3..]))
+        })
+    } else {
+        false
+    };
+
+    let fnames_match = schema.names.iter().any(|n| {
+        let nl = n.to_ascii_lowercase();
+        nl == raw_lower
+            || nl == clean_lower
+            || nl.starts_with(&format!("{}_", clean_lower))
+            || nl.ends_with(&format!("_{}", clean_lower))
+            || (nl.starts_with("dt_") && nl.contains(&clean_lower))
+            || (clean_lower.starts_with("pal") && nl.contains(&clean_lower))
+    });
+
+    if struct_match || sdk_class_match || fnames_match {
+        return (
+            "valid".to_string(),
+            format!("Verified DataTable '{}' in Palworld reflection schema", raw),
+            None,
+        );
+    }
+
+    // 4. Check base game Pak files in Pal/Content/Paks/ if game_path exists
+    if game_path.exists() {
+        let paks_dir = game_path.join("Pal").join("Content").join("Paks");
+        if paks_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&paks_dir) {
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    let name = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                    if name.starts_with("Pal-") && name.ends_with(".pak") {
+                        if let Ok(pak_files) = crate::pak_scanner::list_pak_entries(&p) {
+                            let found = pak_files.iter().any(|f| {
+                                let fl = f.to_ascii_lowercase();
+                                fl.ends_with(&format!("{}.uasset", clean_lower))
+                                    || fl.ends_with(&format!("{}.uasset", raw_lower))
+                                    || fl.contains(&format!("/{}.uasset", clean_lower))
+                                    || fl.contains(&format!("/{}.uasset", raw_lower))
+                            });
+                            if found {
+                                return (
+                                    "valid".to_string(),
+                                    format!("Verified DataTable '{}' in Palworld game assets", raw),
+                                    None,
+                                );
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // 5. If not found, try fuzzy match in schema.names (prioritizing DT_ entries or Pal... entries)
     let raw_norm = raw.replace('_', "").to_ascii_lowercase();
     let mut best_candidate: Option<String> = None;
     let mut highest_score: f64 = 0.0;

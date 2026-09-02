@@ -442,8 +442,21 @@
     "btn_merge_title": "智能合并备份中的个性化配置到当前活动文件",
     "confirm_merge_title": "合并配置选项",
     "confirm_merge_body": "确定要将 **{backup}** 中的自定义配置合并到 **{target}** 中吗？\n\n这将保留您的自定义偏好设置，同时保留新版本中新增的配置选项和文件结构。",
-    "toast_merged": "配置选项合并成功",
-    "diff_collapsed_lines": "已折叠 {count} 行未更改内容"
+    "toast_merged": "配置设置已成功合并",
+    "diff_collapsed_lines": "已折叠 {count} 行未更改内容",
+    "suggested_fix": "建议修复：",
+    "apply_fix": "应用修复",
+    "health_clean": "有效 (0 个错误)",
+    "health_single_issue": "发现 {count} 个问题",
+    "health_multiple_issues": "发现 {count} 个问题",
+    "health_click_tooltip": "点击切换问题面板",
+    "problems_tab_title": "问题",
+    "problems_tab_file": "当前文件",
+    "problems_tab_workspace": "工作区",
+    "problems_scan_btn": "扫描模组",
+    "problems_scan_btn_title": "扫描此模组中的所有脚本与配置文件",
+    "problems_empty": "当前文件中未检测到任何问题。",
+    "problems_workspace_empty": "整个模组工作区中未检测到任何问题。"
   },
   "library": {
     "title": "模组库",

@@ -443,7 +443,20 @@
     "confirm_merge_title": "設定のマージ",
     "confirm_merge_body": "**{backup}** のカスタム設定を **{target}** にマージしてもよろしいですか？\n\n新バージョンで追加された設定項目を維持しながら、お好みのカスタム値を引き継ぎます。",
     "toast_merged": "設定が正常にマージされました",
-    "diff_collapsed_lines": "{count} 行の未変更行を折りたたみ"
+    "diff_collapsed_lines": "{count} 行の未変更行を折りたたみ",
+    "suggested_fix": "修正候補:",
+    "apply_fix": "修正を適用",
+    "health_clean": "有効 (エラー 0 件)",
+    "health_single_issue": "{count} 件の問題が見つかりました",
+    "health_multiple_issues": "{count} 件の問題が見つかりました",
+    "health_click_tooltip": "クリックして問題パネルを切り替え",
+    "problems_tab_title": "問題",
+    "problems_tab_file": "現在のファイル",
+    "problems_tab_workspace": "ワークスペース",
+    "problems_scan_btn": "MODをスキャン",
+    "problems_scan_btn_title": "このMOD内のすべてのスクリプトと設定ファイルをスキャン",
+    "problems_empty": "現在のファイルに問題は検出されませんでした。",
+    "problems_workspace_empty": "MODワークスペース全体に問題は検出されませんでした。"
   },
   "library": {
     "title": "MODライブラリ",

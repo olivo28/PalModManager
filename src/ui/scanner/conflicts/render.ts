@@ -9,6 +9,7 @@ import {
   registrySearchQuery,
   selectedRegistryModId,
   setSelectedRegistryModId,
+  type UsmapHookDiagnostic,
 } from '../mod';
 import { buildMasterItemsHtml, buildInspectorContent } from './inspector';
 

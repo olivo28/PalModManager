@@ -442,8 +442,21 @@
     "btn_merge_title": "Fusionar inteligentemente los ajustes del backup en el archivo activo",
     "confirm_merge_title": "Fusionar Ajustes de Configuración",
     "confirm_merge_body": "¿Deseas fusionar tus valores personalizados de **{backup}** en **{target}**?\n\nEsto preservará tus ajustes personalizados mientras mantiene las nuevas opciones y la estructura de la versión activa.",
-    "toast_merged": "Ajustes de configuración fusionados exitosamente",
-    "diff_collapsed_lines": "{count} líneas sin cambios contraídas"
+    "toast_merged": "Ajustes de configuración fusionados con éxito",
+    "diff_collapsed_lines": "{count} líneas sin cambios contraídas",
+    "suggested_fix": "Sugerencia de corrección:",
+    "apply_fix": "Aplicar corrección",
+    "health_clean": "Válido (0 errores)",
+    "health_single_issue": "{count} problema detectado",
+    "health_multiple_issues": "{count} problemas encontrados",
+    "health_click_tooltip": "Clic para alternar panel de problemas",
+    "problems_tab_title": "Problemas",
+    "problems_tab_file": "Archivo Actual",
+    "problems_tab_workspace": "Workspace",
+    "problems_scan_btn": "Escanear Mod",
+    "problems_scan_btn_title": "Escanear todos los scripts y configuraciones de este mod",
+    "problems_empty": "No se detectaron problemas en el archivo actual.",
+    "problems_workspace_empty": "No se detectaron problemas en todo el workspace del mod."
   },
   "library": {
     "title": "Biblioteca de Mods",

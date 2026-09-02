@@ -43,6 +43,7 @@ use commands::discovery_commands;
 use commands::altermatic_commands;
 use commands::usmap_commands;
 use commands::sdk_commands;
+use commands::editor_commands;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -326,6 +327,9 @@ pub fn run() {
             sdk_commands::import_local_sdk,
             sdk_commands::sync_sdk_from_repo,
             sdk_commands::purge_sdk_cache,
+            editor_commands::validate_editor_code,
+            editor_commands::get_editor_completions,
+            editor_commands::scan_workspace_problems,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();

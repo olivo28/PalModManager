@@ -1,22 +1,12 @@
 import { getState, updateState } from '../../state';
-import { handleEditorSave, handleEditorPreview, syncHighlight, loadEditorData } from './viewer';
+import { handleEditorSave, handleEditorPreview, handleEditorFormat, loadEditorData } from './viewer';
 import { switchEditorMod, renderEditorModTree, revealAndSelectFile } from './tree';
-import { openFind, closeFind } from './search';
 import { confirmDiscardOrSave } from './unsaved';
 import { editorDom, mainDom } from '../../framework';
+import { getMonacoEditor } from './monaco/instance';
 
 export function setupEditorKeybindings(): void {
-  const editorContent = editorDom.elMaybe('editor-content');
-  const highlightEl = editorDom.elMaybe('editor-highlight');
-
   document.addEventListener('keydown', (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      const editorView = editorDom.elMaybe('editor-view');
-      if (editorView && editorView.style.display !== 'none') {
-        e.preventDefault();
-        openFind();
-      }
-    }
     if ((e.ctrlKey || e.metaKey) && e.key === 's') {
       const editorView = editorDom.elMaybe('editor-view');
       if (editorView && editorView.style.display !== 'none') {
@@ -26,78 +16,14 @@ export function setupEditorKeybindings(): void {
     }
   });
 
-  if (editorContent) {
-    const updateCursorPosition = () => {
-      const pos = editorContent.selectionStart;
-      const val = editorContent.value;
-      const textBefore = val.substring(0, pos);
-      const lines = textBefore.split('\n');
-      const lineNum = lines.length;
-      const colNum = lines[lines.length - 1].length + 1;
-      const cursorEl = editorDom.elMaybe('editor-cursor-pos');
-      if (cursorEl) {
-        cursorEl.textContent = `Ln ${lineNum}, Col ${colNum}`;
-      }
-    };
-
-    editorContent.addEventListener('keydown', (e: KeyboardEvent) => {
-      if (e.key === 'Tab') {
-        e.preventDefault();
-        const start = editorContent.selectionStart;
-        const end = editorContent.selectionEnd;
-        editorContent.value = editorContent.value.substring(0, start) + '  ' + editorContent.value.substring(end);
-        editorContent.selectionStart = editorContent.selectionEnd = start + 2;
-        syncHighlight();
-        updateCursorPosition();
-      } else if (e.key === 'Enter') {
-        const start = editorContent.selectionStart;
-        const val = editorContent.value;
-        const textBefore = val.substring(0, start);
-        const currentLine = textBefore.split('\n').pop() || '';
-        const matchIndent = currentLine.match(/^(\s+)/);
-        let indent = matchIndent ? matchIndent[1] : '';
-
-        const trimmed = currentLine.trim();
-        if (trimmed.endsWith('{') || trimmed.endsWith('[') || trimmed.endsWith('(') || trimmed.endsWith('then') || trimmed.endsWith('do')) {
-          indent += '  ';
-        }
-
-        if (indent.length > 0) {
-          e.preventDefault();
-          const end = editorContent.selectionEnd;
-          editorContent.value = val.substring(0, start) + '\n' + indent + val.substring(end);
-          editorContent.selectionStart = editorContent.selectionEnd = start + 1 + indent.length;
-          syncHighlight();
-          updateCursorPosition();
-        }
-      }
-    });
-
-    editorContent.addEventListener('input', () => {
-      syncHighlight();
-      updateCursorPosition();
-    });
-
-    editorContent.addEventListener('click', updateCursorPosition);
-    editorContent.addEventListener('keyup', updateCursorPosition);
-
-    editorContent.addEventListener('scroll', () => {
-      if (highlightEl) {
-        highlightEl.scrollTop = editorContent.scrollTop;
-        highlightEl.scrollLeft = editorContent.scrollLeft;
-      }
-      const gutter = editorDom.elMaybe('editor-gutter');
-      if (gutter) gutter.scrollTop = editorContent.scrollTop;
-    });
+  const saveBtn = editorDom.elMaybe('editor-save-btn');
+  if (saveBtn) {
+    saveBtn.addEventListener('click', handleEditorSave);
   }
 
-  if (highlightEl && editorContent) {
-    highlightEl.addEventListener('scroll', () => {
-      editorContent.scrollTop = highlightEl.scrollTop;
-      editorContent.scrollLeft = highlightEl.scrollLeft;
-      const gutter = editorDom.elMaybe('editor-gutter');
-      if (gutter) gutter.scrollTop = highlightEl.scrollTop;
-    });
+  const formatBtn = editorDom.elMaybe('editor-format-btn');
+  if (formatBtn) {
+    formatBtn.addEventListener('click', handleEditorFormat);
   }
 
   const previewBtn = editorDom.elMaybe('editor-preview-btn');
@@ -224,34 +150,15 @@ export async function openFileAtLine(modId: string, filePath: string, lineNumber
 }
 
 export function jumpToLineInEditor(lineNumber: number, retryCount = 0): void {
-  const editorContent = editorDom.elMaybe('editor-content') as HTMLTextAreaElement | null;
-  if (!editorContent) return;
-
-  const text = editorContent.value;
-  if (!text && retryCount < 10) {
-    setTimeout(() => jumpToLineInEditor(lineNumber, retryCount + 1), 60);
+  const editor = getMonacoEditor();
+  if (!editor) {
+    if (retryCount < 10) {
+      setTimeout(() => jumpToLineInEditor(lineNumber, retryCount + 1), 60);
+    }
     return;
   }
 
-  const lines = text.split('\n');
-  if (lineNumber > 0 && lineNumber <= lines.length) {
-    let charIndex = 0;
-    for (let i = 0; i < lineNumber - 1; i++) {
-      charIndex += lines[i].length + 1;
-    }
-    const lineText = lines[lineNumber - 1];
-    editorContent.focus();
-    editorContent.setSelectionRange(charIndex, charIndex + lineText.length);
-
-    const lineHeight = 19;
-    const targetScrollTop = Math.max(0, (lineNumber - 6) * lineHeight);
-    editorContent.scrollTop = targetScrollTop;
-
-    const highlight = editorDom.elMaybe('editor-highlight');
-    if (highlight) highlight.scrollTop = targetScrollTop;
-    const gutter = editorDom.elMaybe('editor-gutter');
-    if (gutter) gutter.scrollTop = targetScrollTop;
-
-    syncHighlight(true);
-  }
+  editor.revealLineInCenter(lineNumber);
+  editor.setPosition({ lineNumber, column: 1 });
+  editor.focus();
 }

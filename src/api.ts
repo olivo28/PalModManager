@@ -279,6 +279,38 @@ export async function mergeModBackup(modId: string, backupFilePath: string): Pro
   return invoke('merge_mod_backup', { modId, backupFilePath });
 }
 
+export interface EditorDiagnostic {
+  line: number;
+  column: number;
+  endLine?: number;
+  endColumn?: number;
+  severity: 'error' | 'warning' | 'info';
+  message: string;
+  target: string;
+  suggestion?: string;
+  category: string;
+}
+
+export interface EditorCompletion {
+  label: string;
+  insertText: string;
+  kind: 'hook' | 'class' | 'function' | 'delegate' | 'table' | 'struct' | 'api' | 'module';
+  detail?: string;
+  documentation?: string;
+}
+
+export async function validateEditorCode(filePath: string, content: string): Promise<EditorDiagnostic[]> {
+  return invoke('validate_editor_code', { filePath, content });
+}
+
+export async function scanWorkspaceProblems(modId: string): Promise<Record<string, EditorDiagnostic[]>> {
+  return invoke('scan_workspace_problems', { modId });
+}
+
+export async function getEditorCompletions(filePath: string, query: string, linePrefix: string): Promise<EditorCompletion[]> {
+  return invoke('get_editor_completions', { filePath, query, linePrefix });
+}
+
 export interface PakInternalItem {
   path: string;
   name: string;

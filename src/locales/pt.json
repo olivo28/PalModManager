@@ -443,7 +443,20 @@
     "confirm_merge_title": "Mesclar Configurações",
     "confirm_merge_body": "Deseja mesclar seus valores personalizados de **{backup}** em **{target}**?\n\nIsso preservará suas preferências mantendo as novas opções e a estrutura da versão ativa.",
     "toast_merged": "Configurações mescladas com sucesso",
-    "diff_collapsed_lines": "{count} linhas inalteradas recolhidas"
+    "diff_collapsed_lines": "{count} linhas inalteradas recolhidas",
+    "suggested_fix": "Sugestão de Correção:",
+    "apply_fix": "Aplicar Correção",
+    "health_clean": "Válido (0 erros)",
+    "health_single_issue": "{count} Problema Encontrado",
+    "health_multiple_issues": "{count} problemas encontrados",
+    "health_click_tooltip": "Clique para alternar painel de problemas",
+    "problems_tab_title": "Problemas",
+    "problems_tab_file": "Arquivo Atual",
+    "problems_tab_workspace": "Workspace",
+    "problems_scan_btn": "Escanear Mod",
+    "problems_scan_btn_title": "Escanear todos os scripts e configurações deste mod",
+    "problems_empty": "Nenhum problema detectado no arquivo atual.",
+    "problems_workspace_empty": "Nenhum problema detectado em todo o workspace do mod."
   },
   "library": {
     "title": "Biblioteca de Mods",

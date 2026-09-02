@@ -12,6 +12,7 @@
     <button id="editor-restore-btn" class="btn-editor" title="Restore this backup" data-i18n-title="editor.btn_restore_title" data-i18n="editor.btn_restore" style="display:none; background:#ff9000; color:#000; font-weight:700; border-color:#ff9000;">🔄 Restore</button>
     <button id="editor-save-btn" class="btn-editor primary" data-i18n="common.save">Save</button>
     <div style="flex:1"></div>
+    <span id="editor-health-badge" class="editor-health-badge" style="display:none"></span>
     <span id="editor-cursor-pos" style="font-size:11px;color:var(--text-muted);margin-right:12px;font-family:monospace;"></span>
     <span id="editor-status"></span>
   </div>
@@ -29,18 +30,35 @@
     </div>
     <div id="editor-content-area">
       <div id="editor-file-path"></div>
-      <div id="editor-input-wrap">
-        <div id="editor-gutter" style="display:none"></div>
-        <pre id="editor-highlight"><code id="editor-highlight-code"></code></pre>
-        <textarea id="editor-content" spellcheck="false" disabled></textarea>
-        <div id="editor-preview" style="display:none"></div>
-      </div>
-      <div id="editor-find-bar" style="display:none">
-        <input id="editor-find-input" type="text" placeholder="Find..." data-i18n-placeholder="editor.find_placeholder" />
-        <span id="editor-find-count"></span>
-        <button id="editor-find-prev" class="btn-find" title="Previous match" data-i18n-title="editor.find_prev_title">&uarr;</button>
-        <button id="editor-find-next" class="btn-find" title="Next match" data-i18n-title="editor.find_next_title">&darr;</button>
-        <button id="editor-find-close" class="btn-find" title="Close (Esc)" data-i18n-title="editor.find_close_title">&times;</button>
+      <div id="editor-monaco-container" style="flex:1; width:100%; height:calc(100% - 28px); min-height:150px;"></div>
+      <div id="editor-preview" style="display:none"></div>
+      <!-- Bottom Collapsible & Resizable Problems Panel -->
+      <div id="editor-problems-panel" class="editor-problems-panel" style="display:none">
+        <div id="editor-problems-resize-handle" class="editor-problems-resize-handle"></div>
+        <div class="editor-problems-header">
+          <div class="editor-problems-title-group">
+            <button id="editor-problems-tab-file" class="editor-problems-tab active">
+              <span class="editor-problems-icon">📄</span>
+              <span data-i18n="editor.problems_tab_file">Current File</span>
+              <span id="editor-problems-count-badge" class="editor-problems-count-badge clean">0</span>
+            </button>
+            <button id="editor-problems-tab-workspace" class="editor-problems-tab">
+              <span class="editor-problems-icon">📁</span>
+              <span data-i18n="editor.problems_tab_workspace">Workspace</span>
+              <span id="editor-problems-workspace-count-badge" class="editor-problems-count-badge clean">0</span>
+            </button>
+          </div>
+          <div class="editor-problems-actions">
+            <button id="editor-problems-scan-btn" class="editor-problems-action-btn" title="Scan entire workspace" data-i18n-title="editor.problems_scan_btn_title" style="display:none">🔄 <span data-i18n="editor.problems_scan_btn">Scan Mod</span></button>
+            <button id="editor-problems-close" class="editor-problems-close-btn" title="Close Panel" data-i18n-title="common.close">✕</button>
+          </div>
+        </div>
+        <div id="editor-problems-list" class="editor-problems-list">
+          <!-- Populated dynamically by problemsPanel.ts -->
+        </div>
+        <div id="editor-problems-workspace-list" class="editor-problems-list" style="display:none">
+          <!-- Populated dynamically by problemsPanel.ts -->
+        </div>
       </div>
     </div>
   </div>

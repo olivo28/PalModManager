@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct SdkClassInfo {
     pub name: String,
     pub clean_name: String,
+    pub module_name: String,
     pub super_class: Option<String>,
     pub clean_super_class: Option<String>,
     pub functions: HashSet<String>,
@@ -18,6 +19,7 @@ pub struct SdkClassInfo {
 #[serde(rename_all = "camelCase")]
 pub struct SdkIndex {
     pub classes: HashMap<String, SdkClassInfo>,
+    pub modules: HashSet<String>,
     pub total_classes: usize,
     pub total_functions: usize,
     pub source: String,
@@ -28,6 +30,7 @@ impl SdkIndex {
     pub fn new(source: String, game_version: String) -> Self {
         Self {
             classes: HashMap::new(),
+            modules: HashSet::new(),
             total_classes: 0,
             total_functions: 0,
             source,
@@ -278,10 +281,16 @@ pub fn clean_unreal_name(name: &str) -> String {
         without_path
     };
 
-    let without_suffix = if without_dot.ends_with("_C") && without_dot.len() > 2 {
-        &without_dot[..without_dot.len() - 2]
+    let without_cdo = if without_dot.starts_with("Default__") && without_dot.len() > 9 {
+        &without_dot[9..]
     } else {
         without_dot
+    };
+
+    let without_suffix = if without_cdo.ends_with("_C") && without_cdo.len() > 2 {
+        &without_cdo[..without_cdo.len() - 2]
+    } else {
+        without_cdo
     };
 
     if without_suffix.len() > 1 {
@@ -341,8 +350,16 @@ pub fn parse_sdk_directory(dir: &Path, source_label: &str) -> Result<SdkIndex, S
     let mut total_funcs = 0;
 
     for hpp_path in &hpp_files {
+        let module_name = hpp_path
+            .file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("Pal")
+            .to_string();
+
+        index.modules.insert(module_name.clone());
+
         if let Ok(content) = fs::read_to_string(hpp_path) {
-            parse_hpp_content(&content, &mut index, &mut total_funcs);
+            parse_hpp_content(&content, &module_name, &mut index, &mut total_funcs);
         }
     }
 
@@ -350,8 +367,8 @@ pub fn parse_sdk_directory(dir: &Path, source_label: &str) -> Result<SdkIndex, S
     index.total_functions = total_funcs;
 
     crate::logger::log(&format!(
-        "Indexed C++ SDK ({}): {} classes, {} functions across {} headers",
-        source_label, index.total_classes, index.total_functions, hpp_files.len()
+        "Indexed C++ SDK ({}): {} classes, {} functions across {} headers ({} modules)",
+        source_label, index.total_classes, index.total_functions, hpp_files.len(), index.modules.len()
     ));
 
     Ok(index)
@@ -372,7 +389,7 @@ fn collect_hpp_files(dir: &Path, out: &mut Vec<PathBuf>) {
     }
 }
 
-fn parse_hpp_content(content: &str, index: &mut SdkIndex, total_funcs: &mut usize) {
+fn parse_hpp_content(content: &str, module_name: &str, index: &mut SdkIndex, total_funcs: &mut usize) {
     let mut current_class: Option<SdkClassInfo> = None;
     let mut in_class = false;
     let mut brace_depth = 0;
@@ -421,6 +438,7 @@ fn parse_hpp_content(content: &str, index: &mut SdkIndex, total_funcs: &mut usiz
                     current_class = Some(SdkClassInfo {
                         name: class_name.to_string(),
                         clean_name: clean,
+                        module_name: module_name.to_string(),
                         super_class: if !super_name.is_empty() { Some(super_name) } else { None },
                         clean_super_class: clean_super,
                         functions: HashSet::new(),
@@ -445,6 +463,7 @@ fn parse_hpp_content(content: &str, index: &mut SdkIndex, total_funcs: &mut usiz
                     current_class = Some(SdkClassInfo {
                         name: class_name.to_string(),
                         clean_name: clean,
+                        module_name: module_name.to_string(),
                         super_class: None,
                         clean_super_class: None,
                         functions: HashSet::new(),

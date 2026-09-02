@@ -443,7 +443,20 @@
     "confirm_merge_title": "설정 병합",
     "confirm_merge_body": "**{backup}** 의 사용자 맞춤 설정을 **{target}** 파일에 병합하시겠습니까?\n\n새 버전에 추가된 새로운 설정 옵션을 유지하면서 기존 설정값을 안전하게 보존합니다.",
     "toast_merged": "설정이 성공적으로 병합되었습니다",
-    "diff_collapsed_lines": "변경되지 않은 {count}개 줄 접힘"
+    "diff_collapsed_lines": "변경되지 않은 {count}개 줄 접힘",
+    "suggested_fix": "수정 제안:",
+    "apply_fix": "수정 사항 적용",
+    "health_clean": "유효함 (오류 0개)",
+    "health_single_issue": "{count}개 문제 발견",
+    "health_multiple_issues": "{count}개 문제 발견됨",
+    "health_click_tooltip": "클릭하여 문제 패널 전환",
+    "problems_tab_title": "문제",
+    "problems_tab_file": "현재 파일",
+    "problems_tab_workspace": "워크스페이스",
+    "problems_scan_btn": "모드 검사",
+    "problems_scan_btn_title": "이 모드의 모든 스크립트 및 설정 파일 검사",
+    "problems_empty": "현재 파일에서 감지된 문제가 없습니다.",
+    "problems_workspace_empty": "모드 워크스페이스 전체에서 감지된 문제가 없습니다."
   },
   "library": {
     "title": "모드 보관함",

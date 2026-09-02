@@ -3,7 +3,7 @@ import { getState, updateState } from '../../state';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { showConfirm } from '../confirm';
-import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData } from './viewer';
+import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData, clearEditorContent } from './viewer';
 
 export function renderEditorModTree(): void {
   const tree = document.getElementById('editor-mod-tree');
@@ -17,6 +17,20 @@ export function renderEditorModTree(): void {
     m.type !== 'logicmods' &&
     m.nexusAuthor !== 'UE4SS Native Mod'
   );
+
+  // If currently active mod was deleted or removed from disk
+  if (currentModId && !editableMods.some(m => m.id === currentModId)) {
+    if (editableMods.length > 0) {
+      setTimeout(() => switchEditorMod(editableMods[0].id), 0);
+    } else {
+      updateState({ editorModId: null, editorSelectedFile: null, editorFiles: [] });
+      const fileTree = document.getElementById('editor-file-tree');
+      if (fileTree) fileTree.innerHTML = '';
+      const nameEl = document.getElementById('editor-current-mod-name');
+      if (nameEl) nameEl.textContent = '';
+      clearEditorContent();
+    }
+  }
 
   const ue4ssMods = editableMods.filter(m => m.type === 'ue4ss').sort((a, b) => a.name.localeCompare(b.name));
   const palSchemaMods = editableMods.filter(m => m.type === 'palschema').sort((a, b) => a.name.localeCompare(b.name));

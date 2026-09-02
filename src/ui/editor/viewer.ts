@@ -2,31 +2,55 @@ import { readModFile, saveModFile, listModFiles } from '../../api';
 import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
-import { highlightText } from '../../utils/syntax';
 import { t } from '../../utils/i18n';
 import { marked } from 'marked';
 import { confirmDiscardOrSave } from './unsaved';
 import { renderFileTree, refreshEditorFileTree } from './tree';
-import { resetFindMatches, getFindMatchesText } from './search';
 import { editorDom, bus } from '../../framework';
+import {
+  initMonacoEditor,
+  getMonacoEditor,
+  setMonacoFile,
+  getMonacoContent,
+  getCurrentMonacoFilePath,
+} from './monaco/instance';
 
 export let _originalContent: string | null = null;
 export const _lastFilePerMod: Record<string, string> = {};
-let _lastLineCount: number = -1;
-let _highlightRafId: number | null = null;
 
 export function clearOriginalContent(): void {
   _originalContent = null;
-  _lastLineCount = -1;
+  updateUnsavedIndicator();
+}
+
+export function clearEditorContent(): void {
+  _originalContent = null;
+  const editorPath = editorDom.elMaybe('editor-file-path');
+  if (editorPath) editorPath.textContent = '';
+  const editorStatus = editorDom.elMaybe('editor-status');
+  if (editorStatus) editorStatus.textContent = '';
+  const formatBtn = editorDom.elMaybe('editor-format-btn');
+  if (formatBtn) formatBtn.style.display = 'none';
+  const previewBtn = editorDom.elMaybe('editor-preview-btn');
+  if (previewBtn) previewBtn.style.display = 'none';
+  const diffBtn = editorDom.elMaybe('editor-diff-btn');
+  if (diffBtn) diffBtn.style.display = 'none';
+  const restoreBtn = editorDom.elMaybe('editor-restore-btn');
+  if (restoreBtn) restoreBtn.style.display = 'none';
+  const preview = editorDom.elMaybe('editor-preview');
+  if (preview) preview.style.display = 'none';
+  const healthBadge = editorDom.elMaybe('editor-health-badge');
+  if (healthBadge) healthBadge.style.display = 'none';
+
+  setMonacoFile('empty.txt', '');
   updateUnsavedIndicator();
 }
 
 export function updateUnsavedIndicator(): void {
+  const currentText = getMonacoContent();
   const isDirty = _originalContent !== null && (() => {
-    const editorContent = editorDom.elMaybe('editor-content');
-    if (!editorContent) return false;
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
-    return normalize(editorContent.value) !== normalize(_originalContent);
+    return normalize(currentText) !== normalize(_originalContent);
   })();
 
   const state = getState();
@@ -44,76 +68,10 @@ export function updateUnsavedIndicator(): void {
   }
 }
 
-export function syncHighlight(immediate = false): void {
-  const editorContent = editorDom.elMaybe('editor-content');
-  if (!editorContent) return;
-
-  const codeEl = editorDom.elMaybe('editor-highlight-code');
-  if (!codeEl) return;
-
-  const text = editorContent.value;
-  const gutter = editorDom.elMaybe('editor-gutter');
-
-  // Gutter Line Numbers: Only re-render when line count actually changes
-  if (gutter) {
-    const lines = text.split('\n').length;
-    if (lines !== _lastLineCount) {
-      _lastLineCount = lines;
-      let html = '';
-      for (let i = 1; i <= lines; i++) {
-        html += `${i}<br/>`;
-      }
-      gutter.innerHTML = html;
-    }
-  }
-
-  updateUnsavedIndicator();
-
-  const performHighlight = () => {
-    const state = getState();
-    const ext = state.editorSelectedFile ? state.editorSelectedFile.split('.').pop() || '' : '';
-    const currentText = editorContent.value;
-
-    // Handle Find/Search matches highlighting dynamically
-    const processedText = getFindMatchesText(currentText);
-    const highlighted = highlightText(processedText.text, ext);
-    let result = highlighted;
-
-    if (processedText.hasMatches) {
-      for (let i = 0; i < processedText.count; i++) {
-        result = result
-          .replace('\x00START' + i + '\x00', '<mark class="find-match">')
-          .replace('\x00END' + i + '\x00', '</mark>');
-      }
-    }
-
-    codeEl.innerHTML = result + '\n';
-  };
-
-  if (immediate) {
-    if (_highlightRafId !== null) {
-      cancelAnimationFrame(_highlightRafId);
-      _highlightRafId = null;
-    }
-    performHighlight();
-  } else {
-    if (_highlightRafId !== null) {
-      cancelAnimationFrame(_highlightRafId);
-    }
-    _highlightRafId = requestAnimationFrame(() => {
-      _highlightRafId = null;
-      performHighlight();
-    });
-  }
-}
-
 export async function loadFileContent(filePath: string): Promise<void> {
   const state = getState();
   if (!state.editorModId) return;
 
-  resetFindMatches();
-
-  const editorContent = editorDom.el('editor-content');
   const editorPath = editorDom.el('editor-file-path');
   const editorStatus = editorDom.el('editor-status');
   const formatBtn = editorDom.el('editor-format-btn');
@@ -121,32 +79,28 @@ export async function loadFileContent(filePath: string): Promise<void> {
   const diffBtn = editorDom.elMaybe('editor-diff-btn');
   const restoreBtn = editorDom.elMaybe('editor-restore-btn');
   const preview = editorDom.el('editor-preview');
-  const highlight = editorDom.el('editor-highlight');
-  const gutter = editorDom.el('editor-gutter');
+  const monacoContainer = editorDom.elMaybe('editor-monaco-container');
+  const healthBadge = editorDom.elMaybe('editor-health-badge');
 
-  editorContent.disabled = true;
   editorStatus.textContent = '';
   updateState({ editorPreviewMode: false });
   preview.style.display = 'none';
-  highlight.style.display = '';
-  editorContent.style.display = '';
-  gutter.style.display = 'block';
+  if (monacoContainer) monacoContainer.style.display = '';
   previewBtn.style.display = 'none';
   previewBtn.textContent = 'Preview';
 
   const isBak = filePath.toLowerCase().includes('.bak');
   if (diffBtn) diffBtn.style.display = isBak ? '' : 'none';
   if (restoreBtn) restoreBtn.style.display = isBak ? '' : 'none';
+  if (healthBadge) healthBadge.style.display = '';
 
   try {
     const result = await readModFile(state.editorModId, filePath);
     if (!result.content) {
       editorPath.textContent = t('editor.no_content_available');
-      editorContent.value = '';
-      editorContent.disabled = true;
-      formatBtn.style.display = 'none';
       _originalContent = null;
-      gutter.style.display = 'none';
+      if (monacoContainer) monacoContainer.style.display = 'none';
+      if (formatBtn) formatBtn.style.display = 'none';
       if (diffBtn) diffBtn.style.display = 'none';
       if (restoreBtn) restoreBtn.style.display = 'none';
     } else if (result.configType === 'image') {
@@ -157,29 +111,40 @@ export async function loadFileContent(filePath: string): Promise<void> {
           <div style="margin-top:12px;font-size:11px;color:var(--text-muted);">${escapeHtml(filePath)}</div>
         </div>`;
       preview.style.display = 'block';
-      highlight.style.display = 'none';
-      editorContent.style.display = 'none';
-      gutter.style.display = 'none';
-      editorContent.value = '';
+      if (monacoContainer) monacoContainer.style.display = 'none';
       _originalContent = null;
-      formatBtn.style.display = 'none';
-      previewBtn.style.display = 'none';
+      if (formatBtn) formatBtn.style.display = 'none';
+      if (previewBtn) previewBtn.style.display = 'none';
       if (diffBtn) diffBtn.style.display = 'none';
       if (restoreBtn) restoreBtn.style.display = 'none';
       editorStatus.textContent = '';
       return;
     } else {
       editorPath.textContent = result.path || filePath;
-      editorContent.value = result.content;
       _originalContent = result.content;
-      editorContent.disabled = false;
+
+      // Initialize Monaco Editor and set file
+      setMonacoFile(filePath, result.content);
+      const editor = getMonacoEditor();
+
+      if (editor) {
+        editor.onDidChangeCursorPosition((e) => {
+          const cursorPosEl = editorDom.elMaybe('editor-cursor-pos');
+          if (cursorPosEl) {
+            cursorPosEl.textContent = `Ln ${e.position.lineNumber}, Col ${e.position.column}`;
+          }
+        });
+
+        editor.onDidChangeModelContent(() => {
+          updateUnsavedIndicator();
+        });
+      }
+
       formatBtn.style.display = (result.configType === 'json' || result.configType === 'jsonc') && !isBak ? '' : 'none';
       if (filePath.endsWith('.md')) {
         previewBtn.style.display = '';
         preview.style.display = 'none';
-        highlight.style.display = '';
-        editorContent.style.display = '';
-        gutter.style.display = 'block';
+        if (monacoContainer) monacoContainer.style.display = '';
         previewBtn.textContent = t('editor.btn_preview');
         updateState({ editorPreviewMode: false });
       }
@@ -187,33 +152,31 @@ export async function loadFileContent(filePath: string): Promise<void> {
     editorStatus.textContent = '';
   } catch (e) {
     editorPath.textContent = 'Error: ' + e;
-    editorContent.value = '';
-    editorContent.disabled = true;
     _originalContent = null;
     editorStatus.textContent = '';
   }
-  syncHighlight(true);
+
+  updateUnsavedIndicator();
 }
 
 export function stripJsonComments(jsonc: string): string {
-  return jsonc.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => g ? "" : m);
+  return jsonc.replace(/\\"|"(?:\\"|[^"])*"|(\/\/.*|\/\*[\s\S]*?\*\/)/g, (m, g) => (g ? '' : m));
 }
 
 export async function handleEditorSave(): Promise<void> {
   const state = getState();
-  if (!state.editorModId || !state.editorSelectedFile) return;
-  const editorContent = editorDom.el('editor-content');
+  const filePath = state.editorSelectedFile || getCurrentMonacoFilePath();
+  if (!state.editorModId || !filePath) return;
+
   const editorStatus = editorDom.el('editor-status');
   const saveBtn = editorDom.el('editor-save-btn');
 
-  const content = editorContent.value;
-  const isJson = state.editorSelectedFile.endsWith('.json') || state.editorSelectedFile.endsWith('.jsonc');
+  const content = getMonacoContent();
+  const isJson = filePath.endsWith('.json') || filePath.endsWith('.jsonc');
 
   if (isJson) {
     try {
-      const cleanContent = state.editorSelectedFile.endsWith('.jsonc')
-        ? stripJsonComments(content)
-        : content;
+      const cleanContent = filePath.endsWith('.jsonc') ? stripJsonComments(content) : content;
       JSON.parse(cleanContent);
     } catch (e) {
       editorStatus.textContent = t('editor.status_invalid_json', { error: (e as Error).message });
@@ -228,16 +191,18 @@ export async function handleEditorSave(): Promise<void> {
     const { suppressWatcherRefresh } = await import('./watcher');
     suppressWatcherRefresh(3000);
 
-    await saveModFile(state.editorModId, state.editorSelectedFile, content);
+    await saveModFile(state.editorModId, filePath, content);
     _originalContent = content;
     updateUnsavedIndicator();
     editorStatus.textContent = t('editor.status_saved');
-    bus.emit('editor:saved', { filePath: state.editorSelectedFile });
+    bus.emit('editor:saved', { filePath });
     showToast(t('editor.toast_saved'), 'success');
 
     await refreshEditorFileTree(state.editorModId);
 
-    setTimeout(() => { editorStatus.textContent = ''; }, 2000);
+    setTimeout(() => {
+      editorStatus.textContent = '';
+    }, 2000);
   } catch (e) {
     editorStatus.textContent = String(e);
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
@@ -246,20 +211,35 @@ export async function handleEditorSave(): Promise<void> {
   }
 }
 
-export function handleEditorFormat(): void {
-  const editorContent = editorDom.el('editor-content');
+export async function handleEditorFormat(): Promise<void> {
+  const editor = getMonacoEditor();
+  if (!editor) return;
+
   const editorStatus = editorDom.el('editor-status');
   const state = getState();
   const isJsonc = state.editorSelectedFile?.endsWith('.jsonc');
 
   try {
-    const raw = editorContent.value;
-    const clean = isJsonc ? stripJsonComments(raw) : raw;
-    const parsed = JSON.parse(clean);
-    editorContent.value = JSON.stringify(parsed, null, 2);
-    editorStatus.textContent = isJsonc ? t('editor.status_formatted_clean') : t('editor.status_formatted');
-    syncHighlight();
-    setTimeout(() => { editorStatus.textContent = ''; }, 2000);
+    const action = editor.getAction('editor.action.formatDocument');
+    if (action) {
+      await action.run();
+      editorStatus.textContent = isJsonc ? t('editor.status_formatted_clean') : t('editor.status_formatted');
+      updateUnsavedIndicator();
+      setTimeout(() => {
+        editorStatus.textContent = '';
+      }, 2000);
+    } else {
+      // Fallback JSON format
+      const raw = getMonacoContent();
+      const clean = isJsonc ? stripJsonComments(raw) : raw;
+      const parsed = JSON.parse(clean);
+      editor.setValue(JSON.stringify(parsed, null, 2));
+      editorStatus.textContent = isJsonc ? t('editor.status_formatted_clean') : t('editor.status_formatted');
+      updateUnsavedIndicator();
+      setTimeout(() => {
+        editorStatus.textContent = '';
+      }, 2000);
+    }
   } catch (e) {
     editorStatus.textContent = t('editor.status_invalid_json', { error: (e as Error).message });
   }
@@ -267,28 +247,22 @@ export function handleEditorFormat(): void {
 
 export async function handleEditorPreview(): Promise<void> {
   const state = getState();
-  const editorContent = editorDom.el('editor-content');
-  const highlight = editorDom.el('editor-highlight');
+  const monacoContainer = editorDom.elMaybe('editor-monaco-container');
   const preview = editorDom.el('editor-preview');
   const previewBtn = editorDom.el('editor-preview-btn');
-  const gutter = editorDom.el('editor-gutter');
   const mode = state.editorPreviewMode;
 
   if (mode) {
     preview.style.display = 'none';
-    highlight.style.display = '';
-    editorContent.style.display = '';
-    gutter.style.display = 'block';
-    editorContent.disabled = false;
+    if (monacoContainer) monacoContainer.style.display = '';
     previewBtn.textContent = t('editor.btn_preview');
     previewBtn.classList.remove('active');
     updateState({ editorPreviewMode: false });
   } else {
-    preview.innerHTML = await marked.parse(editorContent.value);
+    const content = getMonacoContent();
+    preview.innerHTML = await marked.parse(content);
     preview.style.display = 'block';
-    highlight.style.display = 'none';
-    editorContent.style.display = 'none';
-    gutter.style.display = 'none';
+    if (monacoContainer) monacoContainer.style.display = 'none';
     previewBtn.textContent = t('editor.btn_edit');
     previewBtn.classList.add('active');
     updateState({ editorPreviewMode: true });
@@ -297,22 +271,16 @@ export async function handleEditorPreview(): Promise<void> {
 
 export async function loadEditorData(modId: string): Promise<void> {
   const state = getState();
-  const mod = state.allMods.find(m => m.id === modId);
+  const mod = state.allMods.find((m) => m.id === modId);
 
   const editorModSelect = editorDom.el('editor-mod-select');
   const editorFileTree = editorDom.el('editor-file-tree');
-  const editorContent = editorDom.el('editor-content');
   const editorPath = editorDom.el('editor-file-path');
   const editorStatus = editorDom.el('editor-status');
 
   editorPath.textContent = '';
   editorStatus.textContent = '';
-  editorContent.value = '';
-  editorContent.disabled = true;
   _originalContent = null;
-
-  const codeEl = editorDom.elMaybe('editor-highlight-code');
-  if (codeEl) codeEl.innerHTML = '';
 
   const nameEl = editorDom.elMaybe('editor-current-mod-name');
   if (nameEl) nameEl.textContent = mod?.name || '';
@@ -328,4 +296,5 @@ export async function loadEditorData(modId: string): Promise<void> {
     }
   }
 }
+
 export { confirmDiscardOrSave };

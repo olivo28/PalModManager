@@ -113,7 +113,7 @@ fn get_mod_base_dir(mod_info: &crate::models::ModInfo) -> PathBuf {
     }
 }
 
-fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str) -> Result<PathBuf, String> {
+pub fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str) -> Result<PathBuf, String> {
     if mod_info.mod_type == crate::models::ModType::Hybrid {
         let path_obj = Path::new(file_path);
         let components: Vec<&str> = path_obj.iter().map(|c| c.to_str().unwrap_or_default()).collect();
