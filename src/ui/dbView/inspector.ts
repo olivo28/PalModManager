@@ -68,20 +68,20 @@ export function onJsonEditorInput(): void {
 export function updateJsonStatus(valid: boolean | null): void {
   const status = dbDom.elMaybe('db-json-status');
   const saveBtn = dbDom.elMaybe('db-save-btn');
-  if (!status || !saveBtn) return;
+  if (!status) return;
 
   if (valid === null) {
     status.textContent = '';
     status.className = 'db-json-status';
-    saveBtn.disabled = true;
+    if (saveBtn) saveBtn.disabled = true;
   } else if (valid) {
-    status.textContent = t('db.valid_json');
+    status.textContent = t('db.valid_json') || '✓ Valid JSON';
     status.className = 'db-json-status valid';
-    saveBtn.disabled = dbState.selectedRecordType === null;
+    if (saveBtn) saveBtn.disabled = dbState.selectedRecordType === null;
   } else {
-    status.textContent = t('db.invalid_json');
+    status.textContent = t('db.invalid_json') || '✗ Invalid JSON';
     status.className = 'db-json-status invalid';
-    saveBtn.disabled = true;
+    if (saveBtn) saveBtn.disabled = true;
   }
 }
 

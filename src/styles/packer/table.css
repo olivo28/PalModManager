@@ -198,44 +198,75 @@
 
 .packer-route-badge {
   font-size: 8.5px;
+  padding: 2px 6px;
+  border-radius: 4px;
   font-weight: 700;
+  letter-spacing: 0.4px;
   text-transform: uppercase;
-  padding: 1px 4px;
-  border-radius: 3px;
-  background: rgba(58, 149, 255, 0.15);
-  color: #60a5fa;
-  border: 1px solid rgba(58, 149, 255, 0.3);
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  line-height: 1;
 }
 
 .packer-route-badge.ue4ss {
-  background: rgba(168, 85, 247, 0.15);
-  color: #c084fc;
-  border-color: rgba(168, 85, 247, 0.3);
+  background: rgba(56, 189, 248, 0.14);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
 }
 
-.packer-route-badge.custom {
-  background: rgba(245, 158, 11, 0.15);
+.packer-route-badge.pak {
+  background: rgba(192, 132, 252, 0.14);
+  color: #c084fc;
+  border: 1px solid rgba(192, 132, 252, 0.35);
+}
+
+.packer-route-badge.logicmods {
+  background: rgba(52, 211, 153, 0.14);
+  color: #34d399;
+  border: 1px solid rgba(52, 211, 153, 0.35);
+}
+
+.packer-route-badge.palschema {
+  background: rgba(251, 191, 36, 0.14);
   color: #fbbf24;
-  border-color: rgba(245, 158, 11, 0.3);
+  border: 1px solid rgba(251, 191, 36, 0.35);
+}
+
+.packer-route-badge.file {
+  background: rgba(148, 163, 184, 0.12);
+  color: #94a3b8;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+}
+
+.packer-route-arrow {
+  color: var(--text-muted);
+  opacity: 0.6;
+  font-size: 11px;
+  flex-shrink: 0;
 }
 
 .packer-route-path {
-  color: var(--text-muted);
-  opacity: 0.8;
+  color: var(--text-secondary);
+  opacity: 0.85;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .packer-table-action-btn {
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.04);
   border: 1px solid rgba(255, 255, 255, 0.08);
-  color: var(--text-secondary);
+  color: var(--text-muted);
   cursor: pointer;
   font-size: 11px;
-  padding: 3px 6px;
-  border-radius: 4px;
-  transition: all 0.15s ease;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  transition: all 0.15s ease;
 }
 
 .packer-table-action-btn:hover {
@@ -255,3 +286,4 @@
   color: #f59e0b;
   border-color: rgba(245, 158, 11, 0.4);
 }
+

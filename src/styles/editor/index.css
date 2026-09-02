@@ -1,4 +1,5 @@
-@import './toolbar_panels.css';
-@import './editor_area.css';
-@import './find_intellisense.css';
+@import './explorer.css';
+@import './file_tree.css';
+@import './content_area.css';
+@import './diagnostics.css';
 @import './problems_panel.css';

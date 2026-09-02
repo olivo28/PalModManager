@@ -101,6 +101,13 @@ export function switchDbTable(tab: DbTable): void {
   document.querySelectorAll('.db-tab-btn').forEach(b => {
     b.classList.toggle('active', (b as HTMLElement).dataset.dbtab === tab);
   });
+  
+  const split = document.querySelector('.db-split');
+  if (split) {
+    split.classList.toggle('usmap-mode', tab === 'usmap');
+    split.classList.remove('has-selection');
+  }
+
   clearInspector();
   if (tab === 'usmap') {
     loadUsmapData();

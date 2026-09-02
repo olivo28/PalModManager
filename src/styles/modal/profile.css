@@ -34,6 +34,7 @@
   white-space: nowrap;
 }
 
+
 .profile-item:hover {
   background: var(--bg-hover);
 }
@@ -72,6 +73,7 @@
   transition: color 0.2s;
 }
 
+
 .profile-item-delete:hover:not(.disabled) {
   color: var(--danger);
 }
@@ -101,3 +103,5 @@
 .profile-add-row input:focus {
   border-color: var(--accent);
 }
+
+/* ===== CONFIRM DIALOG ===== */

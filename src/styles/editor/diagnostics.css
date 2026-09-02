@@ -1,0 +1,268 @@
+/* ==========================================================================
+   Editor Health Badge, QuickFix Banner & Autocomplete Popup
+   ========================================================================== */
+
+.editor-health-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 8px;
+  border-radius: 4px;
+  margin-right: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.editor-health-badge.valid {
+  background: rgba(34, 197, 94, 0.12);
+  color: #22c55e;
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  cursor: default;
+}
+
+.editor-health-badge.warning {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+}
+
+.editor-health-badge.warning:hover {
+  background: rgba(245, 158, 11, 0.2);
+  transform: translateY(-1px);
+}
+
+.editor-health-badge.error {
+  background: rgba(239, 68, 68, 0.12);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+}
+
+.editor-health-badge.error:hover {
+  background: rgba(239, 68, 68, 0.2);
+  transform: translateY(-1px);
+}
+
+.health-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.health-dot.green { background: #22c55e; box-shadow: 0 0 6px #22c55e88; }
+.health-dot.amber { background: #f59e0b; box-shadow: 0 0 6px #f59e0b88; }
+.health-dot.red { background: #ef4444; box-shadow: 0 0 6px #ef444488; }
+
+.gutter-num-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 100%;
+}
+
+.gutter-error-dot,
+.gutter-warn-dot {
+  position: absolute;
+  left: -2px;
+  top: 0;
+  font-size: 8px;
+  cursor: pointer;
+}
+
+.gutter-error-dot { color: #ef4444; }
+.gutter-warn-dot { color: #f59e0b; }
+
+.editor-quickfix-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.95));
+  border: 1px solid rgba(245, 158, 11, 0.3);
+  border-left: 3px solid #f59e0b;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin: 6px 12px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+  animation: fadeIn 0.15s ease-out;
+  z-index: 5;
+}
+
+.editor-quickfix-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+}
+
+.editor-quickfix-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-quickfix-icon {
+  font-size: 13px;
+}
+
+.editor-quickfix-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.editor-quickfix-badge.ue4ss {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.3);
+}
+
+.editor-quickfix-badge.palschema {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.3);
+}
+
+.editor-quickfix-badge.syntax {
+  background: rgba(239, 68, 68, 0.15);
+  color: #f87171;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.editor-quickfix-msg {
+  font-size: 12px;
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.editor-quickfix-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 2px;
+}
+
+.editor-quickfix-sug-label {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.editor-quickfix-sug-code {
+  font-family: 'Consolas', 'Fira Code', monospace;
+  font-size: 11px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #38bdf8;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}
+
+.editor-quickfix-btn {
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-quickfix-btn:hover {
+  background: #7dd3fc;
+  transform: translateY(-1px);
+}
+
+.editor-quickfix-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.editor-quickfix-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.editor-autocomplete-popup {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  max-height: 240px;
+  width: 320px;
+  overflow-y: auto;
+  z-index: 20;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.editor-autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  user-select: none;
+}
+
+.editor-autocomplete-item:hover,
+.editor-autocomplete-item.selected {
+  background: var(--bg-tertiary);
+}
+
+.editor-autocomplete-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  white-space: nowrap;
+}
+
+.editor-autocomplete-badge.hook { background: rgba(56, 189, 248, 0.15); color: #38bdf8; }
+.editor-autocomplete-badge.class { background: rgba(168, 85, 247, 0.15); color: #c084fc; }
+.editor-autocomplete-badge.function { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.editor-autocomplete-badge.delegate { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.editor-autocomplete-badge.table { background: rgba(236, 72, 153, 0.15); color: #f472b6; }
+.editor-autocomplete-badge.struct { background: rgba(99, 102, 241, 0.15); color: #818cf8; }
+.editor-autocomplete-badge.api { background: rgba(14, 165, 233, 0.15); color: #38bdf8; }
+
+.editor-autocomplete-info {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  flex: 1;
+}
+
+.editor-autocomplete-label {
+  font-family: 'Consolas', 'Fira Code', monospace;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-autocomplete-detail {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+

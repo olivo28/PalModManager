@@ -1,0 +1,300 @@
+
+.discovery-modal-close-btn {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.65);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+  z-index: 10;
+}
+
+.discovery-modal-close-btn:hover {
+  background: var(--danger);
+  border-color: var(--danger);
+}
+
+.discovery-modal-header-info {
+  position: absolute;
+  bottom: 16px;
+  left: 24px;
+  right: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 5;
+}
+
+.discovery-modal-badges {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discovery-modal-title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  line-height: 1.2;
+}
+
+.discovery-modal-author-row {
+  font-size: 12px;
+  color: #ccc;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.discovery-modal-stats-bar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-top: 6px;
+  flex-wrap: wrap;
+}
+
+.discovery-stat-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.discovery-stat-val {
+  font-weight: 700;
+  color: #fff;
+}
+
+.discovery-stat-lbl {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.discovery-modal-quick-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+
+.btn-discovery-action {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: #fff;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.btn-discovery-action:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-discovery-action.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.btn-discovery-action.own-mod-btn {
+  background: rgba(218, 142, 53, 0.15) !important;
+  border-color: rgba(218, 142, 53, 0.5) !important;
+  color: #da8e35 !important;
+  cursor: default !important;
+  opacity: 0.9;
+}
+
+.btn-discovery-action.own-mod-btn:hover {
+  background: rgba(218, 142, 53, 0.25) !important;
+  border-color: #da8e35 !important;
+  color: #da8e35 !important;
+}
+
+/* MODAL TABS */
+.discovery-modal-tabs {
+  display: flex;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.discovery-modal-tab {
+  padding: 12px 20px;
+  font-size: 12px;
+  font-weight: 700;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s ease;
+}
+
+.discovery-modal-tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.discovery-modal-tab:hover:not(.active) {
+  color: var(--text-primary);
+}
+
+/* MODAL BODY */
+.discovery-modal-body {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.discovery-tab-pane {
+  display: none;
+}
+
+.discovery-tab-pane.active {
+  display: block;
+}
+
+/* BBCODE AND DESCRIPTION FORMATTING */
+.discovery-description-content {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--text-primary);
+}
+
+.discovery-description-content h1,
+.discovery-description-content h2,
+.discovery-description-content h3,
+.bbcode-heading {
+  color: var(--text-primary);
+  margin: 14px 0 8px 0;
+  font-weight: 800;
+}
+
+.bbcode-quote {
+  border-left: 4px solid var(--accent);
+  background: var(--accent-dim);
+  padding: 10px 14px;
+  margin: 12px 0;
+  border-radius: 0 6px 6px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+
+.bbcode-spoiler {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 10px 0;
+}
+
+.bbcode-spoiler summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--accent);
+  outline: none;
+}
+
+.bbcode-spoiler-content {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--border);
+}
+
+.bbcode-code {
+  background: var(--bg-code);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 6px;
+  font-family: monospace;
+  font-size: 12px;
+  color: var(--accent);
+  overflow-x: auto;
+  margin: 10px 0;
+}
+
+.bbcode-list {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.bbcode-list li {
+  margin-bottom: 4px;
+}
+
+.bbcode-link {
+  color: var(--accent);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.bbcode-link:hover {
+  text-decoration: underline;
+}
+
+.bbcode-img {
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 10px 0;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease;
+}
+
+.bbcode-img.cursor-zoom:hover {
+  transform: scale(1.02);
+}
+
+.bbcode-hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 16px 0;
+}
+
+.bbcode-video-wrap {
+  position: relative;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16 / 9;
+  margin: 14px 0;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.bbcode-video-wrap iframe {
+  width: 100%;
+  height: 100%;
+}
+
+.cursor-zoom {
+  cursor: zoom-in;
+}
+
+/* FILES LIST & GROUPING */
+.discovery-files-header {
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+

@@ -16,7 +16,6 @@
   max-width: 600px;
   margin: 2px 0;
   transition: background 0.1s ease, outline 0.1s ease;
-  position: relative;
 }
 
 .packer-tree-node:hover {
@@ -65,12 +64,11 @@
   display: none;
   align-items: center;
   gap: 4px;
-  margin-left: auto;
-  padding-left: 12px;
+  margin-left: 8px;
 }
 
 .packer-tree-node:hover .packer-tree-actions {
-  display: flex;
+  display: inline-flex;
 }
 
 .packer-tree-action-btn {
@@ -78,32 +76,26 @@
   border: 1px solid rgba(255, 255, 255, 0.1);
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 11px;
-  padding: 2px 4px;
-  border-radius: var(--radius);
+  font-size: 10px;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  opacity: 0.7;
-  transition: opacity 0.15s, background 0.15s;
+  transition: all 0.15s ease;
 }
 
 .packer-tree-action-btn:hover {
-  opacity: 1;
-  background: var(--bg-hover);
+  background: rgba(255, 255, 255, 0.15);
   color: var(--text-primary);
 }
 
 .packer-tree-action-btn.danger:hover {
-  color: var(--danger);
   background: rgba(239, 68, 68, 0.2);
+  color: #ef4444;
   border-color: rgba(239, 68, 68, 0.4);
 }
 
-.packer-tree-node.skipped {
-  opacity: 0.45;
-}
 
-.packer-tree-node.skipped .packer-tree-name {
-  text-decoration: line-through;
-}
+

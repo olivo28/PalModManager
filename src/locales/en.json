@@ -48,7 +48,8 @@
     "previous": "Previous",
     "next": "Next",
     "hide": "Hide",
-    "show": "Show"
+    "show": "Show",
+    "no_results": "No matching entries found in USMAP schema"
   },
   "sidebar": {
     "tab_discovery": "Discover",
@@ -963,18 +964,25 @@
     "col_palschema": "PalSchema Load Order (FLO)"
   },
   "db": {
-    "title": "🗄 Database Inspector",
+    "title": "Database Inspector",
     "tab_mods": "Mods",
     "tab_profiles": "Profiles",
     "tab_settings": "Settings",
     "tab_usmap": "USMAP Schema",
-    "usmap_search_placeholder": "Search Structs, Classes, Enums, Properties...",
-    "btn_refresh": "↻ Refresh",
-    "btn_refresh_title": "Reload from Database",
-    "loading": "Loading database…",
-    "inspector_title": "JSON Inspector",
+    "btn_refresh": "Refresh",
+    "btn_refresh_title": "Refresh database view",
     "btn_save": "Save Record",
+    "btn_sync_usmap": "Sync Mappings",
+    "loading": "Loading database…",
+    "inspector_title": "Record Inspector",
     "editor_placeholder": "Select a record above to inspect its raw JSON…",
+    "usmap_search_placeholder": "Search Structs, Classes, Enums, Properties...",
+    "usmap_cat_all": "All",
+    "usmap_cat_structs": "Structs",
+    "usmap_cat_enums": "Enums",
+    "usmap_cat_names": "FNames",
+    "valid_json": "✓ Valid JSON",
+    "invalid_json": "✗ Invalid JSON",
     "confirm_rescan": "Record saved. Do you want to re-scan mods to reflect the changes in the main list?",
     "empty_mods": "No mods in database.",
     "empty_profiles": "No profiles in database.",
@@ -984,8 +992,7 @@
     "col_val": "Value",
     "click_to_edit": "Click to edit settings",
     "settings_hint": "Click any row to open the full settings JSON in the inspector.",
-    "valid_json": "✓ Valid JSON",
-    "invalid_json": "✗ Invalid JSON"
+    "no_results": "No matching entries found in USMAP schema"
   },
   "settings": {
     "title": "Settings",

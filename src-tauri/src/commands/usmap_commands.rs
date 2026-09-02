@@ -104,6 +104,40 @@ pub fn get_usmap_full_struct_details(name: String, state: State<'_, AppState>) -
     Ok(None)
 }
 
+#[inline]
+fn contains_ignore_case_ascii(haystack: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return true;
+    }
+    let n_bytes = needle.as_bytes();
+    let h_bytes = haystack.as_bytes();
+    if h_bytes.len() < n_bytes.len() {
+        return false;
+    }
+    h_bytes.windows(n_bytes.len()).any(|w| {
+        w.iter().zip(n_bytes.iter()).all(|(a, b)| a.to_ascii_lowercase() == b.to_ascii_lowercase())
+    })
+}
+
+#[inline]
+fn starts_with_ignore_case_ascii(haystack: &str, needle: &str) -> bool {
+    if needle.is_empty() {
+        return true;
+    }
+    let n_bytes = needle.as_bytes();
+    let h_bytes = haystack.as_bytes();
+    if h_bytes.len() < n_bytes.len() {
+        return false;
+    }
+    h_bytes[..n_bytes.len()].iter().zip(n_bytes.iter()).all(|(a, b)| a.to_ascii_lowercase() == b.to_ascii_lowercase())
+}
+
+enum MatchedItemRef<'a> {
+    Struct(&'a str, &'a UsmapStruct),
+    Enum(&'a str, &'a Vec<String>),
+    FName(&'a str),
+}
+
 #[tauri::command]
 pub fn search_usmap_entries(
     query: String,
@@ -128,27 +162,17 @@ pub fn search_usmap_entries(
         }
     };
 
-    let q = query.trim().to_lowercase();
-    let mut matches = Vec::new();
+    let q = query.trim();
+    let mut matched_refs: Vec<MatchedItemRef> = Vec::with_capacity(1024);
 
     // 1. Structs / Classes
     if filter_type == "all" || filter_type == "structs" {
         for (name, s) in &schema.structs {
-            if q.is_empty() || name.to_lowercase().contains(&q) || s.super_type.as_ref().map_or(false, |st| st.to_lowercase().contains(&q)) {
-                let preview = if let Some(ref st) = s.super_type {
-                    format!("Super: {} ({} properties)", st, s.properties.len())
-                } else {
-                    format!("{} properties", s.properties.len())
-                };
-
-                matches.push(UsmapSearchItem {
-                    name: name.clone(),
-                    category: "struct".to_string(),
-                    super_type: s.super_type.clone(),
-                    property_count: s.properties.len(),
-                    enum_values_count: 0,
-                    preview,
-                });
+            if q.is_empty() 
+                || contains_ignore_case_ascii(name, q) 
+                || s.super_type.as_ref().map_or(false, |st| contains_ignore_case_ascii(st, q)) 
+            {
+                matched_refs.push(MatchedItemRef::Struct(name.as_str(), s));
             }
         }
     }
@@ -156,58 +180,105 @@ pub fn search_usmap_entries(
     // 2. Enums
     if filter_type == "all" || filter_type == "enums" {
         for (name, vals) in &schema.enums {
-            if q.is_empty() || name.to_lowercase().contains(&q) || vals.iter().any(|v| v.to_lowercase().contains(&q)) {
-                let preview = format!("{} values: {}", vals.len(), vals.iter().take(3).cloned().collect::<Vec<_>>().join(", "));
-                matches.push(UsmapSearchItem {
-                    name: name.clone(),
-                    category: "enum".to_string(),
-                    super_type: None,
-                    property_count: 0,
-                    enum_values_count: vals.len(),
-                    preview,
-                });
+            if q.is_empty() 
+                || contains_ignore_case_ascii(name, q) 
+                || vals.iter().any(|v| contains_ignore_case_ascii(v, q)) 
+            {
+                matched_refs.push(MatchedItemRef::Enum(name.as_str(), vals));
             }
         }
     }
 
     // 3. FNames
-    if filter_type == "names" {
+    if filter_type == "all" || filter_type == "names" {
         for name in &schema.names {
-            if q.is_empty() || name.to_lowercase().contains(&q) {
-                matches.push(UsmapSearchItem {
-                    name: name.clone(),
-                    category: "name".to_string(),
-                    super_type: None,
-                    property_count: 0,
-                    enum_values_count: 0,
-                    preview: "FName Entry".to_string(),
-                });
+            if q.is_empty() || contains_ignore_case_ascii(name, q) {
+                matched_refs.push(MatchedItemRef::FName(name.as_str()));
             }
         }
     }
 
-    // Sort: exact matches first, then alphabetical
-    matches.sort_by(|a, b| {
-        let a_exact = a.name.eq_ignore_ascii_case(&q);
-        let b_exact = b.name.eq_ignore_ascii_case(&q);
-        if a_exact && !b_exact {
-            std::cmp::Ordering::Less
-        } else if !a_exact && b_exact {
-            std::cmp::Ordering::Greater
-        } else {
-            a.name.cmp(&b.name)
+    // Sort matching references: Exact match -> Starts with -> Alphabetical
+    matched_refs.sort_by(|a_ref, b_ref| {
+        let a_name = match a_ref {
+            MatchedItemRef::Struct(n, _) => *n,
+            MatchedItemRef::Enum(n, _) => *n,
+            MatchedItemRef::FName(n) => *n,
+        };
+        let b_name = match b_ref {
+            MatchedItemRef::Struct(n, _) => *n,
+            MatchedItemRef::Enum(n, _) => *n,
+            MatchedItemRef::FName(n) => *n,
+        };
+
+        if !q.is_empty() {
+            let a_exact = a_name.eq_ignore_ascii_case(q);
+            let b_exact = b_name.eq_ignore_ascii_case(q);
+            if a_exact && !b_exact {
+                return std::cmp::Ordering::Less;
+            } else if !a_exact && b_exact {
+                return std::cmp::Ordering::Greater;
+            }
+
+            let a_starts = starts_with_ignore_case_ascii(a_name, q);
+            let b_starts = starts_with_ignore_case_ascii(b_name, q);
+            if a_starts && !b_starts {
+                return std::cmp::Ordering::Less;
+            } else if !a_starts && b_starts {
+                return std::cmp::Ordering::Greater;
+            }
         }
+
+        a_name.cmp(b_name)
     });
 
-    let total_items = matches.len();
+    let total_items = matched_refs.len();
     let start_idx = page.saturating_mul(page_size);
     let end_idx = (start_idx + page_size).min(total_items);
 
-    let items = if start_idx < total_items {
-        matches[start_idx..end_idx].to_vec()
-    } else {
-        Vec::new()
-    };
+    let mut items = Vec::with_capacity(end_idx.saturating_sub(start_idx));
+    if start_idx < total_items {
+        for r in &matched_refs[start_idx..end_idx] {
+            match r {
+                MatchedItemRef::Struct(name, s) => {
+                    let preview = if let Some(ref st) = s.super_type {
+                        format!("Super: {} ({} properties)", st, s.properties.len())
+                    } else {
+                        format!("{} properties", s.properties.len())
+                    };
+                    items.push(UsmapSearchItem {
+                        name: name.to_string(),
+                        category: "struct".to_string(),
+                        super_type: s.super_type.clone(),
+                        property_count: s.properties.len(),
+                        enum_values_count: 0,
+                        preview,
+                    });
+                }
+                MatchedItemRef::Enum(name, vals) => {
+                    let preview = format!("{} values: {}", vals.len(), vals.iter().take(3).cloned().collect::<Vec<_>>().join(", "));
+                    items.push(UsmapSearchItem {
+                        name: name.to_string(),
+                        category: "enum".to_string(),
+                        super_type: None,
+                        property_count: 0,
+                        enum_values_count: vals.len(),
+                        preview,
+                    });
+                }
+                MatchedItemRef::FName(name) => {
+                    items.push(UsmapSearchItem {
+                        name: name.to_string(),
+                        category: "name".to_string(),
+                        super_type: None,
+                        property_count: 0,
+                        enum_values_count: 0,
+                        preview: "FName Symbol".to_string(),
+                    });
+                }
+            }
+        }
+    }
 
     Ok(UsmapSearchResult {
         total_items,

@@ -1,4 +1,3 @@
-/* ===== SETTINGS MODAL ===== */
 
 #settings-modal .modal {
   width: 820px;
@@ -87,7 +86,7 @@
   display: none;
   flex-direction: column;
   gap: 16px;
-  animation: fadeIn 0.2s ease-out;
+  animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .settings-tab-pane.active {
@@ -98,99 +97,110 @@
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  padding: 16px;
+  padding: 14px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 10px;
 }
 
-.settings-section-title {
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+
+.settings-card-title {
   font-size: 13px;
   font-weight: 700;
   color: var(--text-primary);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  border-bottom: 1px solid var(--border);
-  padding-bottom: 8px;
-  margin: 0;
 }
 
-.settings-field-group {
+.settings-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
-.settings-field-label {
-  font-size: 12px;
+.settings-group label {
+  font-size: 13px;
   font-weight: 600;
   color: var(--text-primary);
 }
 
-.settings-field-desc {
+.settings-hint {
   font-size: 11px;
-  color: var(--text-muted);
-  line-height: 1.4;
+  color: var(--text-secondary);
 }
 
-.settings-input-group {
+.settings-toggle-row {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 4px 0;
+  cursor: pointer;
 }
 
-.settings-input-text {
+.settings-toggle-row input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+
+.settings-path-row,
+.settings-key-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.settings-path-row input,
+.settings-key-row input {
   flex: 1;
   padding: 8px 12px;
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 12px;
+  font-size: 13px;
   outline: none;
   transition: border-color 0.2s;
 }
 
-.settings-input-text:focus {
+.settings-path-row input:focus,
+.settings-key-row input:focus {
   border-color: var(--accent);
 }
 
-.settings-select {
-  padding: 8px 12px;
-  background: var(--bg-secondary);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  color: var(--text-primary);
-  font-size: 12px;
-  outline: none;
-  cursor: pointer;
-}
-
-.settings-select:focus {
-  border-color: var(--accent);
-}
-
-.settings-checkbox-card {
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-  cursor: pointer;
-  user-select: none;
-}
-
-.settings-checkbox-card input[type="checkbox"] {
+.settings-path-status {
+  font-size: 11px;
   margin-top: 2px;
-  cursor: pointer;
+}
+
+.settings-path-status.valid {
+  color: var(--success);
+}
+
+.settings-path-status.invalid {
+  color: var(--danger);
+}
+
+.settings-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0;
 }
 
 .btn-icon-inline {
-  padding: 8px;
-  background: var(--bg-secondary);
+  background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
   cursor: pointer;
+  padding: 8px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -202,3 +212,4 @@
   background: var(--bg-tertiary);
   border-color: var(--text-muted);
 }
+

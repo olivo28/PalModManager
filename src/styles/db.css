@@ -91,16 +91,92 @@
   flex: 1;
   overflow: hidden;
   gap: 0;
+  height: 100%;
 }
 
 /* ── Left: data grid panel ── */
 .db-grid-panel {
   flex: 1;
   min-width: 0;
-  overflow-y: auto;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-right: 1px solid var(--border);
+}
+
+.db-split.usmap-mode .db-grid-panel {
+  border-right: none;
+}
+
+.db-split.usmap-mode .db-inspector-panel {
+  display: none;
+}
+
+.db-split.usmap-mode.has-selection .db-grid-panel {
+  border-right: 1px solid var(--border);
+}
+
+.db-split.usmap-mode.has-selection .db-inspector-panel {
+  display: flex;
+  width: 440px;
+}
+
+.db-usmap-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.db-usmap-header {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-card);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.db-usmap-table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border) transparent;
+}
+
+.db-usmap-table-wrap::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.db-usmap-table-wrap::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.db-usmap-table-wrap::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+.db-usmap-table-wrap::-webkit-scrollbar-thumb:hover {
+  background: var(--text-muted);
+}
+
+.db-usmap-footer {
+  flex-shrink: 0;
+  padding: 8px 16px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: var(--bg-card);
+  font-size: 11px;
 }
 
 .db-grid-panel::-webkit-scrollbar {
@@ -138,6 +214,7 @@
   padding: 8px 12px;
   text-align: left;
   text-transform: uppercase;
+  z-index: 2;
 }
 
 .db-row {
@@ -169,10 +246,18 @@
 .db-cell-name {
   color: var(--text-primary);
   font-weight: 600;
-  max-width: 200px;
+  max-width: 450px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+.db-grid-table.usmap-table .db-cell-name {
+  max-width: none;
+  font-family: 'Consolas', 'Fira Code', monospace;
+  font-size: 11.5px;
+  white-space: normal;
+  word-break: break-all;
 }
 
 .db-cell-mono {

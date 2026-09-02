@@ -1,7 +1,6 @@
-@import './toolbar.css';
-@import './hero.css';
-@import './cards.css';
-@import './modal.css';
-@import './bbcode.css';
-@import './sidebar.css';
+@import './toolbar_hero.css';
+@import './cards_grid.css';
+@import './details_modal.css';
+@import './sidebar_filters.css';
 @import './files_changelogs.css';
+@import './bbcode.css';
