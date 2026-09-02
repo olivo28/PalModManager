@@ -90,6 +90,16 @@
   background: #f59e0b;
 }
 
+.editor-status-dot.purple {
+  background: #c084fc;
+  box-shadow: 0 0 6px rgba(192, 132, 252, 0.5);
+}
+
+.editor-status-dot.orange {
+  background: #fb923c;
+  box-shadow: 0 0 6px rgba(251, 146, 60, 0.5);
+}
+
 .editor-status-item.lang-badge {
   font-weight: 700;
   color: var(--accent, #38bdf8);

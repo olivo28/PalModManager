@@ -266,16 +266,19 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
     }
 
     const hasFix = !!diag.suggestion;
+    const jumpTitle = t('editor.problems_jump_title', { line: diag.line }) || `Click to jump to line ${diag.line}`;
+    const fixTitle = t('editor.problems_fix_btn_title', { suggestion: diag.suggestion || '' }) || `Apply Quick Fix: ${diag.suggestion || ''}`;
+    const fixLabel = t('editor.problems_fix_btn') || 'Fix';
 
     html += `
-      <div class="editor-problem-item ${iconClass}" data-index="${index}" title="Click to jump to line ${diag.line}">
+      <div class="editor-problem-item ${iconClass}" data-index="${index}" title="${escapeHtml(jumpTitle)}">
         <span class="problem-icon">${icon}</span>
         <span class="problem-message">${escapeHtml(diag.message)}</span>
         <span class="problem-meta">
           ${categoryBadge}
           <span class="problem-location">${fileName} [${diag.line}, ${diag.column}]</span>
         </span>
-        ${hasFix ? `<button class="problem-fix-btn" data-index="${index}" title="Apply Quick Fix: ${escapeHtml(diag.suggestion || '')}">💡 Fix</button>` : ''}
+        ${hasFix ? `<button class="problem-fix-btn" data-index="${index}" title="${escapeHtml(fixTitle)}">💡 ${escapeHtml(fixLabel)}</button>` : ''}
       </div>
     `;
   });
@@ -469,8 +472,10 @@ function renderWorkspaceProblemsView(): void {
         categoryBadge = '<span class="diag-category-badge syntax">Syntax</span>';
       }
 
+      const jumpTitle = t('editor.problems_jump_title', { line: diag.line }) || `Click to jump to line ${diag.line}`;
+
       html += `
-        <div class="editor-problem-item ${iconClass} workspace-item" data-path="${escapeHtml(filePath)}" data-line="${diag.line}" data-col="${diag.column}">
+        <div class="editor-problem-item ${iconClass} workspace-item" data-path="${escapeHtml(filePath)}" data-line="${diag.line}" data-col="${diag.column}" title="${escapeHtml(jumpTitle)}">
           <span class="problem-icon">${icon}</span>
           <span class="problem-message">${escapeHtml(diag.message)}</span>
           <span class="problem-meta">

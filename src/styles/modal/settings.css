@@ -1,9 +1,9 @@
 
 #settings-modal .modal {
-  width: 820px;
-  max-width: 94vw;
-  height: 620px;
-  max-height: 90vh;
+  width: 980px;
+  max-width: 96vw;
+  height: 740px;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
 }
@@ -25,12 +25,12 @@
 }
 
 .settings-sidebar-nav {
-  width: 200px;
+  width: 220px;
   background: var(--bg-primary);
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 14px 10px;
+  padding: 16px 12px;
   gap: 6px;
   flex-shrink: 0;
 }

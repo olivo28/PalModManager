@@ -131,6 +131,9 @@ export function switchTab(tab: 'mods' | 'editor' | 'library' | 'build' | 'scanne
   if (tab === 'editor') {
     renderEditorModTree();
   }
+  if (tab === 'build') {
+    import('../packer/projects').then(m => m.showProjectsHub());
+  }
 }
 
 export async function openFileAtLine(modId: string, filePath: string, lineNumber: number): Promise<void> {

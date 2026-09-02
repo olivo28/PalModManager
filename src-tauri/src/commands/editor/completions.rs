@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::path::Path;
 use tauri::State;
 use crate::state::AppState;
-use crate::usmap::{get_or_load_sdk_index, get_or_load_schema};
+use crate::usmap::{get_or_load_sdk_index, get_or_load_schema, get_or_load_datatable_index, get_or_load_blueprint_index};
 use super::types::EditorCompletion;
 
 #[tauri::command]
@@ -43,6 +43,8 @@ pub async fn get_editor_completions(
 
     let schema = get_or_load_schema(&program_path);
     let sdk_index = get_or_load_sdk_index(&program_path, &game_path);
+    let dt_index = get_or_load_datatable_index(&program_path);
+    let bp_index = get_or_load_blueprint_index(&program_path);
 
     if ext == "lua" {
         let is_in_path = prefix_lower.contains("registerhook")
@@ -62,7 +64,19 @@ pub async fn get_editor_completions(
 
             // Check if user is typing a DataTable in Lua e.g. StaticFindObject("...DT_PalCharacterParameter")
             if q_lower.starts_with("dt_") {
-                if let Some(ref s) = schema {
+                if let Some(ref dti) = dt_index {
+                    for entry in dti.search_tables(&query, 60) {
+                        if seen.insert(entry.name.clone()) {
+                            completions.push(EditorCompletion {
+                                label: entry.name.clone(),
+                                insert_text: entry.name.clone(),
+                                kind: "table".to_string(),
+                                detail: Some(format!("DataTable ({}, {} rows)", entry.struct_name, entry.count)),
+                                documentation: Some(format!("Package: {}\nRowStruct: {}\nTotal Rows: {}", entry.package, entry.struct_name, entry.count)),
+                            });
+                        }
+                    }
+                } else if let Some(ref s) = schema {
                     for name in &s.names {
                         let nl = name.to_ascii_lowercase();
                         if nl.starts_with("dt_") && (q_lower.is_empty() || nl.contains(&q_lower)) {
@@ -333,8 +347,40 @@ pub async fn get_editor_completions(
         // -------------------------------------------------------------
         let mut seen = HashSet::new();
 
-        // 1. DataTables (DT_...)
-        if let Some(ref s) = schema {
+        // 0. PalSchema Starter Snippet
+        if q_lower.is_empty() || "palschema".starts_with(&q_lower) || "datatable".starts_with(&q_lower) {
+            completions.push(EditorCompletion {
+                label: "PalSchema DataTable Patch".to_string(),
+                insert_text: "{\n  \"DataTable\": \"${1:DT_ItemData}\",\n  \"Rows\": {\n    \"${2:RowName}\": {\n      $0\n    }\n  }\n}".to_string(),
+                kind: "api".to_string(),
+                detail: Some("PalSchema Template".to_string()),
+                documentation: Some("Starter scaffold for modifying game DataTables via PalSchema runtime JSON injection.".to_string()),
+            });
+        }
+
+        // 1. DataTables (DT_...) from DataTableIndex or USMAP Schema
+        let mut active_target_table: Option<String> = None;
+
+        // Check if line_prefix contains a referenced DataTable e.g. "DataTable": "DT_ItemData"
+        if let Some(pos) = prefix_lower.find("dt_") {
+            let slice = &line_prefix[pos..];
+            let end_pos = slice.find(|c: char| !c.is_alphanumeric() && c != '_').unwrap_or(slice.len());
+            active_target_table = Some(slice[..end_pos].to_string());
+        }
+
+        if let Some(ref dti) = dt_index {
+            for entry in dti.search_tables(&query, 60) {
+                if seen.insert(entry.name.clone()) {
+                    completions.push(EditorCompletion {
+                        label: entry.name.clone(),
+                        insert_text: entry.name.clone(),
+                        kind: "table".to_string(),
+                        detail: Some(format!("DataTable ({}, {} rows)", entry.struct_name, entry.count)),
+                        documentation: Some(format!("Package: {}\nRowStruct: {}\nTotal Rows: {}\nSample Rows: {}", entry.package, entry.struct_name, entry.count, entry.rows.iter().take(5).cloned().collect::<Vec<_>>().join(", "))),
+                    });
+                }
+            }
+        } else if let Some(ref s) = schema {
             for name in &s.names {
                 let nl = name.to_ascii_lowercase();
                 if (nl.starts_with("dt_") || nl.contains("datatable")) && (q_lower.is_empty() || nl.contains(&q_lower)) {
@@ -354,9 +400,79 @@ pub async fn get_editor_completions(
             }
         }
 
-        // 2. Blueprint Asset Classes & Mod Paths (/Game/... or BP_...)
-        if q_lower.starts_with("bp_") || q_lower.starts_with("/game/") || q_lower.contains("blueprint") || q_lower.is_empty() {
-            if let Some(ref sdk) = sdk_index {
+        // 2. Specific Row Keys (e.g. Sphere_Mega, Meat_SheepBall, Boss_Anubis)
+        let is_row_context = prefix_lower.contains("rows")
+            || prefix_lower.contains('{')
+            || !q_lower.is_empty();
+
+        if is_row_context {
+            if let Some(ref dti) = dt_index {
+                let rows_found = dti.search_rows(active_target_table.as_deref(), &query, 60);
+                for (row_key, table_name) in rows_found {
+                    if seen.insert(format!("{}:{}", table_name, row_key)) {
+                        completions.push(EditorCompletion {
+                            label: row_key.to_string(),
+                            insert_text: row_key.to_string(),
+                            kind: "value".to_string(),
+                            detail: Some(format!("Row in {}", table_name)),
+                            documentation: Some(format!("DataTable Row Identifier\nKey: {}\nParent Table: {}", row_key, table_name)),
+                        });
+                    }
+                    if completions.len() >= 120 {
+                        break;
+                    }
+                }
+            }
+        }
+
+        let (parent_context, _) = if line_prefix.starts_with("[context:") {
+            if let Some((ctx, _)) = line_prefix.split_once(']') {
+                (Some(ctx.trim_start_matches("[context:").trim().to_string()), ())
+            } else {
+                (None, ())
+            }
+        } else {
+            (None, ())
+        };
+
+        let is_in_blueprint_block = parent_context.as_ref().map(|ctx| {
+            let cl = ctx.to_ascii_lowercase();
+            cl.starts_with("bp_") || cl.starts_with("wbp_") || cl.starts_with("abp_")
+        }).unwrap_or(false);
+
+        // 2. Blueprint Asset Classes & Mod Paths (/Game/... or BP_...) - only when not inside a property block
+        if !is_in_blueprint_block && (q_lower.starts_with("bp_") || q_lower.starts_with("wbp_") || q_lower.starts_with("abp_") || q_lower.starts_with("/game/") || q_lower.contains("blueprint") || q_lower.is_empty()) {
+            if let Some(ref bpi) = bp_index {
+                for entry in bpi.search_blueprints(&query, 80) {
+                    let clean_mount = if entry.package.starts_with("Pal/Content/") {
+                        format!("/Game/{}", entry.package.trim_start_matches("Pal/Content/"))
+                    } else {
+                        entry.full_path.clone()
+                    };
+
+                    if seen.insert(entry.class_name.clone()) {
+                        completions.push(EditorCompletion {
+                            label: entry.class_name.clone(),
+                            insert_text: entry.class_name.clone(),
+                            kind: "class".to_string(),
+                            detail: Some(clean_mount.clone()),
+                            documentation: Some(format!("Live Game Blueprint Asset: {}\nMount Path: {}\nSource Package: {}", entry.class_name, clean_mount, entry.package)),
+                        });
+                    }
+                    if seen.insert(entry.name.clone()) {
+                        completions.push(EditorCompletion {
+                            label: entry.name.clone(),
+                            insert_text: entry.name.clone(),
+                            kind: "class".to_string(),
+                            detail: Some(clean_mount.clone()),
+                            documentation: Some(format!("Live Game Blueprint Asset: {}\nMount Path: {}\nClass: {}", entry.name, clean_mount, entry.class_name)),
+                        });
+                    }
+                    if completions.len() >= 120 {
+                        break;
+                    }
+                }
+            } else if let Some(ref sdk) = sdk_index {
                 for (cname, cinfo) in &sdk.classes {
                     if cname.starts_with("bp_") || cname.starts_with("wbp_") {
                         if q_lower.is_empty() || cname.contains(&q_lower) {
@@ -378,32 +494,40 @@ pub async fn get_editor_completions(
             }
         }
 
-        // 3. Struct Properties & Row Fields
+        // 3. Struct Properties & Engine Reflection Fields
         if let Some(ref s) = schema {
             for (sname, ustruct) in &s.structs {
                 let sl = sname.to_ascii_lowercase();
                 let is_row_struct = sl.ends_with("row") || sl.contains("parameter") || sl.contains("data");
 
-                if is_row_struct || q_lower.is_empty() || sl.contains(&q_lower) {
+                // If inside a blueprint block or user is searching specifically, inspect properties across all structs
+                let should_scan_properties = is_in_blueprint_block || is_row_struct || q_lower.is_empty() || sl.contains(&q_lower) || (!q_lower.is_empty() && q_lower.len() >= 3);
+
+                if should_scan_properties {
                     for prop in &ustruct.properties {
                         let pl = prop.name.to_ascii_lowercase();
                         if q_lower.is_empty() || pl.contains(&q_lower) {
                             if seen.insert(prop.name.clone()) {
+                                let (friendly_type, doc_hint) = get_friendly_type_and_doc(
+                                    &prop.type_name,
+                                    prop.struct_type.as_deref(),
+                                    prop.enum_type.as_deref(),
+                                );
                                 completions.push(EditorCompletion {
                                     label: prop.name.clone(),
                                     insert_text: prop.name.clone(),
                                     kind: "struct".to_string(),
-                                    detail: Some(format!("Field of {}", sname)),
-                                    documentation: Some(format!("Property: {}\nParent Struct: {}\nType: {}", prop.name, sname, prop.type_name)),
+                                    detail: Some(format!("{} • {}", friendly_type, sname)),
+                                    documentation: Some(format!("Property: {}\nParent Struct: {}\nType: {}\n{}", prop.name, sname, prop.type_name, doc_hint)),
                                 });
                             }
                         }
-                        if completions.len() >= 100 {
+                        if completions.len() >= 120 {
                             break;
                         }
                     }
                 }
-                if completions.len() >= 100 {
+                if completions.len() >= 120 {
                     break;
                 }
             }
@@ -411,4 +535,177 @@ pub async fn get_editor_completions(
     }
 
     Ok(completions)
+}
+
+#[derive(Debug, Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ReflectionCatalogsStatus {
+    pub total_datatables: usize,
+    pub total_datatable_rows: usize,
+    pub datatables_active_file: String,
+    pub total_blueprints: usize,
+    pub blueprints_build_id: String,
+    pub blueprints_game_ver: String,
+    pub blueprints_filename: String,
+    pub blueprints_sha256: String,
+    pub blueprints_size: u64,
+}
+
+#[tauri::command]
+pub async fn get_reflection_catalogs_status(
+    state: State<'_, AppState>,
+) -> Result<ReflectionCatalogsStatus, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let dt = crate::usmap::get_or_load_datatable_index(&program_path);
+    let bp = crate::usmap::get_or_load_blueprint_index(&program_path);
+
+    let bp_dir = crate::usmap::get_blueprints_dir(&program_path);
+    let mut bp_ver = "v1.0.3".to_string();
+    let mut bp_build = "24575825".to_string();
+    let mut bp_file = "Palworld_Blueprints_24575825.json".to_string();
+    let mut bp_hash = "c8ec30d2888b12251dc8087622f9ea502011539d2aad9f5a4c4617ec1de97528".to_string();
+    let mut bp_size: u64 = 7549048;
+
+    let manifest_path = crate::usmap::sync::find_bundled_resource("resources/blueprints/manifest.json")
+        .or_else(|| {
+            let p = bp_dir.join("manifest.json");
+            if p.exists() { Some(p) } else { None }
+        });
+
+    if let Some(mp) = manifest_path {
+        if let Ok(m_str) = std::fs::read_to_string(&mp) {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&m_str) {
+                if let Some(list) = v.get("blueprints").and_then(|a| a.as_array()) {
+                    if let Some(first) = list.first() {
+                        if let Some(fname) = first.get("blueprints_filename").and_then(|s| s.as_str()) {
+                            bp_file = fname.to_string();
+                        }
+                        if let Some(ver) = first.get("game_version").and_then(|s| s.as_str()) {
+                            bp_ver = ver.to_string();
+                        }
+                        if let Some(b) = first.get("steam_build_id").and_then(|s| s.as_str()) {
+                            bp_build = b.to_string();
+                        }
+                        if let Some(h) = first.get("sha256").and_then(|s| s.as_str()) {
+                            bp_hash = h.to_string();
+                        }
+                        if let Some(sz) = first.get("file_size_bytes").and_then(|s| s.as_u64()) {
+                            bp_size = sz;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    Ok(ReflectionCatalogsStatus {
+        total_datatables: dt.as_ref().map(|d| d.total_tables).unwrap_or(0),
+        total_datatable_rows: dt.as_ref().map(|d| d.total_rows).unwrap_or(0),
+        datatables_active_file: "dt_index.json".to_string(),
+        total_blueprints: bp.as_ref().map(|b| b.total_blueprints).unwrap_or(0),
+        blueprints_build_id: bp_build,
+        blueprints_game_ver: bp_ver,
+        blueprints_filename: bp_file,
+        blueprints_sha256: bp_hash,
+        blueprints_size: bp_size,
+    })
+}
+
+fn get_friendly_type_and_doc(type_name: &str, struct_type: Option<&str>, enum_type: Option<&str>) -> (String, String) {
+    match type_name {
+        "BoolProperty" => (
+            "boolean".to_string(),
+            "Expected: true or false\nType: Boolean (BoolProperty)".to_string(),
+        ),
+        "FloatProperty" => (
+            "float".to_string(),
+            "Expected: decimal number (e.g. 1.0, 150.5)\nType: Float (FloatProperty)".to_string(),
+        ),
+        "DoubleProperty" => (
+            "double".to_string(),
+            "Expected: floating-point number\nType: Double (DoubleProperty)".to_string(),
+        ),
+        "IntProperty" | "Int32Property" => (
+            "integer".to_string(),
+            "Expected: whole number (e.g. 10, 500)\nType: Integer (IntProperty)".to_string(),
+        ),
+        "Int64Property" => (
+            "int64".to_string(),
+            "Expected: 64-bit integer\nType: Int64 (Int64Property)".to_string(),
+        ),
+        "Int16Property" => (
+            "int16".to_string(),
+            "Expected: 16-bit integer\nType: Int16 (Int16Property)".to_string(),
+        ),
+        "Int8Property" => (
+            "int8".to_string(),
+            "Expected: 8-bit integer (-128 to 127)\nType: Int8 (Int8Property)".to_string(),
+        ),
+        "UInt32Property" => (
+            "uint32".to_string(),
+            "Expected: unsigned integer (>= 0)\nType: UInt32 (UInt32Property)".to_string(),
+        ),
+        "UInt16Property" => (
+            "uint16".to_string(),
+            "Expected: unsigned 16-bit integer (>= 0)\nType: UInt16 (UInt16Property)".to_string(),
+        ),
+        "UInt64Property" => (
+            "uint64".to_string(),
+            "Expected: unsigned 64-bit integer\nType: UInt64 (UInt64Property)".to_string(),
+        ),
+        "ByteProperty" => (
+            "byte".to_string(),
+            "Expected: byte integer (0 to 255)\nType: Byte (ByteProperty)".to_string(),
+        ),
+        "StrProperty" => (
+            "string".to_string(),
+            "Expected: \"text\"\nType: String (StrProperty)".to_string(),
+        ),
+        "NameProperty" => (
+            "name".to_string(),
+            "Expected: \"IdentifierName\"\nType: FName (NameProperty)".to_string(),
+        ),
+        "TextProperty" => (
+            "text".to_string(),
+            "Expected: \"Localized text\"\nType: FText (TextProperty)".to_string(),
+        ),
+        "ArrayProperty" => (
+            "array".to_string(),
+            "Expected: [ ... ] (Array list)\nType: TArray (ArrayProperty)".to_string(),
+        ),
+        "MapProperty" => (
+            "map".to_string(),
+            "Expected: { ... } (Key-Value map)\nType: TMap (MapProperty)".to_string(),
+        ),
+        "SetProperty" => (
+            "set".to_string(),
+            "Expected: [ ... ] (Unique elements)\nType: TSet (SetProperty)".to_string(),
+        ),
+        "StructProperty" => {
+            let sname = struct_type.unwrap_or("Struct");
+            (
+                format!("struct<{}>", sname),
+                format!("Expected: {{ ... }} (Object)\nType: F{} (StructProperty)", sname),
+            )
+        }
+        "EnumProperty" => {
+            let ename = enum_type.unwrap_or("Enum");
+            (
+                format!("enum<{}>", ename),
+                format!("Expected: \"{}::Value\"\nType: Enum (EnumProperty)", ename),
+            )
+        }
+        "ObjectProperty" | "WeakObjectProperty" | "SoftObjectProperty" => (
+            "object".to_string(),
+            "Expected: \"/Game/Path/Asset.Asset_C\" or null\nType: UObject Reference".to_string(),
+        ),
+        other => (
+            other.trim_end_matches("Property").to_ascii_lowercase(),
+            format!("Type: {}", other),
+        ),
+    }
 }

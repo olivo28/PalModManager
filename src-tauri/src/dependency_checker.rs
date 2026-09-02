@@ -32,7 +32,7 @@ pub struct DependencyStatus {
     pub unipalui_installed: bool,
 }
 
-fn get_file_date(path: &str) -> Option<String> {
+pub fn get_file_date(path: &str) -> Option<String> {
     let metadata = fs::metadata(path).ok()?;
     let modified = metadata.modified().ok()?;
     let duration = modified.duration_since(std::time::UNIX_EPOCH).ok()?;
@@ -132,17 +132,37 @@ pub fn build_game_profile(game_root: &Path) -> GameProfile {
     let workshop_ue4ss_dir = root.join("Mods").join("NativeMods").join("UE4SS");
 
     let settings_ini = root.join("Mods").join("PalModSettings.ini");
-    let is_workshop_active = if settings_ini.exists() {
-        std::fs::read_to_string(&settings_ini).map(|c| c.contains("bGlobalEnableMod=True") || c.contains("bGlobalEnableMod = True")).unwrap_or(false)
+    let (_is_workshop_enabled, is_workshop_ue4ss_active) = if settings_ini.exists() {
+        if let Ok(content) = std::fs::read_to_string(&settings_ini) {
+            let global_on = content.contains("bGlobalEnableMod=True") || content.contains("bGlobalEnableMod = True");
+            let has_ue4ss = content.lines().any(|l| {
+                let l_trim = l.trim();
+                if let Some(pos) = l_trim.find('=') {
+                    let k = l_trim[..pos].trim();
+                    let v = l_trim[pos + 1..].trim();
+                    k.eq_ignore_ascii_case("activemodlist")
+                        && (v.eq_ignore_ascii_case("UE4SS") || v.eq_ignore_ascii_case("UE4SSExperimentalPW"))
+                } else {
+                    false
+                }
+            });
+            (global_on, global_on && has_ue4ss)
+        } else {
+            (false, false)
+        }
     } else {
-        false
+        (false, false)
     };
 
-    let ue4ss_install_mode = if is_workshop_active || (workshop_ue4ss_dir.exists() && !standard_dwmapi.exists()) {
-        UE4SSInstallMode::Workshop
-    } else if standard_dwmapi.exists() || standard_ue4ss_dir.exists() {
-        UE4SSInstallMode::Standard
-    } else if workshop_ue4ss_dir.exists() {
+    let ue4ss_install_mode = if standard_dwmapi.exists() || standard_ue4ss_dir.exists() {
+        // Standard (manual Nexus) mode takes precedence when dwmapi.dll or binaries/ue4ss exists,
+        // UNLESS the user explicitly activated Workshop UE4SS in ActiveModList
+        if is_workshop_ue4ss_active {
+            UE4SSInstallMode::Workshop
+        } else {
+            UE4SSInstallMode::Standard
+        }
+    } else if is_workshop_ue4ss_active || workshop_ue4ss_dir.exists() {
         UE4SSInstallMode::Workshop
     } else {
         UE4SSInstallMode::NotFound
@@ -379,7 +399,7 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
 /// tag_name is what we show to the user; iso_date is used for update comparison.
 pub async fn check_ue4ss_latest() -> Result<(String, String), String> {
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.7.0")
+        .user_agent(&format!("PalModManager/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
 

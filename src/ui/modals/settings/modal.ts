@@ -4,7 +4,7 @@ import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
 import { formatBytes } from './helpers';
-import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshUsmapStatus, refreshSdkStatus } from './status';
+import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshUsmapStatus, refreshSdkStatus, refreshBlueprintsStatus, refreshDatatablesStatus } from './status';
 import { settingsDom } from '../../../framework';
 
 export function openSettingsModal(): void {
@@ -181,6 +181,8 @@ export function openSettingsModal(): void {
   refreshImageCacheStatus();
   refreshUsmapStatus();
   refreshSdkStatus();
+  refreshBlueprintsStatus();
+  refreshDatatablesStatus();
 
   // DNS Resolver Select
   const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');
@@ -288,6 +290,58 @@ export function openSettingsModal(): void {
         showToast(String(err), 'error');
       } finally {
         purgeSdkBtn.disabled = false;
+      }
+    };
+  }
+
+  // Live Game Blueprints Sync Button
+  const syncBlueprintsBtn = settingsDom.elMaybe('btn-sync-blueprints');
+  const syncBlueprintsIcon = settingsDom.elMaybe('btn-sync-blueprints-icon');
+  if (syncBlueprintsBtn) {
+    syncBlueprintsBtn.onclick = async () => {
+      try {
+        syncBlueprintsBtn.disabled = true;
+        if (syncBlueprintsIcon) syncBlueprintsIcon.classList.add('spinning');
+        showToast(t('settings.blueprints_syncing') || 'Syncing Blueprints catalog from GitHub...', 'info');
+        const { syncBlueprintsCatalog } = await import('../../../api');
+        const res = await syncBlueprintsCatalog();
+        if (res.updated) {
+          showToast(t('settings.blueprints_sync_success') || `Blueprints catalog synced: ${res.totalItems.toLocaleString()} assets!`, 'success');
+        } else {
+          showToast(t('settings.blueprints_sync_uptodate') || 'Blueprints catalog is already up to date.', 'info');
+        }
+        await refreshBlueprintsStatus();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      } finally {
+        syncBlueprintsBtn.disabled = false;
+        if (syncBlueprintsIcon) syncBlueprintsIcon.classList.remove('spinning');
+      }
+    };
+  }
+
+  // PalSchema DataTables Sync Button
+  const syncDatatablesBtn = settingsDom.elMaybe('btn-sync-datatables');
+  const syncDatatablesIcon = settingsDom.elMaybe('btn-sync-datatables-icon');
+  if (syncDatatablesBtn) {
+    syncDatatablesBtn.onclick = async () => {
+      try {
+        syncDatatablesBtn.disabled = true;
+        if (syncDatatablesIcon) syncDatatablesIcon.classList.add('spinning');
+        showToast(t('settings.datatables_syncing') || 'Syncing DataTables catalog from GitHub...', 'info');
+        const { syncDatatablesCatalog } = await import('../../../api');
+        const res = await syncDatatablesCatalog();
+        if (res.updated) {
+          showToast(t('settings.datatables_sync_success') || `DataTables catalog synced: ${res.totalItems} tables!`, 'success');
+        } else {
+          showToast(t('settings.datatables_sync_uptodate') || 'DataTables catalog is already up to date.', 'info');
+        }
+        await refreshDatatablesStatus();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      } finally {
+        syncDatatablesBtn.disabled = false;
+        if (syncDatatablesIcon) syncDatatablesIcon.classList.remove('spinning');
       }
     };
   }

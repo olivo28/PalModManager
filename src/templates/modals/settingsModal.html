@@ -323,6 +323,55 @@
               </div>
             </div>
 
+            <!-- LIVE GAME BLUEPRINTS CATALOG -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.blueprints_title">Live Game Blueprints Catalog</span>
+                </div>
+                <span id="settings-blueprints-badge" class="badge" style="background:rgba(249,115,22,0.15); color:#f97316; border:1px solid rgba(249,115,22,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.blueprints_hint">Extracted game blueprint classes and cooked assets from Pal-Windows.pak used for rich IntelliSense and instant mod overriding. Synced from official GitHub repository.</div>
+              
+              <div id="settings-blueprints-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong>Game Version:</strong> <span id="settings-blueprints-game-ver">Detecting...</span></div>
+                <div><strong>Indexed Blueprints:</strong> <span id="settings-blueprints-count">0</span></div>
+                <div><strong>Active Catalog:</strong> <span id="settings-blueprints-active-file">Palworld_Blueprints_24575825.json</span></div>
+                <div><strong>Checksum (SHA-256):</strong> <span id="settings-blueprints-hash" style="font-family:monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="btn-sync-blueprints" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-blueprints-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_blueprints">Sync Blueprints from GitHub</span>
+                </button>
+              </div>
+            </div>
+
+            <!-- PALSCHEMA DATATABLES CATALOG -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.datatables_title">PalSchema DataTables Catalog</span>
+                </div>
+                <span id="settings-datatables-badge" class="badge" style="background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.datatables_hint">Decoded game row definitions (ItemData, PalData, CharacterData...) and schema templates used for DataTable autocompletion and conflict detection. Synced from official GitHub repository.</div>
+              
+              <div id="settings-datatables-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong>Indexed DataTables:</strong> <span id="settings-datatables-count">0</span></div>
+                <div><strong>Total Game Rows:</strong> <span id="settings-datatables-rows-count">0</span></div>
+                <div><strong>Active Catalog:</strong> <span id="settings-datatables-active-file">dt_index.json</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="btn-sync-datatables" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-datatables-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_datatables">Sync DataTables from GitHub</span>
+                </button>
+              </div>
+            </div>
+
             <!-- IMAGE CACHE -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">

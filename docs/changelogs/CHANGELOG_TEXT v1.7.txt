@@ -1,3 +1,31 @@
+PalModManager - Changelog v1.7.1 (2026-09-02)
+
+Added
+- Monaco Code Editor & IntelliSense: Full-featured in-app editor with Palworld C++ reflection autocomplete, live game Blueprints autocompletion (20,921 classes extracted directly from .pak), PalSchema DataTables & Row autocompletion (423 tables, 149k rows), live diagnostics dock, 1-click QuickFixes, and in-editor file/folder creation.
+- Custom Mod Notes: Save personal notes, guides, and keybindings directly on any mod card via the detail panel and context menu.
+- Dual UE4SS Activation Mode: Choose between standard folder isolation (enabled.txt) and direct mods.txt control, with clean category formatting.
+- USMAP Reflection Explorer: Browse and inspect Palworld engine structs, classes, enums, and properties directly in the Database Inspector (🗄 DB).
+- C++ SDK Manager: Manage and index Palworld SDK headers in Settings with 1-click cloud sync and local folder import.
+- Conflict Mitigation & Hotkey Tools: 1-click disable/edit actions on conflict cards and intelligent hotkey collision detection with automatic rebind to free keys.
+- Mod Packer Enhancements: Hierarchical tree-table file list view, Vortex folder preset, and 1-click dual packaging for Steam and Xbox.
+- Full 6-Language Localization: Complete translation coverage across all new tools, editor features, and menus.
+
+Changed
+- Editor Canvas: Clean full-height editor workspace with native keyboard shortcuts (Ctrl + S, Shift + Alt + F) and zero-latency mod switching.
+- Database & USMAP Performance: Vastly faster search response times and fixed scrollable layouts.
+- Non-Destructive mods.txt Handling: Preserves custom comments, headers, and manual load orders cleanly.
+- Codebase Optimization: Thorough internal modularization for faster loading and long-term stability.
+
+Fixed
+- Precise Line Navigation: Clicking "Edit" or "Preview" in diagnostics now jumps straight to the exact script line with a brief highlight.
+- Nexus Details Modal: Fixed unresponsiveness when clicking "Update Mod" on installed mods.
+- Engine Reflection & Hook Diagnostics: Improved C++ method parsing and eliminated false-positive warnings on Blueprint assets.
+- Steam Workshop & Profile Stability: Fixed 0-mod counts, toggle sync in PalModSettings.ini, Workshop PalSchema detection, and cross-profile state preservation.
+- Archive & Routing Handlers: Fixed installation errors for .7z/.rar files and corrected misrouted files for Hybrid and Altermatic mods.
+- UI & Translations: Deduplicated component folder buttons, cleaned up bulk selection labels, and fixed missing translations.
+
+------------------------------------
+
 PalModManager - Changelog v1.7.0 (2026-08-31)
 
 Thanks to the low volume of bug reports this past week, I had the dedicated time to tackle several things that were on my todo list and finish implementing them! Many of them are now implemented, though some have not been 100% field-tested yet. However, the core foundation for many new and very useful features is now ready.

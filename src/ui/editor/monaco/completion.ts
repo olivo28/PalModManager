@@ -63,7 +63,7 @@ export function registerMonacoCompletionProviders(): void {
 
   // 2. JSON & JSONC (PalSchema & Workspace) Completion Provider
   const jsonProvider: monaco.languages.CompletionItemProvider = {
-    triggerCharacters: ['"', ':', '{', ' ', '/', 'D', 'P', 'B'],
+    triggerCharacters: ['"', ':', '{', ' ', '/', '_', 'D', 'd', 'P', 'p', 'B', 'b', 'W', 'w', 'I', 'i'],
     async provideCompletionItems(model, position) {
       const filePath = getCurrentMonacoFilePath() || model.uri.fsPath || 'schema.jsonc';
       const textUntilPosition = model.getValueInRange({
@@ -101,7 +101,25 @@ export function registerMonacoCompletionProviders(): void {
       try {
         const state = getState();
         const modId = state.editorModId || undefined;
-        const results = await getEditorCompletions(filePath, query, textUntilPosition, modId);
+
+        // Detect parent block context in JSON/JSONC (e.g. inside "BP_LaserRifle_C": { ...)
+        let contextPrefix = textUntilPosition;
+        let depth = 0;
+        for (let ln = position.lineNumber; ln >= 1; ln--) {
+          const lineContent = model.getLineContent(ln);
+          const openMatches = (lineContent.match(/{/g) || []).length;
+          const closeMatches = (lineContent.match(/}/g) || []).length;
+          depth += (closeMatches - openMatches);
+          if (depth < 0) {
+            const m = lineContent.match(/"([^"]+)"\s*:\s*\{/);
+            if (m) {
+              contextPrefix = `[context:${m[1]}] ${textUntilPosition}`;
+            }
+            break;
+          }
+        }
+
+        const results = await getEditorCompletions(filePath, query, contextPrefix, modId);
         if (!results || results.length === 0) {
           return { suggestions: [] };
         }

@@ -80,6 +80,14 @@ export async function getEditorCompletions(filePath: string, query: string, line
   return invoke('get_editor_completions', { filePath, query, linePrefix, modId: modId || null });
 }
 
+export async function createModFile(modId: string, relativePath: string, initialContent?: string): Promise<string> {
+  return invoke('create_mod_file', { modId, relativePath, initialContent: initialContent || null });
+}
+
+export async function createEditorFolder(modId: string, relativePath: string): Promise<string> {
+  return invoke('create_editor_folder', { modId, relativePath });
+}
+
 export async function inspectPakAsset(modId: string, assetInternalPath: string): Promise<string[]> {
   return invoke('inspect_pak_asset', { modId, assetInternalPath });
 }
@@ -223,4 +231,36 @@ export async function logFromJs(msg: string): Promise<void> {
 
 export async function openUrl(url: string): Promise<void> {
   return invoke('open_url', { url });
+}
+
+export interface ReflectionCatalogsStatus {
+  totalDatatables: number;
+  totalDatatableRows: number;
+  datatablesActiveFile: string;
+  totalBlueprints: number;
+  blueprintsBuildId: string;
+  blueprintsGameVer: string;
+  blueprintsFilename: string;
+  blueprintsSha256: string;
+  blueprintsSize: number;
+}
+
+export interface SyncCatalogResult {
+  success: boolean;
+  message: string;
+  totalItems: number;
+  filename: string;
+  updated: boolean;
+}
+
+export async function getReflectionCatalogsStatus(): Promise<ReflectionCatalogsStatus> {
+  return invoke('get_reflection_catalogs_status');
+}
+
+export async function syncBlueprintsCatalog(programPath?: string): Promise<SyncCatalogResult> {
+  return invoke('sync_blueprints_catalog', { programPath: programPath || null });
+}
+
+export async function syncDatatablesCatalog(programPath?: string): Promise<SyncCatalogResult> {
+  return invoke('sync_datatables_catalog', { programPath: programPath || null });
 }

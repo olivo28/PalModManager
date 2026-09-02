@@ -360,12 +360,27 @@ export function renderFileTree(files: string[]): void {
   const tree = document.getElementById('editor-file-tree')!;
   const rootNode = buildFileTree(files);
 
-  if (rootNode.children.size === 0) {
-    tree.innerHTML = '<div class="editor-file-empty">No editable files found</div>';
-    return;
-  }
+  const state = getState();
+  const currentMod = state.allMods.find(m => m.id === state.editorModId);
+  const modName = currentMod ? currentMod.name : '';
 
-  tree.innerHTML = renderNodeHTML(rootNode);
+  const headerHtml = `
+    <div class="editor-file-tree-header">
+      <div class="editor-file-tree-title-row">
+        <span class="editor-file-tree-mod-name" title="${escapeHtml(modName)}">${escapeHtml(modName)}</span>
+        <div class="editor-file-tree-actions">
+          <button id="editor-new-file-btn" class="editor-tree-icon-btn" title="${escapeHtml(t('editor.btn_new_file') || 'New File')}">📄+</button>
+          <button id="editor-new-folder-btn" class="editor-tree-icon-btn" title="${escapeHtml(t('editor.btn_new_folder') || 'New Folder')}">📁+</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  if (rootNode.children.size === 0) {
+    tree.innerHTML = headerHtml + `<div class="editor-file-empty">${escapeHtml(t('editor.no_editable_files') || 'No editable files found')}</div>`;
+  } else {
+    tree.innerHTML = headerHtml + `<div class="editor-file-tree-content">${renderNodeHTML(rootNode)}</div>`;
+  }
 
   tree.querySelectorAll('.editor-tree-folder-header').forEach(header => {
     header.addEventListener('click', (e) => {
@@ -456,6 +471,56 @@ export function renderFileTree(files: string[]): void {
       await loadFileContent(path);
     });
   });
+
+  // New File action
+  const newFileBtn = document.getElementById('editor-new-file-btn');
+  if (newFileBtn) {
+    newFileBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const currentModId = getState().editorModId;
+      if (!currentModId) return;
+      const promptMsg = t('editor.prompt_new_file') || 'Enter relative path for new file (e.g. scripts/subsystem.lua):';
+      const relPath = window.prompt(promptMsg);
+      if (!relPath || !relPath.trim()) return;
+
+      try {
+        const { createModFile } = await import('../../api');
+        const { showToast } = await import('../toast');
+        const createdPath = await createModFile(currentModId, relPath.trim());
+        showToast(`File created: ${createdPath}`, 'success');
+        await refreshEditorFileTree(currentModId);
+        await revealAndSelectFile(createdPath);
+      } catch (err: any) {
+        const { showToast } = await import('../toast');
+        showToast(String(err), 'error');
+      }
+    });
+  }
+
+  // New Folder action
+  const newFolderBtn = document.getElementById('editor-new-folder-btn');
+  if (newFolderBtn) {
+    newFolderBtn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const currentModId = getState().editorModId;
+      if (!currentModId) return;
+      const promptMsg = t('editor.prompt_new_folder') || 'Enter relative path for new folder (e.g. scripts/spawners):';
+      const relPath = window.prompt(promptMsg);
+      if (!relPath || !relPath.trim()) return;
+
+      try {
+        const { createEditorFolder } = await import('../../api');
+        const { showToast } = await import('../toast');
+        const createdPath = await createEditorFolder(currentModId, relPath.trim());
+        showToast(`Folder created: ${createdPath}`, 'success');
+        await refreshEditorFileTree(currentModId);
+      } catch (err: any) {
+        const { showToast } = await import('../toast');
+        showToast(String(err), 'error');
+      }
+    });
+  }
+
 }
 
 export function populateEditorModSelect(): void {

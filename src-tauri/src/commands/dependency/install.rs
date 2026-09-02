@@ -332,7 +332,7 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
     migrate_legacy_dependency_zips(&program_path);
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.7.0")
+        .user_agent(&format!("PalModManager/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
@@ -472,7 +472,7 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
     };
 
     let client = reqwest::Client::builder()
-        .user_agent("PalModManager/1.7.0")
+        .user_agent(&format!("PalModManager/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 

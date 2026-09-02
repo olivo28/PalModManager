@@ -205,7 +205,19 @@ pub fn get_or_build_mod_symbols(
 
     // Check if cached entry exists and timestamps are fresh
     if let Some(existing) = cache.get(mod_id) {
+        if existing.file_timestamps.keys().any(|k| {
+            let kl = k.to_ascii_lowercase();
+            kl.ends_with("modinfo.pmm.json") || kl.ends_with(".pmm.json") || kl.ends_with("modinfo.json")
+        }) {
+            needs_refresh = true;
+        }
+
         for file_rel in file_list {
+            let file_lower = file_rel.to_ascii_lowercase();
+            if file_lower.ends_with("modinfo.pmm.json") || file_lower.ends_with(".pmm.json") || file_lower.ends_with("modinfo.json") {
+                continue;
+            }
+
             let ext = Path::new(file_rel)
                 .extension()
                 .and_then(|e| e.to_str())
@@ -241,6 +253,11 @@ pub fn get_or_build_mod_symbols(
     let mut new_symbols = Vec::new();
 
     for file_rel in file_list {
+        let file_lower = file_rel.to_ascii_lowercase();
+        if file_lower.ends_with("modinfo.pmm.json") || file_lower.ends_with(".pmm.json") || file_lower.ends_with("modinfo.json") {
+            continue;
+        }
+
         let ext = Path::new(file_rel)
             .extension()
             .and_then(|e| e.to_str())

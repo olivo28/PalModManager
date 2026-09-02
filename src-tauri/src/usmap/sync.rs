@@ -212,7 +212,7 @@ pub async fn sync_mappings_async(program_path: String, game_path: String) -> Res
     // 1. Fetch remote manifest
     let client = reqwest::Client::builder()
         .timeout(std::time::Duration::from_secs(12))
-        .user_agent("PalModManager/1.7.0 (GitHub: olivo28/PalModManager)")
+        .user_agent(&format!("PalModManager/{} (GitHub: olivo28/PalModManager)", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to build HTTP client: {}", e))?;
 

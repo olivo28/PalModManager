@@ -400,3 +400,5 @@ pub fn lint_lua_syntax(content: &str, diagnostics: &mut Vec<EditorDiagnostic>) {
         });
     }
 }
+
+

@@ -12,7 +12,7 @@ pub use status::{
     check_dependencies, check_dependencies_full,
     check_ue4ss_latest, check_palschema_latest,
     clean_conflict_dlls, reset_workshop_cache,
-    compare_versions, empty_status, parse_dmy,
+    compare_versions, is_remote_newer, empty_status, parse_dmy,
 };
 
 // Safety backups

@@ -329,7 +329,12 @@ pub fn run() {
             sdk_commands::purge_sdk_cache,
             editor::validation::validate_editor_code,
             editor::completions::get_editor_completions,
+            editor::completions::get_reflection_catalogs_status,
+            editor::sync_catalogs::sync_blueprints_catalog,
+            editor::sync_catalogs::sync_datatables_catalog,
             editor::validation::scan_workspace_problems,
+            editor::scaffolding::create_mod_file,
+            editor::scaffolding::create_editor_folder,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();

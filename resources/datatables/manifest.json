@@ -1,0 +1,23 @@
+{
+  "schema_version": "1.0.0",
+  "latest_game_version": "v1.0.3",
+  "latest_steam_build_id": "24575825",
+  "updated_at": "2026-09-02T17:21:45.770Z",
+  "datatables": [
+    {
+      "game_version": "v1.0.3",
+      "steam_build_id": "24575825",
+      "app_id": 1623730,
+      "datatables_filename": "Palworld_DataTables_24575825.json",
+      "datatables_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/datatables/Palworld_DataTables_24575825.json",
+      "sha256": "9323dea6c60e117c1bdc1ba326c17852b9236178f6aed7801dddee74645cf283",
+      "file_size_bytes": 1900222,
+      "total_tables": 423,
+      "total_rows": 149129,
+      "engine_version": "UE5.1.1",
+      "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-c838a8ac",
+      "source": "Palworld Cooked DataTables",
+      "is_latest": true
+    }
+  ]
+}

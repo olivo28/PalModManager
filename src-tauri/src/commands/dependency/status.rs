@@ -141,7 +141,9 @@ pub async fn check_palschema_latest() -> Result<String, String> {
     dependency_checker::check_palschema_latest().await
 }
 
-pub fn compare_versions(local: &str, remote: &str) -> bool {
+/// Returns true if and only if `remote` is strictly newer/higher than `local` (SemVer).
+/// If `local >= remote` (e.g. 0.6.6 >= 0.6.5), returns false.
+pub fn is_remote_newer(local: &str, remote: &str) -> bool {
     let local_clean = local.trim_start_matches('v').trim();
     let remote_clean = remote.trim_start_matches('v').trim();
 
@@ -153,14 +155,22 @@ pub fn compare_versions(local: &str, remote: &str) -> bool {
         let l = local_parts.get(i).unwrap_or(&"0");
         let r = remote_parts.get(i).unwrap_or(&"0");
 
-        let l_num: u32 = l.parse().unwrap_or(0);
-        let r_num: u32 = r.parse().unwrap_or(0);
-
-        if l_num != r_num {
-            return false;
+        if let (Ok(l_num), Ok(r_num)) = (l.parse::<u32>(), r.parse::<u32>()) {
+            if l_num < r_num {
+                return true;
+            } else if l_num > r_num {
+                return false;
+            }
+        } else if l != r {
+            return l < r;
         }
     }
-    true
+    false
+}
+
+#[allow(dead_code)]
+pub fn compare_versions(local: &str, remote: &str) -> bool {
+    !is_remote_newer(local, remote)
 }
 
 #[tauri::command]
@@ -199,11 +209,25 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
                     false
                 }
                 Some(local) => {
-                    let needs_up = match (parse_dmy(local.trim()), parse_dmy(ue4ss_date.trim())) {
+                    let local_date = parse_dmy(local.trim()).or_else(|| {
+                        // If version string is not a standard date (e.g. "Palworld_ForPS066" or custom tag),
+                        // inspect the physical modification date of the installed UE4SS files!
+                        let profile = dependency_checker::build_game_profile(Path::new(&game_path));
+                        let dll = profile.binaries_dir.join("ue4ss").join("UE4SS.dll");
+                        let fallback = profile.binaries_dir.join("dwmapi.dll");
+                        let ver_file = profile.binaries_dir.join("ue4ss").join("ue4ss.version");
+
+                        dependency_checker::get_file_date(&dll.to_string_lossy())
+                            .or_else(|| dependency_checker::get_file_date(&fallback.to_string_lossy()))
+                            .or_else(|| dependency_checker::get_file_date(&ver_file.to_string_lossy()))
+                            .and_then(|d_str| parse_dmy(&d_str))
+                    });
+
+                    let needs_up = match (local_date, parse_dmy(ue4ss_date.trim())) {
                         (Some(l), Some(r)) => l < r,
-                        _ => true,
+                        _ => false, // Custom branch / non-dated build / unparsed date: do not falsely claim update needed
                     };
-                    crate::logger::log(&format!("UE4SS check: local='{}', remote='{}' (tag: {}), match={}", local, ue4ss_date, ue4ss_tag, !needs_up));
+                    crate::logger::log(&format!("UE4SS check: local='{}' (effective_date: {:?}), remote='{}' (tag: {}), needs_update={}", local, local_date, ue4ss_date, ue4ss_tag, needs_up));
                     needs_up
                 }
                 None => {
@@ -235,9 +259,9 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
                     false
                 }
                 Some(local) => {
-                    let eq = compare_versions(local, &ps_version);
-                    crate::logger::log(&format!("PalSchema check: local='{}', remote='{}', match={}", local, ps_version, eq));
-                    !eq
+                    let needs_up = is_remote_newer(local, &ps_version);
+                    crate::logger::log(&format!("PalSchema check: local='{}', remote='{}', needs_update={}", local, ps_version, needs_up));
+                    needs_up
                 }
                 None => {
                     crate::logger::log("PalSchema check: local is None (not installed or version not read)");
@@ -249,3 +273,26 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
 
     Ok(status)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_is_remote_newer() {
+        // Newer local test version: no update needed
+        assert!(!is_remote_newer("0.6.6", "0.6.5"));
+        assert!(!is_remote_newer("v0.6.6", "0.6.5"));
+        assert!(!is_remote_newer("v0.6.6", "v0.6.5"));
+
+        // Equal version: no update needed
+        assert!(!is_remote_newer("0.6.5", "0.6.5"));
+        assert!(!is_remote_newer("v0.6.5", "0.6.5"));
+
+        // Older local version: update needed
+        assert!(is_remote_newer("0.6.4", "0.6.5"));
+        assert!(is_remote_newer("v0.6.4", "v0.6.5"));
+        assert!(is_remote_newer("0.5.9", "0.6.0"));
+    }
+}
+

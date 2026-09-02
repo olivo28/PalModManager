@@ -3,12 +3,16 @@ pub mod build_detector;
 pub mod sync;
 pub mod parser;
 pub mod sdk_parser;
+pub mod datatable_index;
+pub mod blueprint_index;
 
 pub use models::*;
 pub use build_detector::detect_installed_game_build;
 pub use sync::{get_mappings_status, sync_mappings_async, get_active_usmap_path};
 pub use parser::{parse_usmap_file, UsmapSchema, UsmapStruct, UsmapProperty};
 pub use sdk_parser::{SdkIndex, SdkClassInfo, get_sdk_dir, parse_sdk_directory};
+pub use datatable_index::{DataTableIndex, DataTableEntry, get_or_load_datatable_index, get_datatables_dir};
+pub use blueprint_index::{BlueprintIndex, BlueprintEntry, get_or_load_blueprint_index, get_blueprints_dir};
 
 use std::sync::Mutex;
 use std::path::PathBuf;

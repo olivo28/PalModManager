@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor';
 import { editorDom } from '../../../framework';
+import { t } from '../../../utils/i18n';
 import { registerMonacoCompletionProviders } from './completion';
 import { registerMonacoLinter } from './linter';
 import { registerMonacoQuickFixProvider } from './quickfix';
@@ -26,13 +27,26 @@ export function configureMonacoLanguages(): void {
       trailingCommas: 'ignore',
       schemaValidation: 'ignore',
     });
+    if (typeof jsonLang.jsonDefaults.setModeConfiguration === 'function') {
+      jsonLang.jsonDefaults.setModeConfiguration({
+        documentFormattingEdits: true,
+        documentRangeFormattingEdits: true,
+        completionItems: false, // Prevent Monaco's built-in schema scraper from leaking keys from other files like modinfo.pmm.json
+        hovers: true,
+        documentSymbols: true,
+        tokens: true,
+        colors: true,
+        foldingRanges: true,
+        selectionRanges: true,
+      });
+    }
   }
 
   // Register dedicated 'jsonc' language
   monaco.languages.register({
     id: 'jsonc',
-    extensions: ['.jsonc'],
-    aliases: ['JSON with Comments', 'jsonc', 'JSONC'],
+    extensions: ['.jsonc', '.json'],
+    aliases: ['JSON with Comments', 'jsonc', 'JSONC', 'JSON'],
     mimetypes: ['application/json', 'application/jsonc'],
   });
 
@@ -46,9 +60,11 @@ export function configureMonacoLanguages(): void {
         [/[{}]/, 'delimiter.bracket'],
         [/[[\]]/, 'delimiter.array'],
         [/[:,]/, 'delimiter'],
-        [/"([^"\\]|\\.)*"/, 'string'],
+        [/"([^"\\]|\\.)*"(?=\s*:)/, 'string.key'],
+        [/"([^"\\]|\\.)*"/, 'string.value'],
         [/-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?/, 'number'],
-        [/\b(?:true|false|null)\b/, 'keyword'],
+        [/\b(?:true|false)\b/, 'keyword.boolean'],
+        [/\bnull\b/, 'keyword.null'],
       ],
       comment: [
         [/[^/*]+/, 'comment'],
@@ -118,7 +134,15 @@ export function definePmmTheme(): void {
       { token: 'delimiter.bracket', foreground: 'ffd700' },
       { token: 'delimiter.array', foreground: 'd4d4d4' },
       { token: 'key', foreground: '9cdcfe' },
+      { token: 'string.key', foreground: '9cdcfe' },
+      { token: 'string.key.json', foreground: '9cdcfe' },
+      { token: 'string.value', foreground: 'ce9178' },
+      { token: 'string.value.json', foreground: 'ce9178' },
+      { token: 'keyword.boolean', foreground: '569cd6', fontStyle: 'bold' },
+      { token: 'keyword.null', foreground: '569cd6' },
+      { token: 'keyword.json', foreground: '569cd6', fontStyle: 'bold' },
       { token: 'constant', foreground: '4fc1ff' },
+      { token: 'constant.language', foreground: '569cd6' },
     ],
     colors: {
       'editor.background': '#1e1e1e',
@@ -192,12 +216,14 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
       filterGraceful: true,
       localityBonus: true,
       shareSuggestSelections: true,
+      showInlineDetails: true,
     },
     quickSuggestions: {
       other: true,
       comments: false,
       strings: true,
     },
+    wordBasedSuggestions: 'matchingDocuments',
     parameterHints: {
       enabled: true,
     },
@@ -223,7 +249,7 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
   // Custom Context Menu Actions
   editorInstance.addAction({
     id: 'pmm-save-action',
-    label: 'Save File',
+    label: t('editor.context_save') || 'Save File',
     keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
     contextMenuGroupId: '1_modification',
     contextMenuOrder: 1,
@@ -235,7 +261,7 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
 
   editorInstance.addAction({
     id: 'pmm-format-action',
-    label: 'Format Document',
+    label: t('editor.context_format') || 'Format Document',
     keybindings: [monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF],
     contextMenuGroupId: '1_modification',
     contextMenuOrder: 2,
@@ -247,7 +273,7 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
 
   editorInstance.addAction({
     id: 'pmm-problems-action',
-    label: 'Toggle Problems Panel',
+    label: t('editor.context_toggle_problems') || 'Toggle Problems Panel',
     contextMenuGroupId: '2_navigation',
     contextMenuOrder: 1,
     run: async () => {
@@ -276,8 +302,8 @@ export function setMonacoFile(filePath: string, content: string): void {
     language = 'lua';
   } else if (filePath.endsWith('.jsonc')) {
     language = 'jsonc';
-  } else if (filePath.endsWith('.json')) {
-    language = 'json';
+  } else if (filePath.endsWith('.jsonc') || filePath.endsWith('.json')) {
+    language = 'jsonc';
   } else if (filePath.endsWith('.ini') || filePath.endsWith('.cfg')) {
     language = 'ini';
   } else if (filePath.endsWith('.md')) {

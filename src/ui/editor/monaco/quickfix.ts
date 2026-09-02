@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor';
 import { getActiveDiagnostics } from './linter';
+import { t } from '../../../utils/i18n';
 
 export function registerMonacoQuickFixProvider(): void {
   const provider: monaco.languages.CodeActionProvider = {
@@ -24,11 +25,11 @@ export function registerMonacoQuickFixProvider(): void {
           const endLine = diag.endLine || diag.line;
           const endCol = diag.endColumn || (startCol + diag.target.length);
 
-          let title = `💡 Quick Fix: Replace with "${diag.suggestion}"`;
+          let title = t('editor.quickfix_replace', { suggestion: diag.suggestion }) || `💡 Quick Fix: Replace with "${diag.suggestion}"`;
           if (diag.category === 'ue4ss_deprecated') {
-            title = `💡 Replace deprecated "${diag.target}" with "${diag.suggestion}"`;
+            title = t('editor.quickfix_deprecated', { target: diag.target, suggestion: diag.suggestion }) || `💡 Replace deprecated "${diag.target}" with "${diag.suggestion}"`;
           } else if (diag.category === 'anti_pattern') {
-            title = `🛡️ Safe Error Handling: Capture "${diag.suggestion}"`;
+            title = t('editor.quickfix_safe_error', { suggestion: diag.suggestion }) || `🛡️ Safe Error Handling: Capture "${diag.suggestion}"`;
           }
 
           actions.push({

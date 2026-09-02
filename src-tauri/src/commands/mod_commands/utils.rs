@@ -62,6 +62,11 @@ pub fn filter_mods_for_current_profile(data: &AppData) -> Vec<ModInfo> {
     let palschema_enabled = profile.map(|p| p.palschema_enabled).unwrap_or(false);
 
     data.mods.iter().filter(|m| {
+        // Project mods created in Mod Studio are workspace projects and always accessible
+        if m.origin_load_method.as_deref() == Some("project") || m.id.starts_with("project_") {
+            return true;
+        }
+
         let is_native = m.nexus_author.as_deref() == Some("UE4SS Native Mod");
         if is_native {
             return ue4ss_enabled;

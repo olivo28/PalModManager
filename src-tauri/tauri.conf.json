@@ -1,6 +1,6 @@
 {
   "productName": "PalModManager",
-  "version": "1.7.0",
+  "version": "1.7.1",
   "identifier": "com.pmm.palmodmanager",
   "build": {
     "beforeDevCommand": "pnpm dev",

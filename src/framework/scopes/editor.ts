@@ -36,6 +36,10 @@ export interface EditorDomMap {
   'editor-status-usmap-label': HTMLElement;
   'editor-status-sdk': HTMLElement;
   'editor-status-sdk-label': HTMLElement;
+  'editor-status-datatables': HTMLElement;
+  'editor-status-datatables-label': HTMLElement;
+  'editor-status-blueprints': HTMLElement;
+  'editor-status-blueprints-label': HTMLElement;
   'editor-status-cursor': HTMLElement;
   'editor-status-spaces': HTMLElement;
   'editor-status-encoding': HTMLElement;

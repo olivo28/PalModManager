@@ -195,4 +195,112 @@ export async function refreshSdkStatus(): Promise<void> {
   }
 }
 
+export async function refreshBlueprintsStatus(): Promise<void> {
+  const badge = document.getElementById('settings-blueprints-badge');
+  const gameVer = document.getElementById('settings-blueprints-game-ver');
+  const countElem = document.getElementById('settings-blueprints-count');
+  const activeFile = document.getElementById('settings-blueprints-active-file');
+  const hashElem = document.getElementById('settings-blueprints-hash');
+
+  if (!badge && !gameVer) return;
+
+  try {
+    const { getReflectionCatalogsStatus } = await import('../../../api');
+    const status = await getReflectionCatalogsStatus();
+
+    if (badge) {
+      if (status.totalBlueprints > 0) {
+        badge.textContent = `✅ ${t('settings.blueprints_status_synced') || 'Synced & Ready'}`;
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else {
+        badge.textContent = `⚠️ ${t('settings.blueprints_status_missing') || 'Missing / Not Synced'}`;
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+    }
+
+    if (gameVer) {
+      const verText = status.blueprintsGameVer || 'Unknown';
+      const buildText = status.blueprintsBuildId ? ` (Steam Build: ${status.blueprintsBuildId})` : '';
+      gameVer.textContent = `${verText}${buildText}`;
+    }
+
+    if (countElem) {
+      countElem.textContent = `${status.totalBlueprints.toLocaleString()} classes & cooked assets`;
+    }
+
+    if (activeFile) {
+      if (status.totalBlueprints > 0) {
+        const sizeFormatted = formatBytes(status.blueprintsSize);
+        activeFile.textContent = `${status.blueprintsFilename} (${sizeFormatted})`;
+      } else {
+        activeFile.textContent = t('settings.blueprints_not_installed') || 'Not Installed';
+      }
+    }
+
+    if (hashElem) {
+      if (status.blueprintsSha256) {
+        hashElem.textContent = status.blueprintsSha256.substring(0, 16) + '...' + status.blueprintsSha256.substring(status.blueprintsSha256.length - 8);
+        hashElem.title = status.blueprintsSha256;
+      } else {
+        hashElem.textContent = '---';
+      }
+    }
+  } catch (e) {
+    console.error('Failed to get Blueprints catalog status:', e);
+    if (badge) {
+      badge.textContent = `⚠️ ${t('settings.blueprints_status_error') || 'Error'}`;
+    }
+  }
+}
+
+export async function refreshDatatablesStatus(): Promise<void> {
+  const badge = document.getElementById('settings-datatables-badge');
+  const countElem = document.getElementById('settings-datatables-count');
+  const rowsElem = document.getElementById('settings-datatables-rows-count');
+  const activeFile = document.getElementById('settings-datatables-active-file');
+
+  if (!badge && !countElem) return;
+
+  try {
+    const { getReflectionCatalogsStatus } = await import('../../../api');
+    const status = await getReflectionCatalogsStatus();
+
+    if (badge) {
+      if (status.totalDatatables > 0) {
+        badge.textContent = `✅ ${t('settings.datatables_status_synced') || 'Indexed & Ready'}`;
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else {
+        badge.textContent = `⚠️ ${t('settings.datatables_status_missing') || 'Missing / Not Synced'}`;
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+    }
+
+    if (countElem) {
+      countElem.textContent = `${status.totalDatatables.toLocaleString()} DataTables`;
+    }
+
+    if (rowsElem) {
+      rowsElem.textContent = `${status.totalDatatableRows.toLocaleString()} rows decoded`;
+    }
+
+    if (activeFile) {
+      activeFile.textContent = status.datatablesActiveFile || 'dt_index.json';
+    }
+  } catch (e) {
+    console.error('Failed to get DataTables catalog status:', e);
+    if (badge) {
+      badge.textContent = `⚠️ ${t('settings.datatables_status_error') || 'Error'}`;
+    }
+  }
+}
+
+
 

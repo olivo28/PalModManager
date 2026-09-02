@@ -139,7 +139,7 @@ pub fn parse_usmap_file(path: &Path) -> Result<UsmapSchema, String> {
         };
         let enum_name = names.get(enum_name_idx).cloned().unwrap_or_else(|| format!("Enum_{}", enum_name_idx));
 
-        let val_count = if version >= 4 {
+        let val_count = if version >= 3 {
             read_u16(&payload, &mut p_cursor).unwrap_or(0) as usize
         } else {
             read_u8(&payload, &mut p_cursor).unwrap_or(0) as usize
@@ -148,6 +148,10 @@ pub fn parse_usmap_file(path: &Path) -> Result<UsmapSchema, String> {
         let mut values = Vec::with_capacity(val_count.min(1000));
         for _ in 0..val_count {
             if p_cursor >= payload.len() { break; }
+            if version >= 4 {
+                // In USMAP v4 (ExplicitEnumValues), read 8-byte i64 value before name index
+                let _ = read_i64(&payload, &mut p_cursor);
+            }
             let val_idx = match read_u32(&payload, &mut p_cursor) {
                 Ok(idx) => idx as usize,
                 Err(_) => break,
@@ -180,16 +184,19 @@ pub fn parse_usmap_file(path: &Path) -> Result<UsmapSchema, String> {
             None
         };
 
-        let prop_count = match read_u16(&payload, &mut p_cursor) {
+        let _prop_count = match read_u16(&payload, &mut p_cursor) {
             Ok(c) => c as usize,
             Err(_) => break,
         };
-        let _serializable_prop_count = read_u16(&payload, &mut p_cursor).unwrap_or(0);
+        let serializable_prop_count = match read_u16(&payload, &mut p_cursor) {
+            Ok(c) => c as usize,
+            Err(_) => break,
+        };
 
-        let mut properties = Vec::with_capacity(prop_count.min(2000));
-        let mut property_map = HashMap::with_capacity(prop_count.min(2000));
+        let mut properties = Vec::with_capacity(serializable_prop_count.min(2000));
+        let mut property_map = HashMap::with_capacity(serializable_prop_count.min(2000));
 
-        for _ in 0..prop_count {
+        for _ in 0..serializable_prop_count {
             if p_cursor >= payload.len() { break; }
             let prop_index = match read_u16(&payload, &mut p_cursor) {
                 Ok(idx) => idx,
@@ -247,32 +254,57 @@ pub fn parse_usmap_file(path: &Path) -> Result<UsmapSchema, String> {
 }
 
 fn parse_property_type(payload: &[u8], cursor: &mut usize, names: &[String]) -> Result<(String, Option<String>, Option<String>, Option<String>), String> {
-    let type_tag = read_u8(payload, cursor)?;
-    match type_tag {
-        0 => {
-            // ByteProperty in USMAP has an optional enum_name_idx (u32) or 0xFFFFFFFF
-            let e_idx = read_u32(payload, cursor)? as usize;
-            let enum_name = if e_idx != 0xFFFFFFFF && e_idx < names.len() {
-                names.get(e_idx).cloned()
+    let tag = read_u8(payload, cursor)?;
+    match tag {
+        0 => Ok(("ByteProperty".to_string(), None, None, None)),
+        1 => Ok(("BoolProperty".to_string(), None, None, None)),
+        2 => Ok(("IntProperty".to_string(), None, None, None)),
+        3 => Ok(("FloatProperty".to_string(), None, None, None)),
+        4 => Ok(("ObjectProperty".to_string(), None, None, None)),
+        5 => Ok(("NameProperty".to_string(), None, None, None)),
+        6 => Ok(("DelegateProperty".to_string(), None, None, None)),
+        7 => Ok(("DoubleProperty".to_string(), None, None, None)),
+        8 => {
+            // ArrayProperty: inner property type
+            let (inner, s, e, _) = parse_property_type(payload, cursor, names)?;
+            Ok(("ArrayProperty".to_string(), s, e, Some(inner)))
+        }
+        9 => {
+            // StructProperty: struct_name_idx
+            let s_idx = read_u32(payload, cursor)? as usize;
+            let s_name = if s_idx != 0xFFFFFFFF && s_idx < names.len() {
+                names.get(s_idx).cloned()
             } else {
                 None
             };
-            Ok(("ByteProperty".to_string(), None, enum_name, None))
+            Ok(("StructProperty".to_string(), s_name, None, None))
         }
-        1 => Ok(("BoolProperty".to_string(), None, None, None)),
-        2 => Ok(("Int8Property".to_string(), None, None, None)),
-        3 => Ok(("Int16Property".to_string(), None, None, None)),
-        4 => Ok(("IntProperty".to_string(), None, None, None)),
-        5 => Ok(("Int64Property".to_string(), None, None, None)),
-        6 => Ok(("UInt16Property".to_string(), None, None, None)),
-        7 => Ok(("UInt32Property".to_string(), None, None, None)),
-        8 => Ok(("UInt64Property".to_string(), None, None, None)),
-        9 => Ok(("FloatProperty".to_string(), None, None, None)),
-        10 => Ok(("DoubleProperty".to_string(), None, None, None)),
-        11 => Ok(("StrProperty".to_string(), None, None, None)),
-        12 => Ok(("NameProperty".to_string(), None, None, None)),
-        13 => Ok(("TextProperty".to_string(), None, None, None)),
-        14 => {
+        10 => Ok(("StrProperty".to_string(), None, None, None)),
+        11 => Ok(("TextProperty".to_string(), None, None, None)),
+        12 => Ok(("InterfaceProperty".to_string(), None, None, None)),
+        13 => Ok(("MulticastDelegateProperty".to_string(), None, None, None)),
+        14 => Ok(("WeakObjectProperty".to_string(), None, None, None)),
+        15 => Ok(("LazyObjectProperty".to_string(), None, None, None)),
+        16 => Ok(("AssetObjectProperty".to_string(), None, None, None)),
+        17 => Ok(("SoftObjectProperty".to_string(), None, None, None)),
+        18 => Ok(("UInt64Property".to_string(), None, None, None)),
+        19 => Ok(("UInt32Property".to_string(), None, None, None)),
+        20 => Ok(("UInt16Property".to_string(), None, None, None)),
+        21 => Ok(("Int64Property".to_string(), None, None, None)),
+        22 => Ok(("Int16Property".to_string(), None, None, None)),
+        23 => Ok(("Int8Property".to_string(), None, None, None)),
+        24 => {
+            // MapProperty: key type + value type
+            let (k_name, _, _, _) = parse_property_type(payload, cursor, names)?;
+            let (v_name, s_name, e_name, _) = parse_property_type(payload, cursor, names)?;
+            Ok(("MapProperty".to_string(), s_name, e_name, Some(format!("{} -> {}", k_name, v_name))))
+        }
+        25 => {
+            // SetProperty: inner property type
+            let (inner_name, s_name, e_name, _) = parse_property_type(payload, cursor, names)?;
+            Ok(("SetProperty".to_string(), s_name, e_name, Some(inner_name)))
+        }
+        26 => {
             // EnumProperty: inner property type + enum_name_idx
             let (inner_name, _, _, _) = parse_property_type(payload, cursor, names)?;
             let enum_idx = read_u32(payload, cursor)? as usize;
@@ -283,46 +315,15 @@ fn parse_property_type(payload: &[u8], cursor: &mut usize, names: &[String]) -> 
             };
             Ok(("EnumProperty".to_string(), None, enum_name, Some(inner_name)))
         }
-        15 => {
-            // StructProperty: struct_name_idx
-            let s_idx = read_u32(payload, cursor)? as usize;
-            let s_name = if s_idx != 0xFFFFFFFF && s_idx < names.len() {
-                names.get(s_idx).cloned()
-            } else {
-                None
-            };
-            Ok(("StructProperty".to_string(), s_name, None, None))
-        }
-        16 => {
-            // ArrayProperty: inner property type
-            let (inner_name, s_name, e_name, _) = parse_property_type(payload, cursor, names)?;
-            Ok(("ArrayProperty".to_string(), s_name, e_name, Some(inner_name)))
-        }
-        17 => {
-            // SetProperty: inner property type
-            let (inner_name, s_name, e_name, _) = parse_property_type(payload, cursor, names)?;
-            Ok(("SetProperty".to_string(), s_name, e_name, Some(inner_name)))
-        }
-        18 => {
-            // MapProperty: key type + value type
-            let (k_name, _, _, _) = parse_property_type(payload, cursor, names)?;
-            let (v_name, s_name, e_name, _) = parse_property_type(payload, cursor, names)?;
-            Ok(("MapProperty".to_string(), s_name, e_name, Some(format!("{} -> {}", k_name, v_name))))
-        }
-        19 => Ok(("ObjectProperty".to_string(), None, None, None)),
-        20 => Ok(("ClassProperty".to_string(), None, None, None)),
-        21 => Ok(("SoftObjectProperty".to_string(), None, None, None)),
-        22 => Ok(("SoftClassProperty".to_string(), None, None, None)),
-        23 => Ok(("DelegateProperty".to_string(), None, None, None)),
-        24 => Ok(("MulticastDelegateProperty".to_string(), None, None, None)),
-        25 => Ok(("MulticastInlineDelegateProperty".to_string(), None, None, None)),
-        26 => Ok(("FieldPathProperty".to_string(), None, None, None)),
-        27 => {
+        27 => Ok(("FieldPathProperty".to_string(), None, None, None)),
+        28 => {
             // OptionalProperty: inner property type
             let (inner_name, s_name, e_name, _) = parse_property_type(payload, cursor, names)?;
             Ok(("OptionalProperty".to_string(), s_name, e_name, Some(inner_name)))
         }
-        other => Ok((format!("UnknownProperty_{}", other), None, None, None)),
+        29 => Ok(("Utf8StrProperty".to_string(), None, None, None)),
+        30 => Ok(("AnsiStrProperty".to_string(), None, None, None)),
+        other => Ok((format!("PropertyType_{}", other), None, None, None)),
     }
 }
 
@@ -347,6 +348,16 @@ fn read_u32(buf: &[u8], cursor: &mut usize) -> Result<u32, String> {
     Ok(val)
 }
 
+fn read_i64(buf: &[u8], cursor: &mut usize) -> Result<i64, String> {
+    if *cursor + 8 > buf.len() { return Err("Buffer underflow reading i64".to_string()); }
+    let val = i64::from_le_bytes([
+        buf[*cursor], buf[*cursor + 1], buf[*cursor + 2], buf[*cursor + 3],
+        buf[*cursor + 4], buf[*cursor + 5], buf[*cursor + 6], buf[*cursor + 7],
+    ]);
+    *cursor += 8;
+    Ok(val)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -354,12 +365,23 @@ mod tests {
 
     #[test]
     fn test_parse_bundled_usmap() {
-        let usmap_path = PathBuf::from("../resources/mappings/Palworld.usmap");
+        let usmap_path = PathBuf::from("../resources/mappings/Palworld_24575825.usmap");
         if usmap_path.exists() {
             let buffer = fs::read(&usmap_path).unwrap();
             eprintln!("USMAP file len = {}", buffer.len());
-            let schema = parse_usmap_file(&usmap_path).expect("Should parse Palworld.usmap cleanly");
+            let schema = parse_usmap_file(&usmap_path).expect("Should parse Palworld_24575825.usmap cleanly");
             eprintln!("PARSED USMAP RESULT: structs={}, enums={}, names={}", schema.total_structs, schema.total_enums, schema.total_names);
+            
+            // Search for IsTrigger
+            let mut found_props = Vec::new();
+            for (sname, ustruct) in &schema.structs {
+                for prop in &ustruct.properties {
+                    if prop.name.to_ascii_lowercase().contains("istrigger") {
+                        found_props.push((sname.clone(), prop.name.clone()));
+                    }
+                }
+            }
+            eprintln!("Found properties matching istrigger: {:?}", found_props);
         }
     }
 }
