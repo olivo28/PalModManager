@@ -76,8 +76,8 @@ export async function scanWorkspaceProblems(modId: string): Promise<Record<strin
   return invoke('scan_workspace_problems', { modId });
 }
 
-export async function getEditorCompletions(filePath: string, query: string, linePrefix: string): Promise<EditorCompletion[]> {
-  return invoke('get_editor_completions', { filePath, query, linePrefix });
+export async function getEditorCompletions(filePath: string, query: string, linePrefix: string, modId?: string): Promise<EditorCompletion[]> {
+  return invoke('get_editor_completions', { filePath, query, linePrefix, modId: modId || null });
 }
 
 export async function inspectPakAsset(modId: string, assetInternalPath: string): Promise<string[]> {

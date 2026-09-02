@@ -6,7 +6,9 @@ export function isItemBroken(diag: UsmapHookDiagnostic): boolean {
   return diag.status === 'broken_class' ||
     diag.status === 'broken_function' ||
     diag.status === 'broken_table' ||
-    diag.status === 'broken_struct';
+    diag.status === 'broken_struct' ||
+    diag.status === 'deprecated_api' ||
+    diag.status === 'blind_pcall';
 }
 
 export function renderHookItem(diag: UsmapHookDiagnostic): string {
@@ -25,6 +27,12 @@ export function renderHookItem(diag: UsmapHookDiagnostic): string {
     categoryBadge = `
       <span style="font-size: 9.5px; font-weight: 700; color: var(--warning); background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.25); border-radius: 4px; padding: 2px 6px;">
         📦 ${escapeHtml(t('scanner.usmap_category_pak') || 'Pak Asset')}
+      </span>
+    `;
+  } else if (diag.category === 'anti_pattern' || diag.status === 'blind_pcall') {
+    categoryBadge = `
+      <span style="font-size: 9.5px; font-weight: 700; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); border-radius: 4px; padding: 2px 6px;">
+        🛡️ ${escapeHtml(t('scanner.usmap_category_antipattern') || 'Anti-Pattern')}
       </span>
     `;
   } else {
@@ -63,6 +71,20 @@ export function renderHookItem(diag: UsmapHookDiagnostic): string {
       </span>
     `;
     borderCol = 'var(--danger)';
+  } else if (diag.status === 'deprecated_api') {
+    statusBadge = `
+      <span style="font-size: 10px; font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); border-radius: 4px; padding: 2px 6px;">
+        ⚠️ ${escapeHtml(t('scanner.usmap_status_deprecated_api') || 'Deprecated UE4SS API')}
+      </span>
+    `;
+    borderCol = '#fbbf24';
+  } else if (diag.status === 'blind_pcall') {
+    statusBadge = `
+      <span style="font-size: 10px; font-weight: 700; color: #f87171; background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); border-radius: 4px; padding: 2px 6px;">
+        🛡️ ${escapeHtml(t('scanner.usmap_status_blind_pcall') || 'Blind pcall / Silent Error')}
+      </span>
+    `;
+    borderCol = '#f87171';
   } else if (diag.status === 'blueprint_asset') {
     statusBadge = `
       <span style="font-size: 10px; font-weight: 700; color: var(--accent); background: rgba(0,210,255,0.12); border: 1px solid rgba(0,210,255,0.3); border-radius: 4px; padding: 2px 6px;">

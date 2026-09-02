@@ -10,6 +10,7 @@ import {
   getCurrentMonacoFilePath,
   setCurrentMonacoFilePath,
 } from './state';
+import { updateStatusBarCursor, updateStatusBarLanguage } from './statusBar';
 
 export { isMonacoInitialized, getMonacoEditor, getCurrentMonacoFilePath };
 
@@ -102,43 +103,45 @@ export function definePmmTheme(): void {
     base: 'vs-dark',
     inherit: true,
     rules: [
-      { token: '', foreground: 'd4d4d8', background: '121418' },
-      { token: 'comment', foreground: '64748b', fontStyle: 'italic' },
-      { token: 'keyword', foreground: '38bdf8', fontStyle: 'bold' },
-      { token: 'keyword.control', foreground: 'f43f5e' },
-      { token: 'string', foreground: '4ade80' },
-      { token: 'string.escape', foreground: 'a7f3d0' },
-      { token: 'number', foreground: 'fbbf24' },
-      { token: 'type', foreground: 'c084fc' },
-      { token: 'function', foreground: '60a5fa' },
-      { token: 'identifier', foreground: 'e2e8f0' },
-      { token: 'delimiter', foreground: '94a3b8' },
-      { token: 'delimiter.bracket', foreground: 'e2e8f0' },
-      { token: 'delimiter.array', foreground: 'e2e8f0' },
-      { token: 'key', foreground: '38bdf8' },
+      { token: '', foreground: 'd4d4d4', background: '1e1e1e' },
+      { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
+      { token: 'keyword', foreground: '569cd6' },
+      { token: 'keyword.control', foreground: 'c586c0' },
+      { token: 'keyword.operator', foreground: 'd4d4d4' },
+      { token: 'string', foreground: 'ce9178' },
+      { token: 'string.escape', foreground: 'd7ba7d' },
+      { token: 'number', foreground: 'b5cea8' },
+      { token: 'type', foreground: '4ec9b0' },
+      { token: 'function', foreground: 'dcdcaa' },
+      { token: 'identifier', foreground: '9cdcfe' },
+      { token: 'delimiter', foreground: 'd4d4d4' },
+      { token: 'delimiter.bracket', foreground: 'ffd700' },
+      { token: 'delimiter.array', foreground: 'd4d4d4' },
+      { token: 'key', foreground: '9cdcfe' },
+      { token: 'constant', foreground: '4fc1ff' },
     ],
     colors: {
-      'editor.background': '#121418',
-      'editor.foreground': '#d4d4d8',
-      'editor.lineHighlightBackground': '#1a1f26',
-      'editor.selectionBackground': '#0284c733',
-      'editorInactiveSelection.background': '#0284c71a',
-      'editorCursor.foreground': '#38bdf8',
-      'editorLineNumber.foreground': '#475569',
-      'editorLineNumber.activeForeground': '#38bdf8',
-      'editorGutter.background': '#15181e',
-      'editorWidget.background': '#181b22',
-      'editorWidget.border': '#334155',
-      'editorSuggestWidget.background': '#181b22',
-      'editorSuggestWidget.border': '#334155',
-      'editorSuggestWidget.foreground': '#f1f5f9',
-      'editorSuggestWidget.selectedBackground': '#0369a1',
-      'editorSuggestWidget.highlightForeground': '#38bdf8',
-      'editorHoverWidget.background': '#181b22',
-      'editorHoverWidget.border': '#334155',
-      'scrollbarSlider.background': '#33415544',
-      'scrollbarSlider.hoverBackground': '#33415588',
-      'scrollbarSlider.activeBackground': '#38bdf866',
+      'editor.background': '#1e1e1e',
+      'editor.foreground': '#d4d4d4',
+      'editor.lineHighlightBackground': '#282b30',
+      'editor.selectionBackground': '#264f7880',
+      'editorInactiveSelection.background': '#264f7840',
+      'editorCursor.foreground': '#00d2ff',
+      'editorLineNumber.foreground': '#6e7681',
+      'editorLineNumber.activeForeground': '#00d2ff',
+      'editorGutter.background': '#1e1e1e',
+      'editorWidget.background': '#252526',
+      'editorWidget.border': '#454545',
+      'editorSuggestWidget.background': '#252526',
+      'editorSuggestWidget.border': '#454545',
+      'editorSuggestWidget.foreground': '#cccccc',
+      'editorSuggestWidget.selectedBackground': '#04395e',
+      'editorSuggestWidget.highlightForeground': '#00d2ff',
+      'editorHoverWidget.background': '#252526',
+      'editorHoverWidget.border': '#454545',
+      'scrollbarSlider.background': '#79797933',
+      'scrollbarSlider.hoverBackground': '#79797966',
+      'scrollbarSlider.activeBackground': '#bfbfbf66',
     },
   });
 }
@@ -217,6 +220,50 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
 
   registerMonacoLinter(editorInstance);
 
+  // Custom Context Menu Actions
+  editorInstance.addAction({
+    id: 'pmm-save-action',
+    label: 'Save File',
+    keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS],
+    contextMenuGroupId: '1_modification',
+    contextMenuOrder: 1,
+    run: async () => {
+      const { handleEditorSave } = await import('../viewer');
+      await handleEditorSave();
+    },
+  });
+
+  editorInstance.addAction({
+    id: 'pmm-format-action',
+    label: 'Format Document',
+    keybindings: [monaco.KeyMod.Shift | monaco.KeyMod.Alt | monaco.KeyCode.KeyF],
+    contextMenuGroupId: '1_modification',
+    contextMenuOrder: 2,
+    run: async () => {
+      const { handleEditorFormat } = await import('../viewer');
+      await handleEditorFormat();
+    },
+  });
+
+  editorInstance.addAction({
+    id: 'pmm-problems-action',
+    label: 'Toggle Problems Panel',
+    contextMenuGroupId: '2_navigation',
+    contextMenuOrder: 1,
+    run: async () => {
+      const { toggleProblemsPanel } = await import('./problemsPanel');
+      toggleProblemsPanel();
+    },
+  });
+
+  // Suppress generic VS Code command palette on F1
+  editorInstance.addCommand(monaco.KeyCode.F1, () => {});
+
+  // Live cursor position tracking for editor bottom status bar
+  editorInstance.onDidChangeCursorPosition((e) => {
+    updateStatusBarCursor(e.position.lineNumber, e.position.column);
+  });
+
   return editorInstance;
 }
 
@@ -236,6 +283,8 @@ export function setMonacoFile(filePath: string, content: string): void {
   } else if (filePath.endsWith('.md')) {
     language = 'markdown';
   }
+
+  updateStatusBarLanguage(filePath);
 
   const uri = monaco.Uri.file(filePath);
   let model = monaco.editor.getModel(uri);

@@ -221,3 +221,77 @@
   color: var(--text-primary);
 }
 
+.monaco-line-jump-highlight {
+  background: rgba(0, 210, 255, 0.22) !important;
+  border-left: 3px solid var(--accent) !important;
+}
+
+/* Monaco Custom Context Menu & Command Palette Suppression */
+.context-view.monaco-menu-container {
+  border-radius: 8px !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
+  background: #232730 !important;
+  padding: 5px !important;
+}
+
+.monaco-menu {
+  background: transparent !important;
+}
+
+.monaco-menu .monaco-action-bar {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+.monaco-menu .actions-container {
+  padding: 0 !important;
+}
+
+.monaco-menu .action-item {
+  border-radius: 5px !important;
+  margin: 1px 0 !important;
+  cursor: pointer !important;
+  transition: background 0.12s ease !important;
+}
+
+.monaco-menu .action-item.focused,
+.monaco-menu .action-item:hover {
+  background: #007acc !important;
+}
+
+.monaco-menu .action-menu-item {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 500 !important;
+  padding: 6px 14px !important;
+  color: #e2e8f0 !important;
+}
+
+.monaco-menu .action-item.focused .action-menu-item,
+.monaco-menu .action-item:hover .action-menu-item {
+  color: #ffffff !important;
+}
+
+.monaco-menu .keybinding {
+  font-size: 11px !important;
+  opacity: 0.65 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+  margin-left: 20px !important;
+}
+
+.monaco-menu .action-item.separator {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  margin: 4px 6px !important;
+}
+
+/* Hide Command Palette from Monaco Context Menu */
+.monaco-menu .action-item:has([aria-label*="Command Palette"]),
+.monaco-menu .action-item:has([aria-label*="Paleta de comandos"]),
+.monaco-menu .action-item [aria-label*="Command Palette"],
+.monaco-menu .action-item [aria-label*="Paleta de comandos"] {
+  display: none !important;
+}
+
+

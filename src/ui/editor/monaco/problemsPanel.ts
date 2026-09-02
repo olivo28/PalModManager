@@ -8,10 +8,12 @@ import { getCurrentMonacoFilePath, getMonacoEditor } from './state';
 
 const STORAGE_HEIGHT_KEY = 'pmm_editor_problems_height';
 const STORAGE_OPEN_KEY = 'pmm_editor_problems_open';
-const STORAGE_TAB_KEY = 'pmm_editor_problems_active_tab';
-const MIN_PANEL_HEIGHT = 80;
-const MAX_PANEL_HEIGHT = 450;
-const DEFAULT_PANEL_HEIGHT = 160;
+const STORAGE_TAB_KEY = 'pmm_editor_problems_tab';
+const MIN_PANEL_HEIGHT = 120;
+const MAX_PANEL_HEIGHT = 500;
+const DEFAULT_PANEL_HEIGHT = 220;
+
+import { updateStatusBarProblems } from './statusBar';
 
 let _isInitialized = false;
 let _isOpen = false;
@@ -19,6 +21,7 @@ let _activeTab: 'file' | 'workspace' = 'file';
 let _currentHeight = DEFAULT_PANEL_HEIGHT;
 
 let _currentFileDiagnostics: EditorDiagnostic[] = [];
+let _workspaceDiagnosticsByMod: Record<string, Record<string, EditorDiagnostic[]>> = {};
 let _workspaceDiagnostics: Record<string, EditorDiagnostic[]> = {};
 let _isScanningWorkspace = false;
 
@@ -65,7 +68,12 @@ export function initProblemsPanel(): void {
 
   tabWorkspace.addEventListener('click', () => {
     switchProblemsTab('workspace');
-    triggerWorkspaceScan();
+    const currentModId = getState().editorModId;
+    if (currentModId && _workspaceDiagnosticsByMod[currentModId]) {
+      renderWorkspaceProblemsView();
+    } else {
+      triggerWorkspaceScan();
+    }
   });
 
   if (scanBtn) {
@@ -169,6 +177,23 @@ export function toggleProblemsPanel(forceState?: boolean): void {
   }
 }
 
+export function updateWorkspaceBadge(): void {
+  const workspaceCountBadge = editorDom.elMaybe('editor-problems-workspace-count-badge');
+  const fileEntries = Object.entries(_workspaceDiagnostics);
+  let totalIssues = 0;
+  fileEntries.forEach(([_, diags]) => {
+    totalIssues += diags ? diags.length : 0;
+  });
+
+  if (workspaceCountBadge) {
+    workspaceCountBadge.textContent = String(totalIssues);
+    workspaceCountBadge.className = `editor-problems-count-badge ${totalIssues === 0 ? 'clean' : 'has-issues'}`;
+  }
+
+  // Update editor footer status bar
+  updateStatusBarProblems(_currentFileDiagnostics.length, totalIssues);
+}
+
 export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
   initProblemsPanel();
   _currentFileDiagnostics = diagnostics || [];
@@ -181,6 +206,29 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
   if (countBadge) {
     countBadge.textContent = String(count);
     countBadge.className = `editor-problems-count-badge ${count === 0 ? 'clean' : 'has-issues'}`;
+  }
+
+  // Sync current file issues into workspace map and update workspace badge
+  const currentFilePath = getCurrentMonacoFilePath();
+  const state = getState();
+  const modId = state.editorModId;
+  if (currentFilePath && modId) {
+    if (!_workspaceDiagnosticsByMod[modId]) {
+      _workspaceDiagnosticsByMod[modId] = {};
+    }
+    if (_currentFileDiagnostics.length > 0) {
+      _workspaceDiagnostics[currentFilePath] = _currentFileDiagnostics;
+      _workspaceDiagnosticsByMod[modId][currentFilePath] = _currentFileDiagnostics;
+    } else {
+      delete _workspaceDiagnostics[currentFilePath];
+      delete _workspaceDiagnosticsByMod[modId][currentFilePath];
+    }
+    updateWorkspaceBadge();
+    if (_activeTab === 'workspace') {
+      renderWorkspaceProblemsView();
+    }
+  } else {
+    updateWorkspaceBadge();
   }
 
   if (count === 0) {
@@ -294,18 +342,42 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
   });
 }
 
+export function loadWorkspaceDiagnosticsForMod(modId: string): void {
+  _workspaceDiagnostics = _workspaceDiagnosticsByMod[modId] || {};
+  updateWorkspaceBadge();
+  if (_activeTab === 'workspace') {
+    renderWorkspaceProblemsView();
+  }
+}
+
+export function clearWorkspaceProblemsCache(): void {
+  _workspaceDiagnostics = {};
+  _workspaceDiagnosticsByMod = {};
+  updateWorkspaceBadge();
+}
+
 export async function triggerWorkspaceScan(force = false): Promise<void> {
   const state = getState();
   const modId = state.editorModId;
   if (!modId) return;
 
+  // Instant 0ms recovery from per-mod cache
+  if (!force && _workspaceDiagnosticsByMod[modId]) {
+    _workspaceDiagnostics = _workspaceDiagnosticsByMod[modId];
+    updateWorkspaceBadge();
+    if (_activeTab === 'workspace') {
+      renderWorkspaceProblemsView();
+    }
+    return;
+  }
+
   if (_isScanningWorkspace && !force) return;
   _isScanningWorkspace = true;
 
   const workspaceList = editorDom.elMaybe('editor-problems-workspace-list');
-  const workspaceCountBadge = editorDom.elMaybe('editor-problems-workspace-count-badge');
 
-  if (workspaceList) {
+  // Only show the loading spinner when forced or when cache is empty for this mod
+  if (workspaceList && (force || !_workspaceDiagnosticsByMod[modId])) {
     workspaceList.innerHTML = `
       <div class="editor-problems-empty">
         <span class="spinner" style="width:14px;height:14px;border:2px solid var(--accent);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></span>
@@ -315,8 +387,13 @@ export async function triggerWorkspaceScan(force = false): Promise<void> {
   }
 
   try {
-    _workspaceDiagnostics = await scanWorkspaceProblems(modId);
-    renderWorkspaceProblemsView();
+    const res = await scanWorkspaceProblems(modId);
+    _workspaceDiagnosticsByMod[modId] = res || {};
+    _workspaceDiagnostics = _workspaceDiagnosticsByMod[modId];
+    updateWorkspaceBadge();
+    if (_activeTab === 'workspace') {
+      renderWorkspaceProblemsView();
+    }
   } catch (err) {
     console.error('Failed to scan workspace problems:', err);
     if (workspaceList) {

@@ -13,7 +13,7 @@ export interface DbViewState {
   snapshot: DbSnapshot | null;
   activeTable: DbTable;
   selectedRecordType: 'mod' | 'profile' | 'settings' | 'usmap_struct' | 'usmap_enum' | 'usmap_name' | null;
-  selectedRecordId: string;
+  selectedRecordId: string | null;
 
   // USMAP State
   usmapSummary: UsmapSummaryData | null;

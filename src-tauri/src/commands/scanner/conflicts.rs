@@ -20,6 +20,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
     let mut table_map: TableMap = HashMap::new();
     let mut hook_map: HookMap = HashMap::new();
     let mut palschema_tables: Vec<PalschemaTableEntry> = Vec::new();
+    let mut deprecated_diagnostics: Vec<UsmapHookDiagnostic> = Vec::new();
     let mut warnings = Vec::new();
     
     let mut total_scanned = 0;
@@ -97,7 +98,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                 };
 
                 if let Some(ref s_path) = scripts_path {
-                    scan_ue4ss_mod(&base_path, s_path, &conflict_info, &mut hook_map, &mut warnings);
+                    scan_ue4ss_mod(&base_path, s_path, &conflict_info, &mut hook_map, &mut deprecated_diagnostics, &mut warnings);
                 }
             }
         }
@@ -390,16 +391,24 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                 }
             }
 
+            // 4. Add Deprecated UE4SS APIs & Blind pcall Anti-Patterns
+            for dep in deprecated_diagnostics {
+                broken_hooks += 1;
+                diagnostics.push(dep);
+            }
+
             diagnostics.sort_by(|a, b| {
                 let status_order = |s: &str| match s {
                     "broken_class" => 0,
                     "broken_function" => 1,
                     "broken_table" => 2,
                     "broken_struct" => 3,
-                    "unknown" => 4,
-                    "blueprint_asset" => 5,
-                    "valid" => 6,
-                    _ => 7,
+                    "deprecated_api" => 4,
+                    "blind_pcall" => 5,
+                    "unknown" => 6,
+                    "blueprint_asset" => 7,
+                    "valid" => 8,
+                    _ => 9,
                 };
                 status_order(&a.status)
                     .cmp(&status_order(&b.status))
@@ -566,6 +575,7 @@ fn scan_ue4ss_mod(
     scripts_path: &Path,
     conflict_info: &ConflictingMod,
     hook_map: &mut HookMap,
+    deprecated_diagnostics: &mut Vec<UsmapHookDiagnostic>,
     _warnings: &mut Vec<String>,
 ) {
     let mut files_to_scan = Vec::new();
@@ -593,6 +603,15 @@ fn scan_ue4ss_mod(
                     entry.1.push(current_info);
                 }
             }
+
+            // Scan for Deprecated UE4SS APIs & Blind pcall Anti-Patterns
+            crate::commands::scanner::hook_validator::scan_lua_deprecations(
+                &file_info.mod_id,
+                &file_info.mod_name,
+                &file_info.file_path,
+                &content,
+                deprecated_diagnostics,
+            );
         }
     }
 }

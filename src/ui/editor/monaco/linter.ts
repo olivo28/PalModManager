@@ -1,13 +1,10 @@
 import * as monaco from 'monaco-editor';
 import { validateEditorCode, EditorDiagnostic } from '../../../api';
-import { editorDom } from '../../../framework';
-import { t } from '../../../utils/i18n';
 import { getCurrentMonacoFilePath } from './state';
-import { renderProblemsList, toggleProblemsPanel } from './problemsPanel';
+import { renderProblemsList } from './problemsPanel';
 
 let _activeDiagnostics: EditorDiagnostic[] = [];
 let _debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let _badgeListenerAttached = false;
 
 export function getActiveDiagnostics(): EditorDiagnostic[] {
   return _activeDiagnostics;
@@ -43,7 +40,6 @@ export async function runValidation(
   if (!filePath || (!filePath.endsWith('.lua') && !filePath.endsWith('.json') && !filePath.endsWith('.jsonc'))) {
     monaco.editor.setModelMarkers(model, 'palworld', []);
     _activeDiagnostics = [];
-    updateHealthBadge(0);
     renderProblemsList([]);
     return;
   }
@@ -54,7 +50,6 @@ export async function runValidation(
   if (content.length > 2 * 1024 * 1024) {
     monaco.editor.setModelMarkers(model, 'palworld', []);
     _activeDiagnostics = [];
-    updateHealthBadge(0, true);
     renderProblemsList([]);
     return;
   }
@@ -88,38 +83,8 @@ export async function runValidation(
     });
 
     monaco.editor.setModelMarkers(model, 'palworld', markers);
-    updateHealthBadge(_activeDiagnostics.length);
     renderProblemsList(_activeDiagnostics);
   } catch (err) {
     console.error('Validation error in Monaco linter:', err);
-  }
-}
-
-function updateHealthBadge(issueCount: number, isLargeFile = false): void {
-  const badge = editorDom.elMaybe('editor-health-badge');
-  if (!badge) return;
-
-  if (!_badgeListenerAttached) {
-    badge.addEventListener('click', () => {
-      toggleProblemsPanel();
-    });
-    badge.style.cursor = 'pointer';
-    _badgeListenerAttached = true;
-  }
-
-  badge.title = t('editor.health_click_tooltip') || 'Click to toggle Problems panel';
-
-  if (isLargeFile) {
-    badge.className = 'editor-health-badge clean';
-    badge.innerHTML = `<span class="health-icon">⚡</span> <span class="health-text">${t('editor.health_clean')} (&gt;2MB)</span>`;
-  } else if (issueCount === 0) {
-    badge.className = 'editor-health-badge clean';
-    badge.innerHTML = `<span class="health-icon">✓</span> <span class="health-text">${t('editor.health_clean')}</span>`;
-  } else if (issueCount === 1) {
-    badge.className = 'editor-health-badge issues';
-    badge.innerHTML = `<span class="health-icon">⚠️</span> <span class="health-text">${t('editor.health_single_issue', { count: 1 })}</span>`;
-  } else {
-    badge.className = 'editor-health-badge issues';
-    badge.innerHTML = `<span class="health-icon">⚠️</span> <span class="health-text">${t('editor.health_multiple_issues', { count: issueCount })}</span>`;
   }
 }

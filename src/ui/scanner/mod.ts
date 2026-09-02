@@ -73,10 +73,10 @@ export interface UsmapHookDiagnostic {
   hookTarget: string;
   targetClass: string;
   targetFunction: string;
-  status: 'valid' | 'blueprint_asset' | 'broken_class' | 'broken_function' | 'broken_table' | 'broken_struct' | 'unknown';
+  status: 'valid' | 'blueprint_asset' | 'broken_class' | 'broken_function' | 'broken_table' | 'broken_struct' | 'deprecated_api' | 'blind_pcall' | 'unknown';
   reason: string;
   suggestion?: string;
-  category?: 'ue4ss' | 'palschema' | 'pak';
+  category?: 'ue4ss' | 'palschema' | 'pak' | 'ue4ss_deprecated' | 'anti_pattern';
 }
 
 export interface UsmapDiagnosticSummary {

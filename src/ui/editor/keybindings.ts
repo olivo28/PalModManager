@@ -140,10 +140,18 @@ export async function openFileAtLine(modId: string, filePath: string, lineNumber
   const normalizedPath = filePath.replace(/\\/g, '/').replace(/^\/+/, '').trim();
   const state = getState();
 
-  if (state.editorModId !== modId) {
-    await switchEditorMod(modId, normalizedPath);
+  // Find exact mod ID if display name or folder was passed
+  const targetMod = state.allMods.find(m => 
+    m.id === modId || 
+    m.name.toLowerCase() === modId.toLowerCase() || 
+    (m as any).folderName?.toLowerCase() === modId.toLowerCase()
+  );
+  const resolvedModId = targetMod ? targetMod.id : modId;
+
+  if (state.editorModId !== resolvedModId) {
+    await switchEditorMod(resolvedModId, normalizedPath, lineNumber);
   } else {
-    revealAndSelectFile(normalizedPath);
+    await revealAndSelectFile(normalizedPath, lineNumber);
   }
 
   jumpToLineInEditor(lineNumber);
@@ -152,13 +160,39 @@ export async function openFileAtLine(modId: string, filePath: string, lineNumber
 export function jumpToLineInEditor(lineNumber: number, retryCount = 0): void {
   const editor = getMonacoEditor();
   if (!editor) {
-    if (retryCount < 10) {
-      setTimeout(() => jumpToLineInEditor(lineNumber, retryCount + 1), 60);
+    if (retryCount < 15) {
+      setTimeout(() => jumpToLineInEditor(lineNumber, retryCount + 1), 40);
     }
     return;
   }
 
-  editor.revealLineInCenter(lineNumber);
-  editor.setPosition({ lineNumber, column: 1 });
+  const model = editor.getModel();
+  if (!model) {
+    if (retryCount < 15) {
+      setTimeout(() => jumpToLineInEditor(lineNumber, retryCount + 1), 40);
+    }
+    return;
+  }
+
+  const maxLine = model.getLineCount();
+  const targetLine = Math.min(Math.max(1, lineNumber), maxLine);
+
+  editor.revealLineInCenter(targetLine);
+  editor.setPosition({ lineNumber: targetLine, column: 1 });
   editor.focus();
+
+  // Highlight the line briefly with a flash decoration
+  const monaco = (window as any).monaco;
+  if (monaco) {
+    const decorations = editor.createDecorationsCollection([
+      {
+        range: new monaco.Range(targetLine, 1, targetLine, model.getLineMaxColumn(targetLine)),
+        options: {
+          isWholeLine: true,
+          className: 'monaco-line-jump-highlight',
+        },
+      },
+    ]);
+    setTimeout(() => decorations.clear(), 2000);
+  }
 }

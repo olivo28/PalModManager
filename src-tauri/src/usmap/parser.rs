@@ -160,7 +160,6 @@ pub fn parse_usmap_file(path: &Path) -> Result<UsmapSchema, String> {
 
     // 5. Read Structs / Classes Table
     let struct_count = read_u32(&payload, &mut p_cursor).unwrap_or(0) as usize;
-    eprintln!("p_cursor = {}, payload.len() = {}, struct_count = {}", p_cursor, payload.len(), struct_count);
     let mut structs = HashMap::with_capacity(struct_count.min(20000));
 
     for _ in 0..struct_count {

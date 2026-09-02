@@ -1,5 +1,6 @@
 import * as monaco from 'monaco-editor';
 import { getEditorCompletions, EditorCompletion } from '../../../api';
+import { getState } from '../../../state';
 import { getCurrentMonacoFilePath } from './state';
 
 export function registerMonacoCompletionProviders(): void {
@@ -41,7 +42,9 @@ export function registerMonacoCompletionProviders(): void {
           };
 
       try {
-        const results = await getEditorCompletions(filePath, query, textUntilPosition);
+        const state = getState();
+        const modId = state.editorModId || undefined;
+        const results = await getEditorCompletions(filePath, query, textUntilPosition, modId);
         if (!results || results.length === 0) {
           return { suggestions: [] };
         }
@@ -58,7 +61,7 @@ export function registerMonacoCompletionProviders(): void {
     },
   });
 
-  // 2. JSON & JSONC (PalSchema) Completion Provider
+  // 2. JSON & JSONC (PalSchema & Workspace) Completion Provider
   const jsonProvider: monaco.languages.CompletionItemProvider = {
     triggerCharacters: ['"', ':', '{', ' ', '/', 'D', 'P', 'B'],
     async provideCompletionItems(model, position) {
@@ -96,7 +99,9 @@ export function registerMonacoCompletionProviders(): void {
           };
 
       try {
-        const results = await getEditorCompletions(filePath, query, textUntilPosition);
+        const state = getState();
+        const modId = state.editorModId || undefined;
+        const results = await getEditorCompletions(filePath, query, textUntilPosition, modId);
         if (!results || results.length === 0) {
           return { suggestions: [] };
         }
@@ -141,7 +146,17 @@ function mapToMonacoCompletionItem(
       kind = monaco.languages.CompletionItemKind.Interface;
       break;
     case 'struct':
+    case 'property':
       kind = monaco.languages.CompletionItemKind.Property;
+      break;
+    case 'field':
+      kind = monaco.languages.CompletionItemKind.Field;
+      break;
+    case 'constant':
+      kind = monaco.languages.CompletionItemKind.Constant;
+      break;
+    case 'value':
+      kind = monaco.languages.CompletionItemKind.Value;
       break;
     case 'api':
       kind = monaco.languages.CompletionItemKind.Function;

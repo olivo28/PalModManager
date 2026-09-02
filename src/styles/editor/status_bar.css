@@ -1,0 +1,100 @@
+/* ==========================================================================
+   Editor Bottom Status Bar (Footer)
+   ========================================================================== */
+
+.editor-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 24px;
+  min-height: 24px;
+  background: var(--bg-tertiary, #16181d);
+  border-top: 1px solid var(--border, #27272a);
+  padding: 0 10px;
+  font-size: 11px;
+  color: var(--text-muted, #71717a);
+  user-select: none;
+  z-index: 6;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.editor-status-bar-left,
+.editor-status-bar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-status-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--text-muted, #a1a1aa);
+  white-space: nowrap;
+}
+
+.editor-status-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: transparent;
+  border: none;
+  color: var(--text-muted, #a1a1aa);
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-status-btn:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary, #ffffff);
+}
+
+.editor-status-btn.has-issues {
+  color: #fbbf24;
+}
+
+.editor-status-btn.has-errors {
+  color: #f87171;
+}
+
+.editor-status-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--border, #2d3139);
+}
+
+.editor-status-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.editor-status-dot.green {
+  background: #22c55e;
+  box-shadow: 0 0 6px rgba(34, 197, 94, 0.5);
+}
+
+.editor-status-dot.blue {
+  background: #38bdf8;
+  box-shadow: 0 0 6px rgba(56, 189, 248, 0.5);
+}
+
+.editor-status-dot.yellow {
+  background: #f59e0b;
+}
+
+.editor-status-item.lang-badge {
+  font-weight: 700;
+  color: var(--accent, #38bdf8);
+  background: rgba(56, 189, 248, 0.1);
+  padding: 1px 6px;
+  border-radius: 3px;
+  border: 1px solid rgba(56, 189, 248, 0.2);
+}

@@ -81,7 +81,7 @@ export function renderEditorModTree(): void {
   });
 }
 
-export async function switchEditorMod(modId: string, targetFile?: string): Promise<void> {
+export async function switchEditorMod(modId: string, targetFile?: string, lineNumber?: number): Promise<void> {
   const state = getState();
   const currentModId = state.editorModId;
   if (currentModId === modId && !targetFile) return;
@@ -109,19 +109,19 @@ export async function switchEditorMod(modId: string, targetFile?: string): Promi
   await loadEditorData(modId);
 
   // 1. If a specific target file was requested, prioritize revealing it
-  if (targetFile && revealAndSelectFile(targetFile)) {
+  if (targetFile && await revealAndSelectFile(targetFile, lineNumber)) {
     return;
   }
 
   // 2. Prioritize last opened file for this mod
   const lastFile = _lastFilePerMod[modId];
-  if (lastFile && revealAndSelectFile(lastFile)) {
+  if (lastFile && await revealAndSelectFile(lastFile)) {
     return;
   }
 
   // 3. Fallback to best configuration / script file
   const bestFile = findBestConfigFile(getState().editorFiles || []);
-  if (bestFile && revealAndSelectFile(bestFile)) {
+  if (bestFile && await revealAndSelectFile(bestFile)) {
     return;
   }
 
@@ -129,8 +129,7 @@ export async function switchEditorMod(modId: string, targetFile?: string): Promi
   const firstFile = document.querySelector('.editor-file-item') as HTMLElement | null;
   if (firstFile) {
     const path = firstFile.dataset.path;
-    if (path) revealAndSelectFile(path);
-    else firstFile.click();
+    if (path) await revealAndSelectFile(path);
   }
 }
 
@@ -191,7 +190,7 @@ export function findBestConfigFile(files: string[]): string | null {
   return validFiles[0];
 }
 
-export function revealAndSelectFile(filePath: string): boolean {
+export async function revealAndSelectFile(filePath: string, lineNumber?: number): Promise<boolean> {
   if (!filePath) return false;
   const tree = document.getElementById('editor-file-tree');
   if (!tree) return false;
@@ -224,11 +223,22 @@ export function revealAndSelectFile(filePath: string): boolean {
   }
 
   if (fileItem) {
-    fileItem.click();
+    const actualPath = fileItem.dataset.path || normalizedTarget;
+    tree.querySelectorAll('.editor-file-item').forEach(el => el.classList.remove('selected'));
+    fileItem.classList.add('selected');
     fileItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+
+    updateState({ editorSelectedFile: actualPath });
+    const state = getState();
+    if (state.editorModId) _lastFilePerMod[state.editorModId] = actualPath;
+
+    await loadFileContent(actualPath, lineNumber);
     return true;
   }
-  return false;
+
+  // Direct load fallback
+  await loadFileContent(normalizedTarget, lineNumber);
+  return true;
 }
 
 interface FileTreeNode {

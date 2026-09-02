@@ -25,13 +25,13 @@ export async function openConfigEditor(modId: string): Promise<void> {
 
   // 1. Search for the best configuration / main script file
   const bestFile = findBestConfigFile(files);
-  if (bestFile && revealAndSelectFile(bestFile)) {
+  if (bestFile && (await revealAndSelectFile(bestFile))) {
     return;
   }
 
   // 2. Fallback to last visited file for this mod
   const lastFile = _lastFilePerMod[modId];
-  if (lastFile && revealAndSelectFile(lastFile)) {
+  if (lastFile && (await revealAndSelectFile(lastFile))) {
     return;
   }
 
@@ -39,7 +39,7 @@ export async function openConfigEditor(modId: string): Promise<void> {
   const firstFile = document.querySelector('.editor-file-item') as HTMLElement | null;
   if (firstFile) {
     const path = firstFile.dataset.path;
-    if (path) revealAndSelectFile(path);
+    if (path) await revealAndSelectFile(path);
     else firstFile.click();
   }
 }

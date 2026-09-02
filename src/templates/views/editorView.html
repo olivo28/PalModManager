@@ -1,21 +1,5 @@
 <!-- EDITOR TAB -->
 <div id="editor-view" class="tab-content">
-  <div id="editor-toolbar">
-    <select id="editor-mod-select" style="display:none">
-      <option value="" data-i18n="editor.select_mod_placeholder">Select a mod...</option>
-    </select>
-    <span id="editor-current-mod-name" style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 8px;min-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;"></span>
-    <span class="editor-sep"></span>
-    <button id="editor-format-btn" class="btn-editor" title="Format JSON" data-i18n-title="editor.btn_format_title" data-i18n="common.format">Format</button>
-    <button id="editor-preview-btn" class="btn-editor" title="Toggle preview" data-i18n-title="editor.btn_preview_title" data-i18n="common.preview" style="display:none">Preview</button>
-    <button id="editor-diff-btn" class="btn-editor" title="Compare diff with active version" data-i18n-title="editor.btn_diff_title" data-i18n="editor.btn_diff" style="display:none">🔍 Diff</button>
-    <button id="editor-restore-btn" class="btn-editor" title="Restore this backup" data-i18n-title="editor.btn_restore_title" data-i18n="editor.btn_restore" style="display:none; background:#ff9000; color:#000; font-weight:700; border-color:#ff9000;">🔄 Restore</button>
-    <button id="editor-save-btn" class="btn-editor primary" data-i18n="common.save">Save</button>
-    <div style="flex:1"></div>
-    <span id="editor-health-badge" class="editor-health-badge" style="display:none"></span>
-    <span id="editor-cursor-pos" style="font-size:11px;color:var(--text-muted);margin-right:12px;font-family:monospace;"></span>
-    <span id="editor-status"></span>
-  </div>
   <div id="editor-body">
     <!-- Left: mod tree panel -->
     <div id="editor-mod-panel">
@@ -58,6 +42,39 @@
         </div>
         <div id="editor-problems-workspace-list" class="editor-problems-list" style="display:none">
           <!-- Populated dynamically by problemsPanel.ts -->
+        </div>
+      </div>
+      <!-- Editor Bottom Status Bar (Footer) -->
+      <div id="editor-status-bar" class="editor-status-bar">
+        <div class="editor-status-bar-left">
+          <button id="editor-status-problems-btn" class="editor-status-btn" title="Toggle Problems Panel">
+            <span class="editor-status-icon">⚠️</span>
+            <span id="editor-status-error-count">0 Problems</span>
+          </button>
+          <span class="editor-status-sep"></span>
+          <span id="editor-status-mod-info" class="editor-status-item">
+            <span class="editor-status-icon">📦</span>
+            <span id="editor-status-mod-name">Mod</span>
+          </span>
+        </div>
+        <div class="editor-status-bar-right">
+          <span id="editor-status-usmap" class="editor-status-item" title="Palworld Unreal Engine Reflection Schema">
+            <span class="editor-status-dot green"></span>
+            <span id="editor-status-usmap-label">USMAP: Active</span>
+          </span>
+          <span class="editor-status-sep"></span>
+          <span id="editor-status-sdk" class="editor-status-item" title="UE4SS C++ SDK CXXHeaderDump Index">
+            <span class="editor-status-dot blue"></span>
+            <span id="editor-status-sdk-label">SDK: Indexed</span>
+          </span>
+          <span class="editor-status-sep"></span>
+          <span id="editor-status-cursor" class="editor-status-item">Ln 1, Col 1</span>
+          <span class="editor-status-sep"></span>
+          <span id="editor-status-spaces" class="editor-status-item">Spaces: 4</span>
+          <span class="editor-status-sep"></span>
+          <span id="editor-status-encoding" class="editor-status-item">UTF-8</span>
+          <span class="editor-status-sep"></span>
+          <span id="editor-status-language" class="editor-status-item lang-badge">Lua</span>
         </div>
       </div>
     </div>

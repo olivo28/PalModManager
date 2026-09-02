@@ -24,8 +24,15 @@ export function registerMonacoQuickFixProvider(): void {
           const endLine = diag.endLine || diag.line;
           const endCol = diag.endColumn || (startCol + diag.target.length);
 
+          let title = `💡 Quick Fix: Replace with "${diag.suggestion}"`;
+          if (diag.category === 'ue4ss_deprecated') {
+            title = `💡 Replace deprecated "${diag.target}" with "${diag.suggestion}"`;
+          } else if (diag.category === 'anti_pattern') {
+            title = `🛡️ Safe Error Handling: Capture "${diag.suggestion}"`;
+          }
+
           actions.push({
-            title: `💡 Quick Fix: Replace with "${diag.suggestion}"`,
+            title,
             kind: 'quickfix',
             isPreferred: true,
             diagnostics: context.markers,

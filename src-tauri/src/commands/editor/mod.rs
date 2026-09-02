@@ -6,9 +6,11 @@ pub mod linter_lua;
 pub mod linter_json;
 pub mod validation;
 pub mod completions;
+pub mod workspace_index;
 
 // Re-export types
 pub use types::{EditorDiagnostic, EditorCompletion};
+pub use workspace_index::*;
 
 // Re-export linters
 pub use linter_lua::{lint_lua_syntax, LuaLexState};

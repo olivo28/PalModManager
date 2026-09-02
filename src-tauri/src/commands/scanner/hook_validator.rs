@@ -323,3 +323,99 @@ pub fn validate_hook_with_usmap(
         None,
     )
 }
+
+pub fn scan_lua_deprecations(
+    mod_id: &str,
+    mod_name: &str,
+    file_rel_path: &str,
+    content: &str,
+    diagnostics: &mut Vec<crate::commands::scanner::types::UsmapHookDiagnostic>,
+) {
+    let lines: Vec<&str> = content.lines().collect();
+    for (i, line) in lines.iter().enumerate() {
+        let line_num = (i + 1) as u32;
+        let trimmed = line.trim();
+        if trimmed.starts_with("--") {
+            continue;
+        }
+
+        // Mask out string literals and inline comments
+        let code_only = crate::commands::editor::validation::mask_strings_and_comments(line);
+        let code_trimmed = code_only.trim();
+
+        let line_lower = code_only.to_ascii_lowercase();
+        let deprecated_rules = [
+            (
+                "loopasync",
+                "LoopAsync",
+                "LoopAsync is deprecated in UE4SS. Use LoopInGameThreadWithDelay for cancellable and pauseable timers.",
+                Some("LoopInGameThreadWithDelay"),
+            ),
+            (
+                "executeasync",
+                "ExecuteAsync",
+                "ExecuteAsync is deprecated in UE4SS. Use ExecuteInGameThread or ExecuteInGameThreadWithDelay for thread safety.",
+                Some("ExecuteInGameThreadWithDelay"),
+            ),
+            (
+                "executewithdelay",
+                "ExecuteWithDelay",
+                "ExecuteWithDelay is deprecated in UE4SS. Use ExecuteInGameThreadWithDelay from the Delayed Action System.",
+                Some("ExecuteInGameThreadWithDelay"),
+            ),
+            (
+                "getchartarray",
+                "GetCharTArray",
+                "GetCharTArray() is deprecated in UE4SS. Use GetCharArray() instead.",
+                Some("GetCharArray"),
+            ),
+            (
+                "foreachproperty",
+                "ForEachProperty",
+                "ForEachProperty is deprecated on UStruct/UClass in UE4SS. Use direct field access (GetPropertyValue / __index).",
+                None,
+            ),
+        ];
+
+        for (token_lower, display_name, reason, suggestion) in &deprecated_rules {
+            if let Some(pos) = line_lower.find(token_lower) {
+                let is_prefix = pos > 0 && code_only.chars().nth(pos - 1).map(|c| c.is_alphanumeric() || c == '_').unwrap_or(false);
+                let after_idx = pos + token_lower.len();
+                let is_suffix = after_idx < code_only.len() && code_only.chars().nth(after_idx).map(|c| c.is_alphanumeric() || c == '_').unwrap_or(false);
+
+                if !is_prefix && !is_suffix {
+                    diagnostics.push(crate::commands::scanner::types::UsmapHookDiagnostic {
+                        mod_id: mod_id.to_string(),
+                        mod_name: mod_name.to_string(),
+                        file_path: file_rel_path.to_string(),
+                        line_number: line_num,
+                        hook_target: display_name.to_string(),
+                        target_class: display_name.to_string(),
+                        target_function: String::new(),
+                        status: "deprecated_api".to_string(),
+                        reason: reason.to_string(),
+                        suggestion: suggestion.map(|s| s.to_string()),
+                        category: "ue4ss_deprecated".to_string(),
+                    });
+                }
+            }
+        }
+
+        // Blind pcall check
+        if code_trimmed.starts_with("pcall(") || code_trimmed.starts_with("pcall ") {
+            diagnostics.push(crate::commands::scanner::types::UsmapHookDiagnostic {
+                mod_id: mod_id.to_string(),
+                mod_name: mod_name.to_string(),
+                file_path: file_rel_path.to_string(),
+                line_number: line_num,
+                hook_target: "pcall(...)".to_string(),
+                target_class: "pcall".to_string(),
+                target_function: "pcall".to_string(),
+                status: "blind_pcall".to_string(),
+                reason: "Blind pcall detected: suppressing errors silences runtime crashes and makes mods impossible to debug. Capture 'local ok, err = pcall(...)' and log errors.".to_string(),
+                suggestion: Some("local ok, err = pcall(...)".to_string()),
+                category: "anti_pattern".to_string(),
+            });
+        }
+    }
+}

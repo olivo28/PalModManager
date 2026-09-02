@@ -2,7 +2,7 @@ use std::collections::HashMap;
 use std::path::Path;
 use tauri::State;
 use crate::state::AppState;
-use crate::usmap::{get_or_load_sdk_index, sync::get_active_usmap_path, parser::parse_usmap_file};
+use crate::usmap::{get_or_load_sdk_index, get_or_load_schema};
 use super::types::EditorDiagnostic;
 use super::linter_lua::lint_lua_syntax;
 use super::linter_json::{lint_json_syntax, find_key_position};
@@ -29,13 +29,7 @@ pub async fn validate_editor_code(
         return Ok(Vec::new());
     }
 
-    let usmap_path = get_active_usmap_path(&program_path);
-    let schema = if usmap_path.exists() {
-        parse_usmap_file(&usmap_path).ok()
-    } else {
-        None
-    };
-
+    let schema = get_or_load_schema(&program_path);
     let sdk_index = get_or_load_sdk_index(&program_path, &game_path);
 
     if ext == "lua" {
@@ -99,6 +93,11 @@ pub async fn validate_editor_code(
                 }
             }
         }
+
+        // -------------------------------------------------------------
+        // Layer 3: UE4SS Deprecated APIs & Blind pcall Anti-Patterns
+        // -------------------------------------------------------------
+        lint_deprecated_and_antipatterns(&content, &mut diagnostics);
     } else if ext == "json" || ext == "jsonc" {
         // -------------------------------------------------------------
         // Layer 1: Universal JSON Syntax & Duplicate Key Detection
@@ -167,12 +166,7 @@ pub async fn scan_workspace_problems(
     let files = crate::commands::config_commands::list_mod_files(mod_id, state.clone())?;
     let mut results: HashMap<String, Vec<EditorDiagnostic>> = HashMap::new();
 
-    let usmap_path = get_active_usmap_path(&program_path);
-    let schema = if usmap_path.exists() {
-        parse_usmap_file(&usmap_path).ok()
-    } else {
-        None
-    };
+    let schema = get_or_load_schema(&program_path);
     let sdk_index = get_or_load_sdk_index(&program_path, &game_path);
 
     for file_path in files {
@@ -259,9 +253,52 @@ pub async fn scan_workspace_problems(
                     }
                 }
             }
+
+            // Layer 3: Deprecated UE4SS APIs & Blind pcall Anti-Patterns
+            lint_deprecated_and_antipatterns(&content, &mut diagnostics);
         } else if ext == "json" || ext == "jsonc" {
             let clean_content = content.strip_prefix("\u{feff}").unwrap_or(&content);
             lint_json_syntax(clean_content, &mut diagnostics);
+
+            if !clean_content.trim().is_empty() {
+                let stripped = crate::commands::scanner::utils::strip_jsonc_comments(clean_content);
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&stripped) {
+                    if let Some(ref s) = schema {
+                        let lines: Vec<&str> = clean_content.lines().collect();
+                        if let Some(obj) = val.as_object() {
+                            for (key, nested) in obj {
+                                let is_dt = key.starts_with("DT_") || key.contains("DataTable");
+                                let is_bp = key.starts_with("BP_") || key.ends_with("_C");
+                                if (is_dt || is_bp) && nested.is_object() {
+                                    let (line_num, col_num) = find_key_position(&lines, key);
+
+                                    let (status, reason, suggestion) =
+                                        crate::commands::scanner::palschema::validate_palschema_table_with_usmap(
+                                            key,
+                                            s,
+                                            sdk_index.as_ref(),
+                                            Path::new(&game_path),
+                                        );
+
+                                    if status == "broken_table" || status == "broken_class" {
+                                        diagnostics.push(EditorDiagnostic {
+                                            line: line_num,
+                                            column: col_num,
+                                            end_line: line_num,
+                                            end_column: col_num + key.len() as u32,
+                                            severity: "error".to_string(),
+                                            message: reason,
+                                            target: key.clone(),
+                                            suggestion,
+                                            category: "palschema".to_string(),
+                                        });
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         if !diagnostics.is_empty() {
@@ -326,4 +363,184 @@ pub fn extract_string_literal(line: &str, start_pos: usize) -> Option<(String, c
     }
 
     None
+}
+
+pub fn mask_strings_and_comments(line: &str) -> String {
+    let mut out = String::with_capacity(line.len());
+    let mut in_single = false;
+    let mut in_double = false;
+    let mut escaped = false;
+    let chars: Vec<char> = line.chars().collect();
+    let len = chars.len();
+    let mut i = 0;
+
+    while i < len {
+        let c = chars[i];
+        let next_c = if i + 1 < len { Some(chars[i + 1]) } else { None };
+
+        if in_single {
+            if escaped {
+                escaped = false;
+                out.push(' ');
+            } else if c == '\\' {
+                escaped = true;
+                out.push(' ');
+            } else if c == '\'' {
+                in_single = false;
+                out.push(' ');
+            } else {
+                out.push(' ');
+            }
+        } else if in_double {
+            if escaped {
+                escaped = false;
+                out.push(' ');
+            } else if c == '\\' {
+                escaped = true;
+                out.push(' ');
+            } else if c == '"' {
+                in_double = false;
+                out.push(' ');
+            } else {
+                out.push(' ');
+            }
+        } else {
+            if c == '-' && next_c == Some('-') {
+                while i < len {
+                    out.push(' ');
+                    i += 1;
+                }
+                break;
+            } else if c == '\'' {
+                in_single = true;
+                out.push(' ');
+            } else if c == '"' {
+                in_double = true;
+                out.push(' ');
+            } else {
+                out.push(c);
+            }
+        }
+        i += 1;
+    }
+
+    out
+}
+
+pub fn lint_deprecated_and_antipatterns(content: &str, diagnostics: &mut Vec<EditorDiagnostic>) {
+    let lines: Vec<&str> = content.lines().collect();
+
+    for (i, line) in lines.iter().enumerate() {
+        let line_num = (i + 1) as u32;
+        let trimmed = line.trim();
+
+        // Skip full comment lines
+        if trimmed.starts_with("--") {
+            continue;
+        }
+
+        // Mask out string literals and inline comments so we only inspect active code tokens
+        let code_only = mask_strings_and_comments(line);
+        let code_trimmed = code_only.trim();
+
+        // -------------------------------------------------------------
+        // 1. Deprecated UE4SS APIs
+        // -------------------------------------------------------------
+        let deprecated_rules = [
+            (
+                "loopasync",
+                "LoopAsync",
+                "LoopAsync is deprecated in UE4SS. Use LoopInGameThreadWithDelay from the Delayed Action System for cancellable and pauseable timers.",
+                Some("LoopInGameThreadWithDelay"),
+            ),
+            (
+                "executeasync",
+                "ExecuteAsync",
+                "ExecuteAsync is deprecated in UE4SS. Use ExecuteInGameThread or ExecuteInGameThreadWithDelay for thread safety.",
+                Some("ExecuteInGameThreadWithDelay"),
+            ),
+            (
+                "executewithdelay",
+                "ExecuteWithDelay",
+                "ExecuteWithDelay is deprecated in UE4SS. Use ExecuteInGameThreadWithDelay from the Delayed Action System.",
+                Some("ExecuteInGameThreadWithDelay"),
+            ),
+            (
+                "getchartarray",
+                "GetCharTArray",
+                "GetCharTArray() is deprecated in UE4SS. Use GetCharArray() instead.",
+                Some("GetCharArray"),
+            ),
+            (
+                "foreachproperty",
+                "ForEachProperty",
+                "ForEachProperty is deprecated on UStruct/UClass in UE4SS. Use direct field access (GetPropertyValue / __index) or metadata iteration.",
+                None,
+            ),
+        ];
+
+        let line_lower = code_only.to_ascii_lowercase();
+        for (token_lower, display_name, reason, suggestion) in &deprecated_rules {
+            if let Some(pos) = line_lower.find(token_lower) {
+                let is_prefix_char = pos > 0 && code_only.chars().nth(pos - 1).map(|c| c.is_alphanumeric() || c == '_').unwrap_or(false);
+                let after_idx = pos + token_lower.len();
+                let is_suffix_char = after_idx < code_only.len() && code_only.chars().nth(after_idx).map(|c| c.is_alphanumeric() || c == '_').unwrap_or(false);
+
+                if !is_prefix_char && !is_suffix_char {
+                    diagnostics.push(EditorDiagnostic {
+                        line: line_num,
+                        column: (pos + 1) as u32,
+                        end_line: line_num,
+                        end_column: (pos + 1 + display_name.len()) as u32,
+                        severity: "warning".to_string(),
+                        message: reason.to_string(),
+                        target: display_name.to_string(),
+                        suggestion: suggestion.map(|s| s.to_string()),
+                        category: "ue4ss_deprecated".to_string(),
+                    });
+                }
+            }
+        }
+
+        // -------------------------------------------------------------
+        // 2. Anti-Pattern: Blind pcall / Error Silencing
+        // -------------------------------------------------------------
+        // Case A: Orphan `pcall(...)` statement without variable assignment
+        let is_pcall_start = code_trimmed.starts_with("pcall(") || code_trimmed.starts_with("pcall ");
+        if is_pcall_start {
+            if let Some(pos) = code_only.find("pcall") {
+                diagnostics.push(EditorDiagnostic {
+                    line: line_num,
+                    column: (pos + 1) as u32,
+                    end_line: line_num,
+                    end_column: (pos + 6) as u32,
+                    severity: "warning".to_string(),
+                    message: "Blind pcall detected: suppressing errors silences runtime crashes and makes mods impossible to debug. Capture 'local ok, err = pcall(...)' and log errors, or use direct 'if obj and obj:IsValid()' checks.".to_string(),
+                    target: "pcall".to_string(),
+                    suggestion: Some("local ok, err = pcall".to_string()),
+                    category: "anti_pattern".to_string(),
+                });
+            }
+        } else if code_trimmed.starts_with("local ") && code_trimmed.contains("= pcall") {
+            // Case B: `local ok = pcall(` capturing only 1 variable (no comma before `=`)
+            if let Some(eq_idx) = code_trimmed.find('=') {
+                let vars_part = code_trimmed[6..eq_idx].trim();
+                if !vars_part.contains(',') {
+                    if let Some(pos) = code_only.find("pcall") {
+                        diagnostics.push(EditorDiagnostic {
+                            line: line_num,
+                            column: (pos + 1) as u32,
+                            end_line: line_num,
+                            end_column: (pos + 6) as u32,
+                            severity: "warning".to_string(),
+                            message: format!("Unhandled pcall error: only '{}' is captured while the error message is discarded. Capture 'local {}, err = pcall(...)' and log failures when '{} == false'.", vars_part, vars_part, vars_part),
+                            target: "pcall".to_string(),
+                            suggestion: Some(format!("local {}, err = pcall", vars_part)),
+                            category: "anti_pattern".to_string(),
+                        });
+                    }
+                }
+            }
+        }
+    }
 }

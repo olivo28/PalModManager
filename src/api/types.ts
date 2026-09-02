@@ -103,7 +103,7 @@ export interface EditorDiagnostic {
 export interface EditorCompletion {
   label: string;
   insertText: string;
-  kind: 'hook' | 'class' | 'function' | 'delegate' | 'table' | 'struct' | 'api' | 'module';
+  kind: 'hook' | 'class' | 'function' | 'delegate' | 'table' | 'struct' | 'api' | 'module' | 'property' | 'constant' | 'field' | 'value';
   detail?: string;
   documentation?: string;
 }
