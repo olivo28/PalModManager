@@ -61,9 +61,26 @@ pub fn get_mappings_dir(program_path: &str) -> PathBuf {
 
 pub fn get_active_usmap_path(program_path: &str) -> PathBuf {
     let dir = get_mappings_dir(program_path);
-    let target = dir.join("Palworld.usmap");
-    if target.exists() {
-        return target;
+    let local_manifest = load_local_manifest(program_path);
+
+    // 1. Check if manifest has an active/best filename (e.g. Palworld_24575825.usmap)
+    if let Some(ref manifest) = local_manifest {
+        if let Some(best) = find_best_mapping(manifest, None, None) {
+            let target = dir.join(&best.usmap_filename);
+            if target.exists() {
+                return target;
+            }
+        }
+    }
+
+    let default_target = dir.join("Palworld_24575825.usmap");
+    if default_target.exists() {
+        return default_target;
+    }
+
+    let legacy_target = dir.join("Palworld.usmap");
+    if legacy_target.exists() {
+        return legacy_target;
     }
 
     // Check if any custom-named .usmap file exists in the directory
@@ -77,16 +94,24 @@ pub fn get_active_usmap_path(program_path: &str) -> PathBuf {
     }
 
     // Auto-seed from bundled repository resource if missing in LocalAppData
-    if let Some(bundled) = find_bundled_resource("resources/mappings/Palworld.usmap") {
-        let _ = fs::create_dir_all(&dir);
-        let _ = fs::copy(&bundled, &target);
-        if target.exists() {
-            return target;
+    let candidates = [
+        "resources/mappings/Palworld_24575825.usmap",
+        "resources/mappings/Palworld.usmap",
+    ];
+    for cand in &candidates {
+        if let Some(bundled) = find_bundled_resource(cand) {
+            let _ = fs::create_dir_all(&dir);
+            let file_name = bundled.file_name().unwrap_or_default();
+            let dest = dir.join(file_name);
+            let _ = fs::copy(&bundled, &dest);
+            if dest.exists() {
+                return dest;
+            }
+            return bundled;
         }
-        return bundled;
     }
 
-    target
+    default_target
 }
 
 pub fn load_local_manifest(program_path: &str) -> Option<MappingsManifest> {

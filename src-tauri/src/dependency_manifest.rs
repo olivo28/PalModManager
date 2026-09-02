@@ -38,6 +38,14 @@ pub struct DependencyManifest {
     pub dep_type: String,
     pub version: String,
     pub install_date: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub detected_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub adopted_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub manifest_generated_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub is_adopted: Option<bool>,
     pub files: Vec<String>,
 }
 
@@ -100,10 +108,25 @@ pub fn ensure_ue4ss_manifest(game_path: &str, detected_version: Option<&str>) ->
     files.sort();
     files.dedup();
 
+    // Inspect real file modification/creation time of UE4SS.dll or directory
+    let ue4ss_dll = ue4ss_dir.join("UE4SS.dll");
+    let actual_file_time = fs::metadata(&ue4ss_dll)
+        .or_else(|_| fs::metadata(&ue4ss_dir))
+        .ok()
+        .and_then(|m| m.modified().or_else(|_| m.created()).ok())
+        .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339())
+        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+
+    let now_str = chrono::Utc::now().to_rfc3339();
+
     let manifest = DependencyManifest {
         dep_type: "ue4ss".to_string(),
         version,
-        install_date: chrono::Utc::now().to_rfc3339(),
+        install_date: actual_file_time,
+        detected_at: Some(now_str.clone()),
+        adopted_at: Some(now_str.clone()),
+        manifest_generated_at: Some(now_str),
+        is_adopted: Some(true),
         files,
     };
 
@@ -161,10 +184,25 @@ pub fn ensure_palschema_manifest(game_path: &str, detected_version: Option<&str>
     files.sort();
     files.dedup();
 
+    // Inspect real file modification/creation time of main.dll or directory
+    let palschema_dll = palschema_dir.join("dlls").join("main.dll");
+    let actual_file_time = fs::metadata(&palschema_dll)
+        .or_else(|_| fs::metadata(&palschema_dir))
+        .ok()
+        .and_then(|m| m.modified().or_else(|_| m.created()).ok())
+        .map(|t| chrono::DateTime::<chrono::Utc>::from(t).to_rfc3339())
+        .unwrap_or_else(|| chrono::Utc::now().to_rfc3339());
+
+    let now_str = chrono::Utc::now().to_rfc3339();
+
     let manifest = DependencyManifest {
         dep_type: "palschema".to_string(),
         version,
-        install_date: chrono::Utc::now().to_rfc3339(),
+        install_date: actual_file_time,
+        detected_at: Some(now_str.clone()),
+        adopted_at: Some(now_str.clone()),
+        manifest_generated_at: Some(now_str),
+        is_adopted: Some(true),
         files,
     };
 

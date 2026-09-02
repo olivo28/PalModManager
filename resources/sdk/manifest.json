@@ -3,17 +3,19 @@
   "latest_game_version": "v1.0.3",
   "latest_steam_build_id": "24575825",
   "updated_at": "2026-09-02T12:30:00Z",
-  "mappings": [
+  "sdk": [
     {
       "game_version": "v1.0.3",
       "steam_build_id": "24575825",
       "app_id": 1623730,
-      "usmap_filename": "Palworld_24575825.usmap",
-      "usmap_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/mappings/Palworld_24575825.usmap",
-      "sha256": "62411376d57c6aac395ea2eed611440601f5f3884d0710c6b02b7ffd491d182d",
-      "file_size_bytes": 2322295,
+      "sdk_filename": "Palworld_SDK_24575825.zip",
+      "sdk_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/sdk/Palworld_SDK_24575825.zip",
+      "sha256": "523615b2776f4d935e382a0008cc603853a7990b4dc176ecdb986705c1cf848a",
+      "file_size_bytes": 1875979,
+      "total_headers": 1710,
       "engine_version": "UE5.1.1",
       "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-c838a8ac",
+      "source": "CXXHeaderDump",
       "is_latest": true
     }
   ]

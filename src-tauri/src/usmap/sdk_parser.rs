@@ -24,6 +24,14 @@ pub struct SdkIndex {
     pub total_functions: usize,
     pub source: String,
     pub game_version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub build_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sha256: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_headers: Option<usize>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub generated_at: Option<String>,
 }
 
 impl SdkIndex {
@@ -35,6 +43,10 @@ impl SdkIndex {
             total_functions: 0,
             source,
             game_version,
+            build_id: None,
+            sha256: None,
+            total_headers: None,
+            generated_at: None,
         }
     }
 
@@ -352,14 +364,65 @@ pub fn parse_sdk_directory(dir: &Path, source_label: &str) -> Result<SdkIndex, S
         return Err(format!("SDK directory does not exist: {:?}", dir));
     }
 
-    let mut index = SdkIndex::new(source_label.to_string(), "v0.3.0+".to_string());
     let mut hpp_files = Vec::new();
-
     collect_hpp_files(dir, &mut hpp_files);
 
     if hpp_files.is_empty() {
         return Err(format!("No C++ header (.hpp) files found in {:?}", dir));
     }
+
+    let mut game_version = "v1.0.3".to_string();
+    let mut build_id = None;
+    let mut sha256 = None;
+    let mut generated_at = None;
+
+    // Check for manifest.json in dir or parent
+    let manifest_candidates = [
+        dir.join("manifest.json"),
+        dir.parent().map(|p| p.join("manifest.json")).unwrap_or_else(|| dir.to_path_buf()),
+    ];
+
+    for m_path in &manifest_candidates {
+        if m_path.exists() {
+            if let Ok(content) = fs::read_to_string(m_path) {
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(lv) = v.get("latest_game_version").and_then(|s| s.as_str()) {
+                        game_version = lv.to_string();
+                    }
+                    if let Some(up) = v.get("updated_at").and_then(|s| s.as_str()) {
+                        generated_at = Some(up.to_string());
+                    }
+                    if let Some(sdks) = v.get("sdk").and_then(|s| s.as_array()) {
+                        if let Some(first) = sdks.first() {
+                            if let Some(gv) = first.get("game_version").and_then(|s| s.as_str()) {
+                                game_version = gv.to_string();
+                            }
+                            if let Some(bid) = first.get("build_id").and_then(|s| s.as_str()) {
+                                build_id = Some(bid.to_string());
+                            }
+                            if let Some(hash) = first.get("sha256").and_then(|s| s.as_str()) {
+                                sha256 = Some(hash.to_string());
+                            }
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+    }
+
+    let mut index = SdkIndex {
+        classes: HashMap::new(),
+        modules: HashSet::new(),
+        total_classes: 0,
+        total_functions: 0,
+        source: source_label.to_string(),
+        game_version,
+        build_id,
+        sha256,
+        total_headers: Some(hpp_files.len()),
+        generated_at,
+    };
 
     // Prioritize main module headers first
     hpp_files.sort_by(|a, b| {
