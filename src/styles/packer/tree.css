@@ -1,0 +1,109 @@
+/* Tree View Styles */
+.packer-tree-root {
+  max-width: 600px;
+  margin: 0 auto;
+}
+
+.packer-tree-node {
+  display: flex;
+  align-items: center;
+  padding: 4px 8px;
+  font-family: monospace;
+  font-size: 12px;
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  user-select: none;
+  max-width: 600px;
+  margin: 2px 0;
+  transition: background 0.1s ease, outline 0.1s ease;
+  position: relative;
+}
+
+.packer-tree-node:hover {
+  background: var(--bg-hover);
+}
+
+.packer-tree-icon {
+  margin-right: 8px;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.packer-tree-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packer-tree-size {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-left: auto;
+  padding-left: 20px;
+  flex-shrink: 0;
+}
+
+.packer-tree-dir {
+  font-weight: 600;
+  color: var(--warning);
+}
+
+.packer-tree-dir.drag-over {
+  background: var(--accent-dim) !important;
+  outline: 1px dashed var(--accent) !important;
+}
+
+.packer-tree-file {
+  cursor: grab;
+}
+
+.packer-tree-file:active {
+  cursor: grabbing;
+}
+
+.packer-tree-actions {
+  display: none;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding-left: 12px;
+}
+
+.packer-tree-node:hover .packer-tree-actions {
+  display: flex;
+}
+
+.packer-tree-action-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 2px 4px;
+  border-radius: var(--radius);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.7;
+  transition: opacity 0.15s, background 0.15s;
+}
+
+.packer-tree-action-btn:hover {
+  opacity: 1;
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.packer-tree-action-btn.danger:hover {
+  color: var(--danger);
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.packer-tree-node.skipped {
+  opacity: 0.45;
+}
+
+.packer-tree-node.skipped .packer-tree-name {
+  text-decoration: line-through;
+}

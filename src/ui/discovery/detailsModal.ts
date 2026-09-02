@@ -22,11 +22,65 @@ import { handleDiscoveryImageError } from './helpers';
 import { openLightbox } from './lightbox';
 import { discoveryDom } from '../../framework';
 
+let _isModalListenersSetup = false;
+
+export function setupDiscoveryModalEventListeners(): void {
+  if (_isModalListenersSetup) return;
+  _isModalListenersSetup = true;
+
+  // Modal close button
+  discoveryDom.elMaybe('discovery-modal-close')?.addEventListener('click', () => {
+    closeDiscoveryModal();
+  });
+
+  // Modal overlay click to close
+  const modalOverlay = discoveryDom.elMaybe('discovery-mod-modal');
+  if (modalOverlay) {
+    modalOverlay.addEventListener('click', (e) => {
+      if (e.target === modalOverlay) {
+        closeDiscoveryModal();
+      }
+    });
+  }
+
+  // Cover image click to open lightbox
+  const coverImg = discoveryDom.elMaybe('discovery-modal-img') as HTMLImageElement | null;
+  if (coverImg) {
+    coverImg.addEventListener('click', () => {
+      if (coverImg.src) {
+        openLightbox(coverImg.src);
+      }
+    });
+  }
+
+  // Modal sub-tabs
+  discoveryDom.queryAll('.discovery-modal-tab').forEach((tabBtn) => {
+    tabBtn.addEventListener('click', () => {
+      const tabName = (tabBtn as HTMLElement).dataset.tab;
+      document.querySelectorAll('.discovery-modal-tab').forEach((b) => b.classList.remove('active'));
+      tabBtn.classList.add('active');
+
+      document.querySelectorAll('.discovery-tab-pane').forEach((p) => {
+        (p as HTMLElement).style.display = 'none';
+        p.classList.remove('active');
+      });
+
+      const pane = document.getElementById(`discovery-tab-${tabName}`);
+      if (pane) {
+        pane.style.display = 'block';
+        pane.classList.add('active');
+      }
+    });
+  });
+}
+
 export async function openModDetails(
   modId: number,
   autoInstallFirstPrimary: boolean = false,
   previewData?: Partial<DiscoveryModItem>
 ): Promise<void> {
+  setupDiscoveryModalEventListeners();
+
   const modal = discoveryDom.elMaybe('discovery-mod-modal');
   if (!modal) return;
 

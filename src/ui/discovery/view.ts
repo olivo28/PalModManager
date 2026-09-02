@@ -7,7 +7,7 @@ import { scrollToTop } from './helpers';
 import { openLightbox, closeLightbox, updateLightboxTransform, setupLightboxPanZoom } from './lightbox';
 import { renderTagChips, renderTagMenu, setupTagPickers } from './tags';
 import { renderGrid } from './grid';
-import { closeDiscoveryModal } from './detailsModal';
+import { closeDiscoveryModal, setupDiscoveryModalEventListeners } from './detailsModal';
 import { discoveryDom } from '../../framework';
 
 export async function renderDiscoveryView(): Promise<void> {
@@ -123,39 +123,8 @@ export function setupEventListeners(): void {
     }
   });
 
-  // Modal close
-  discoveryDom.elMaybe('discovery-modal-close')?.addEventListener('click', () => {
-    closeDiscoveryModal();
-  });
-
-  const modalOverlay = discoveryDom.elMaybe('discovery-mod-modal');
-  if (modalOverlay) {
-    modalOverlay.addEventListener('click', (e) => {
-      if (e.target === modalOverlay) {
-        closeDiscoveryModal();
-      }
-    });
-  }
-
-  // Modal sub-tabs
-  discoveryDom.queryAll('.discovery-modal-tab').forEach((tabBtn) => {
-    tabBtn.addEventListener('click', () => {
-      const tabName = (tabBtn as HTMLElement).dataset.tab;
-      document.querySelectorAll('.discovery-modal-tab').forEach((b) => b.classList.remove('active'));
-      tabBtn.classList.add('active');
-
-      document.querySelectorAll('.discovery-tab-pane').forEach((p) => {
-        (p as HTMLElement).style.display = 'none';
-        p.classList.remove('active');
-      });
-
-      const pane = document.getElementById(`discovery-tab-${tabName}`);
-      if (pane) {
-        pane.style.display = 'block';
-        pane.classList.add('active');
-      }
-    });
-  });
+  // Setup discovery details modal event listeners
+  setupDiscoveryModalEventListeners();
 
   // Lightbox close & controls
   discoveryDom.elMaybe('discovery-lightbox-close')?.addEventListener('click', () => {

@@ -269,8 +269,8 @@ fn merge_json_values(old_val: &Value, new_val: &Value, prefix: &str, ignored_key
 }
 
 fn merge_json(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
-    let old_clean = crate::commands::scanner_commands::strip_jsonc_comments(old);
-    let new_clean = crate::commands::scanner_commands::strip_jsonc_comments(new);
+    let old_clean = crate::commands::scanner::utils::strip_jsonc_comments(old);
+    let new_clean = crate::commands::scanner::utils::strip_jsonc_comments(new);
     
     let old_json: Value = serde_json::from_str(&old_clean).ok()?;
     let new_json: Value = serde_json::from_str(&new_clean).ok()?;
@@ -436,8 +436,8 @@ pub fn generate_config_diff(old_content: &str, new_content: &str, ext: &str) -> 
 
     let ext_lower = ext.to_lowercase();
     if ext_lower == "json" || ext_lower == "jsonc" {
-        let old_clean = crate::commands::scanner_commands::strip_jsonc_comments(old_content);
-        let new_clean = crate::commands::scanner_commands::strip_jsonc_comments(new_content);
+        let old_clean = crate::commands::scanner::utils::strip_jsonc_comments(old_content);
+        let new_clean = crate::commands::scanner::utils::strip_jsonc_comments(new_content);
         
         let old_json: Value = serde_json::from_str(&old_clean).ok()?;
         let new_json: Value = serde_json::from_str(&new_clean).ok()?;

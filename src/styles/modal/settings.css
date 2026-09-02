@@ -1,0 +1,204 @@
+/* ===== SETTINGS MODAL ===== */
+
+#settings-modal .modal {
+  width: 820px;
+  max-width: 94vw;
+  height: 620px;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+#settings-modal .modal-body {
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+  overflow: hidden;
+  gap: 0;
+}
+
+.settings-modal-layout {
+  display: flex;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.settings-sidebar-nav {
+  width: 200px;
+  background: var(--bg-primary);
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding: 14px 10px;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.settings-tab-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  outline: none;
+}
+
+.settings-tab-button:hover {
+  color: var(--text-primary);
+  background: var(--bg-hover);
+}
+
+.settings-tab-button.active {
+  color: #ffffff;
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.35);
+}
+
+.settings-tab-button .tab-icon {
+  font-size: 15px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-content-viewport {
+  flex: 1;
+  padding: 20px 24px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  background: var(--bg-secondary);
+}
+
+.settings-tab-pane {
+  display: none;
+  flex-direction: column;
+  gap: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.settings-tab-pane.active {
+  display: flex;
+}
+
+.settings-section-card {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.settings-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin: 0;
+}
+
+.settings-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-field-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.settings-field-desc {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+.settings-input-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.settings-input-text {
+  flex: 1;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.settings-input-text:focus {
+  border-color: var(--accent);
+}
+
+.settings-select {
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  font-size: 12px;
+  outline: none;
+  cursor: pointer;
+}
+
+.settings-select:focus {
+  border-color: var(--accent);
+}
+
+.settings-checkbox-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.settings-checkbox-card input[type="checkbox"] {
+  margin-top: 2px;
+  cursor: pointer;
+}
+
+.btn-icon-inline {
+  padding: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.btn-icon-inline:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--text-muted);
+}

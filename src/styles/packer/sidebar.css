@@ -1,0 +1,117 @@
+/* Metadata Form */
+.packer-form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.packer-form-group label {
+  font-size: 10.5px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  opacity: 0.85;
+}
+
+.packer-form-input,
+.packer-form-select,
+.packer-form-textarea {
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 6px;
+  color: #f1f5f9;
+  padding: 7px 10px;
+  font-size: 12px;
+  transition: all 0.2s ease;
+}
+
+.packer-form-textarea {
+  min-height: 125px;
+  height: 125px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.packer-form-input:focus,
+.packer-form-select:focus,
+.packer-form-textarea:focus {
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.45);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+  outline: none;
+}
+
+.packer-form-header {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: 6px;
+  margin-bottom: 4px;
+}
+
+.packer-format-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 16px;
+}
+
+.packer-btn-build {
+  flex: 1;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  padding: 9px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 12.5px;
+  box-shadow: 0 4px 14px rgba(0, 120, 212, 0.3);
+  transition: all 0.2s ease;
+}
+
+.packer-btn-build:hover:not(:disabled) {
+  background: var(--accent-hover);
+  box-shadow: 0 4px 18px rgba(0, 120, 212, 0.45);
+  transform: translateY(-1px);
+}
+
+.packer-btn-build:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.packer-btn-build:disabled {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text-muted);
+  box-shadow: none;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.packer-select-format {
+  width: 90px;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+  border-radius: 6px;
+  padding: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.packer-select-format:focus {
+  border-color: var(--accent);
+  outline: none;
+}

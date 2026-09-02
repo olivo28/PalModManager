@@ -654,7 +654,7 @@ pub async fn handle_nxm_download(
     let zip_str = download_nxm_file(nxm_url, download_id, app_handle, state.clone()).await?;
     let temp_path = std::path::PathBuf::from(&zip_str);
 
-    let install_res = crate::commands::install_commands::install_mod_command(
+    let install_res = crate::commands::install::install_mod_command(
         zip_str,
         None,
         None,

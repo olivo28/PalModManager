@@ -7,7 +7,7 @@ use zip::read::ZipArchive;
 
 use crate::models::{AppData, ModFolder, ModInfo, ModType, Profile, DependencyMode};
 use crate::profiles::utils::{get_profile_dir, sanitize_profile_id};
-use crate::commands::dependency_commands::get_vault_dir;
+use crate::commands::dependency::get_vault_dir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

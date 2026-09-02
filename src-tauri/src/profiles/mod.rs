@@ -1,7 +1,7 @@
 pub mod utils;
 pub mod isolation;
 pub mod actions;
-pub mod core_lifecycle;
+pub mod lifecycle;
 pub mod core;
 pub mod export_import;
 
@@ -25,7 +25,7 @@ pub use core::{
     auto_add_scanned_mods_to_profile,
 };
 
-pub use core_lifecycle::{
+pub use lifecycle::{
     set_profile_mod_state, switch_profile, create_profile, clone_profile,
     delete_profile, clear_profile, rename_profile,
 };

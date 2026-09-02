@@ -1,0 +1,232 @@
+/* ===== Main Code Editor Area ===== */
+#editor-code-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg-primary);
+  position: relative;
+}
+
+#editor-tabs {
+  display: flex;
+  align-items: center;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  overflow-x: auto;
+  flex-shrink: 0;
+  height: 35px;
+}
+
+.editor-tab {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  height: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
+  border-right: 1px solid var(--border);
+  cursor: pointer;
+  user-select: none;
+  background: var(--bg-secondary);
+  transition: all 0.12s;
+  position: relative;
+  white-space: nowrap;
+}
+
+.editor-tab:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.editor-tab.active {
+  background: var(--bg-primary);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.editor-tab.active::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--accent);
+}
+
+.editor-tab-dirty {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent);
+  display: none;
+}
+
+.editor-tab.dirty .editor-tab-dirty {
+  display: block;
+}
+
+.editor-tab-close {
+  font-size: 12px;
+  color: var(--text-muted);
+  border-radius: 2px;
+  padding: 1px 3px;
+  line-height: 1;
+}
+
+.editor-tab-close:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+}
+
+#editor-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 16px;
+  font-size: 10px;
+  color: var(--text-muted);
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.editor-breadcrumb-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.editor-breadcrumb-sep {
+  opacity: 0.4;
+}
+
+#editor-monaco-container {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+#editor-status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 3px 12px;
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  font-size: 10px;
+  color: var(--text-muted);
+  flex-shrink: 0;
+  height: 22px;
+}
+
+.editor-status-left,
+.editor-status-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.editor-status-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: default;
+}
+
+.editor-status-item.clickable {
+  cursor: pointer;
+}
+
+.editor-status-item.clickable:hover {
+  color: var(--text-primary);
+}
+
+/* ===== Markdown Live Preview ===== */
+#editor-preview-container {
+  display: none;
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px 32px;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  line-height: 1.6;
+  font-size: 13px;
+}
+
+#editor-preview-container.split-view {
+  border-left: 1px solid var(--border);
+}
+
+#editor-preview h1,
+#editor-preview h2,
+#editor-preview h3,
+#editor-preview h4 {
+  color: var(--accent);
+  margin-top: 24px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 6px;
+}
+
+#editor-preview h1 { font-size: 20px; }
+#editor-preview h2 { font-size: 16px; }
+#editor-preview h3 { font-size: 14px; }
+
+#editor-preview p {
+  margin-bottom: 14px;
+  color: var(--text-secondary);
+}
+
+#editor-preview a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+#editor-preview a:hover {
+  text-decoration: underline;
+}
+
+#editor-preview ul,
+#editor-preview ol {
+  padding-left: 20px;
+  margin-bottom: 14px;
+}
+
+#editor-preview li {
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+}
+
+#editor-preview code {
+  font-family: 'Consolas', monospace;
+  background: var(--bg-secondary);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+}
+
+#editor-preview pre {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  padding: 12px;
+  border-radius: 6px;
+  overflow-x: auto;
+  margin-bottom: 16px;
+}
+
+#editor-preview pre code {
+  padding: 0;
+  background: transparent;
+}
+
+#editor-preview blockquote {
+  border-left: 4px solid var(--accent);
+  padding-left: 16px;
+  color: var(--text-muted);
+  margin: 0 0 16px 0;
+}

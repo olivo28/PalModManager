@@ -1,20 +1,19 @@
 pub mod settings_commands;
 pub mod mod_commands;
-pub mod install_commands;
+pub mod install;
 pub mod config_commands;
 pub mod nexus_commands;
 pub mod library_commands;
 pub mod profile_commands;
-pub mod dependency_commands;
+pub mod dependency;
 pub mod packer_commands;
-pub mod scanner_commands;
+pub mod scanner;
 pub mod db_commands;
 pub mod load_order_commands;
 pub mod workshop_commands;
 pub mod launch_commands;
-pub mod discovery_commands;
+pub mod discovery;
 pub mod altermatic_commands;
 pub mod usmap_commands;
 pub mod sdk_commands;
-pub mod editor_commands;
-
+pub mod editor;

@@ -1,0 +1,150 @@
+/* Layout Button Toggles (Matching system) */
+.layout-btn {
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  border-radius: var(--radius);
+  width: 26px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.layout-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.layout-btn.active {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+/* Projects Hub Dashboard Card Styles */
+.packer-projects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 20px;
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.packer-project-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  position: relative;
+  min-height: 180px;
+}
+
+.packer-project-card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  background: var(--bg-hover);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.packer-project-card-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+  color: var(--warning);
+}
+
+.packer-project-card-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 6px;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packer-project-card-meta {
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-bottom: auto;
+}
+
+.packer-project-card-actions {
+  display: flex;
+  gap: 6px;
+  width: 100%;
+  margin-top: 12px;
+}
+
+.packer-project-card-btn {
+  flex: 1;
+  font-size: 10px;
+  padding: 4px 8px;
+  border-radius: var(--radius);
+  cursor: pointer;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid var(--border);
+  background: var(--bg-primary);
+  color: var(--text-secondary);
+}
+
+.packer-project-card-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+.packer-project-card-btn.primary {
+  background: var(--accent-dim);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.packer-project-card-btn.primary:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+.packer-project-card-btn.danger:hover {
+  background: var(--danger-dim);
+  color: var(--danger);
+  border-color: var(--danger);
+}
+
+/* "New Project" card placeholder */
+.packer-project-card.new-placeholder {
+  border-style: dashed;
+  border-width: 2px;
+  background: transparent;
+  justify-content: center;
+}
+
+.packer-project-card.new-placeholder:hover {
+  border-color: var(--accent);
+  background: var(--bg-hover);
+}
+
+.packer-project-card.new-placeholder .packer-project-card-icon {
+  color: var(--text-muted);
+}
+
+/* Staging Skip and Tree Actions */
+tr.skipped {
+  opacity: 0.45;
+}
+tr.skipped td strong {
+  text-decoration: line-through;
+}
+tr.skipped .packer-input-target {
+  text-decoration: line-through;
+  opacity: 0.6;
+}

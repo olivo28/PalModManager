@@ -1,0 +1,130 @@
+/* DISCOVERY TAB STYLES */
+
+.discovery-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 20px;
+  background: var(--bg-primary);
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.discovery-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.discovery-nexus-badge {
+  background: linear-gradient(135deg, #da8e35, #b86e20);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 3px 8px;
+  border-radius: 4px;
+  letter-spacing: 0.5px;
+  box-shadow: 0 2px 6px rgba(218, 142, 53, 0.3);
+}
+
+.discovery-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.discovery-filters-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.discovery-select-wrap {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.discovery-select {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  font-size: 11px;
+  font-weight: 600;
+  padding: 5px 8px;
+  border-radius: 4px;
+  outline: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.discovery-select:hover,
+.discovery-select:focus {
+  border-color: var(--accent);
+  background: var(--bg-tertiary);
+}
+
+.discovery-search-wrap {
+  position: relative;
+  width: 200px;
+}
+
+.discovery-search-icon {
+  position: absolute;
+  left: 9px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+#discovery-search-input {
+  width: 100%;
+  padding: 5px 26px 5px 28px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+#discovery-search-input:focus {
+  border-color: var(--accent);
+  background: var(--bg-tertiary);
+  box-shadow: 0 0 0 2px var(--accent-dim);
+}
+
+.discovery-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px;
+}
+
+.discovery-search-clear:hover {
+  color: var(--text-primary);
+}
+
+/* BODY CONTAINER */
+.discovery-body {
+  flex: 1;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}

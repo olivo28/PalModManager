@@ -1,0 +1,333 @@
+#editor-find-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+  position: absolute;
+  top: 12px;
+  right: 24px;
+  width: 320px;
+  z-index: 10;
+}
+
+#editor-find-bar.hidden {
+  display: none;
+}
+
+.editor-find-input-wrap {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#editor-find-input {
+  width: 100%;
+  padding: 4px 50px 4px 8px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 11px;
+}
+
+#editor-find-input:focus {
+  outline: none;
+  border-color: var(--accent);
+}
+
+#editor-find-count {
+  position: absolute;
+  right: 8px;
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.editor-find-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.btn-find-action {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-find-action:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* ===== Diagnostics & Schema Integration ===== */
+.editor-status-diagnostics {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.editor-status-diagnostics:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.editor-status-diagnostics.errors {
+  color: #ef4444;
+}
+
+.editor-status-diagnostics.warnings {
+  color: #f59e0b;
+}
+
+.editor-status-diagnostics.clean {
+  color: #10b981;
+}
+
+.editor-diagnostics-dropdown {
+  position: absolute;
+  bottom: 28px;
+  right: 12px;
+  width: 420px;
+  max-height: 280px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.editor-diagnostics-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border);
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+.editor-diagnostics-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.editor-diagnostic-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+  font-size: 11px;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.editor-diagnostic-item:hover {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.editor-diagnostic-icon {
+  font-size: 12px;
+  margin-top: 1px;
+  flex-shrink: 0;
+}
+
+.editor-diagnostic-item.error .editor-diagnostic-icon { color: #ef4444; }
+.editor-diagnostic-item.warning .editor-diagnostic-icon { color: #f59e0b; }
+.editor-diagnostic-item.info .editor-diagnostic-icon { color: #3b82f6; }
+
+.editor-diagnostic-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.editor-diagnostic-msg {
+  color: var(--text-primary);
+  line-height: 1.35;
+}
+
+.editor-diagnostic-loc {
+  font-size: 10px;
+  color: var(--text-muted);
+}
+
+.editor-diagnostic-schema-badge {
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(139, 92, 246, 0.15);
+  color: #a78bfa;
+  align-self: flex-start;
+}
+
+/* QuickFix Floating Tooltip/Popup */
+.editor-quickfix-popup {
+  position: absolute;
+  background: var(--bg-secondary);
+  border: 1px solid var(--accent);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  padding: 10px 14px;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+  animation: popIn 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes popIn {
+  0% { transform: scale(0.95); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+.editor-quickfix-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #38bdf8;
+}
+
+.editor-quickfix-desc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  line-height: 1.4;
+}
+
+.editor-quickfix-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+}
+
+.editor-quickfix-btn {
+  background: #38bdf8;
+  color: #0f172a;
+  border: none;
+  font-size: 10.5px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.editor-quickfix-btn:hover {
+  background: #7dd3fc;
+  transform: translateY(-1px);
+}
+
+.editor-quickfix-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.editor-quickfix-close:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.editor-autocomplete-popup {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  max-height: 240px;
+  width: 320px;
+  overflow-y: auto;
+  z-index: 20;
+  padding: 4px;
+  box-sizing: border-box;
+}
+
+.editor-autocomplete-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+  user-select: none;
+}
+
+.editor-autocomplete-item:hover,
+.editor-autocomplete-item.selected {
+  background: var(--bg-tertiary);
+}
+
+.editor-autocomplete-badge {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: 3px;
+  text-transform: uppercase;
+}
+
+.editor-autocomplete-badge.key {
+  background: rgba(56, 189, 248, 0.15);
+  color: #38bdf8;
+}
+
+.editor-autocomplete-badge.enum {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+}
+
+.editor-autocomplete-badge.type {
+  background: rgba(34, 197, 94, 0.15);
+  color: #4ade80;
+}
+
+.editor-autocomplete-label {
+  font-size: 11px;
+  font-family: 'Consolas', monospace;
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.editor-autocomplete-desc {
+  font-size: 10px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}

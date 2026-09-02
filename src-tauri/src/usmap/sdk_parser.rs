@@ -149,6 +149,30 @@ impl SdkIndex {
         all_members
     }
 
+    /// Find any class in the SDK that defines or inherits a specific function/method
+    pub fn find_class_with_function(&self, func_name: &str) -> Option<String> {
+        let clean = func_name.trim();
+        if clean.is_empty() {
+            return None;
+        }
+
+        // First pass: Direct function declaration on class
+        for cls in self.classes.values() {
+            if cls.functions.iter().any(|f| f.eq_ignore_ascii_case(clean)) {
+                return Some(cls.clean_name.clone());
+            }
+        }
+
+        // Second pass: Inherited function
+        for cls in self.classes.values() {
+            if self.has_function(&cls.clean_name, clean) {
+                return Some(cls.clean_name.clone());
+            }
+        }
+
+        None
+    }
+
     /// Fuzzy search closest function, delegate signature, or property on the class inheritance hierarchy
     pub fn suggest_similar_function(&self, class_name: &str, target_func: &str) -> Option<String> {
         let target = target_func.trim();
@@ -477,29 +501,33 @@ fn parse_hpp_content(content: &str, module_name: &str, index: &mut SdkIndex, tot
         }
 
         if in_class {
-            if trimmed.contains('{') {
+            if trimmed.starts_with("class ") || trimmed.starts_with("struct ") && !trimmed.ends_with(';') {
+                // Nested class/struct
+                brace_depth += 1;
+            } else if trimmed.contains('{') {
                 brace_depth += trimmed.matches('{').count();
             }
-            if trimmed.contains('}') {
+
+            if trimmed.starts_with("};") || (trimmed.contains('}') && brace_depth <= 1 && trimmed.ends_with(';')) {
+                in_class = false;
+                brace_depth = 0;
+                if let Some(cls) = current_class.take() {
+                    let key = cls.clean_name.to_ascii_lowercase();
+                    let exact_key = cls.name.to_ascii_lowercase();
+                    index.classes.insert(key, cls.clone());
+                    index.classes.insert(exact_key, cls);
+                }
+                continue;
+            } else if trimmed.contains('}') {
                 let closing = trimmed.matches('}').count();
-                if brace_depth <= closing {
-                    in_class = false;
-                    brace_depth = 0;
-                    if let Some(cls) = current_class.take() {
-                        let key = cls.clean_name.to_ascii_lowercase();
-                        let exact_key = cls.name.to_ascii_lowercase();
-                        index.classes.insert(key, cls.clone());
-                        index.classes.insert(exact_key, cls);
-                    }
-                    continue;
-                } else {
+                if brace_depth >= closing {
                     brace_depth -= closing;
                 }
             }
 
-            // Inside class: match functions e.g. "void ReportCrimeIdsDelegate__DelegateSignature(...);"
+            // Inside class: match functions e.g. "void RequestUseItemToCharacter(...);"
             if let Some(ref mut cls) = current_class {
-                if trimmed.contains('(') && trimmed.contains(')') && !trimmed.starts_with('#') {
+                if trimmed.contains('(') && !trimmed.starts_with('#') {
                     if let Some(paren_pos) = trimmed.find('(') {
                         let before_paren = trimmed[..paren_pos].trim();
                         let tokens: Vec<&str> = before_paren.split_whitespace().collect();
@@ -514,6 +542,9 @@ fn parse_hpp_content(content: &str, module_name: &str, index: &mut SdkIndex, tot
                                 && !clean_func.eq_ignore_ascii_case("bool")
                                 && !clean_func.eq_ignore_ascii_case("static")
                                 && !clean_func.eq_ignore_ascii_case("const")
+                                && !clean_func.eq_ignore_ascii_case("virtual")
+                                && !clean_func.eq_ignore_ascii_case("class")
+                                && !clean_func.eq_ignore_ascii_case("struct")
                             {
                                 if cls.functions.insert(clean_func.to_string()) {
                                     *total_funcs += 1;

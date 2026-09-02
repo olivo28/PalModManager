@@ -1,0 +1,257 @@
+#build-view {
+  display: flex;
+  flex-direction: row;
+  height: 100%;
+  width: 100%;
+  background: var(--bg-primary);
+  overflow: hidden;
+}
+
+.packer-left {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  position: relative;
+}
+
+.packer-right {
+  width: 320px;
+  min-width: 320px;
+  max-width: 320px;
+  background: var(--bg-secondary);
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  overflow-y: auto;
+  gap: 16px;
+}
+
+.packer-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+}
+
+.packer-toolbar-title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-right: auto;
+}
+
+.packer-files-container {
+  flex: 1;
+  overflow-y: auto;
+  position: relative;
+  background: var(--bg-primary);
+}
+
+.packer-empty-state {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  width: 80%;
+  max-width: 380px;
+  pointer-events: none;
+}
+
+.packer-empty-icon {
+  font-size: 32px;
+  opacity: 0.6;
+}
+
+.packer-drop-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 120, 212, 0.08);
+  border: 2px dashed var(--accent);
+  margin: 8px;
+  border-radius: var(--card-radius);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+  pointer-events: none;
+}
+
+.packer-drop-overlay.drag-over {
+  display: flex;
+}
+
+.packer-drop-overlay-content {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  padding: 16px 24px;
+  border-radius: var(--radius);
+  color: var(--accent);
+  font-weight: 600;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+/* Staged Files Table */
+.packer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+  table-layout: fixed;
+}
+
+.packer-table th {
+  text-align: left;
+  padding: 8px 12px;
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.packer-table td {
+  padding: 5px 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  vertical-align: middle;
+  transition: background 0.15s ease;
+}
+
+.packer-table tr {
+  transition: background 0.15s ease;
+}
+
+.packer-table tr:hover {
+  background: rgba(255, 255, 255, 0.025);
+}
+
+.packer-table tr.skipped {
+  opacity: 0.55;
+  background: rgba(0, 0, 0, 0.15);
+}
+
+.packer-table-folder-row {
+  background: rgba(255, 255, 255, 0.02);
+  cursor: pointer;
+  user-select: none;
+}
+
+.packer-table-folder-row:hover {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.packer-table-folder-row td {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  padding-top: 5px !important;
+  padding-bottom: 5px !important;
+  padding-right: 12px !important;
+}
+
+.packer-input-target {
+  width: 100%;
+  height: 25px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 4px;
+  color: #f1f5f9;
+  padding: 2px 8px;
+  font-family: 'Fira Code', Consolas, Monaco, monospace;
+  font-size: 11px;
+  transition: all 0.2s ease;
+}
+
+.packer-input-target:focus {
+  border-color: var(--accent);
+  background: rgba(0, 0, 0, 0.5);
+  box-shadow: 0 0 0 1.5px var(--accent-dim);
+  outline: none;
+}
+
+.packer-route-preview {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 2px;
+  font-family: 'Fira Code', Consolas, Monaco, monospace;
+  font-size: 9.5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.packer-route-badge {
+  font-size: 8.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: rgba(58, 149, 255, 0.15);
+  color: #60a5fa;
+  border: 1px solid rgba(58, 149, 255, 0.3);
+}
+
+.packer-route-badge.ue4ss {
+  background: rgba(168, 85, 247, 0.15);
+  color: #c084fc;
+  border-color: rgba(168, 85, 247, 0.3);
+}
+
+.packer-route-badge.custom {
+  background: rgba(245, 158, 11, 0.15);
+  color: #fbbf24;
+  border-color: rgba(245, 158, 11, 0.3);
+}
+
+.packer-route-path {
+  color: var(--text-muted);
+  opacity: 0.8;
+}
+
+.packer-table-action-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-size: 11px;
+  padding: 3px 6px;
+  border-radius: 4px;
+  transition: all 0.15s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.packer-table-action-btn:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.packer-table-action-btn.remove:hover {
+  background: rgba(239, 68, 68, 0.18);
+  color: #ef4444;
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.packer-table-action-btn.skip:hover {
+  background: rgba(245, 158, 11, 0.18);
+  color: #f59e0b;
+  border-color: rgba(245, 158, 11, 0.4);
+}
