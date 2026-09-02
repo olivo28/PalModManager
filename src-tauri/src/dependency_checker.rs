@@ -131,9 +131,16 @@ pub fn build_game_profile(game_root: &Path) -> GameProfile {
     let standard_ue4ss_dir = binaries_dir.join("ue4ss");
     let workshop_ue4ss_dir = root.join("Mods").join("NativeMods").join("UE4SS");
 
-    let ue4ss_install_mode = if standard_dwmapi.exists() && standard_ue4ss_dir.exists() {
-        UE4SSInstallMode::Standard
-    } else if standard_dwmapi.exists() {
+    let settings_ini = root.join("Mods").join("PalModSettings.ini");
+    let is_workshop_active = if settings_ini.exists() {
+        std::fs::read_to_string(&settings_ini).map(|c| c.contains("bGlobalEnableMod=True") || c.contains("bGlobalEnableMod = True")).unwrap_or(false)
+    } else {
+        false
+    };
+
+    let ue4ss_install_mode = if is_workshop_active || (workshop_ue4ss_dir.exists() && !standard_dwmapi.exists()) {
+        UE4SSInstallMode::Workshop
+    } else if standard_dwmapi.exists() || standard_ue4ss_dir.exists() {
         UE4SSInstallMode::Standard
     } else if workshop_ue4ss_dir.exists() {
         UE4SSInstallMode::Workshop
@@ -228,14 +235,33 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         }
     };
 
-    let ps_dll = profile.ue4ss_mods_dir.join("PalSchema").join("dlls").join("main.dll");
-    let (palschema_installed, palschema_version) = if ps_dll.exists() {
+    let ps_dll_std = profile.ue4ss_mods_dir.join("PalSchema").join("dlls").join("main.dll");
+    let ps_dir_std = profile.ue4ss_mods_dir.join("PalSchema");
+    let ps_ws_managed = game_path_val.join("Mods").join("ManagedMods").join("PalSchema");
+    let ps_ws_native = game_path_val.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema");
+    let ws_settings = if profile.ue4ss_install_mode == UE4SSInstallMode::Workshop {
+        Some(crate::workshop::read_pal_mod_settings(game_path))
+    } else {
+        None
+    };
+
+    let ps_exists = ps_dll_std.exists()
+        || ps_dir_std.exists()
+        || ps_ws_managed.exists()
+        || ps_ws_native.exists()
+        || ws_settings.as_ref().map_or(false, |s| s.active_mod_list.iter().any(|m| m.eq_ignore_ascii_case("PalSchema")));
+
+    let (palschema_installed, palschema_version) = if ps_exists {
         let ps_active = if profile.ue4ss_install_mode == UE4SSInstallMode::Workshop {
-            let settings = crate::workshop::read_pal_mod_settings(game_path);
-            settings.global_enabled &&
-            settings.active_mod_list.iter().any(|m| m.eq_ignore_ascii_case("PalSchema"))
+            ws_settings.as_ref().map_or(true, |s| {
+                s.global_enabled && (
+                    s.active_mod_list.iter().any(|m| m.eq_ignore_ascii_case("PalSchema"))
+                    || ps_ws_managed.exists()
+                    || ps_ws_native.exists()
+                )
+            })
         } else {
-            true
+            ps_dll_std.exists() || ps_dir_std.exists()
         };
 
         if !ps_active {
@@ -248,10 +274,10 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
                 None
             };
 
-            // Fallback for Workshop: check Info.json in ManagedMods or PalSchema dir
             if ver.is_none() {
                 let candidates = [
                     game_path_val.join("Mods").join("ManagedMods").join("PalSchema").join("Info.json"),
+                    game_path_val.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema").join("Info.json"),
                     profile.ue4ss_mods_dir.join("PalSchema").join("Info.json"),
                 ];
                 for c in candidates {
@@ -321,14 +347,11 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         || has_pak_starting_with(&profile.logic_mods_dir, "unipalui")
         || profile.ue4ss_mods_dir.join("UniPalUI").exists();
 
-    use std::sync::Mutex;
-    static LAST_LOGGED_STATUS: Mutex<Option<String>> = Mutex::new(None);
-    let log_msg = format!("check_dependencies: UE4SS installed={}, mode={}, ver={:?} | PalSchema installed={}, ver={:?} | Altermatic={}, UniPalUI={}", ue4ss_installed, ue4ss_install_mode_str, ue4ss_version, palschema_installed, palschema_version, altermatic_installed, unipalui_installed);
-    if let Ok(mut last) = LAST_LOGGED_STATUS.lock() {
-        if last.as_deref() != Some(&log_msg) {
-            crate::logger::log(&log_msg);
-            *last = Some(log_msg);
-        }
+    if ue4ss_installed {
+        crate::dependency_manifest::ensure_ue4ss_manifest(game_path, ue4ss_version.as_deref());
+    }
+    if palschema_installed {
+        crate::dependency_manifest::ensure_palschema_manifest(game_path, palschema_version.as_deref());
     }
 
     DependencyStatus {

@@ -16,6 +16,7 @@ export interface PackerDomMap {
   'packer-add-folder-btn': HTMLButtonElement;
   'packer-new-virtual-folder-btn': HTMLButtonElement;
   'packer-autostruct-btn': HTMLButtonElement;
+  'packer-preview-install-btn': HTMLButtonElement;
   'packer-clear-btn': HTMLButtonElement;
   'packer-files-container': HTMLElement;
   'packer-list-table': HTMLElement;
@@ -32,6 +33,8 @@ export interface PackerDomMap {
   'packer-meta-nexus-id': HTMLInputElement;
   'packer-meta-type': HTMLSelectElement;
   'packer-meta-desc': HTMLTextAreaElement;
+  'packer-preset-vortex': HTMLInputElement;
+  'packer-preset-dual': HTMLInputElement;
   'packer-format-select': HTMLSelectElement;
   'packer-build-btn': HTMLButtonElement;
 }

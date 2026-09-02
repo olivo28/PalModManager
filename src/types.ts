@@ -167,6 +167,7 @@ export interface Profile {
   altermatic_version?: string | null;
   unipalui_version?: string | null;
   compatibility_patches?: string[] | null;
+  ue4ss_control_mode?: 'enabled_txt' | 'mods_txt' | string | null;
   ue4ssControlMode?: 'enabled_txt' | 'mods_txt' | string | null;
 }
 
@@ -368,6 +369,22 @@ export interface UsmapStatus {
   latestRemoteVersion?: string | null;
   errorMessage?: string | null;
   mappingsPath: string;
+}
+
+export interface PmmMetadata {
+  name: string;
+  version: string;
+  author?: string;
+  description?: string;
+  type?: string;
+  nexusModId?: number;
+  nexusFileId?: number;
+  nexusPictureUrl?: string;
+  nexusUrl?: string;
+  customNotes?: string;
+  category?: string;
+  routes?: Array<{ zipPath: string; routeType: string }>;
+  installedFiles?: string[];
 }
 
 

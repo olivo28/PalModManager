@@ -60,6 +60,66 @@ export function setSavedProjects(projects: PackerProject[]): void {
 }
 export function setActiveProject(name: string): void { activeProjectName = name; }
 
+export function getFormattedTargetPath(
+  targetPath: string,
+  platform: 'win64' | 'wingdk' | 'standard',
+  isVortex: boolean
+): string {
+  const clean = targetPath.replace(/\\/g, '/');
+  const lower = clean.toLowerCase();
+
+  if (!isVortex) {
+    return clean;
+  }
+
+  const binDir = platform === 'wingdk' ? 'WinGDK' : 'Win64';
+
+  if (
+    lower.startsWith('ue4ss/') ||
+    lower.startsWith('mods/') ||
+    lower.includes('/scripts/') ||
+    lower.includes('/dlls/') ||
+    lower.endsWith('.lua') ||
+    lower.endsWith('enabled.txt')
+  ) {
+    let sub = clean;
+    if (lower.startsWith('ue4ss/mods/')) sub = clean.substring(11);
+    else if (lower.startsWith('ue4ss/')) sub = clean.substring(6);
+    else if (lower.startsWith('mods/')) sub = clean.substring(5);
+
+    return `Pal/Binaries/${binDir}/ue4ss/Mods/${sub}`;
+  } else if (
+    lower.startsWith('palschema/') ||
+    lower.startsWith('mods/palschema/') ||
+    lower.includes('/palschema/')
+  ) {
+    let sub = clean;
+    if (lower.startsWith('palschema/mods/')) sub = clean.substring(15);
+    else if (lower.startsWith('mods/palschema/mods/')) sub = clean.substring(20);
+    else if (lower.startsWith('palschema/')) sub = clean.substring(10);
+    else if (lower.startsWith('mods/palschema/')) sub = clean.substring(15);
+
+    return `Pal/Binaries/${binDir}/ue4ss/PalSchema/mods/${sub}`;
+  } else if (
+    lower.startsWith('pal/content/paks/logicmods/') ||
+    lower.includes('/logicmods/')
+  ) {
+    const fn = clean.split('/').pop() || clean;
+    return `Pal/Content/Paks/LogicMods/${fn}`;
+  } else if (
+    lower.startsWith('pal/content/paks/~mods/') ||
+    lower.startsWith('pal/content/paks/') ||
+    lower.endsWith('.pak') ||
+    lower.endsWith('.ucas') ||
+    lower.endsWith('.utoc')
+  ) {
+    const fn = clean.split('/').pop() || clean;
+    return `Pal/Content/Paks/~mods/${fn}`;
+  }
+
+  return clean;
+}
+
 export function initPackerView(): void {
   setupPackerDragAndDrop();
   setupPackerEventListeners();
@@ -158,6 +218,9 @@ function setupPackerEventListeners(): void {
     const metaNexusIdStr = (packerDom.elMaybe('packer-meta-nexus-id') as HTMLInputElement)?.value.trim();
     const metaNexusId = metaNexusIdStr ? parseInt(metaNexusIdStr, 10) : null;
 
+    const isVortex = (packerDom.elMaybe('packer-preset-vortex') as HTMLInputElement)?.checked || false;
+    const isDual = (packerDom.elMaybe('packer-preset-dual') as HTMLInputElement)?.checked || false;
+
     // Compute routes based on staged files
     const activeFiles = stagedFiles.filter(f => f.targetPath !== '__SKIP__');
     const computedRoutes: Array<{ zipPath: string; routeType: string }> = [];
@@ -168,6 +231,16 @@ function setupPackerEventListeners(): void {
       let routeType = 'passthrough';
 
       if (
+        lower.startsWith('ue4ss/') ||
+        lower.includes('/ue4ss/') ||
+        lower.startsWith('mods/') ||
+        lower.includes('/scripts/') ||
+        lower.includes('/dlls/') ||
+        lower.endsWith('.lua') ||
+        lower.endsWith('enabled.txt')
+      ) {
+        routeType = 'ue4ss';
+      } else if (
         lower.startsWith('palschema/') ||
         lower.startsWith('mods/palschema/') ||
         lower.includes('/palschema/') ||
@@ -177,14 +250,6 @@ function setupPackerEventListeners(): void {
         lower.includes('/translations/')
       ) {
         routeType = 'palschema';
-      } else if (
-        lower.startsWith('ue4ss/') ||
-        lower.startsWith('mods/') ||
-        lower.includes('/scripts/') ||
-        lower.endsWith('.lua') ||
-        lower.endsWith('enabled.txt')
-      ) {
-        routeType = 'ue4ss';
       } else if (
         lower.startsWith('pal/content/paks/logicmods/') ||
         lower.includes('/logicmods/')
@@ -201,7 +266,7 @@ function setupPackerEventListeners(): void {
       }
 
       computedRoutes.push({
-        zipPath: cleanTarget,
+        zipPath: getFormattedTargetPath(cleanTarget, 'win64', isVortex),
         routeType
       });
     });
@@ -218,10 +283,11 @@ function setupPackerEventListeners(): void {
 
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
+      const defaultName = metaName ? `${metaName}_v${metaVersion}.${format}` : `packed_mod.${format}`;
       const destPath = await save({
         title: t('packer.dialog_save_archive_title'),
         filters: [{ name: 'Mod Archive', extensions: [format] }],
-        defaultPath: metaName ? `${metaName}_v${metaVersion}.${format}` : `packed_mod.${format}`
+        defaultPath: defaultName
       });
 
       if (!destPath) return;
@@ -233,27 +299,73 @@ function setupPackerEventListeners(): void {
       }
       showToast(t('packer.toast_packing_wait'), 'info');
 
-      const filesToPack = activeFiles.map(f => ({
-        sourcePath: f.sourcePath,
-        relativePath: f.relativePath,
-        size: f.size,
-        targetPath: f.targetPath
-      }));
+      if (isDual) {
+        // Generate both Steam Win64 and Xbox WinGDK archives
+        const base = destPath.replace(new RegExp(`\\.${format}$`, 'i'), '');
+        const steamPath = `${base}_Steam_Win64.${format}`;
+        const xboxPath = `${base}_Xbox_WinGDK.${format}`;
 
-      const res = await invoke<string>('pack_mod', {
-        files: filesToPack,
-        metadata,
-        outputPath: destPath,
-        format
-      });
+        // 1. Pack Steam Win64
+        const steamFiles = activeFiles.map(f => ({
+          sourcePath: f.sourcePath,
+          relativePath: f.relativePath,
+          size: f.size,
+          targetPath: getFormattedTargetPath(f.targetPath, 'win64', isVortex)
+        }));
 
-      bus.emit('project:packed', {
-        outputPath: destPath,
-        format,
-        modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
-      });
+        await invoke<string>('pack_mod', {
+          files: steamFiles,
+          metadata,
+          outputPath: steamPath,
+          format
+        });
 
-      showToast(t('packer.toast_pack_success'), 'success');
+        // 2. Pack Xbox WinGDK
+        const xboxFiles = activeFiles.map(f => ({
+          sourcePath: f.sourcePath,
+          relativePath: f.relativePath,
+          size: f.size,
+          targetPath: getFormattedTargetPath(f.targetPath, 'wingdk', isVortex)
+        }));
+
+        await invoke<string>('pack_mod', {
+          files: xboxFiles,
+          metadata,
+          outputPath: xboxPath,
+          format
+        });
+
+        bus.emit('project:packed', {
+          outputPath: steamPath,
+          format,
+          modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
+        });
+
+        showToast(t('packer.toast_dual_pack_success') || 'Created both Steam Win64 and Xbox WinGDK mod packages!', 'success');
+      } else {
+        // Single Package build
+        const filesToPack = activeFiles.map(f => ({
+          sourcePath: f.sourcePath,
+          relativePath: f.relativePath,
+          size: f.size,
+          targetPath: getFormattedTargetPath(f.targetPath, 'win64', isVortex)
+        }));
+
+        await invoke<string>('pack_mod', {
+          files: filesToPack,
+          metadata,
+          outputPath: destPath,
+          format
+        });
+
+        bus.emit('project:packed', {
+          outputPath: destPath,
+          format,
+          modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
+        });
+
+        showToast(isVortex ? (t('packer.toast_vortex_pack_success') || 'Mod packaged with Vortex compatibility!') : t('packer.toast_pack_success'), 'success');
+      }
     } catch (err: any) {
       console.error(err);
       showToast(t('toasts.export_failed', { error: String(err) }), 'error');

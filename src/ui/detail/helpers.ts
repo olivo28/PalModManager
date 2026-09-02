@@ -17,22 +17,25 @@ export function formatDisplayPath(fullPath: string): string {
 }
 
 export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
-  const allPaths: string[] = [];
-  const primaryPath = mod.enabled ? mod.gamePath : mod.disabledPath;
-  if (primaryPath) allPaths.push(primaryPath);
-  if (mod.extraFiles && Array.isArray(mod.extraFiles)) {
-    for (const f of mod.extraFiles) {
-      if (f && !allPaths.includes(f)) {
-        allPaths.push(f);
+  const primaryPath = (mod.enabled ? mod.gamePath : mod.disabledPath) || '';
+  const components: ModComponentFolder[] = [];
+  const seenFolders = new Set<string>();
+
+  const addFolder = (folderPath: string, explicitType?: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other') => {
+    if (!folderPath) return;
+    const normalized = folderPath.replace(/\\/g, '/');
+    const lower = normalized.toLowerCase();
+
+    // Check if this folder or an ancestor folder is already registered
+    if (seenFolders.has(lower)) return;
+    for (const seen of seenFolders) {
+      if (lower.startsWith(seen + '/') || seen.startsWith(lower + '/')) {
+        return;
       }
     }
-  }
+    seenFolders.add(lower);
 
-  const components: ModComponentFolder[] = [];
-
-  for (const p of allPaths) {
-    const lower = p.toLowerCase().replace(/\\/g, '/');
-    let compType: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other' = 'other';
+    let compType: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other' = explicitType || 'other';
     let label = t('detail.comp_other_folder');
     let buttonLabel = t('detail.btn_open_folder');
 
@@ -40,7 +43,7 @@ export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
       compType = 'palschema';
       label = t('detail.comp_palschema_folder');
       buttonLabel = t('detail.comp_palschema_folder');
-    } else if (lower.includes('ue4ss/mods') || (lower.includes('ue4ss') && !lower.endsWith('.pak'))) {
+    } else if (lower.includes('nativemods/ue4ss') || lower.includes('ue4ss/mods') || (lower.includes('ue4ss') && !lower.endsWith('.pak'))) {
       compType = 'ue4ss';
       label = t('detail.comp_ue4ss_folder');
       buttonLabel = t('detail.comp_ue4ss_folder');
@@ -55,23 +58,55 @@ export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
     } else if (mod.type === 'ue4ss') {
       compType = 'ue4ss';
       label = t('detail.comp_ue4ss_folder');
-      buttonLabel = t('detail.btn_open_folder');
+      buttonLabel = t('detail.comp_ue4ss_folder');
     } else if (mod.type === 'palschema') {
       compType = 'palschema';
       label = t('detail.comp_palschema_folder');
-      buttonLabel = t('detail.btn_open_folder');
+      buttonLabel = t('detail.comp_palschema_folder');
     } else if (mod.type === 'pak') {
       compType = 'pak';
       label = t('detail.comp_pak_folder');
-      buttonLabel = t('detail.btn_open_folder');
+      buttonLabel = t('detail.comp_pak_folder');
     } else if (mod.type === 'logicmods') {
       compType = 'logicmods';
       label = t('detail.comp_logicmods_folder');
-      buttonLabel = t('detail.btn_open_folder');
+      buttonLabel = t('detail.comp_logicmods_folder');
     }
 
-    if (!components.some(c => c.path === p)) {
-      components.push({ type: compType, label, buttonLabel, path: p });
+    components.push({ type: compType, label, buttonLabel, path: folderPath });
+  };
+
+  // 1. Add primary path
+  if (primaryPath) {
+    addFolder(primaryPath);
+  }
+
+  // 2. Add extra files ONLY if they represent distinct external directories / companion packages
+  if (mod.extraFiles && Array.isArray(mod.extraFiles)) {
+    for (const f of mod.extraFiles) {
+      if (!f) continue;
+      const fNorm = f.replace(/\\/g, '/');
+      const fLower = fNorm.toLowerCase();
+
+      // If this file is an internal child of primaryPath, skip it
+      if (primaryPath) {
+        const primNorm = primaryPath.replace(/\\/g, '/').toLowerCase();
+        if (fLower.startsWith(primNorm + '/') || fLower === primNorm) {
+          continue;
+        }
+      }
+
+      // If it's a standalone companion .pak or .json outside the primary folder
+      if (fLower.endsWith('.pak')) {
+        addFolder(f, fLower.includes('logicmods') ? 'logicmods' : 'pak');
+      } else if (fLower.includes('swapjson') || fLower.includes('alterconfig')) {
+        const parentDir = f.substring(0, Math.max(f.lastIndexOf('/'), f.lastIndexOf('\\')));
+        addFolder(parentDir || f, 'other');
+      } else if (fLower.includes('palschema')) {
+        addFolder(f, 'palschema');
+      } else if (fLower.includes('ue4ss') || fLower.includes('nativemods')) {
+        addFolder(f, 'ue4ss');
+      }
     }
   }
 

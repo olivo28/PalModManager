@@ -262,8 +262,7 @@ pub fn create_mod_folder_command(
             let _ = std::fs::write(p_dir.join("profile.json"), json);
         }
 
-        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt")
-            || data.settings.ue4ss_control_mode.as_deref() == Some("mods_txt");
+        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt");
         if is_mods_txt && !data.settings.game_path.is_empty() {
             let gp = crate::dependency_checker::build_game_profile(std::path::Path::new(&data.settings.game_path));
             let mods_txt = gp.ue4ss_mods_dir.join("mods.txt");
@@ -307,8 +306,7 @@ pub fn delete_mod_folder_command(
             let _ = std::fs::write(p_dir.join("profile.json"), json);
         }
 
-        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt")
-            || data.settings.ue4ss_control_mode.as_deref() == Some("mods_txt");
+        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt");
         if is_mods_txt && !data.settings.game_path.is_empty() {
             let gp = crate::dependency_checker::build_game_profile(std::path::Path::new(&data.settings.game_path));
             let mods_txt = gp.ue4ss_mods_dir.join("mods.txt");
@@ -361,8 +359,7 @@ pub fn rename_mod_folder_command(
             let _ = std::fs::write(p_dir.join("profile.json"), json);
         }
 
-        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt")
-            || data.settings.ue4ss_control_mode.as_deref() == Some("mods_txt");
+        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt");
         if is_mods_txt && !data.settings.game_path.is_empty() {
             let gp = crate::dependency_checker::build_game_profile(std::path::Path::new(&data.settings.game_path));
             let mods_txt = gp.ue4ss_mods_dir.join("mods.txt");
@@ -415,8 +412,7 @@ pub fn add_mod_to_folder_command(
             let _ = std::fs::write(p_dir.join("profile.json"), json);
         }
 
-        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt")
-            || data.settings.ue4ss_control_mode.as_deref() == Some("mods_txt");
+        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt");
         if is_mods_txt && !data.settings.game_path.is_empty() {
             let gp = crate::dependency_checker::build_game_profile(std::path::Path::new(&data.settings.game_path));
             let mods_txt = gp.ue4ss_mods_dir.join("mods.txt");
@@ -550,8 +546,7 @@ pub fn reorder_mod_folders_command(
             let _ = std::fs::write(p_dir.join("profile.json"), json);
         }
 
-        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt")
-            || data.settings.ue4ss_control_mode.as_deref() == Some("mods_txt");
+        let is_mods_txt = data.profiles[p_idx].ue4ss_control_mode.as_deref() == Some("mods_txt");
         if is_mods_txt && !data.settings.game_path.is_empty() {
             let gp = crate::dependency_checker::build_game_profile(std::path::Path::new(&data.settings.game_path));
             let mods_txt = gp.ue4ss_mods_dir.join("mods.txt");

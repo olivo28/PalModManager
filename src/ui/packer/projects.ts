@@ -4,7 +4,7 @@ import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
 import { stagedFiles, sourcePaths, targetOverrides, virtualFolders, backupPaths, activeProjectName, savedProjects, setStagedFiles, setSourcePaths, setVirtualFolders, setBackupPaths, setActiveProject, setSavedProjects, renderWorkspace, escapeHtml } from './mod';
 import { scanAndBuildStagedFiles } from './staging';
-import { clearMetadataForm } from './rendering';
+import { clearMetadataForm, updateBuildButtonState } from './rendering';
 import { packerDom } from '../../framework';
 
 import { ModMetadata, PackerProject } from './mod';
@@ -24,7 +24,8 @@ export function renderProjectsHub(): void {
   if (!grid) return;
 
   let html = savedProjects.map(proj => {
-    const typeBadge = proj.metadata?.modType ? `<span class="mod-type-badge" style="font-size:10px; padding:2px 6px; margin-top:6px;">${escapeHtml(proj.metadata.modType)}</span>` : '';
+    const modTypeVal = proj.metadata?.modType || (proj.metadata as any)?.type;
+    const typeBadge = modTypeVal ? `<span class="mod-type-badge" style="font-size:10px; padding:2px 6px; margin-top:6px;">${escapeHtml(modTypeVal)}</span>` : '';
     return `
       <div class="packer-project-card" data-name="${escapeHtml(proj.name)}">
         <div class="packer-project-card-icon">📁</div>
@@ -127,12 +128,14 @@ export function loadSelectedProject(name: string): void {
 
   if (project.metadata) {
     const m = project.metadata;
+    const modTypeVal = m.modType || (m as any).type || '';
     packerDom.el('packer-meta-name').value = m.name || '';
     packerDom.el('packer-meta-version').value = m.version || '1.0.0';
     packerDom.el('packer-meta-author').value = m.author || '';
-    packerDom.el('packer-meta-type').value = m.modType || '';
+    packerDom.el('packer-meta-type').value = modTypeVal;
     packerDom.el('packer-meta-nexus-id').value = m.nexusModId ? String(m.nexusModId) : '';
     packerDom.el('packer-meta-desc').value = m.description || '';
+    updateBuildButtonState();
   } else {
     clearMetadataForm();
   }

@@ -139,3 +139,60 @@ export async function refreshUsmapStatus(): Promise<void> {
   }
 }
 
+export async function refreshSdkStatus(): Promise<void> {
+  const badge = document.getElementById('settings-sdk-badge');
+  const sourceElem = document.getElementById('settings-sdk-source');
+  const classesElem = document.getElementById('settings-sdk-classes-count');
+  const funcsElem = document.getElementById('settings-sdk-funcs-count');
+  const pathElem = document.getElementById('settings-sdk-path');
+
+  if (!badge && !sourceElem) return;
+
+  try {
+    const { getSdkStatus } = await import('../../../api');
+    const status = await getSdkStatus();
+
+    if (badge) {
+      if (status.installed && status.totalClasses > 0) {
+        badge.textContent = `✅ ${t('settings.sdk_status_ready') || 'Ready'}`;
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else if (status.localGameCxxFound) {
+        badge.textContent = `📂 ${t('settings.sdk_status_local_found') || 'Local Folder Detected'}`;
+        badge.style.background = 'rgba(0,188,255,0.15)';
+        badge.style.color = '#00bcff';
+        badge.style.borderColor = 'rgba(0,188,255,0.3)';
+      } else {
+        badge.textContent = `⚠️ ${t('settings.sdk_status_not_installed') || 'Not Installed'}`;
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+    }
+
+    if (sourceElem) {
+      sourceElem.textContent = status.source || 'Not Installed';
+    }
+
+    if (classesElem) {
+      classesElem.textContent = status.totalClasses.toLocaleString();
+    }
+
+    if (funcsElem) {
+      funcsElem.textContent = status.totalFunctions.toLocaleString();
+    }
+
+    if (pathElem) {
+      pathElem.textContent = status.path || '---';
+      pathElem.title = status.path;
+    }
+  } catch (e) {
+    console.error('Failed to get SDK status:', e);
+    if (badge) {
+      badge.textContent = `⚠️ ${t('settings.sdk_status_error') || 'Error'}`;
+    }
+  }
+}
+
+

@@ -1,5 +1,6 @@
 import { stagedFiles, sourcePaths, targetOverrides, backupPaths, viewMode, virtualFolders, setVirtualFolders, setSourcePaths, escapeHtml } from './mod';
-import { toggleSkipFile } from './staging';
+import { toggleSkipFile, StagedFile } from './staging';
+import { getState } from '../../state';
 import { showPrompt, showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
 import { packerDom } from '../../framework';
@@ -47,34 +48,241 @@ export async function renderWorkspace(): Promise<void> {
   updateBuildButtonState();
 }
 
+interface ListTreeNode {
+  name: string;
+  path: string;
+  isFolder: boolean;
+  children: Map<string, ListTreeNode>;
+  file?: StagedFile;
+  fileIndex?: number;
+  totalSize: number;
+  fileCount: number;
+}
+
+const collapsedTableFolders = new Set<string>();
+
+function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boolean): string {
+  const children = Array.from(node.children.values()).sort((a, b) => {
+    if (a.isFolder !== b.isFolder) return a.isFolder ? -1 : 1;
+    return a.name.localeCompare(b.name);
+  });
+
+  let html = '';
+
+  children.forEach(child => {
+    if (child.isFolder) {
+      const isCollapsed = collapsedTableFolders.has(child.path);
+      const indent = depth * 20 + 12;
+
+      html += `
+        <tr class="packer-table-folder-row" data-folder-path="${escapeHtml(child.path)}">
+          <td style="padding-left: ${indent}px !important;">
+            <div style="display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
+              <span class="editor-tree-chevron" style="display: inline-block; font-size: 8.5px; transition: transform 0.15s ease; ${isCollapsed ? 'transform: rotate(-90deg);' : ''}">▾</span>
+              <span style="font-size: 13px;">📁</span>
+              <strong style="color: var(--text-primary); font-size: 12px;">${escapeHtml(child.name)}</strong>
+              <span style="font-size: 10px; color: var(--text-muted); opacity: 0.7;">(${child.totalSize > 0 ? formatBytes(child.totalSize) : ''})</span>
+            </div>
+          </td>
+          <td style="white-space: nowrap; font-family: monospace; font-size: 11px; color: var(--text-muted);">${formatBytes(child.totalSize)}</td>
+          <td>
+            <div style="font-family: 'Fira Code', monospace; font-size: 10.5px; color: var(--text-muted); opacity: 0.5;">
+              ${escapeHtml(child.path)}/
+            </div>
+          </td>
+          <td></td>
+        </tr>
+      `;
+
+      if (!isCollapsed) {
+        html += renderListTreeRows(child, depth + 1, isWorkshop);
+      }
+    } else {
+      const file = child.file!;
+      const index = child.fileIndex!;
+      const isSkipped = file.targetPath === '__SKIP__';
+      const displayPath = isSkipped ? (backupPaths.get(file.sourcePath) || file.relativePath) : file.targetPath;
+
+      const cleanTarget = displayPath.replace(/\\/g, '/');
+      const lower = cleanTarget.toLowerCase();
+      let routeBadge = 'FILE';
+      let destPreview = cleanTarget;
+
+      if (
+        lower.startsWith('ue4ss/') ||
+        lower.includes('/ue4ss/') ||
+        lower.startsWith('mods/') ||
+        lower.includes('/scripts/') ||
+        lower.includes('/dlls/') ||
+        lower.endsWith('.lua') ||
+        lower.endsWith('enabled.txt')
+      ) {
+        routeBadge = 'UE4SS';
+        let sub = cleanTarget;
+        if (lower.startsWith('ue4ss/')) sub = cleanTarget.substring(6);
+        else if (lower.startsWith('mods/')) sub = cleanTarget.substring(5);
+        destPreview = (isWorkshop ? `Mods/NativeMods/UE4SS/Mods/` : `Pal/Binaries/Win64/ue4ss/Mods/`) + sub;
+      } else if (
+        lower.startsWith('palschema/') ||
+        lower.startsWith('mods/palschema/') ||
+        lower.includes('/palschema/') ||
+        lower.includes('/blueprints/') ||
+        lower.includes('/items/') ||
+        lower.includes('/raw/') ||
+        lower.includes('/translations/')
+      ) {
+        routeBadge = 'PALSCHEMA';
+        let sub = cleanTarget;
+        if (lower.startsWith('palschema/')) sub = cleanTarget.substring(10);
+        else if (lower.startsWith('mods/palschema/')) sub = cleanTarget.substring(15);
+        destPreview = (isWorkshop ? `Mods/NativeMods/UE4SS/Mods/PalSchema/mods/` : `Pal/Binaries/Win64/ue4ss/PalSchema/mods/`) + sub;
+      } else if (
+        lower.startsWith('pal/content/paks/logicmods/') ||
+        lower.includes('/logicmods/')
+      ) {
+        routeBadge = 'LOGICMODS';
+        const fn = cleanTarget.split('/').pop() || cleanTarget;
+        destPreview = `Pal/Content/Paks/LogicMods/${fn}`;
+      } else if (
+        lower.startsWith('pal/content/paks/~mods/') ||
+        lower.startsWith('pal/content/paks/') ||
+        lower.endsWith('.pak') ||
+        lower.endsWith('.ucas') ||
+        lower.endsWith('.utoc')
+      ) {
+        routeBadge = 'PAK';
+        const fn = cleanTarget.split('/').pop() || cleanTarget;
+        destPreview = `Pal/Content/Paks/~mods/${fn}`;
+      }
+
+      let fileIcon = '📄';
+      const ext = child.name.split('.').pop()?.toLowerCase();
+      if (ext === 'lua') fileIcon = '📜';
+      else if (ext === 'json' || ext === 'jsonc') fileIcon = '⚙️';
+      else if (ext === 'pak' || ext === 'ucas' || ext === 'utoc') fileIcon = '📦';
+      else if (ext === 'dll') fileIcon = '🧩';
+      else if (ext === 'txt' || ext === 'ini' || ext === 'cfg') fileIcon = '📝';
+
+      const indent = depth * 20 + 12;
+
+      html += `
+        <tr data-index="${index}" class="${isSkipped ? 'skipped' : ''}">
+          <td title="${escapeHtml(file.sourcePath)}" style="padding-left: ${indent}px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+              <span style="font-size: 14px; opacity: 0.85; flex-shrink: 0;">${fileIcon}</span>
+              <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <strong style="color: var(--text-primary); font-size: 12px; ${isSkipped ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${escapeHtml(child.name)}</strong>
+              </div>
+            </div>
+          </td>
+          <td style="white-space: nowrap; font-family: monospace; font-size: 11px; color: var(--text-muted);">${formatBytes(file.size)}</td>
+          <td>
+            <input type="text" class="packer-input-target" value="${escapeHtml(displayPath)}" data-index="${index}" ${isSkipped ? 'disabled' : ''} />
+            ${!isSkipped ? `
+              <div class="packer-route-preview" title="${escapeHtml(destPreview.replace(/\//g, '\\'))}">
+                <span class="packer-route-badge ${routeBadge.toLowerCase()}">${routeBadge}</span>
+                <span class="packer-route-arrow">→</span>
+                <span class="packer-route-path">${escapeHtml(destPreview.replace(/\//g, '\\'))}</span>
+              </div>
+            ` : ''}
+          </td>
+          <td style="text-align: right; width: 70px;">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+              <button class="packer-table-action-btn packer-skip-file-btn skip ${isSkipped ? 'active' : ''}" data-index="${index}" title="${isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">
+                ${isSkipped ? '↩️' : '🚫'}
+              </button>
+              <button class="packer-table-action-btn packer-remove-file-btn remove" data-index="${index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">
+                ✕
+              </button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }
+  });
+
+  return html;
+}
+
 function renderListMode(): void {
   const container = packerDom.elMaybe('packer-files-body');
   if (!container) return;
 
-  container.innerHTML = stagedFiles.map((file, index) => {
-    const filename = file.sourcePath.split(/[/\\]/).pop() || file.relativePath;
+  const state = getState();
+  const isWorkshop = state.currentProfile?.dependency_mode === 'workshop';
+
+  const root: ListTreeNode = {
+    name: '',
+    path: '',
+    isFolder: true,
+    children: new Map(),
+    totalSize: 0,
+    fileCount: 0,
+  };
+
+  virtualFolders.forEach(vf => {
+    const parts = vf.replace(/\\/g, '/').split('/').filter(p => p.trim() !== '');
+    let current = root;
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const curPath = parts.slice(0, i + 1).join('/');
+      if (!current.children.has(part)) {
+        current.children.set(part, {
+          name: part,
+          path: curPath,
+          isFolder: true,
+          children: new Map(),
+          totalSize: 0,
+          fileCount: 0,
+        });
+      }
+      current = current.children.get(part)!;
+    }
+  });
+
+  stagedFiles.forEach((file, index) => {
     const isSkipped = file.targetPath === '__SKIP__';
     const displayPath = isSkipped ? (backupPaths.get(file.sourcePath) || file.relativePath) : file.targetPath;
+    const clean = displayPath.replace(/\\/g, '/');
+    const parts = clean.split('/').filter(p => p.trim() !== '');
+    let current = root;
 
-    return `
-      <tr data-index="${index}" class="${isSkipped ? 'skipped' : ''}">
-        <td title="${escapeHtml(file.sourcePath)}" style="max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          <strong style="${isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(filename)}</strong>
-          <div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis;">${escapeHtml(file.sourcePath)}</div>
-        </td>
-        <td style="white-space: nowrap;">${formatBytes(file.size)}</td>
-        <td>
-          <input type="text" class="packer-input-target" value="${escapeHtml(displayPath)}" data-index="${index}" ${isSkipped ? 'disabled' : ''} />
-        </td>
-        <td>
-          <div style="display: flex; align-items: center; gap: 4px;">
-            <button class="packer-skip-file-btn" data-index="${index}" title="${isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">${isSkipped ? '↩️' : '🚫'}</button>
-            <button class="packer-remove-file-btn" data-index="${index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">✕</button>
-          </div>
-        </td>
-      </tr>
-    `;
-  }).join('');
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+      const isLast = i === parts.length - 1;
+      const curPath = parts.slice(0, i + 1).join('/');
+
+      if (!current.children.has(part)) {
+        current.children.set(part, {
+          name: part,
+          path: curPath,
+          isFolder: !isLast,
+          children: new Map(),
+          file: isLast ? file : undefined,
+          fileIndex: isLast ? index : undefined,
+          totalSize: 0,
+          fileCount: 0,
+        });
+      }
+      current = current.children.get(part)!;
+      current.totalSize += file.size;
+      if (isLast) current.fileCount += 1;
+    }
+  });
+
+  container.innerHTML = renderListTreeRows(root, 0, isWorkshop);
+
+  container.querySelectorAll('.packer-table-folder-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const folderPath = (row as HTMLElement).dataset.folderPath || '';
+      if (collapsedTableFolders.has(folderPath)) {
+        collapsedTableFolders.delete(folderPath);
+      } else {
+        collapsedTableFolders.add(folderPath);
+      }
+      renderListMode();
+    });
+  });
 
   container.querySelectorAll('.packer-input-target').forEach(input => {
     input.addEventListener('change', (e) => {

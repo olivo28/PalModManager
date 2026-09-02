@@ -325,6 +325,44 @@ pub struct FileRoute {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct PackerRoute {
+    pub zip_path: String,
+    pub route_type: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct PmmMetadata {
+    #[serde(default)]
+    pub name: String,
+    #[serde(default)]
+    pub version: String,
+    #[serde(default, alias = "nexusAuthor", alias = "nexus_author")]
+    pub author: Option<String>,
+    #[serde(default, alias = "nexusSummary", alias = "nexus_summary", alias = "nexusDescription", alias = "nexus_description")]
+    pub description: Option<String>,
+    #[serde(default, rename = "type", alias = "modType", alias = "mod_type")]
+    pub mod_type: Option<String>,
+    #[serde(default, alias = "nexusModId", alias = "nexus_mod_id", alias = "modId")]
+    pub nexus_mod_id: Option<u32>,
+    #[serde(default, alias = "nexusFileId", alias = "nexus_file_id", alias = "fileId")]
+    pub nexus_file_id: Option<u32>,
+    #[serde(default, alias = "nexusPictureUrl", alias = "nexus_picture_url", alias = "pictureUrl")]
+    pub nexus_picture_url: Option<String>,
+    #[serde(default, alias = "nexusUrl", alias = "nexus_url")]
+    pub nexus_url: Option<String>,
+    #[serde(default, alias = "customNotes", alias = "custom_notes", alias = "notes")]
+    pub custom_notes: Option<String>,
+    #[serde(default)]
+    pub category: Option<String>,
+    #[serde(default)]
+    pub routes: Option<Vec<PackerRoute>>,
+    #[serde(default, alias = "installedFiles", alias = "installed_files", alias = "files")]
+    pub installed_files: Option<Vec<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct InstallManifest {
     pub folder_name: String,
     pub display_name: String,

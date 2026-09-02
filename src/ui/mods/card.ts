@@ -44,8 +44,10 @@ export function isVersionNewer(local: string, remote: string): boolean {
 export function computeAvailableUpdates(mods: ModInfo[], libraryEntries?: any[]): Map<string, string> {
   const updatesMap = new Map<string, string>();
   for (const m of mods) {
-    if (m.hasPendingUpdate && m.nexusVersionCached) {
-      updatesMap.set(m.id, m.nexusVersionCached);
+    const hasUp = m.hasPendingUpdate || (m as any).has_pending_update;
+    const cachedVer = m.nexusVersionCached || (m as any).nexus_version_cached;
+    if (hasUp && cachedVer) {
+      updatesMap.set(m.id, cachedVer);
       continue;
     }
     if (m.nexusVersionCached && m.version) {

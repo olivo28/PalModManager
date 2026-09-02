@@ -2,15 +2,19 @@ pub mod models;
 pub mod build_detector;
 pub mod sync;
 pub mod parser;
+pub mod sdk_parser;
 
 pub use models::*;
 pub use build_detector::detect_installed_game_build;
 pub use sync::{get_mappings_status, sync_mappings_async, get_active_usmap_path};
 pub use parser::{parse_usmap_file, UsmapSchema, UsmapStruct, UsmapProperty};
+pub use sdk_parser::{SdkIndex, SdkClassInfo, get_sdk_dir, parse_sdk_directory};
 
 use std::sync::Mutex;
+use std::path::PathBuf;
 
 static ACTIVE_SCHEMA_CACHE: Mutex<Option<UsmapSchema>> = Mutex::new(None);
+static ACTIVE_SDK_CACHE: Mutex<Option<SdkIndex>> = Mutex::new(None);
 
 pub fn get_or_load_schema(program_path: &str) -> Option<UsmapSchema> {
     let mut cache = ACTIVE_SCHEMA_CACHE.lock().ok()?;
@@ -36,8 +40,61 @@ pub fn get_or_load_schema(program_path: &str) -> Option<UsmapSchema> {
     }
 }
 
+pub fn get_or_load_sdk_index(program_path: &str, game_path: &str) -> Option<SdkIndex> {
+    let mut cache = ACTIVE_SDK_CACHE.lock().ok()?;
+    if let Some(ref sdk) = *cache {
+        return Some(sdk.clone());
+    }
+
+    // 1. Check internal app storage resources/sdk first
+    let sdk_dir = get_sdk_dir(program_path);
+    if sdk_dir.exists() {
+        if let Ok(idx) = parse_sdk_directory(&sdk_dir, "App Resources (resources/sdk)") {
+            *cache = Some(idx.clone());
+            return Some(idx);
+        }
+    }
+
+    // 2. Check local game folder UE4SS CXXHeaderDump if game_path is available
+    if !game_path.is_empty() {
+        let game_cxx = PathBuf::from(game_path)
+            .join("Pal")
+            .join("Binaries")
+            .join("Win64")
+            .join("ue4ss")
+            .join("CXXHeaderDump");
+        if game_cxx.exists() {
+            if let Ok(idx) = parse_sdk_directory(&game_cxx, "Local UE4SS (CXXHeaderDump)") {
+                *cache = Some(idx.clone());
+                return Some(idx);
+            }
+        }
+
+        let ws_cxx = PathBuf::from(game_path)
+            .join("Mods")
+            .join("NativeMods")
+            .join("UE4SS")
+            .join("CXXHeaderDump");
+        if ws_cxx.exists() {
+            if let Ok(idx) = parse_sdk_directory(&ws_cxx, "Workshop UE4SS (CXXHeaderDump)") {
+                *cache = Some(idx.clone());
+                return Some(idx);
+            }
+        }
+    }
+
+    None
+}
+
 pub fn invalidate_schema_cache() {
     if let Ok(mut cache) = ACTIVE_SCHEMA_CACHE.lock() {
         *cache = None;
     }
 }
+
+pub fn invalidate_sdk_cache() {
+    if let Ok(mut cache) = ACTIVE_SDK_CACHE.lock() {
+        *cache = None;
+    }
+}
+

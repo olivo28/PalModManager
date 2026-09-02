@@ -1,6 +1,6 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use serde::{Deserialize, Serialize};
 use tauri::State;
 use crate::state::AppState;
@@ -45,6 +45,42 @@ pub struct ModSummary {
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 #[serde(rename_all = "camelCase")]
+pub struct UsmapHookDiagnostic {
+    pub mod_id: String,
+    pub mod_name: String,
+    pub file_path: String,
+    pub line_number: u32,
+    pub hook_target: String,
+    pub target_class: String,
+    pub target_function: String,
+    pub status: String,
+    pub reason: String,
+    pub suggestion: Option<String>,
+    pub category: String,
+}
+
+#[derive(Debug, Clone)]
+pub struct PalschemaTableEntry {
+    pub mod_id: String,
+    pub mod_name: String,
+    pub file_path: String,
+    pub line_number: u32,
+    pub table_name: String,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct UsmapDiagnosticSummary {
+    pub has_usmap: bool,
+    pub usmap_version: String,
+    pub total_hooks_checked: u32,
+    pub valid_hooks: u32,
+    pub broken_hooks: u32,
+    pub diagnostics: Vec<UsmapHookDiagnostic>,
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
 pub struct ScanResult {
     pub total_scanned: u32,
     pub palschema_scanned: u32,
@@ -59,6 +95,7 @@ pub struct ScanResult {
     pub mod_summaries: Vec<ModSummary>,
     pub gamepass_notices: Vec<crate::pak_scanner::GamePassPakNotice>,
     pub schema_notices: Vec<crate::pak_scanner::DeprecatedSchemaNotice>,
+    pub usmap_diagnostics: Option<UsmapDiagnosticSummary>,
     pub is_gamepass: bool,
 }
 
@@ -71,6 +108,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
     
     let mut table_map: HashMap<String, Vec<ConflictingMod>> = HashMap::new();
     let mut hook_map: HashMap<String, (String, Vec<ConflictingMod>)> = HashMap::new();
+    let mut palschema_tables: Vec<PalschemaTableEntry> = Vec::new();
     let mut warnings = Vec::new();
     
     let mut total_scanned = 0;
@@ -116,7 +154,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                 }
             }
             if target_palschema_path.exists() {
-                scan_palschema_mod(&target_palschema_path, &conflict_info, &mut table_map, &mut warnings);
+                scan_palschema_mod(&target_palschema_path, &conflict_info, &mut table_map, &mut palschema_tables, &mut warnings);
             }
         }
 
@@ -299,6 +337,122 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
 
     let schema_notices = crate::pak_scanner::check_mod_schema_compatibility(&profile_mods);
 
+    // USMAP Unreal Engine Schema Hook Diagnostics & C++ SDK Headers
+    let usmap_path = crate::usmap::sync::get_active_usmap_path(&data.settings.program_path);
+    let sdk_index = crate::usmap::get_or_load_sdk_index(&data.settings.program_path, &data.settings.game_path);
+
+    let usmap_diagnostics = if usmap_path.exists() {
+        if let Ok(schema) = crate::usmap::parser::parse_usmap_file(&usmap_path) {
+            let mut diagnostics = Vec::new();
+            let mut valid_hooks = 0;
+            let mut broken_hooks = 0;
+
+            // 1. Validate UE4SS Lua Hooks
+            for (hook_target, (_hook_fn, mods)) in &hook_map {
+                let (target_class, target_function, status, reason, suggestion) = validate_hook_with_usmap(hook_target, &schema, sdk_index.as_ref());
+                if status == "valid" || status == "blueprint_asset" {
+                    valid_hooks += 1;
+                } else if status == "broken_class" || status == "broken_function" {
+                    broken_hooks += 1;
+                }
+
+                for m in mods {
+                    diagnostics.push(UsmapHookDiagnostic {
+                        mod_id: m.mod_id.clone(),
+                        mod_name: m.mod_name.clone(),
+                        file_path: m.file_path.clone(),
+                        line_number: m.line_number,
+                        hook_target: hook_target.clone(),
+                        target_class: target_class.clone(),
+                        target_function: target_function.clone(),
+                        status: status.clone(),
+                        reason: reason.clone(),
+                        suggestion: suggestion.clone(),
+                        category: "ue4ss".to_string(),
+                    });
+                }
+            }
+
+            // 2. Validate PalSchema DataTables & Structures
+            let mut seen_palschema_tables = HashSet::new();
+            for entry in &palschema_tables {
+                let dedup = (entry.mod_id.clone(), entry.file_path.clone(), entry.table_name.clone());
+                if !seen_palschema_tables.insert(dedup) {
+                    continue;
+                }
+
+                let (status, reason, suggestion) = validate_palschema_table_with_usmap(&entry.table_name, &schema, sdk_index.as_ref());
+                if status == "valid" || status == "blueprint_asset" {
+                    valid_hooks += 1;
+                } else if status == "broken_table" || status == "broken_class" {
+                    broken_hooks += 1;
+                }
+
+                diagnostics.push(UsmapHookDiagnostic {
+                    mod_id: entry.mod_id.clone(),
+                    mod_name: entry.mod_name.clone(),
+                    file_path: entry.file_path.clone(),
+                    line_number: entry.line_number,
+                    hook_target: entry.table_name.clone(),
+                    target_class: entry.table_name.clone(),
+                    target_function: String::new(),
+                    status,
+                    reason,
+                    suggestion,
+                    category: "palschema".to_string(),
+                });
+            }
+
+            // 3. Validate Pak Assets & Deprecated Schema Notices
+            for notice in &schema_notices {
+                let suggestion = sdk_index.as_ref().and_then(|s| s.suggest_similar_class(&notice.struct_name));
+                broken_hooks += 1;
+                diagnostics.push(UsmapHookDiagnostic {
+                    mod_id: notice.mod_id.clone(),
+                    mod_name: notice.mod_name.clone(),
+                    file_path: notice.asset_path.clone(),
+                    line_number: 1,
+                    hook_target: format!("{} ({})", notice.asset_path, notice.struct_name),
+                    target_class: notice.struct_name.clone(),
+                    target_function: String::new(),
+                    status: "broken_struct".to_string(),
+                    reason: notice.message.clone(),
+                    suggestion,
+                    category: "pak".to_string(),
+                });
+            }
+
+            diagnostics.sort_by(|a, b| {
+                let status_order = |s: &str| match s {
+                    "broken_class" => 0,
+                    "broken_function" => 1,
+                    "broken_table" => 2,
+                    "broken_struct" => 3,
+                    "unknown" => 4,
+                    "blueprint_asset" => 5,
+                    "valid" => 6,
+                    _ => 7,
+                };
+                status_order(&a.status)
+                    .cmp(&status_order(&b.status))
+                    .then_with(|| a.mod_name.cmp(&b.mod_name))
+            });
+
+            Some(UsmapDiagnosticSummary {
+                has_usmap: true,
+                usmap_version: schema.game_version,
+                total_hooks_checked: diagnostics.len() as u32,
+                valid_hooks,
+                broken_hooks,
+                diagnostics,
+            })
+        } else {
+            None
+        }
+    } else {
+        None
+    };
+
     Ok(ScanResult {
         total_scanned,
         palschema_scanned,
@@ -313,14 +467,397 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         mod_summaries,
         gamepass_notices,
         schema_notices,
+        usmap_diagnostics,
         is_gamepass,
     })
+}
+
+fn validate_hook_with_usmap(
+    target: &str,
+    schema: &crate::usmap::parser::UsmapSchema,
+    sdk: Option<&crate::usmap::SdkIndex>,
+) -> (String, String, String, String, Option<String>) {
+    let raw_target = target.trim();
+    
+    // 1. Dynamic Blueprint Asset Hooks (/Game/...)
+    if raw_target.starts_with("/Game/") {
+        let (raw_class, raw_func) = if let Some(colon_idx) = raw_target.find(':') {
+            (&raw_target[..colon_idx], &raw_target[colon_idx + 1..])
+        } else {
+            (raw_target, "")
+        };
+
+        let clean_class = raw_class
+            .split('.')
+            .last()
+            .unwrap_or(raw_class)
+            .split('/')
+            .last()
+            .unwrap_or(raw_class)
+            .trim();
+
+        let clean_func = raw_func.trim();
+
+        if let Some(sdk_idx) = sdk {
+            if sdk_idx.find_class(clean_class).is_some() {
+                if !clean_func.is_empty() {
+                    if sdk_idx.has_function(clean_class, clean_func) {
+                        return (
+                            clean_class.to_string(),
+                            clean_func.to_string(),
+                            "valid".to_string(),
+                            format!("Verified Blueprint hook '{}:{}' in C++ SDK", clean_class, clean_func),
+                            None,
+                        );
+                    } else {
+                        let suggestion = sdk_idx.suggest_similar_function(clean_class, clean_func).map(|sug| {
+                            if let Some((prefix, _)) = raw_target.split_once(':') {
+                                format!("{}:{}", prefix, sug)
+                            } else {
+                                format!("{}:{}", clean_class, sug)
+                            }
+                        });
+                        return (
+                            clean_class.to_string(),
+                            clean_func.to_string(),
+                            "broken_function".to_string(),
+                            format!("Function or event '{}' not found in Blueprint '{}' (checked C++ SDK)", clean_func, clean_class),
+                            suggestion,
+                        );
+                    }
+                } else {
+                    return (
+                        clean_class.to_string(),
+                        clean_func.to_string(),
+                        "valid".to_string(),
+                        format!("Verified Blueprint class '{}' in C++ SDK", clean_class),
+                        None,
+                    );
+                }
+            }
+        }
+
+        return (
+            clean_class.to_string(),
+            clean_func.to_string(),
+            "blueprint_asset".to_string(),
+            "Dynamic Blueprint Asset Hook (loaded at runtime from game packages)".to_string(),
+            None,
+        );
+    }
+
+    // 2. Native C++ Engine Hooks (/Script/...)
+    let (raw_class, raw_func) = if let Some(colon_idx) = raw_target.find(':') {
+        (&raw_target[..colon_idx], &raw_target[colon_idx + 1..])
+    } else {
+        (raw_target, "")
+    };
+
+    let without_script = raw_class.trim_start_matches("/Script/");
+    let clean_class = if let Some(dot_idx) = without_script.rfind('.') {
+        &without_script[dot_idx + 1..]
+    } else if without_script.starts_with("PalPal") {
+        &without_script[3..]
+    } else {
+        without_script
+    }.trim();
+
+    let clean_func = raw_func.trim();
+
+    if clean_class.is_empty() {
+        return (
+            clean_class.to_string(),
+            clean_func.to_string(),
+            "unknown".to_string(),
+            "Empty or unparseable hook target".to_string(),
+            None,
+        );
+    }
+
+    // Check if class is Blueprint by naming convention (starts with BP_ or ends with _C)
+    if clean_class.starts_with("BP_") || clean_class.ends_with("_C") {
+        if let Some(sdk_idx) = sdk {
+            if sdk_idx.find_class(clean_class).is_some() {
+                if !clean_func.is_empty() {
+                    if sdk_idx.has_function(clean_class, clean_func) {
+                        return (
+                            clean_class.to_string(),
+                            clean_func.to_string(),
+                            "valid".to_string(),
+                            format!("Verified Blueprint hook '{}:{}' in C++ SDK", clean_class, clean_func),
+                            None,
+                        );
+                    } else {
+                        let suggestion = sdk_idx.suggest_similar_function(clean_class, clean_func).map(|sug| {
+                            if let Some((prefix, _)) = raw_target.split_once(':') {
+                                format!("{}:{}", prefix, sug)
+                            } else {
+                                format!("{}:{}", clean_class, sug)
+                            }
+                        });
+                        return (
+                            clean_class.to_string(),
+                            clean_func.to_string(),
+                            "broken_function".to_string(),
+                            format!("Function '{}' not found in Blueprint '{}' (checked C++ SDK)", clean_func, clean_class),
+                            suggestion,
+                        );
+                    }
+                } else {
+                    return (
+                        clean_class.to_string(),
+                        clean_func.to_string(),
+                        "valid".to_string(),
+                        format!("Verified Blueprint class '{}' in C++ SDK", clean_class),
+                        None,
+                    );
+                }
+            }
+        }
+
+        return (
+            clean_class.to_string(),
+            clean_func.to_string(),
+            "blueprint_asset".to_string(),
+            "Dynamic Blueprint Asset Hook (loaded at runtime from game packages)".to_string(),
+            None,
+        );
+    }
+
+    // If C++ SDK is available, perform authoritative class and method resolution
+    if let Some(sdk_idx) = sdk {
+        let class_in_sdk = sdk_idx.find_class(clean_class);
+        let class_struct = schema.find_struct(clean_class);
+        let class_in_names = schema.names.iter().any(|n| {
+            n.eq_ignore_ascii_case(clean_class)
+                || n.eq_ignore_ascii_case(&format!("A{}", clean_class))
+                || n.eq_ignore_ascii_case(&format!("U{}", clean_class))
+        });
+
+        if class_in_sdk.is_none() && class_struct.is_none() && !class_in_names {
+            let suggestion = sdk_idx.suggest_similar_class(clean_class).map(|sug_cls| {
+                if let Some((raw_cls_part, raw_func_part)) = raw_target.split_once(':') {
+                    if let Some(dot_idx) = raw_cls_part.rfind('.') {
+                        let prefix = &raw_cls_part[..=dot_idx];
+                        format!("{}{}:{}", prefix, sug_cls, raw_func_part)
+                    } else if raw_cls_part.starts_with("/Script/") {
+                        format!("/Script/{}:{}", sug_cls, raw_func_part)
+                    } else {
+                        format!("{}:{}", sug_cls, raw_func_part)
+                    }
+                } else if let Some(dot_idx) = raw_target.rfind('.') {
+                    let prefix = &raw_target[..=dot_idx];
+                    format!("{}{}", prefix, sug_cls)
+                } else {
+                    sug_cls
+                }
+            });
+            return (
+                clean_class.to_string(),
+                clean_func.to_string(),
+                "broken_class".to_string(),
+                format!(
+                    "Native class '{}' does not exist in Palworld schema or C++ SDK",
+                    clean_class
+                ),
+                suggestion,
+            );
+        }
+
+        if class_in_sdk.is_some() {
+            if !clean_func.is_empty() {
+                if sdk_idx.has_function(clean_class, clean_func) {
+                    return (
+                        clean_class.to_string(),
+                        clean_func.to_string(),
+                        "valid".to_string(),
+                        format!(
+                            "Verified native hook '{}:{}' in Palworld C++ SDK",
+                            clean_class, clean_func
+                        ),
+                        None,
+                    );
+                } else {
+                    let suggestion = sdk_idx.suggest_similar_function(clean_class, clean_func).map(|sug| {
+                        if let Some((prefix, _)) = raw_target.split_once(':') {
+                            format!("{}:{}", prefix, sug)
+                        } else {
+                            format!("{}:{}", clean_class, sug)
+                        }
+                    });
+                    return (
+                        clean_class.to_string(),
+                        clean_func.to_string(),
+                        "broken_function".to_string(),
+                        format!(
+                            "Function or delegate '{}' not found in class '{}' (checked C++ SDK)",
+                            clean_func, clean_class
+                        ),
+                        suggestion,
+                    );
+                }
+            } else {
+                return (
+                    clean_class.to_string(),
+                    clean_func.to_string(),
+                    "valid".to_string(),
+                    format!(
+                        "Verified native class '{}' in Palworld C++ SDK",
+                        clean_class
+                    ),
+                    None,
+                );
+            }
+        }
+    }
+
+    // Fallback: Check class existence in USMAP
+    let class_struct = schema.find_struct(clean_class);
+    let class_in_names = schema.names.iter().any(|n| {
+        n.eq_ignore_ascii_case(clean_class)
+            || n.eq_ignore_ascii_case(&format!("A{}", clean_class))
+            || n.eq_ignore_ascii_case(&format!("U{}", clean_class))
+    });
+
+    let class_exists = class_struct.is_some() || class_in_names;
+
+    if !class_exists {
+        return (
+            clean_class.to_string(),
+            clean_func.to_string(),
+            "broken_class".to_string(),
+            format!(
+                "Native class '{}' does not exist in current Palworld schema",
+                clean_class
+            ),
+            None,
+        );
+    }
+
+    // If function is specified, validate function/delegate name in schema FNames
+    if !clean_func.is_empty() {
+        let func_in_struct_props = class_struct.map_or(false, |s| {
+            s.properties.iter().any(|p| p.name.eq_ignore_ascii_case(clean_func))
+        });
+        let func_in_names = schema.names.iter().any(|n| n.eq_ignore_ascii_case(clean_func));
+
+        if !func_in_struct_props && !func_in_names {
+            return (
+                clean_class.to_string(),
+                clean_func.to_string(),
+                "broken_function".to_string(),
+                format!(
+                    "Function or delegate '{}' not found in Palworld schema FNames",
+                    clean_func
+                ),
+                None,
+            );
+        }
+    }
+
+    let clean_ver = schema.game_version.trim_start_matches(|c| c == 'v' || c == 'V');
+
+    (
+        clean_class.to_string(),
+        clean_func.to_string(),
+        "valid".to_string(),
+        if clean_func.is_empty() {
+            format!(
+                "Verified native class '{}' in Palworld schema v{}",
+                clean_class, clean_ver
+            )
+        } else {
+            format!(
+                "Verified native hook '{}:{}' in Palworld schema v{}",
+                clean_class, clean_func, clean_ver
+            )
+        },
+        None,
+    )
+}
+
+fn validate_palschema_table_with_usmap(
+    table_name: &str,
+    schema: &crate::usmap::parser::UsmapSchema,
+    sdk: Option<&crate::usmap::SdkIndex>,
+) -> (String, String, Option<String>) {
+    let raw = table_name.trim();
+    if raw.is_empty() {
+        return ("unknown".to_string(), "Empty table name".to_string(), None);
+    }
+
+    // 1. Direct match in USMAP schema FNames (e.g. DT_PalCharacterParameter, DT_ItemData)
+    let in_schema_names = schema.names.iter().any(|n| n.eq_ignore_ascii_case(raw));
+    let in_schema_structs = schema.find_struct(raw).is_some();
+
+    // 2. Check stripped name without DT_ (e.g. PalIndividualCharacterParameter, ItemData)
+    let clean = if raw.starts_with("DT_") {
+        &raw[3..]
+    } else {
+        raw
+    };
+    let clean_in_structs = schema.find_struct(clean).is_some();
+    let clean_in_names = schema.names.iter().any(|n| n.eq_ignore_ascii_case(clean));
+
+    // 3. Check in C++ SDK
+    let class_in_sdk = sdk.and_then(|s| s.find_class(clean).or_else(|| s.find_class(raw)));
+
+    if in_schema_names || in_schema_structs || clean_in_structs || clean_in_names || class_in_sdk.is_some() {
+        return (
+            "valid".to_string(),
+            format!("Verified DataTable '{}' in Palworld reflection schema", raw),
+            None,
+        );
+    }
+
+    // If not found, it's a broken table name / obsolete table
+    // Try fuzzy match in schema.names (prioritizing DT_ entries or Pal... entries)
+    let raw_norm = raw.replace('_', "").to_ascii_lowercase();
+    let mut best_candidate: Option<String> = None;
+    let mut highest_score: f64 = 0.0;
+
+    for name in &schema.names {
+        if !name.starts_with("DT_") && !name.contains("DataTable") && !name.starts_with("Pal") {
+            continue;
+        }
+        let cand_norm = name.replace('_', "").to_ascii_lowercase();
+        if raw_norm == cand_norm {
+            best_candidate = Some(name.clone());
+            break;
+        }
+        let max_len = raw_norm.len().max(cand_norm.len());
+        if max_len == 0 {
+            continue;
+        }
+        let dist = crate::usmap::sdk_parser::levenshtein_distance(&raw_norm, &cand_norm);
+        let score = 1.0 - (dist as f64 / max_len as f64);
+        if score > highest_score && score >= 0.55 {
+            highest_score = score;
+            best_candidate = Some(name.clone());
+        }
+    }
+
+    // If still no candidate, check SDK classes
+    if best_candidate.is_none() {
+        if let Some(sdk_idx) = sdk {
+            if let Some(sug) = sdk_idx.suggest_similar_class(clean) {
+                best_candidate = Some(if raw.starts_with("DT_") { format!("DT_{}", sug) } else { sug });
+            }
+        }
+    }
+
+    (
+        "broken_table".to_string(),
+        format!("DataTable '{}' does not exist in Palworld reflection schema", raw),
+        best_candidate,
+    )
 }
 
 fn scan_palschema_mod(
     mod_path: &Path,
     conflict_info: &ConflictingMod,
     table_map: &mut HashMap<String, Vec<ConflictingMod>>,
+    palschema_tables: &mut Vec<PalschemaTableEntry>,
     warnings: &mut Vec<String>,
 ) {
     let mut files_to_scan = Vec::new();
@@ -346,7 +883,7 @@ fn scan_palschema_mod(
                     } else {
                         file_info.file_path = file_path.to_string_lossy().to_string();
                     }
-                    extract_palschema_rows(&file_path, &val, &file_info, table_map, warnings);
+                    extract_palschema_rows(&file_path, &val, content_clean, &file_info, table_map, palschema_tables, warnings);
                 }
                 Err(e) => {
                     warnings.push(format!(
@@ -364,17 +901,35 @@ fn scan_palschema_mod(
 fn extract_palschema_rows(
     file_path: &Path,
     json_val: &serde_json::Value,
+    raw_content: &str,
     mod_info: &ConflictingMod,
     table_map: &mut HashMap<String, Vec<ConflictingMod>>,
+    palschema_tables: &mut Vec<PalschemaTableEntry>,
     _warnings: &mut Vec<String>,
 ) {
     let filename = file_path.file_stem().and_then(|s| s.to_str()).unwrap_or("unknown");
+    let content_lines: Vec<&str> = raw_content.lines().collect();
+
     if let Some(obj) = json_val.as_object() {
         for (key, val) in obj {
             let is_dt = key.starts_with("DT_") || key.contains("DataTable");
             let is_bp = key.starts_with("BP_") || key.ends_with("_C");
             
             if (is_dt || is_bp) && val.is_object() {
+                let line_num = content_lines
+                    .iter()
+                    .position(|l| l.contains(&format!("\"{}\"", key)))
+                    .map(|p| p as u32 + 1)
+                    .unwrap_or(1);
+
+                palschema_tables.push(PalschemaTableEntry {
+                    mod_id: mod_info.mod_id.clone(),
+                    mod_name: mod_info.mod_name.clone(),
+                    file_path: mod_info.file_path.clone(),
+                    line_number: line_num,
+                    table_name: key.clone(),
+                });
+
                 if let Some(nested_obj) = val.as_object() {
                     for (row_key, row_val) in nested_obj {
                         if row_val.is_object() || row_val.is_array() {
@@ -394,6 +949,14 @@ fn extract_palschema_rows(
                     }
                 }
             } else if (filename.starts_with("DT_") || filename.contains("DataTable") || filename.starts_with("BP_") || filename.ends_with("_C")) && (val.is_object() || val.is_array()) {
+                palschema_tables.push(PalschemaTableEntry {
+                    mod_id: mod_info.mod_id.clone(),
+                    mod_name: mod_info.mod_name.clone(),
+                    file_path: mod_info.file_path.clone(),
+                    line_number: 1,
+                    table_name: filename.to_string(),
+                });
+
                 let val_str = serde_json::to_string(val).unwrap_or_else(|_| val.to_string());
                 let detail = if val_str.len() > 140 {
                     format!("{}...", &val_str[..140])
@@ -579,6 +1142,99 @@ pub struct ModHotkey {
     pub line_number: usize,
     pub keys: String,
     pub raw_line: String,
+    pub variable_name: Option<String>,
+    pub definition_file_path: Option<String>,
+    pub definition_absolute_path: Option<String>,
+    pub definition_line_number: Option<usize>,
+    pub is_variable: bool,
+}
+
+fn find_variable_in_lua_files(
+    var_name: &str,
+    lua_files: &[(PathBuf, String)],
+    depth: usize,
+) -> Option<(String, PathBuf, usize)> {
+    if depth > 5 || var_name.is_empty() {
+        return None;
+    }
+
+    let clean_var = var_name.trim();
+
+    if clean_var.contains("Key.") || clean_var.contains("ModifierKey.") {
+        return None;
+    }
+
+    let (table_prefix, field_name) = if let Some(dot_idx) = clean_var.find('.') {
+        (&clean_var[..dot_idx], &clean_var[dot_idx + 1..])
+    } else {
+        ("", clean_var)
+    };
+
+    for (file_path, content) in lua_files {
+        let lines: Vec<&str> = content.lines().collect();
+        for (line_idx, line) in lines.iter().enumerate() {
+            let trimmed = line.trim();
+            if trimmed.starts_with("--") {
+                continue;
+            }
+
+            // Pattern 1: Direct assignment e.g. "Config.OpenMenuKey = Key.F5" or "local OpenMenuKey = Key.F5"
+            let is_match = if !table_prefix.is_empty() {
+                trimmed.starts_with(&format!("{}.{} ", table_prefix, field_name))
+                    || trimmed.starts_with(&format!("{}.{}=", table_prefix, field_name))
+                    || trimmed.starts_with(&format!("{}.{}\t", table_prefix, field_name))
+            } else {
+                trimmed.starts_with(&format!("local {} ", field_name))
+                    || trimmed.starts_with(&format!("local {}=", field_name))
+                    || trimmed.starts_with(&format!("local {}\t", field_name))
+                    || trimmed.starts_with(&format!("{} ", field_name))
+                    || trimmed.starts_with(&format!("{}=", field_name))
+                    || trimmed.starts_with(&format!("{}\t", field_name))
+            };
+
+            if is_match {
+                if let Some(eq_pos) = trimmed.find('=') {
+                    let mut rhs = trimmed[eq_pos + 1..].trim();
+                    if let Some(c_pos) = rhs.find("--") {
+                        rhs = rhs[..c_pos].trim();
+                    }
+                    rhs = rhs.trim_end_matches(',').trim_end_matches(';').trim();
+
+                    if !rhs.is_empty() {
+                        if rhs.contains("Key.") || rhs.contains("ModifierKey.") || rhs.starts_with('"') || rhs.starts_with('\'') || rhs.starts_with('{') {
+                            return Some((rhs.to_string(), file_path.clone(), line_idx + 1));
+                        } else if !rhs.contains('(') && !rhs.contains(' ') {
+                            if let Some(sub_res) = find_variable_in_lua_files(rhs, lua_files, depth + 1) {
+                                return Some(sub_res);
+                            }
+                        }
+                    }
+                }
+            }
+
+            // Pattern 2: Field inside table constructor e.g. OpenMenuKey = Key.F5 inside Config = { ... }
+            if !table_prefix.is_empty() {
+                if trimmed.starts_with(&format!("{} =", field_name))
+                    || trimmed.starts_with(&format!("{}=", field_name))
+                    || trimmed.starts_with(&format!("{}\t=", field_name))
+                {
+                    if let Some(eq_pos) = trimmed.find('=') {
+                        let mut rhs = trimmed[eq_pos + 1..].trim();
+                        if let Some(c_pos) = rhs.find("--") {
+                            rhs = rhs[..c_pos].trim();
+                        }
+                        rhs = rhs.trim_end_matches(',').trim_end_matches(';').trim();
+
+                        if rhs.contains("Key.") || rhs.contains("ModifierKey.") || rhs.starts_with('"') || rhs.starts_with('\'') || rhs.starts_with('{') {
+                            return Some((rhs.to_string(), file_path.clone(), line_idx + 1));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    None
 }
 
 fn extract_keys_from_line(line: &str) -> Option<String> {
@@ -774,30 +1430,61 @@ pub fn scan_mod_hotkeys(state: State<'_, AppState>) -> Result<Vec<ModHotkey>, St
             let mut files_to_scan = Vec::new();
             collect_files_with_extensions(&scripts_path, &["lua"], &mut files_to_scan);
 
-            for file_path in files_to_scan {
-                if let Ok(content) = fs::read_to_string(&file_path) {
-                    let lines: Vec<&str> = content.lines().collect();
-                    for (idx, line) in lines.iter().enumerate() {
-                        let trimmed = line.trim();
-                        if trimmed.starts_with("--") {
-                            continue;
-                        }
-                        if trimmed.contains("RegisterKeyBind") {
-                            if let Some(keys) = extract_keys_from_line(line) {
-                                let rel_path = match file_path.strip_prefix(&base_path) {
-                                    Ok(rel) => rel.to_string_lossy().to_string(),
-                                    Err(_) => file_path.to_string_lossy().to_string(),
-                                };
-                                hotkeys.push(ModHotkey {
-                                    mod_id: m.id.clone(),
-                                    mod_name: m.name.clone(),
-                                    file_path: rel_path,
-                                    absolute_file_path: file_path.to_string_lossy().to_string(),
-                                    line_number: idx + 1,
-                                    keys,
-                                    raw_line: line.to_string(),
-                                });
-                            }
+            // Preload all .lua files and their contents for this mod
+            let mut mod_lua_files: Vec<(PathBuf, String)> = Vec::new();
+            for file_path in &files_to_scan {
+                if let Ok(content) = fs::read_to_string(file_path) {
+                    mod_lua_files.push((file_path.clone(), content));
+                }
+            }
+
+            for (file_path, content) in &mod_lua_files {
+                let lines: Vec<&str> = content.lines().collect();
+                for (idx, line) in lines.iter().enumerate() {
+                    let trimmed = line.trim();
+                    if trimmed.starts_with("--") {
+                        continue;
+                    }
+                    if trimmed.contains("RegisterKeyBind") {
+                        if let Some(raw_keys) = extract_keys_from_line(line) {
+                            let rel_path = match file_path.strip_prefix(&base_path) {
+                                Ok(rel) => rel.to_string_lossy().to_string(),
+                                Err(_) => file_path.to_string_lossy().to_string(),
+                            };
+
+                            let is_direct_key = raw_keys.contains("Key.")
+                                || raw_keys.contains("ModifierKey.")
+                                || raw_keys.starts_with('"')
+                                || raw_keys.starts_with('\'');
+
+                            let (final_keys, var_name, def_file_rel, def_file_abs, def_line, is_var) = if !is_direct_key {
+                                if let Some((resolved, def_path, def_line_num)) = find_variable_in_lua_files(&raw_keys, &mod_lua_files, 0) {
+                                    let def_rel = match def_path.strip_prefix(&base_path) {
+                                        Ok(rel) => rel.to_string_lossy().to_string(),
+                                        Err(_) => def_path.to_string_lossy().to_string(),
+                                    };
+                                    (resolved, Some(raw_keys.clone()), Some(def_rel), Some(def_path.to_string_lossy().to_string()), Some(def_line_num), true)
+                                } else {
+                                    (raw_keys.clone(), Some(raw_keys.clone()), None, None, None, false)
+                                }
+                            } else {
+                                (raw_keys.clone(), None, None, None, None, false)
+                            };
+
+                            hotkeys.push(ModHotkey {
+                                mod_id: m.id.clone(),
+                                mod_name: m.name.clone(),
+                                file_path: rel_path,
+                                absolute_file_path: file_path.to_string_lossy().to_string(),
+                                line_number: idx + 1,
+                                keys: final_keys,
+                                raw_line: line.to_string(),
+                                variable_name: var_name,
+                                definition_file_path: def_file_rel,
+                                definition_absolute_path: def_file_abs,
+                                definition_line_number: def_line,
+                                is_variable: is_var,
+                            });
                         }
                     }
                 }
@@ -813,6 +1500,8 @@ pub fn update_mod_hotkey(
     absolute_file_path: String,
     line_number: usize,
     new_keys: String,
+    is_variable: Option<bool>,
+    _variable_name: Option<String>,
 ) -> Result<(), String> {
     let path = Path::new(&absolute_file_path);
     if !path.exists() {
@@ -827,15 +1516,38 @@ pub fn update_mod_hotkey(
     }
 
     let target_line = &lines[line_number - 1];
-    if let Some(updated_line) = update_line_keybind(target_line, &new_keys) {
-        lines[line_number - 1] = updated_line;
-        let ending = if content.contains("\r\n") { "\r\n" } else { "\n" };
-        let new_content = lines.join(ending) + ending;
-        fs::write(path, new_content).map_err(|e| format!("Failed to write file: {}", e))?;
-        Ok(())
+
+    let updated_line = if is_variable == Some(true) {
+        if let Some(eq_idx) = target_line.find('=') {
+            let left = &target_line[..=eq_idx];
+            let comment_part = if let Some(c_idx) = target_line.find("--") {
+                if c_idx > eq_idx {
+                    format!(" {}", &target_line[c_idx..])
+                } else {
+                    String::new()
+                }
+            } else {
+                String::new()
+            };
+            let trimmed_end = target_line.trim_end();
+            let ends_with_comma = trimmed_end.ends_with(',') || (trimmed_end.contains("--") && trimmed_end.split("--").next().unwrap_or("").trim().ends_with(','));
+            let comma_suffix = if ends_with_comma { "," } else { "" };
+            format!("{} {}{}{}", left, new_keys, comma_suffix, comment_part)
+        } else {
+            update_line_keybind(target_line, &new_keys).unwrap_or_else(|| target_line.clone())
+        }
     } else {
-        Err("Failed to parse RegisterKeyBind on target line".to_string())
-    }
+        match update_line_keybind(target_line, &new_keys) {
+            Some(line) => line,
+            None => return Err("Failed to parse RegisterKeyBind on target line".to_string()),
+        }
+    };
+
+    lines[line_number - 1] = updated_line;
+    let ending = if content.contains("\r\n") { "\r\n" } else { "\n" };
+    let new_content = lines.join(ending) + ending;
+    fs::write(path, new_content).map_err(|e| format!("Failed to write file: {}", e))?;
+    Ok(())
 }
 
 #[tauri::command]

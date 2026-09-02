@@ -906,14 +906,31 @@ export interface ModHotkey {
   lineNumber: number;
   keys: string;
   rawLine: string;
+  variableName?: string | null;
+  definitionFilePath?: string | null;
+  definitionAbsolutePath?: string | null;
+  definitionLineNumber?: number | null;
+  isVariable?: boolean;
 }
 
 export async function scanModHotkeys(): Promise<ModHotkey[]> {
   return invoke('scan_mod_hotkeys');
 }
 
-export async function updateModHotkey(absoluteFilePath: string, lineNumber: number, newKeys: string): Promise<void> {
-  return invoke('update_mod_hotkey', { absoluteFilePath, lineNumber, newKeys });
+export async function updateModHotkey(
+  absoluteFilePath: string,
+  lineNumber: number,
+  newKeys: string,
+  isVariable?: boolean,
+  variableName?: string | null,
+): Promise<void> {
+  return invoke('update_mod_hotkey', {
+    absoluteFilePath,
+    lineNumber,
+    newKeys,
+    isVariable: isVariable ?? false,
+    variableName: variableName ?? null,
+  });
 }
 
 export async function ignoreModVersion(modId: string, version: string | null): Promise<void> {
@@ -1208,6 +1225,51 @@ export async function purgeImageCache(): Promise<void> {
   return invoke('purge_image_cache');
 }
 
+export interface UsmapProperty {
+  index: number;
+  name: string;
+  typeName: string;
+  structType?: string | null;
+  enumType?: string | null;
+  innerType?: string | null;
+  arrayDim: number;
+}
+
+export interface UsmapSearchItem {
+  name: string;
+  category: 'struct' | 'enum' | 'name';
+  superType?: string | null;
+  propertyCount: number;
+  enumValuesCount: number;
+  preview: string;
+}
+
+export interface UsmapSearchResult {
+  totalItems: number;
+  page: number;
+  pageSize: number;
+  items: UsmapSearchItem[];
+}
+
+export interface UsmapStructFullDetails {
+  name: string;
+  superType?: string | null;
+  inheritanceChain: string[];
+  properties: UsmapProperty[];
+  totalPropertiesWithAncestors: number;
+}
+
+export interface UsmapSummaryData {
+  loaded: boolean;
+  totalStructs: number;
+  totalEnums: number;
+  totalNames: number;
+  gameVersion?: string;
+  path?: string;
+  sha256?: string;
+  gameBuild?: string;
+}
+
 export async function getMappingsStatus(): Promise<import('./types').UsmapStatus> {
   return invoke('get_mappings_status');
 }
@@ -1216,6 +1278,51 @@ export async function syncMappingsNow(): Promise<import('./types').UsmapStatus> 
   return invoke('sync_mappings_now');
 }
 
-export async function getUsmapSummary(): Promise<{ loaded: boolean; totalStructs: number; totalEnums: number; totalNames: number; gameVersion?: string }> {
+export async function getUsmapSummary(): Promise<UsmapSummaryData> {
   return invoke('get_usmap_summary');
 }
+
+export async function searchUsmapEntries(
+  query: string,
+  filterType: 'all' | 'structs' | 'enums' | 'names' = 'all',
+  page: number = 0,
+  pageSize: number = 50
+): Promise<UsmapSearchResult> {
+  return invoke('search_usmap_entries', { query, filterType, page, pageSize });
+}
+
+export async function getUsmapFullStructDetails(name: string): Promise<UsmapStructFullDetails | null> {
+  return invoke('get_usmap_full_struct_details', { name });
+}
+
+export async function getUsmapEnumInfo(enumName: string): Promise<string[] | null> {
+  return invoke('get_usmap_enum_info', { enumName });
+}
+
+export interface SdkStatus {
+  installed: boolean;
+  totalClasses: number;
+  totalFunctions: number;
+  source: string;
+  gameVersion: string;
+  path: string;
+  localGameCxxFound: boolean;
+  localGameCxxPath?: string | null;
+}
+
+export async function getSdkStatus(): Promise<SdkStatus> {
+  return invoke('get_sdk_status');
+}
+
+export async function importLocalSdk(folderPath?: string): Promise<SdkStatus> {
+  return invoke('import_local_sdk', { folderPath: folderPath || null });
+}
+
+export async function syncSdkFromRepo(): Promise<SdkStatus> {
+  return invoke('sync_sdk_from_repo');
+}
+
+export async function purgeSdkCache(): Promise<SdkStatus> {
+  return invoke('purge_sdk_cache');
+}
+

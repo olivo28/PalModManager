@@ -25,16 +25,17 @@
         <button id="packer-add-folder-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_folder">📁 Add Folder</button>
         <button id="packer-new-virtual-folder-btn" class="toolbar-btn-sm" style="display:none;" data-i18n="packer.btn_new_virtual_folder">➕ New Folder</button>
         <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;" data-i18n="packer.btn_auto_struct">Auto-Structure</button>
+        <button id="packer-preview-install-btn" class="toolbar-btn-sm" style="display:inline-flex;align-items:center;gap:4px;" data-i18n-title="packer.btn_preview_install_title" data-i18n="packer.btn_preview_install">👁️ Preview Install</button>
         <button id="packer-clear-btn" class="toolbar-btn-sm" data-i18n="packer.btn_clear_all">Clear All</button>
       </div>
       <div id="packer-files-container" class="packer-files-container">
         <table id="packer-list-table" class="packer-table">
           <thead>
             <tr>
-              <th data-i18n="packer.col_source_file">Source File</th>
-              <th data-i18n="packer.col_size">Size</th>
-              <th data-i18n="packer.col_target_path">Archive Target Path</th>
-              <th style="width: 40px;"></th>
+              <th style="width: 36%;" data-i18n="packer.col_source_file">Source File</th>
+              <th style="width: 70px;" data-i18n="packer.col_size">Size</th>
+              <th style="width: 56%;" data-i18n="packer.col_target_path">Archive Target Path</th>
+              <th style="width: 65px; text-align: right;"></th>
             </tr>
           </thead>
           <tbody id="packer-files-body">
@@ -95,6 +96,19 @@
       <div class="packer-form-group">
         <label for="packer-meta-desc" data-i18n="packer.label_description">Description</label>
         <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..." data-i18n-placeholder="packer.placeholder_desc"></textarea>
+      </div>
+      <div class="packer-form-header" style="margin-top: 10px;" data-i18n="packer.export_presets_title">Compatibility & Presets</div>
+      <div class="packer-form-group" style="margin-bottom: 6px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 11px; text-transform: none; letter-spacing: normal; color: var(--text-primary);">
+          <input type="checkbox" id="packer-preset-vortex" style="cursor: pointer;" />
+          <span data-i18n="packer.opt_vortex_structure">Vortex / Manual Root Structure</span>
+        </label>
+      </div>
+      <div class="packer-form-group" style="margin-bottom: 12px;">
+        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 11px; text-transform: none; letter-spacing: normal; color: var(--text-primary);">
+          <input type="checkbox" id="packer-preset-dual" style="cursor: pointer;" />
+          <span data-i18n="packer.opt_dual_zip">Dual Package (Steam Win64 + Xbox WinGDK)</span>
+        </label>
       </div>
       <div class="packer-format-row">
         <select id="packer-format-select" class="packer-select-format">

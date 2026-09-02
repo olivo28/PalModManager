@@ -1,6 +1,6 @@
 import { getState, updateState } from '../../state';
 import { handleEditorSave, handleEditorPreview, syncHighlight, loadEditorData } from './viewer';
-import { switchEditorMod, renderEditorModTree } from './tree';
+import { switchEditorMod, renderEditorModTree, revealAndSelectFile } from './tree';
 import { openFind, closeFind } from './search';
 import { confirmDiscardOrSave } from './unsaved';
 import { editorDom, mainDom } from '../../framework';
@@ -211,39 +211,47 @@ export async function openFileAtLine(modId: string, filePath: string, lineNumber
   const { navigateTo } = await import('../tabManager');
   navigateTo('editor');
 
+  const normalizedPath = filePath.replace(/\\/g, '/').replace(/^\/+/, '').trim();
   const state = getState();
+
   if (state.editorModId !== modId) {
-    await switchEditorMod(modId);
+    await switchEditorMod(modId, normalizedPath);
+  } else {
+    revealAndSelectFile(normalizedPath);
   }
 
-  const normalizedPath = filePath.replace(/\\/g, '/');
+  jumpToLineInEditor(lineNumber);
+}
 
-  setTimeout(() => {
-    const fileItem = document.querySelector(`.editor-file-item[data-path="${CSS.escape(normalizedPath)}"]`) as HTMLElement | null;
-    if (fileItem) {
-      if (getState().editorSelectedFile !== normalizedPath) {
-        fileItem.click();
-      }
+export function jumpToLineInEditor(lineNumber: number, retryCount = 0): void {
+  const editorContent = editorDom.elMaybe('editor-content') as HTMLTextAreaElement | null;
+  if (!editorContent) return;
+
+  const text = editorContent.value;
+  if (!text && retryCount < 10) {
+    setTimeout(() => jumpToLineInEditor(lineNumber, retryCount + 1), 60);
+    return;
+  }
+
+  const lines = text.split('\n');
+  if (lineNumber > 0 && lineNumber <= lines.length) {
+    let charIndex = 0;
+    for (let i = 0; i < lineNumber - 1; i++) {
+      charIndex += lines[i].length + 1;
     }
+    const lineText = lines[lineNumber - 1];
+    editorContent.focus();
+    editorContent.setSelectionRange(charIndex, charIndex + lineText.length);
 
-    setTimeout(() => {
-      const editorContent = editorDom.elMaybe('editor-content');
-      if (editorContent) {
-        const text = editorContent.value;
-        const lines = text.split('\n');
-        if (lineNumber > 0 && lineNumber <= lines.length) {
-          let charIndex = 0;
-          for (let i = 0; i < lineNumber - 1; i++) {
-            charIndex += lines[i].length + 1;
-          }
-          const lineText = lines[lineNumber - 1];
-          editorContent.focus();
-          editorContent.setSelectionRange(charIndex, charIndex + lineText.length);
-          const lineHeight = 19;
-          editorContent.scrollTop = Math.max(0, (lineNumber - 5) * lineHeight);
-          syncHighlight();
-        }
-      }
-    }, 250);
-  }, 250);
+    const lineHeight = 19;
+    const targetScrollTop = Math.max(0, (lineNumber - 6) * lineHeight);
+    editorContent.scrollTop = targetScrollTop;
+
+    const highlight = editorDom.elMaybe('editor-highlight');
+    if (highlight) highlight.scrollTop = targetScrollTop;
+    const gutter = editorDom.elMaybe('editor-gutter');
+    if (gutter) gutter.scrollTop = targetScrollTop;
+
+    syncHighlight(true);
+  }
 }

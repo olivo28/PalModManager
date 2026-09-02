@@ -186,6 +186,17 @@ export async function handleSaveSettings(): Promise<void> {
       updateState({ currentSettings: settings, collapsedFolderIds: newCollapsed });
     }
 
+    const modeModsTxtRadio = settingsDom.elMaybe('settings-ue4ss-mode-mods-txt');
+    if (modeModsTxtRadio) {
+      const targetMode = modeModsTxtRadio.checked ? 'mods_txt' : 'enabled_txt';
+      const activeProfile = state.currentProfile || state.profiles?.find(p => p.id === state.currentProfileId);
+      const currentMode = (activeProfile as any)?.ue4ss_control_mode || activeProfile?.ue4ssControlMode || 'enabled_txt';
+      if (targetMode !== currentMode) {
+        const { setUe4ssControlMode } = await import('../../../api');
+        await setUe4ssControlMode(targetMode);
+      }
+    }
+
     closeSettingsModal();
     showToast(t('toasts.settings_saved'), 'success');
 

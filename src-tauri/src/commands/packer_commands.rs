@@ -16,24 +16,7 @@ pub struct StagedFile {
     pub target_path: String,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct PackerRoute {
-    pub zip_path: String,
-    pub route_type: String,
-}
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-#[serde(rename_all = "camelCase")]
-pub struct ModMetadata {
-    pub name: String,
-    pub version: String,
-    pub description: String,
-    pub author: String,
-    pub mod_type: String,
-    pub nexus_mod_id: Option<u32>,
-    pub routes: Option<Vec<PackerRoute>>,
-}
+use crate::models::PmmMetadata as ModMetadata;
 
 #[tauri::command]
 pub async fn scan_paths_for_packing(paths: Vec<String>) -> Result<Vec<StagedFile>, String> {

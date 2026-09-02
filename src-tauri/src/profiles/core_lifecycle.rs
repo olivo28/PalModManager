@@ -104,13 +104,6 @@ fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile: &P
     match active_mode {
         DependencyMode::Workshop => {
             let ws_folder = game_path_to_workshop_dir(game_path);
-            let root_backup = profile_dir.join("ue4ss_workshop_root");
-            if root_backup.exists() {
-                let _ = fs::remove_dir_all(&root_backup);
-            }
-            if ws_folder.exists() {
-                let _ = copy_dir_all(&ws_folder, &root_backup);
-            }
 
             // Backup user UE4SS mods from workshop
             let ws_mods_dir = ws_folder.join("Mods");
@@ -382,13 +375,6 @@ fn restore_profile_files_to_game(
                 let _ = copy_dir_all(&managed_backup, &managed_mods);
             }
 
-            let root_backup = profile_dir.join("ue4ss_workshop_root");
-            if root_backup.exists() {
-                let _ = copy_dir_all(&root_backup, &ws_folder);
-            } else {
-                let _ = fs::create_dir_all(ws_folder.join("Mods"));
-            }
-
             let target_ws_mods_dir = ws_folder.join("Mods");
             let _ = fs::create_dir_all(&target_ws_mods_dir);
 
@@ -594,7 +580,6 @@ pub fn switch_profile(
     sync_current_profile_states(data);
 
     let target_mode = target_profile.ue4ss_control_mode.as_deref()
-        .or(data.settings.ue4ss_control_mode.as_deref())
         .unwrap_or("enabled_txt")
         .to_string();
     let _ = crate::profiles::reconcile_ue4ss_control_mode(data, program_path, &target_mode);

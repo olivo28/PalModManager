@@ -15,3 +15,4 @@ pub mod launch_commands;
 pub mod discovery_commands;
 pub mod altermatic_commands;
 pub mod usmap_commands;
+pub mod sdk_commands;

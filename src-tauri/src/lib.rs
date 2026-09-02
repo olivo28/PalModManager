@@ -23,6 +23,7 @@ pub mod retoc_runner;
 pub mod save_scanner;
 pub mod usmap;
 pub mod texture_decoder;
+pub mod dependency_manifest;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -41,6 +42,7 @@ use commands::workshop_commands;
 use commands::discovery_commands;
 use commands::altermatic_commands;
 use commands::usmap_commands;
+use commands::sdk_commands;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -316,7 +318,14 @@ pub fn run() {
             usmap_commands::get_mappings_status,
             usmap_commands::sync_mappings_now,
             usmap_commands::get_usmap_struct_info,
+            usmap_commands::get_usmap_full_struct_details,
+            usmap_commands::search_usmap_entries,
+            usmap_commands::get_usmap_enum_info,
             usmap_commands::get_usmap_summary,
+            sdk_commands::get_sdk_status,
+            sdk_commands::import_local_sdk,
+            sdk_commands::sync_sdk_from_repo,
+            sdk_commands::purge_sdk_cache,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();

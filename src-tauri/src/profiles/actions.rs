@@ -5,6 +5,7 @@ use super::utils::{
     get_profile_dir, remove_junction_or_symlink, create_junction_or_symlink,
     move_path, save_pmm_meta,
 };
+use super::core::mod_matches_profile_entry;
 use crate::profiles::effective_force_ue4ss;
 
 pub fn get_mod_folder_name(mod_info: &ModInfo) -> String {
@@ -142,6 +143,32 @@ pub fn disable_mod_internal(
         .join("disabled_mods");
     let _ = fs::create_dir_all(&disabled_base);
 
+    let is_workshop = data.mods[mod_index].nexus_summary.as_deref()
+        .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
+    if is_workshop {
+        let game_path = data.settings.game_path.clone();
+        let force_load_order_ue4ss = crate::profiles::effective_force_ue4ss(data);
+        let wmods = crate::workshop::scan_workshop_mods(&game_path);
+        let target_id = data.mods[mod_index].id.clone();
+        let target_name = data.mods[mod_index].name.clone();
+        if let Some(target) = wmods.iter().find(|m| m.package_name.eq_ignore_ascii_case(&target_id) || target_name.to_lowercase().starts_with(&m.package_name.to_lowercase())) {
+            let _ = crate::workshop::deactivate_workshop_mod(&game_path, target, force_load_order_ue4ss);
+        }
+        data.mods[mod_index].enabled = false;
+        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+            profile.enabled_mod_ids.retain(|id| !mod_matches_profile_entry(&data.mods[mod_index], id));
+        }
+        if !program_path.is_empty() {
+            let p_dir = get_profile_dir(program_path, &current_profile_id);
+            if let Some(profile) = data.profiles.iter().find(|p| p.id == current_profile_id) {
+                if let Ok(json) = serde_json::to_string_pretty(profile) {
+                    let _ = fs::write(p_dir.join("profile.json"), json);
+                }
+            }
+        }
+        return Ok(());
+    }
+
     if is_native {
         let mod_info = &mut data.mods[mod_index];
         let game_dir = PathBuf::from(&mod_info.game_path);
@@ -174,8 +201,7 @@ pub fn disable_mod_internal(
 
             let is_mods_txt_mode = {
                 let current_p = data.profiles.iter().find(|p| p.id == current_profile_id);
-                current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("") == "mods_txt"
-                    || data.settings.ue4ss_control_mode.as_deref().unwrap_or("") == "mods_txt"
+                current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("enabled_txt") == "mods_txt"
             };
 
             if is_mods_txt_mode {
@@ -463,8 +489,7 @@ pub fn disable_mod_internal(
 
     let is_mods_txt_mode = {
         let current_p = data.profiles.iter().find(|p| p.id == current_id);
-        current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("") == "mods_txt"
-            || data.settings.ue4ss_control_mode.as_deref().unwrap_or("") == "mods_txt"
+        current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("enabled_txt") == "mods_txt"
     };
     if is_mods_txt_mode && !data.settings.game_path.is_empty() {
         let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));
@@ -496,6 +521,40 @@ pub fn enable_mod_internal(
     let force_palschema_effective = crate::profiles::effective_force_palschema(data);
     let game_paks = PathBuf::from(&data.settings.game_path).join("Pal").join("Content").join("Paks");
 
+    let is_workshop = data.mods[mod_index].nexus_summary.as_deref()
+        .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
+    if is_workshop {
+        let game_path = data.settings.game_path.clone();
+        let force_load_order_ue4ss = effective_force_ue4ss(data);
+        let wmods = crate::workshop::scan_workshop_mods(&game_path);
+        let target_id = data.mods[mod_index].id.clone();
+        let target_name = data.mods[mod_index].name.clone();
+        if let Some(target) = wmods.iter().find(|m| m.package_name.eq_ignore_ascii_case(&target_id) || target_name.to_lowercase().starts_with(&m.package_name.to_lowercase())) {
+            let _ = crate::workshop::activate_workshop_mod(&game_path, target, force_load_order_ue4ss);
+        }
+        data.mods[mod_index].enabled = true;
+        let current_id = data.current_profile_id.clone();
+        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_id) {
+            let mod_name = data.mods[mod_index].name.clone();
+            let mod_id = data.mods[mod_index].id.clone();
+            if !profile.installed_mod_ids.iter().any(|id| id.eq_ignore_ascii_case(&mod_id) || id.eq_ignore_ascii_case(&mod_name)) {
+                profile.installed_mod_ids.push(mod_id.clone());
+            }
+            if !profile.enabled_mod_ids.iter().any(|id| id.eq_ignore_ascii_case(&mod_id) || id.eq_ignore_ascii_case(&mod_name)) {
+                profile.enabled_mod_ids.push(mod_id);
+            }
+        }
+        if !program_path.is_empty() {
+            let p_dir = get_profile_dir(program_path, &current_id);
+            if let Some(profile) = data.profiles.iter().find(|p| p.id == current_id) {
+                if let Ok(json) = serde_json::to_string_pretty(profile) {
+                    let _ = fs::write(p_dir.join("profile.json"), json);
+                }
+            }
+        }
+        return Ok(());
+    }
+
     if is_native {
         let mod_info = &mut data.mods[mod_index];
         let game_dir = PathBuf::from(&mod_info.game_path);
@@ -525,8 +584,7 @@ pub fn enable_mod_internal(
 
             let is_mods_txt_mode = {
                 let current_p = data.profiles.iter().find(|p| p.id == data.current_profile_id);
-                current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("") == "mods_txt"
-                    || data.settings.ue4ss_control_mode.as_deref().unwrap_or("") == "mods_txt"
+                current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("enabled_txt") == "mods_txt"
             };
 
             if is_mods_txt_mode {
@@ -875,8 +933,7 @@ pub fn enable_mod_internal(
 
     let is_mods_txt_mode = {
         let current_p = data.profiles.iter().find(|p| p.id == current_id);
-        current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("") == "mods_txt"
-            || data.settings.ue4ss_control_mode.as_deref().unwrap_or("") == "mods_txt"
+        current_p.and_then(|p| p.ue4ss_control_mode.as_deref()).unwrap_or("enabled_txt") == "mods_txt"
     };
     if is_mods_txt_mode && !data.settings.game_path.is_empty() {
         let gp = crate::dependency_checker::build_game_profile(Path::new(&data.settings.game_path));

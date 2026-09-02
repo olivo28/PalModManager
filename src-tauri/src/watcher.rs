@@ -74,7 +74,11 @@ pub fn start_fs_watcher(app_handle: AppHandle, paths_to_watch: Vec<PathBuf>) {
                     if should_track {
                         for p in event.paths {
                             let p_str = p.to_string_lossy().to_string();
-                            if !p_str.ends_with('~') && !p_str.ends_with(".tmp") && !p_str.ends_with(".lock") {
+                            if !p_str.ends_with('~') 
+                                && !p_str.ends_with(".tmp") 
+                                && !p_str.ends_with(".lock") 
+                                && !p_str.ends_with("modinfo.pmm.json") 
+                                && !p_str.ends_with(".pmm.json") {
                                 if !pending_paths.contains(&p_str) {
                                     pending_paths.push(p_str);
                                 }

@@ -65,6 +65,29 @@ export interface DeprecatedSchemaNotice {
   message: string;
 }
 
+export interface UsmapHookDiagnostic {
+  modId: string;
+  modName: string;
+  filePath: string;
+  lineNumber: number;
+  hookTarget: string;
+  targetClass: string;
+  targetFunction: string;
+  status: 'valid' | 'blueprint_asset' | 'broken_class' | 'broken_function' | 'broken_table' | 'broken_struct' | 'unknown';
+  reason: string;
+  suggestion?: string;
+  category?: 'ue4ss' | 'palschema' | 'pak';
+}
+
+export interface UsmapDiagnosticSummary {
+  hasUsmap: boolean;
+  usmapVersion: string;
+  totalHooksChecked: number;
+  validHooks: number;
+  brokenHooks: number;
+  diagnostics: UsmapHookDiagnostic[];
+}
+
 export interface ScanResult {
   totalScanned: number;
   palschemaScanned: number;
@@ -79,6 +102,7 @@ export interface ScanResult {
   modSummaries: ModSummary[];
   gamepassNotices?: GamePassPakNotice[];
   schemaNotices?: DeprecatedSchemaNotice[];
+  usmapDiagnostics?: UsmapDiagnosticSummary;
   isGamepass?: boolean;
 }
 
@@ -454,7 +478,9 @@ export function setupEventListeners(): void {
 
       (btn as HTMLButtonElement).disabled = true;
       try {
-        await updateModHotkey(hk.absoluteFilePath, hk.lineNumber, newKeys);
+        const targetPath = hk.definitionAbsolutePath || hk.absoluteFilePath;
+        const targetLine = hk.definitionLineNumber || hk.lineNumber;
+        await updateModHotkey(targetPath, targetLine, newKeys, hk.isVariable, hk.variableName);
         bus.emit('hotkey:updated', { modId: hk.modId, newHotkey: newKeys });
         showToast(t('scanner.toast_hotkey_saved'), 'success');
         editingHotkeyKey = null;
@@ -466,6 +492,30 @@ export function setupEventListeners(): void {
     });
   });
 
+  document.querySelectorAll('.hk-quick-rebind-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const idx = parseInt((btn as HTMLElement).dataset.idx || '0');
+      const suggestKey = (btn as HTMLElement).dataset.suggest || 'Key.F10';
+      if (!lastHotkeysResult || !lastHotkeysResult[idx]) return;
+
+      const hk = lastHotkeysResult[idx];
+      try {
+        const targetPath = hk.definitionAbsolutePath || hk.absoluteFilePath;
+        const targetLine = hk.definitionLineNumber || hk.lineNumber;
+        await updateModHotkey(targetPath, targetLine, suggestKey, hk.isVariable, hk.variableName);
+        bus.emit('hotkey:updated', { modId: hk.modId, newHotkey: suggestKey });
+        showToast(t('scanner.toast_hotkey_saved'), 'success');
+        await runHotkeysScan();
+      } catch (err: any) {
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+      }
+    });
+  });
+
+  document.getElementById('scanner-rescan-hotkeys-btn')?.addEventListener('click', () => {
+    runHotkeysScan();
+  });
+
   document.querySelectorAll('.hk-code-btn').forEach(btn => {
     btn.addEventListener('click', async () => {
       const modId = (btn as HTMLElement).dataset.modId!;
@@ -473,6 +523,33 @@ export function setupEventListeners(): void {
       const line = parseInt((btn as HTMLElement).dataset.line || '1');
       const { openFileAtLine } = await import('../editorView');
       openFileAtLine(modId, filePath, line);
+    });
+  });
+
+  document.querySelectorAll('.scan-code-jump-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const modId = (btn as HTMLElement).dataset.modId!;
+      const filePath = (btn as HTMLElement).dataset.filePath!;
+      const line = parseInt((btn as HTMLElement).dataset.line || '1');
+      const { openFileAtLine } = await import('../editorView');
+      openFileAtLine(modId, filePath, line);
+    });
+  });
+
+  document.querySelectorAll('.scan-disable-mod-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const modId = (btn as HTMLElement).dataset.modId!;
+      const { disableMod } = await import('../../api');
+      try {
+        await disableMod(modId);
+        showToast(t('common.mod_disabled_success') || 'Mod disabled successfully', 'success');
+        const { runScan } = await import('./conflicts');
+        await runScan();
+      } catch (err: any) {
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+      }
     });
   });
 

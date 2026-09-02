@@ -9,6 +9,8 @@ fn get_overridden_settings(data: &crate::models::AppData) -> crate::models::AppS
     settings.force_load_order_ue4ss = Some(crate::profiles::effective_force_ue4ss(data));
     settings.force_load_order_palschema = Some(crate::profiles::effective_force_palschema(data));
     settings.hide_native_mods = Some(crate::profiles::effective_hide_native_mods(data));
+    let current_p = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+    settings.ue4ss_control_mode = current_p.and_then(|p| p.ue4ss_control_mode.clone()).or(Some("enabled_txt".to_string()));
     settings
 }
 
@@ -602,7 +604,6 @@ pub fn set_folder_expand_mode(mode: String, state: State<AppState>) -> Result<Va
 #[tauri::command]
 pub fn set_ue4ss_control_mode(mode: String, state: State<AppState>) -> Result<Value, String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
-    data.settings.ue4ss_control_mode = Some(mode.clone());
     let current_profile_id = data.current_profile_id.clone();
     if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
         profile.ue4ss_control_mode = Some(mode.clone());

@@ -67,12 +67,12 @@ export function renderEditorModTree(): void {
   });
 }
 
-export async function switchEditorMod(modId: string): Promise<void> {
+export async function switchEditorMod(modId: string, targetFile?: string): Promise<void> {
   const state = getState();
   const currentModId = state.editorModId;
-  if (currentModId === modId) return;
+  if (currentModId === modId && !targetFile) return;
 
-  if (currentModId && state.editorSelectedFile) {
+  if (currentModId && state.editorSelectedFile && currentModId !== modId) {
     _lastFilePerMod[currentModId] = state.editorSelectedFile;
   }
 
@@ -94,13 +94,127 @@ export async function switchEditorMod(modId: string): Promise<void> {
 
   await loadEditorData(modId);
 
-  const lastFile = _lastFilePerMod[modId];
-  if (lastFile) {
-    const item = document.querySelector(`.editor-file-item[data-path="${CSS.escape(lastFile)}"]`) as HTMLElement | null;
-    if (item) { item.click(); return; }
+  // 1. If a specific target file was requested, prioritize revealing it
+  if (targetFile && revealAndSelectFile(targetFile)) {
+    return;
   }
+
+  // 2. Prioritize last opened file for this mod
+  const lastFile = _lastFilePerMod[modId];
+  if (lastFile && revealAndSelectFile(lastFile)) {
+    return;
+  }
+
+  // 3. Fallback to best configuration / script file
+  const bestFile = findBestConfigFile(getState().editorFiles || []);
+  if (bestFile && revealAndSelectFile(bestFile)) {
+    return;
+  }
+
+  // 4. Fallback to first file in the tree
   const firstFile = document.querySelector('.editor-file-item') as HTMLElement | null;
-  if (firstFile) firstFile.click();
+  if (firstFile) {
+    const path = firstFile.dataset.path;
+    if (path) revealAndSelectFile(path);
+    else firstFile.click();
+  }
+}
+
+export function findBestConfigFile(files: string[]): string | null {
+  if (!files || files.length === 0) return null;
+
+  const validFiles = files.filter(f => {
+    const name = f.replace(/^.*[/\\]/, '').toLowerCase();
+    return !name.startsWith('.') && name !== 'enabled.txt' && !name.endsWith('.bak');
+  });
+
+  if (validFiles.length === 0) return files[0] || null;
+
+  // 1. Exact or near-exact config / settings file matches
+  const exactConfig = validFiles.find(f => {
+    const leaf = f.replace(/^.*[/\\]/, '').toLowerCase();
+    return (
+      leaf === 'config.lua' ||
+      leaf === 'config.json' ||
+      leaf === 'config.jsonc' ||
+      leaf === 'config.ini' ||
+      leaf === 'config.cfg' ||
+      leaf === 'settings.json' ||
+      leaf === 'settings.lua' ||
+      leaf === 'options.json' ||
+      leaf === 'alterconfig.json' ||
+      leaf === 'swapjson.json'
+    );
+  });
+  if (exactConfig) return exactConfig;
+
+  // 2. Any file with "config", "settings", "options", "params" in the filename
+  const namedConfig = validFiles.find(f => {
+    const leaf = f.replace(/^.*[/\\]/, '').toLowerCase();
+    return leaf.includes('config') || leaf.includes('setting') || leaf.includes('option') || leaf.includes('param');
+  });
+  if (namedConfig) return namedConfig;
+
+  // 3. Main script entry points (main.lua, init.lua, mod.lua)
+  const mainScript = validFiles.find(f => {
+    const leaf = f.replace(/^.*[/\\]/, '').toLowerCase();
+    return leaf === 'main.lua' || leaf === 'init.lua' || leaf === 'mod.lua' || leaf === 'index.js';
+  });
+  if (mainScript) return mainScript;
+
+  // 4. Any JSON / JSONC / INI / CFG files
+  const dataFile = validFiles.find(f => {
+    const lower = f.toLowerCase();
+    return lower.endsWith('.jsonc') || lower.endsWith('.json') || lower.endsWith('.ini') || lower.endsWith('.cfg');
+  });
+  if (dataFile) return dataFile;
+
+  // 5. Any Lua scripts
+  const luaScript = validFiles.find(f => f.toLowerCase().endsWith('.lua'));
+  if (luaScript) return luaScript;
+
+  // 6. First valid file
+  return validFiles[0];
+}
+
+export function revealAndSelectFile(filePath: string): boolean {
+  if (!filePath) return false;
+  const tree = document.getElementById('editor-file-tree');
+  if (!tree) return false;
+
+  const normalizedTarget = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+
+  // 1. Expand all parent folders of this file path
+  const parts = normalizedTarget.split('/');
+  for (let i = 1; i < parts.length; i++) {
+    const folderPath = parts.slice(0, i).join('/');
+    _collapsedFolders.delete(folderPath);
+    const folderEl = tree.querySelector(`.editor-tree-folder[data-folder-path="${CSS.escape(folderPath)}"]`);
+    if (folderEl) {
+      folderEl.classList.remove('collapsed');
+    }
+  }
+
+  // 2. Query exact match, normalized match, or fuzzy/suffix match
+  let fileItem = tree.querySelector(`.editor-file-item[data-path="${CSS.escape(filePath)}"]`) as HTMLElement | null;
+  if (!fileItem) {
+    fileItem = tree.querySelector(`.editor-file-item[data-path="${CSS.escape(normalizedTarget)}"]`) as HTMLElement | null;
+  }
+  if (!fileItem) {
+    const allItems = Array.from(tree.querySelectorAll('.editor-file-item')) as HTMLElement[];
+    const targetLower = normalizedTarget.toLowerCase();
+    fileItem = allItems.find(el => {
+      const p = (el.dataset.path || '').replace(/\\/g, '/').replace(/^\/+/, '').toLowerCase();
+      return p === targetLower || p.endsWith('/' + targetLower) || targetLower.endsWith('/' + p);
+    }) || null;
+  }
+
+  if (fileItem) {
+    fileItem.click();
+    fileItem.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    return true;
+  }
+  return false;
 }
 
 interface FileTreeNode {

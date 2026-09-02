@@ -154,7 +154,19 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                             }
                         }
                     }
-                    let has_pending_update = is_installed && installed_version.is_some() && installed_version.as_ref() != Some(&info.version);
+                    if installed_version.is_none() {
+                        let alt_info = Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema").join("mods").join(&info.package_name).join("Info.json");
+                        let alt_info2 = Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join(&info.package_name).join("Info.json");
+                        let target_alt = if alt_info.exists() { Some(alt_info) } else if alt_info2.exists() { Some(alt_info2) } else { None };
+                        if let Some(alt) = target_alt {
+                            if let Ok(inst_info_str) = fs::read_to_string(&alt) {
+                                if let Ok(inst_info) = serde_json::from_str::<WorkshopInfoJson>(&inst_info_str) {
+                                    installed_version = Some(inst_info.version);
+                                }
+                            }
+                        }
+                    }
+                    let has_pending_update = is_installed && installed_version.as_ref() != Some(&info.version);
 
                     let rule = info.install_rule.first();
                     let (install_type, install_target) = match rule {

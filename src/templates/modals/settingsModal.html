@@ -293,6 +293,36 @@
               </div>
             </div>
 
+            <!-- C++ SDK HEADERS (RESOURCES/SDK) -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.sdk_title">C++ SDK Headers (Pal.hpp / CXXHeaderDump)</span>
+                </div>
+                <span id="settings-sdk-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.sdk_hint">C++ header definitions (Pal.hpp, Engine.hpp, BP_*.hpp) used by the Hook Diagnostic Engine to validate exact UE4SS functions, RPCs, and delegates with zero false positives.</div>
+              
+              <div id="settings-sdk-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong>Source:</strong> <span id="settings-sdk-source">Detecting...</span></div>
+                <div><strong>Indexed Classes:</strong> <span id="settings-sdk-classes-count">0</span></div>
+                <div><strong>Indexed Functions & Delegates:</strong> <span id="settings-sdk-funcs-count">0</span></div>
+                <div><strong>Location:</strong> <span id="settings-sdk-path" style="font-family:monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button type="button" id="btn-sync-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-sdk-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_sdk">Sync SDK from Repo</span>
+                </button>
+                <button type="button" id="btn-import-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span>📂</span>
+                  <span data-i18n="settings.btn_import_sdk">Import Local CXXHeaderDump</span>
+                </button>
+                <button type="button" id="btn-purge-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_sdk">🧹 Clear SDK</button>
+              </div>
+            </div>
+
             <!-- IMAGE CACHE -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">

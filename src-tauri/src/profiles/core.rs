@@ -48,11 +48,20 @@ pub fn migrate_profile_uuids_to_stable_ids(data: &mut AppData) {
 
 pub fn mod_matches_profile_entry(mod_info: &crate::models::ModInfo, entry: &str) -> bool {
     let entry_lower = entry.to_lowercase();
-    if entry_lower == mod_info.id.to_lowercase() {
+    let mod_id_lower = mod_info.id.to_lowercase();
+    let mod_name_lower = mod_info.name.to_lowercase();
+    if entry_lower == mod_id_lower || entry_lower == mod_name_lower {
         return true;
     }
-    if entry_lower == mod_info.name.to_lowercase() {
-        return true;
+    if let Some(stripped) = mod_name_lower.strip_suffix(" (workshop)") {
+        if stripped == entry_lower {
+            return true;
+        }
+    }
+    if let Some(stripped) = entry_lower.strip_suffix(" (workshop)") {
+        if stripped == mod_name_lower || stripped == mod_id_lower {
+            return true;
+        }
     }
     if !mod_info.game_path.is_empty() {
         if let Some(filename) = Path::new(&mod_info.game_path).file_name() {
@@ -91,13 +100,6 @@ pub fn sync_current_profile_states(data: &mut AppData) {
             if mod_info.nexus_author.as_deref() == Some("UE4SS Native Mod") {
                 continue;
             }
-            // Workshop mods track their own enabled state via PalModSettings.ini on disk.
-            // Don't overwrite that here — it gets set correctly by scan_mods_internal.
-            let is_workshop = mod_info.nexus_summary.as_deref()
-                .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
-            if is_workshop {
-                continue;
-            }
             let is_enabled = profile.enabled_mod_ids.iter().any(|entry| {
                 mod_matches_profile_entry(mod_info, entry)
             });
@@ -114,21 +116,10 @@ pub fn cleanup_profile_mod_lists(data: &mut AppData) {
     };
 
     let program_path = data.settings.program_path.clone();
-    let has_mods = !data.mods.is_empty();
 
     for profile in &mut data.profiles {
         dedup_vec(&mut profile.installed_mod_ids);
         dedup_vec(&mut profile.enabled_mod_ids);
-
-        // Prune orphan IDs that do not exist in data.mods
-        if has_mods {
-            profile.installed_mod_ids.retain(|entry| {
-                data.mods.iter().any(|m| mod_matches_profile_entry(m, entry))
-            });
-            profile.enabled_mod_ids.retain(|entry| {
-                data.mods.iter().any(|m| mod_matches_profile_entry(m, entry))
-            });
-        }
 
         if profile.installed_mod_ids.is_empty() && !profile.enabled_mod_ids.is_empty() {
             profile.installed_mod_ids = profile.enabled_mod_ids.clone();
@@ -324,11 +315,32 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
                 continue;
             }
 
-            // Workshop mods are managed by Steam/PalModSettings.ini, not by PMM profile installs.
-            // Their presence on disk does NOT mean they belong to this profile's managed list.
             let is_workshop = m.nexus_summary.as_deref()
                 .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
+
             if is_workshop {
+                if (m.mod_type == crate::models::ModType::Ue4ss || m.mod_type == crate::models::ModType::Hybrid) && !ue4ss_active {
+                    continue;
+                }
+                if m.mod_type == crate::models::ModType::PalSchema && !palschema_active {
+                    continue;
+                }
+                let already_installed = profile.installed_mod_ids.iter().any(|id| {
+                    mod_matches_profile_entry(m, id)
+                });
+                if !already_installed {
+                    profile.installed_mod_ids.push(m.id.clone());
+                    modified = true;
+                }
+                if m.enabled {
+                    let already_enabled = profile.enabled_mod_ids.iter().any(|id| {
+                        mod_matches_profile_entry(m, id)
+                    });
+                    if !already_enabled {
+                        profile.enabled_mod_ids.push(m.id.clone());
+                        modified = true;
+                    }
+                }
                 continue;
             }
 
@@ -350,7 +362,7 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
 
             if (is_in_game && !is_in_other_profile_disabled) || is_disabled {
                 let already_installed = profile.installed_mod_ids.iter().any(|id| {
-                    id.to_lowercase() == m.id.to_lowercase() || id.to_lowercase() == m.name.to_lowercase()
+                    mod_matches_profile_entry(m, id)
                 });
                 if !already_installed {
                     profile.installed_mod_ids.push(m.id.clone());
@@ -359,7 +371,7 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
 
                 if is_in_game && m.enabled {
                     let already_enabled = profile.enabled_mod_ids.iter().any(|id| {
-                        id.to_lowercase() == m.id.to_lowercase() || id.to_lowercase() == m.name.to_lowercase()
+                        mod_matches_profile_entry(m, id)
                     });
                     if !already_enabled {
                         profile.enabled_mod_ids.push(m.id.clone());
@@ -369,7 +381,17 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
             }
         }
 
-        if modified {
+        let orig_inst_len = profile.installed_mod_ids.len();
+        profile.installed_mod_ids.retain(|id| !id.trim().is_empty());
+        let mut seen_inst = std::collections::HashSet::new();
+        profile.installed_mod_ids.retain(|id| seen_inst.insert(id.to_lowercase()));
+
+        let orig_enb_len = profile.enabled_mod_ids.len();
+        profile.enabled_mod_ids.retain(|id| !id.trim().is_empty());
+        let mut seen_enb = std::collections::HashSet::new();
+        profile.enabled_mod_ids.retain(|id| seen_enb.insert(id.to_lowercase()));
+
+        if modified || profile.installed_mod_ids.len() != orig_inst_len || profile.enabled_mod_ids.len() != orig_enb_len {
             let p_dir = get_profile_dir(&program_path, &current_profile_id);
             if let Ok(json) = serde_json::to_string_pretty(profile) {
                 let _ = fs::write(p_dir.join("profile.json"), json);

@@ -92,7 +92,13 @@ export function autoStructureWorkspace(): void {
       } else if (ext === 'dll') {
         target = `Mods/${modName}/${filename}`;
       } else {
-        target = `Mods/${modName}/${filename}`;
+        const lowerPath = file.relativePath.toLowerCase();
+        const scriptsIndex = lowerPath.indexOf('scripts/');
+        if (scriptsIndex !== -1) {
+          target = `Mods/${modName}/${file.relativePath.substring(scriptsIndex)}`;
+        } else {
+          target = `Mods/${modName}/${filename}`;
+        }
       }
     } else if (modType === 'palschema') {
       if (ext === 'json' || ext === 'jsonc') {

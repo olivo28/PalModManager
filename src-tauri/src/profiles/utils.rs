@@ -142,6 +142,84 @@ pub fn move_path(src: &Path, dst: &Path) -> Result<(), String> {
     Ok(())
 }
 
+pub fn consolidate_mod_folder_metadata(folder: &Path) -> Option<crate::models::PmmMetadata> {
+    if !folder.is_dir() {
+        return None;
+    }
+
+    let modinfo_path = folder.join("modinfo.pmm.json");
+    let legacy_dot_path = folder.join(".pmm.json");
+
+    let mut meta = crate::models::PmmMetadata::default();
+    let mut found = false;
+    let mut needs_write = false;
+
+    if modinfo_path.exists() {
+        if let Ok(content) = fs::read_to_string(&modinfo_path) {
+            if let Ok(parsed) = serde_json::from_str::<crate::models::PmmMetadata>(&content) {
+                meta = parsed;
+                found = true;
+            }
+        }
+    }
+
+    if legacy_dot_path.exists() {
+        if let Ok(content) = fs::read_to_string(&legacy_dot_path) {
+            if let Ok(legacy_parsed) = serde_json::from_str::<crate::models::PmmMetadata>(&content) {
+                if !found {
+                    meta = legacy_parsed;
+                    found = true;
+                } else {
+                    if meta.name.is_empty() && !legacy_parsed.name.is_empty() { meta.name = legacy_parsed.name; }
+                    if meta.version.is_empty() && !legacy_parsed.version.is_empty() { meta.version = legacy_parsed.version; }
+                    if meta.author.is_none() && legacy_parsed.author.is_some() { meta.author = legacy_parsed.author; }
+                    if meta.description.is_none() && legacy_parsed.description.is_some() { meta.description = legacy_parsed.description; }
+                    if meta.nexus_picture_url.is_none() && legacy_parsed.nexus_picture_url.is_some() { meta.nexus_picture_url = legacy_parsed.nexus_picture_url; }
+                    if meta.nexus_url.is_none() && legacy_parsed.nexus_url.is_some() { meta.nexus_url = legacy_parsed.nexus_url; }
+                    if meta.nexus_mod_id.is_none() && legacy_parsed.nexus_mod_id.is_some() { meta.nexus_mod_id = legacy_parsed.nexus_mod_id; }
+                    if meta.custom_notes.is_none() && legacy_parsed.custom_notes.is_some() { meta.custom_notes = legacy_parsed.custom_notes; }
+                    if meta.category.is_none() && legacy_parsed.category.is_some() { meta.category = legacy_parsed.category; }
+                    if meta.routes.is_none() && legacy_parsed.routes.is_some() { meta.routes = legacy_parsed.routes; }
+                    if meta.installed_files.is_none() && legacy_parsed.installed_files.is_some() { meta.installed_files = legacy_parsed.installed_files; }
+                }
+            }
+        }
+        // Safely remove redundant legacy .pmm.json
+        let _ = fs::remove_file(&legacy_dot_path);
+        needs_write = true;
+    }
+
+    // Populate installed_files if empty or None
+    if meta.installed_files.as_ref().map_or(true, |f| f.is_empty()) {
+        let mut files = Vec::new();
+        for entry in walkdir::WalkDir::new(folder).into_iter().filter_map(|e| e.ok()) {
+            if entry.file_type().is_file() {
+                if let Ok(rel) = entry.path().strip_prefix(folder) {
+                    let rel_str = rel.to_string_lossy().replace('\\', "/");
+                    if rel_str != "modinfo.pmm.json" && rel_str != ".pmm.json" {
+                        files.push(rel_str);
+                    }
+                }
+            }
+        }
+        if !files.is_empty() {
+            meta.installed_files = Some(files);
+            needs_write = true;
+        }
+    }
+
+    if found {
+        if needs_write || !modinfo_path.exists() {
+            if let Ok(json) = serde_json::to_string_pretty(&meta) {
+                let _ = fs::write(&modinfo_path, json);
+            }
+        }
+        Some(meta)
+    } else {
+        None
+    }
+}
+
 fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
     if path_str.is_empty() {
         return Ok(());
@@ -151,13 +229,52 @@ fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
         return Ok(());
     }
 
+    let installed_files = if !m.extra_files.is_empty() {
+        Some(m.extra_files.clone())
+    } else if path.is_dir() {
+        let mut files = Vec::new();
+        for entry in walkdir::WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
+            if entry.file_type().is_file() {
+                if let Ok(rel) = entry.path().strip_prefix(path) {
+                    let rel_str = rel.to_string_lossy().replace('\\', "/");
+                    if rel_str != "modinfo.pmm.json" && rel_str != ".pmm.json" {
+                        files.push(rel_str);
+                    }
+                }
+            }
+        }
+        if !files.is_empty() { Some(files) } else { None }
+    } else {
+        None
+    };
+
+    let meta = crate::models::PmmMetadata {
+        name: m.name.clone(),
+        version: m.version.clone(),
+        author: m.nexus_author.clone(),
+        description: m.nexus_summary.clone(),
+        mod_type: Some(format!("{:?}", m.mod_type).to_lowercase()),
+        nexus_mod_id: m.nexus_mod_id,
+        nexus_file_id: m.nexus_file_id,
+        nexus_picture_url: m.nexus_picture_url.clone(),
+        nexus_url: m.nexus_url.clone(),
+        custom_notes: m.custom_notes.clone(),
+        category: m.nexus_category.clone(),
+        routes: None,
+        installed_files,
+    };
+
     let pmm_path = if path.is_file() {
         PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()))
     } else {
-        path.join(".pmm.json")
+        let legacy_file = path.join(".pmm.json");
+        if legacy_file.exists() {
+            let _ = fs::remove_file(&legacy_file);
+        }
+        path.join("modinfo.pmm.json")
     };
 
-    if let Ok(json) = serde_json::to_string_pretty(m) {
+    if let Ok(json) = serde_json::to_string_pretty(&meta) {
         let _ = fs::write(&pmm_path, json);
     }
     Ok(())

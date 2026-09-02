@@ -390,28 +390,14 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
 
                     if let Some(ref pmm_file) = pmm_path_to_read {
                         if let Ok(content) = fs::read_to_string(pmm_file) {
-                            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                                if let Some(a) = val.get("nexusAuthor").or_else(|| val.get("author")).and_then(|v| v.as_str()) {
-                                    author = Some(a.to_string());
-                                }
-                                if let Some(d) = val.get("nexusSummary").or_else(|| val.get("nexusDescription")).or_else(|| val.get("description")).and_then(|v| v.as_str()) {
-                                    description = Some(d.to_string());
-                                }
-                                if let Some(v) = val.get("version").and_then(|v| v.as_str()) {
-                                    version = Some(v.to_string());
-                                }
-                                if let Some(t) = val.get("type").or_else(|| val.get("modType")).and_then(|v| v.as_str()) {
-                                    mod_type = Some(t.to_string());
-                                }
-                                if let Some(p) = val.get("nexusPictureUrl").and_then(|v| v.as_str()) {
-                                    nexus_picture_url = Some(p.to_string());
-                                }
-                                if let Some(n) = val.get("name").and_then(|v| v.as_str()) {
-                                    nexus_name = Some(n.to_string());
-                                }
-                                if let Some(id) = val.get("nexusModId").and_then(|v| v.as_u64()) {
-                                    nexus_mod_id = Some(id as u32);
-                                }
+                            if let Ok(meta) = serde_json::from_str::<crate::models::PmmMetadata>(&content) {
+                                if let Some(a) = meta.author { author = Some(a); }
+                                if let Some(d) = meta.description { description = Some(d); }
+                                if !meta.version.is_empty() { version = Some(meta.version); }
+                                if let Some(t) = meta.mod_type { mod_type = Some(t); }
+                                if let Some(p) = meta.nexus_picture_url { nexus_picture_url = Some(p); }
+                                if !meta.name.is_empty() { nexus_name = Some(meta.name); }
+                                if let Some(id) = meta.nexus_mod_id { nexus_mod_id = Some(id); }
                             }
                         }
                     } else {
@@ -421,18 +407,26 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
                             version = Some(v);
                         }
 
-                        // Auto-generate .pmm.json sidecar
-                        let pmm_data = serde_json::json!({
-                            "name": nexus_name.as_deref().unwrap_or(&mod_id),
-                            "nexusModId": nexus_mod_id,
-                            "nexusAuthor": author.as_deref().unwrap_or(""),
-                            "nexusSummary": description.as_deref().unwrap_or(""),
-                            "nexusPictureUrl": nexus_picture_url.as_deref().unwrap_or(""),
-                            "version": version.as_deref().unwrap_or(""),
-                            "zipName": zip_name,
-                        });
+                        // Auto-generate .pmm.json sidecar using PmmMetadata
+                        let pmm_data = crate::models::PmmMetadata {
+                            name: nexus_name.as_deref().unwrap_or(&mod_id).to_string(),
+                            version: version.clone().unwrap_or_default(),
+                            author: author.clone(),
+                            description: description.clone(),
+                            mod_type: mod_type.clone(),
+                            nexus_mod_id,
+                            nexus_file_id: None,
+                            nexus_picture_url: nexus_picture_url.clone(),
+                            nexus_url: None,
+                            custom_notes: None,
+                            category: None,
+                            routes: None,
+                            installed_files: None,
+                        };
                         let sidecar_dest = PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()));
-                        let _ = fs::write(&sidecar_dest, serde_json::to_string_pretty(&pmm_data).unwrap_or_default());
+                        if let Ok(json) = serde_json::to_string_pretty(&pmm_data) {
+                            let _ = fs::write(&sidecar_dest, json);
+                        }
                     }
 
                     // Check live installation status against active installed mods

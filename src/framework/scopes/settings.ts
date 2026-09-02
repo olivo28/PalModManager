@@ -45,6 +45,16 @@ export interface SettingsDomMap {
   'settings-usmap-hash': HTMLElement;
   'btn-sync-usmap': HTMLButtonElement;
   'btn-sync-usmap-icon': HTMLElement;
+  'settings-sdk-badge': HTMLElement;
+  'settings-sdk-details': HTMLElement;
+  'settings-sdk-source': HTMLElement;
+  'settings-sdk-classes-count': HTMLElement;
+  'settings-sdk-funcs-count': HTMLElement;
+  'settings-sdk-path': HTMLElement;
+  'btn-sync-sdk': HTMLButtonElement;
+  'btn-sync-sdk-icon': HTMLElement;
+  'btn-import-sdk': HTMLButtonElement;
+  'btn-purge-sdk': HTMLButtonElement;
   'settings-image-cache-badge': HTMLElement;
   'btn-purge-image-cache': HTMLButtonElement;
   'settings-pane-safety': HTMLElement;

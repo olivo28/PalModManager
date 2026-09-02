@@ -241,20 +241,25 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
             && !fl.ends_with("metadata.json")
         {
             let parts: Vec<&str> = fl.split('/').collect();
-            parts.iter().any(|part| {
-                matches!(
-                    *part,
-                    "pals"
-                        | "spawns"
-                        | "items"
-                        | "blueprints"
-                        | "unique"
-                        | "enums"
-                        | "skins"
-                        | "translations"
-                        | "raw"
-                )
-            })
+            // If the JSON is inside scripts/, dlls/, or a UE4SS folder, it is not a PalSchema data table
+            if parts.contains(&"scripts") || parts.contains(&"dlls") || fl.contains("/scripts/") || fl.contains("/dlls/") || fl.contains("ue4ss") {
+                false
+            } else {
+                parts.iter().any(|part| {
+                    matches!(
+                        *part,
+                        "pals"
+                            | "spawns"
+                            | "items"
+                            | "blueprints"
+                            | "unique"
+                            | "enums"
+                            | "skins"
+                            | "translations"
+                            | "raw"
+                    )
+                })
+            }
         } else {
             false
         }
@@ -906,10 +911,20 @@ pub fn build_manifest_from_files(
                 RouteType::Ue4ss
             }
         } else {
-            // Check if any ancestor is a PalSchema folder
+            // Check if this file belongs to a UE4SS mod (inside scripts, dlls, or a detected UE4SS root)
+            let is_inside_ue4ss = rel_segments.contains(&"scripts")
+                || rel_segments.contains(&"dlls")
+                || lower.contains("/scripts/")
+                || lower.contains("/dlls/")
+                || lower.contains("ue4ss/mods/")
+                || lower.contains("nativemods/ue4ss")
+                || rel_lower.ends_with("enabled.txt")
+                || rel_segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)));
+
+            // Check if any ancestor is a PalSchema folder (only if NOT inside a UE4SS folder)
             let mut is_palschema_asset = false;
             let is_standard_game_path = rel_segments.contains(&"content") || rel_segments.contains(&"~mods") || rel_segments.contains(&"logicmods");
-            if !is_standard_game_path {
+            if !is_standard_game_path && !is_inside_ue4ss {
                 for seg in &rel_segments {
                     if PALSCHEMA_FOLDERS.contains(seg) {
                         is_palschema_asset = true;
@@ -918,16 +933,12 @@ pub fn build_manifest_from_files(
                 }
             }
 
-            let is_ue4ss_asset = rel_segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)))
-                || lower.contains("ue4ss/mods/")
-                || rel_lower.ends_with("enabled.txt");
-
-            if is_palschema_asset || lower.contains("palschema/") {
-                has_palschema = true;
-                RouteType::PalSchema
-            } else if is_ue4ss_asset {
+            if is_inside_ue4ss {
                 has_ue4ss = true;
                 RouteType::Ue4ss
+            } else if is_palschema_asset || lower.contains("palschema/") {
+                has_palschema = true;
+                RouteType::PalSchema
             } else {
                 RouteType::Passthrough
             }
@@ -977,15 +988,19 @@ pub fn build_manifest_from_files(
         let game_subpath = if let Some(idx) = zip_lower.find("pal/content/paks/") {
             Some(norm_zip[idx..].to_string())
         } else if let Some(idx) = zip_lower.find("pal/binaries/") {
-            let sub = &norm_zip[idx..];
-            let sub_lower = sub.to_lowercase();
-            // Adapt win64/wingdk to target system
-            if sub_lower.starts_with("pal/binaries/win64/") && binaries_name == "wingdk" {
-                Some(format!("Pal/Binaries/WinGDK/{}", &sub["pal/binaries/win64/".len()..]))
-            } else if sub_lower.starts_with("pal/binaries/wingdk/") && binaries_name == "win64" {
-                Some(format!("Pal/Binaries/Win64/{}", &sub["pal/binaries/wingdk/".len()..]))
+            if route_type == RouteType::Ue4ss || route_type == RouteType::PalSchema || zip_lower.contains("ue4ss/mods/") || zip_lower.contains("mods/nativemods/ue4ss/mods/") {
+                None
             } else {
-                Some(sub.to_string())
+                let sub = &norm_zip[idx..];
+                let sub_lower = sub.to_lowercase();
+                // Adapt win64/wingdk to target system
+                if sub_lower.starts_with("pal/binaries/win64/") && binaries_name == "wingdk" {
+                    Some(format!("Pal/Binaries/WinGDK/{}", &sub["pal/binaries/win64/".len()..]))
+                } else if sub_lower.starts_with("pal/binaries/wingdk/") && binaries_name == "win64" {
+                    Some(format!("Pal/Binaries/Win64/{}", &sub["pal/binaries/wingdk/".len()..]))
+                } else {
+                    Some(sub.to_string())
+                }
             }
         } else if let Some(idx) = rel_lower.find("mods/nativemods/ue4ss/mods/") {
             Some(relative_path[idx..].to_string())

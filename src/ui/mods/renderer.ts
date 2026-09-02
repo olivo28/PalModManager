@@ -132,7 +132,7 @@ export function renderModsView(): void {
   for (const mod of filtered) {
     let placed = false;
     for (const f of folders) {
-      if (f.mod_ids.includes(mod.id)) {
+      if (f.mod_ids.some(id => id === mod.id || id.toLowerCase() === mod.id.toLowerCase() || id.toLowerCase() === mod.name.toLowerCase())) {
         folderModsMap.get(f.id)!.push(mod);
         placed = true;
         break;
