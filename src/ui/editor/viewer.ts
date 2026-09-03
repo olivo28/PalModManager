@@ -261,7 +261,9 @@ export async function loadEditorData(modId: string): Promise<void> {
       const files = await listModFiles(modId);
       updateState({ editorFiles: files, editorSelectedFile: null });
       renderFileTree(files);
-      triggerWorkspaceScan(false).catch(() => {});
+      setTimeout(() => {
+        triggerWorkspaceScan(false).catch(() => {});
+      }, 300);
     } catch (e) {
       editorFileTree.innerHTML = '<div class="editor-file-error">Error loading files</div>';
     }

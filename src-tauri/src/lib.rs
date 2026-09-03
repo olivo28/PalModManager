@@ -332,6 +332,10 @@ pub fn run() {
             editor::completions::get_reflection_catalogs_status,
             editor::sync_catalogs::sync_blueprints_catalog,
             editor::sync_catalogs::sync_datatables_catalog,
+            editor::sync_catalogs::sync_palschema_schemas,
+            editor::sync_catalogs::get_palschema_schemas_catalog,
+            editor::sync_catalogs::get_palschema_monaco_definitions,
+            editor::sync_catalogs::get_palschema_raw_schema,
             editor::validation::scan_workspace_problems,
             editor::scaffolding::create_mod_file,
             editor::scaffolding::create_editor_folder,
@@ -351,6 +355,23 @@ pub fn run() {
                 }
                 let _ = window.show();
             }
+
+            // Asynchronously pre-warm all reflection databases (USMAP, SDK, DataTables, Blueprints)
+            let prog_path = settings.program_path.clone();
+            let g_path = settings.game_path.clone();
+            std::thread::Builder::new()
+                .name("pmm-reflection-prewarm".into())
+                .spawn(move || {
+                    std::thread::sleep(std::time::Duration::from_millis(400));
+                    crate::logger::log("Pre-warming reflection databases in background...");
+                    let _ = crate::usmap::get_or_load_schema(&prog_path);
+                    let _ = crate::usmap::get_or_load_sdk_index(&prog_path, &g_path);
+                    let _ = crate::usmap::get_or_load_datatable_index(&prog_path);
+                    let _ = crate::usmap::get_or_load_blueprint_index(&prog_path);
+                    let _ = crate::usmap::load_palschema_definitions_for_monaco(&prog_path, &g_path, true);
+                    crate::logger::log("Reflection databases pre-warmed successfully.");
+                })
+                .ok();
 
             // Check if launched directly with palmodmanager:// or nxm:// deep link
             for arg in std::env::args() {

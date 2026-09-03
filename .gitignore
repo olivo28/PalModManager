@@ -110,3 +110,6 @@ docs/ANALISIS_PALMODMANAGER_VEREDICTO.md
 /docs/analisis
 docs/PALMODSTUDIO_VISION.md
 /docs/plans
+resources/schemas/palschema/
+resources/sdk/**/sdk_index.json
+sdk_index.json

@@ -372,6 +372,43 @@
               </div>
             </div>
 
+            <!-- PALSCHEMA JSON SCHEMAS SPECIFICATION -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.schemas_title">PalSchema JSON Schemas Specification</span>
+                </div>
+                <span id="settings-schemas-badge" class="badge" style="background:rgba(14,165,233,0.15); color:#0ea5e9; border:1px solid rgba(14,165,233,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.schemas_hint">Formal JSON Schema (Draft-07) specifications defining all 474 DataTables, Unreal property types, and high-level items/pals/buildings/skins schemas. Powers deep IDE IntelliSense, autocomplete, and real-time linter validation.</div>
+              
+              <div id="settings-schemas-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong>Specification Version:</strong> <span id="settings-schemas-version">v0.6.6</span></div>
+                <div><strong>DataTable Schemas:</strong> <span id="settings-schemas-raw-count">474</span></div>
+                <div><strong>Domain Models:</strong> <span id="settings-schemas-domain-count">5</span> (Items, Pals, Buildings, Skins, Utility)</div>
+                <div><strong>Engine Enums:</strong> <span id="settings-schemas-enums">Included (enums.schema.json)</span></div>
+                <div><strong>Active Source:</strong> <span id="settings-schemas-source">Detecting...</span></div>
+              </div>
+
+              <!-- Special Thanks to Okaetsu Acknowledgment Box -->
+              <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:6px; padding:10px 12px; margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:16px;">✨</span>
+                  <div style="font-size:11px; line-height:1.4; color:var(--text-primary);">
+                    <span data-i18n="settings.schemas_okaetsu_credit">Special thanks to <strong>Okaetsu</strong> for creating and maintaining the official PalSchema specification schemas.</span>
+                  </div>
+                </div>
+                <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:10px; padding:4px 8px; white-space:nowrap;" data-i18n="settings.btn_view_source">View Source ↗</button>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="btn-sync-schemas" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-schemas-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_schemas">Sync Schemas from GitHub</span>
+                </button>
+              </div>
+            </div>
+
             <!-- IMAGE CACHE -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">

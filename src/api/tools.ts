@@ -264,3 +264,38 @@ export async function syncBlueprintsCatalog(programPath?: string): Promise<SyncC
 export async function syncDatatablesCatalog(programPath?: string): Promise<SyncCatalogResult> {
   return invoke('sync_datatables_catalog', { programPath: programPath || null });
 }
+
+export interface PalSchemaCatalogStatus {
+  is_available: boolean;
+  total_raw_schemas: number;
+  total_domain_schemas: number;
+  has_enums: boolean;
+  version: string;
+  author: string;
+  source_location: string;
+  schemas_dir: string;
+}
+
+export interface PalSchemaDefinition {
+  uri: string;
+  file_match: string[];
+  schema_json: string;
+}
+
+export async function getPalSchemaSchemasCatalog(): Promise<PalSchemaCatalogStatus> {
+  return invoke('get_palschema_schemas_catalog');
+}
+
+export async function getPalSchemaMonacoDefinitions(includeRaw = false): Promise<PalSchemaDefinition[]> {
+  return invoke('get_palschema_monaco_definitions', { includeRaw });
+}
+
+export async function getPalSchemaRawSchema(tableName: string): Promise<PalSchemaDefinition | null> {
+  return invoke('get_palschema_raw_schema', { tableName });
+}
+
+export async function syncPalSchemaSchemas(programPath?: string): Promise<SyncCatalogResult> {
+  return invoke('sync_palschema_schemas', { programPath: programPath || null });
+}
+
+

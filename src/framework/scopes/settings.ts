@@ -70,6 +70,15 @@ export interface SettingsDomMap {
   'settings-datatables-active-file': HTMLElement;
   'btn-sync-datatables': HTMLButtonElement;
   'btn-sync-datatables-icon': HTMLElement;
+  'settings-schemas-badge': HTMLElement;
+  'settings-schemas-details': HTMLElement;
+  'settings-schemas-version': HTMLElement;
+  'settings-schemas-raw-count': HTMLElement;
+  'settings-schemas-domain-count': HTMLElement;
+  'settings-schemas-enums': HTMLElement;
+  'settings-schemas-source': HTMLElement;
+  'btn-sync-schemas': HTMLButtonElement;
+  'btn-sync-schemas-icon': HTMLElement;
   'settings-image-cache-badge': HTMLElement;
   'btn-purge-image-cache': HTMLButtonElement;
   'settings-pane-safety': HTMLElement;

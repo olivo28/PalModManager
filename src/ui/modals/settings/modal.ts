@@ -4,7 +4,7 @@ import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
 import { formatBytes } from './helpers';
-import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshUsmapStatus, refreshSdkStatus, refreshBlueprintsStatus, refreshDatatablesStatus } from './status';
+import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshUsmapStatus, refreshSdkStatus, refreshBlueprintsStatus, refreshDatatablesStatus, refreshPalSchemaSchemasStatus } from './status';
 import { settingsDom } from '../../../framework';
 
 export function openSettingsModal(): void {
@@ -183,6 +183,7 @@ export function openSettingsModal(): void {
   refreshSdkStatus();
   refreshBlueprintsStatus();
   refreshDatatablesStatus();
+  refreshPalSchemaSchemasStatus();
 
   // DNS Resolver Select
   const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');
@@ -342,6 +343,35 @@ export function openSettingsModal(): void {
       } finally {
         syncDatatablesBtn.disabled = false;
         if (syncDatatablesIcon) syncDatatablesIcon.classList.remove('spinning');
+      }
+    };
+  }
+
+  // PalSchema Schemas Sync Button
+  const syncSchemasBtn = settingsDom.elMaybe('btn-sync-schemas');
+  const syncSchemasIcon = settingsDom.elMaybe('btn-sync-schemas-icon');
+  if (syncSchemasBtn) {
+    syncSchemasBtn.onclick = async () => {
+      try {
+        syncSchemasBtn.disabled = true;
+        if (syncSchemasIcon) syncSchemasIcon.classList.add('spinning');
+        showToast(t('settings.schemas_syncing') || 'Syncing PalSchema schemas specification from GitHub...', 'info');
+        const { syncPalSchemaSchemas } = await import('../../../api');
+        const res = await syncPalSchemaSchemas();
+        if (res.updated) {
+          showToast(t('settings.schemas_sync_success') || `PalSchema schemas synced: ${res.totalItems} specifications!`, 'success');
+        } else {
+          showToast(t('settings.schemas_sync_uptodate') || 'PalSchema schemas are already up to date.', 'info');
+        }
+        await refreshPalSchemaSchemasStatus();
+        // Refresh Monaco in-memory schemas as well
+        const { refreshMonacoPalSchemas } = await import('../../editor/monaco/schemas');
+        await refreshMonacoPalSchemas();
+      } catch (err: any) {
+        showToast(String(err), 'error');
+      } finally {
+        syncSchemasBtn.disabled = false;
+        if (syncSchemasIcon) syncSchemasIcon.classList.remove('spinning');
       }
     };
   }

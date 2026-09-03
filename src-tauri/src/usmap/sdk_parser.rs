@@ -364,6 +364,23 @@ pub fn parse_sdk_directory(dir: &Path, source_label: &str) -> Result<SdkIndex, S
         return Err(format!("SDK directory does not exist: {:?}", dir));
     }
 
+    // Check for cached sdk_index.json for instant <15ms startup
+    let cache_candidates = [
+        dir.join("sdk_index.json"),
+        dir.parent().map(|p| p.join("sdk_index.json")).unwrap_or_else(|| dir.to_path_buf()),
+    ];
+
+    for c_path in &cache_candidates {
+        if c_path.is_file() {
+            if let Ok(data) = fs::read_to_string(c_path) {
+                if let Ok(mut cached_idx) = serde_json::from_str::<SdkIndex>(&data) {
+                    cached_idx.source = source_label.to_string();
+                    return Ok(cached_idx);
+                }
+            }
+        }
+    }
+
     let mut hpp_files = Vec::new();
     collect_hpp_files(dir, &mut hpp_files);
 
@@ -457,6 +474,12 @@ pub fn parse_sdk_directory(dir: &Path, source_label: &str) -> Result<SdkIndex, S
         "Indexed C++ SDK ({}): {} classes, {} functions across {} headers ({} modules)",
         source_label, index.total_classes, index.total_functions, hpp_files.len(), index.modules.len()
     ));
+
+    // Save cached index to disk for instant subsequent startups
+    let cache_file = dir.join("sdk_index.json");
+    if let Ok(serialized) = serde_json::to_string(&index) {
+        let _ = fs::write(cache_file, serialized);
+    }
 
     Ok(index)
 }

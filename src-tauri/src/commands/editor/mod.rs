@@ -14,7 +14,11 @@ pub mod sync_catalogs;
 pub use types::{EditorDiagnostic, EditorCompletion};
 pub use workspace_index::*;
 pub use scaffolding::*;
-pub use sync_catalogs::{sync_blueprints_catalog, sync_datatables_catalog, SyncCatalogResult};
+pub use sync_catalogs::{
+    sync_blueprints_catalog, sync_datatables_catalog, sync_palschema_schemas,
+    get_palschema_schemas_catalog, get_palschema_monaco_definitions,
+    SyncCatalogResult,
+};
 
 // Re-export linters
 pub use linter_lua::{lint_lua_syntax, LuaLexState};

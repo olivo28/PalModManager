@@ -1,0 +1,25 @@
+{
+  "schema_version": "1.0.0",
+  "latest_palschema_version": "0.6.6",
+  "latest_game_version": "v1.0.3",
+  "latest_steam_build_id": "24575825",
+  "author": "Okaetsu",
+  "upstream_repository": "https://github.com/Okaetsu/PalSchema",
+  "updated_at": "2026-09-02T23:55:00Z",
+  "schemas": [
+    {
+      "palschema_version": "0.6.6",
+      "game_version": "v1.0.3",
+      "steam_build_id": "24575825",
+      "schemas_filename": "palschema_schemas_0.6.6.zip",
+      "schemas_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/schemas/palschema_schemas_0.6.6.zip",
+      "sha256": "2989b719b8934715c3ea9213de816ed8da110612791f4f17116bcc011603fc18",
+      "file_size_bytes": 385539,
+      "total_raw_schemas": 474,
+      "total_domain_schemas": 5,
+      "has_enums": true,
+      "engine_version": "UE5.1.1",
+      "is_latest": true
+    }
+  ]
+}

@@ -261,7 +261,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
 
             // 1. Validate UE4SS Lua Hooks
             for (hook_target, (_hook_fn, mods)) in &hook_map {
-                let (target_class, target_function, status, reason, suggestion) = validate_hook_with_usmap(hook_target, &schema, sdk_index.as_ref());
+                let (target_class, target_function, status, reason, suggestion) = validate_hook_with_usmap(hook_target, &schema, sdk_index.as_deref());
                 if status == "valid" || status == "blueprint_asset" {
                     valid_hooks += 1;
                 } else if status == "broken_class" || status == "broken_function" {
@@ -293,7 +293,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
                     continue;
                 }
 
-                let (status, reason, suggestion) = validate_palschema_table_with_usmap(&entry.table_name, &schema, sdk_index.as_ref(), Path::new(&data.settings.game_path));
+                let (status, reason, suggestion) = validate_palschema_table_with_usmap(&entry.table_name, &schema, sdk_index.as_deref(), Path::new(&data.settings.game_path));
                 if status == "valid" || status == "blueprint_asset" {
                     valid_hooks += 1;
                 } else if status == "broken_table" || status == "broken_class" {

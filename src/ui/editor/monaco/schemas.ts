@@ -1,0 +1,140 @@
+import * as monaco from 'monaco-editor';
+import { getPalSchemaMonacoDefinitions, getPalSchemaRawSchema, PalSchemaDefinition } from '../../../api';
+
+let cachedSchemaDefinitions: PalSchemaDefinition[] = [];
+let _isInitialized = false;
+let _fullSchemasLoaded = false;
+const registeredRawTables = new Set<string>();
+const parsedSchemaMap = new Map<string, any>();
+
+/**
+ * Initializes and registers official PalSchema JSON schemas into Monaco's JSON language service.
+ * - Stage 1 (0ms): Loads essential domain schemas so editor renders instantly.
+ * - Stage 2 (100ms in background): Loads all 474 raw DataTables schemas for full Okaetsu RawTable autocompletion.
+ */
+export async function initializeMonacoPalSchemas(force = false): Promise<void> {
+  if (_isInitialized && !force) return;
+  _isInitialized = true;
+
+  try {
+    // Stage 1: Fast core domain schemas (<1ms)
+    const coreDefs = await getPalSchemaMonacoDefinitions(false);
+    if (coreDefs && coreDefs.length > 0) {
+      cachedSchemaDefinitions = coreDefs;
+      applySchemasToMonaco(coreDefs);
+      console.info(`PalSchema Schemas: Initialized ${coreDefs.length} core domain schemas.`);
+    }
+
+    // Stage 2: Background full raw schemas enrichment (non-blocking)
+    scheduleFullSchemasLoading(force);
+  } catch (err) {
+    console.error('Failed to initialize Monaco PalSchema schemas:', err);
+  }
+}
+
+/**
+ * Loads all 481 PalSchema definitions (including all 474 DataTables) in the background without UI blocking.
+ */
+function scheduleFullSchemasLoading(force = false): void {
+  if (_fullSchemasLoaded && !force) return;
+
+  setTimeout(async () => {
+    try {
+      const fullDefs = await getPalSchemaMonacoDefinitions(true);
+      if (fullDefs && fullDefs.length > 0) {
+        cachedSchemaDefinitions = fullDefs;
+        applySchemasToMonaco(fullDefs);
+        _fullSchemasLoaded = true;
+        console.info(`PalSchema Schemas: Enriched with all ${fullDefs.length} schemas (474 DataTables active).`);
+      }
+    } catch (err) {
+      console.warn('Failed to background-load full PalSchema definitions:', err);
+    }
+  }, 100);
+}
+
+/**
+ * Registers an individual raw DataTable schema on-demand when a user opens a DT_*.json file.
+ */
+export async function registerRawTableSchema(tableName: string): Promise<void> {
+  const cleanName = tableName.trim().replace(/\.jsonc?$/i, '').replace(/\.schema$/i, '');
+  if (!cleanName || registeredRawTables.has(cleanName.toLowerCase())) return;
+
+  registeredRawTables.add(cleanName.toLowerCase());
+  try {
+    const def = await getPalSchemaRawSchema(cleanName);
+    if (def) {
+      cachedSchemaDefinitions.push(def);
+      applySchemasToMonaco(cachedSchemaDefinitions);
+      console.info(`PalSchema Schemas: Dynamically registered schema for table ${cleanName}`);
+    }
+  } catch (err) {
+    console.warn(`Failed to dynamically register schema for ${cleanName}:`, err);
+  }
+}
+
+/**
+ * Applies schema definitions to Monaco's jsonDefaults diagnostics options.
+ */
+function applySchemasToMonaco(defs: PalSchemaDefinition[]): void {
+  const jsonLang = (monaco.languages as any).json;
+  if (!jsonLang || !jsonLang.jsonDefaults) return;
+
+  const monacoSchemas = defs.map((def) => {
+    let parsedSchema = parsedSchemaMap.get(def.uri);
+    if (!parsedSchema) {
+      try {
+        parsedSchema = JSON.parse(def.schema_json);
+        parsedSchemaMap.set(def.uri, parsedSchema);
+      } catch (e) {
+        console.warn(`Failed to parse JSON for schema ${def.uri}:`, e);
+        parsedSchema = {};
+      }
+    }
+
+    return {
+      uri: def.uri,
+      fileMatch: def.file_match && def.file_match.length > 0 ? def.file_match : undefined,
+      schema: parsedSchema,
+    };
+  });
+
+  jsonLang.jsonDefaults.setDiagnosticsOptions({
+    validate: true,
+    allowComments: true,
+    comments: 'ignore',
+    trailingCommas: 'ignore',
+    schemaValidation: 'warning',
+    enableSchemaRequest: false,
+    schemas: monacoSchemas,
+  });
+
+  if (typeof jsonLang.jsonDefaults.setModeConfiguration === 'function') {
+    jsonLang.jsonDefaults.setModeConfiguration({
+      documentFormattingEdits: true,
+      documentRangeFormattingEdits: true,
+      completionItems: true, // Enable schema-driven property & enum autocomplete
+      hovers: true,
+      documentSymbols: true,
+      tokens: true,
+      colors: true,
+      foldingRanges: true,
+      selectionRanges: true,
+    });
+  }
+}
+
+/**
+ * Reloads and refreshes the schemas in Monaco (e.g. after a catalog sync).
+ */
+export async function refreshMonacoPalSchemas(): Promise<void> {
+  await initializeMonacoPalSchemas(true);
+}
+
+/**
+ * Returns cached definitions for external inspector tools or linters.
+ */
+export function getCachedPalSchemaDefinitions(): PalSchemaDefinition[] {
+  return cachedSchemaDefinitions;
+}
+

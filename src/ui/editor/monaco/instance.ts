@@ -4,6 +4,7 @@ import { t } from '../../../utils/i18n';
 import { registerMonacoCompletionProviders } from './completion';
 import { registerMonacoLinter } from './linter';
 import { registerMonacoQuickFixProvider } from './quickfix';
+import { initializeMonacoPalSchemas } from './schemas';
 import {
   isMonacoInitialized,
   getMonacoEditor,
@@ -242,6 +243,9 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
     registerMonacoCompletionProviders();
     registerMonacoQuickFixProvider();
     _providersRegistered = true;
+    setTimeout(() => {
+      initializeMonacoPalSchemas().catch(console.error);
+    }, 0);
   }
 
   registerMonacoLinter(editorInstance);
@@ -323,6 +327,16 @@ export function setMonacoFile(filePath: string, content: string): void {
   }
 
   editor.setModel(model);
+
+  // If opening a raw DataTable JSON file, register its specific schema lazily in background
+  if (filePath.includes('DT_') && (filePath.endsWith('.json') || filePath.endsWith('.jsonc'))) {
+    const match = filePath.match(/DT_[A-Za-z0-9_]+/);
+    if (match) {
+      setTimeout(() => {
+        import('./schemas').then((m) => m.registerRawTableSchema(match[0])).catch(() => {});
+      }, 50);
+    }
+  }
 }
 
 export function getMonacoContent(): string {

@@ -302,5 +302,62 @@ export async function refreshDatatablesStatus(): Promise<void> {
   }
 }
 
+export async function refreshPalSchemaSchemasStatus(): Promise<void> {
+  const badge = document.getElementById('settings-schemas-badge');
+  const versionElem = document.getElementById('settings-schemas-version');
+  const rawCountElem = document.getElementById('settings-schemas-raw-count');
+  const domainCountElem = document.getElementById('settings-schemas-domain-count');
+  const enumsElem = document.getElementById('settings-schemas-enums');
+  const sourceElem = document.getElementById('settings-schemas-source');
+
+  if (!badge && !rawCountElem) return;
+
+  try {
+    const { getPalSchemaSchemasCatalog } = await import('../../../api');
+    const catalog = await getPalSchemaSchemasCatalog();
+
+    if (badge) {
+      if (catalog.is_available && catalog.total_raw_schemas > 0) {
+        badge.textContent = `✅ ${t('settings.schemas_status_synced') || 'Ready & Active'}`;
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else {
+        badge.textContent = `⚠️ ${t('settings.schemas_status_missing') || 'Missing / Not Synced'}`;
+        badge.style.background = 'rgba(239,68,68,0.15)';
+        badge.style.color = '#ef4444';
+        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      }
+    }
+
+    if (versionElem) {
+      const ver = catalog.version ? (catalog.version.startsWith('v') ? catalog.version : `v${catalog.version}`) : 'v0.6.6';
+      versionElem.textContent = ver;
+    }
+
+    if (rawCountElem) {
+      rawCountElem.textContent = `${catalog.total_raw_schemas.toLocaleString()} schemas (raw/DT_*.schema.json)`;
+    }
+
+    if (domainCountElem) {
+      domainCountElem.textContent = `${catalog.total_domain_schemas} models (Items, Pals, Buildings, Skins, Utility)`;
+    }
+
+    if (enumsElem) {
+      enumsElem.textContent = catalog.has_enums ? `Included (${t('settings.schemas_enums_included') || 'EPalItemTypeA, EPalTribeID...'})` : 'Missing';
+    }
+
+    if (sourceElem) {
+      sourceElem.textContent = catalog.source_location || 'None';
+    }
+  } catch (e) {
+    console.error('Failed to get PalSchema schemas catalog status:', e);
+    if (badge) {
+      badge.textContent = `⚠️ ${t('settings.schemas_status_error') || 'Error'}`;
+    }
+  }
+}
+
+
 
 

@@ -67,7 +67,7 @@ pub async fn validate_editor_code(
                                         crate::commands::scanner::hook_validator::validate_hook_with_usmap(
                                         trimmed,
                                         s,
-                                        sdk_index.as_ref(),
+                                        sdk_index.as_deref(),
                                     );
 
                                 if status == "broken_class" || status == "broken_function" {
@@ -124,7 +124,7 @@ pub async fn validate_editor_code(
                                     crate::commands::scanner::palschema::validate_palschema_table_with_usmap(
                                         key,
                                         s,
-                                        sdk_index.as_ref(),
+                                        sdk_index.as_deref(),
                                         Path::new(&game_path),
                                     );
 
@@ -227,7 +227,7 @@ pub async fn scan_workspace_problems(
                                             crate::commands::scanner::hook_validator::validate_hook_with_usmap(
                                             trimmed,
                                             s,
-                                            sdk_index.as_ref(),
+                                            sdk_index.as_deref(),
                                         );
 
                                     if status == "broken_class" || status == "broken_function" {
@@ -276,7 +276,7 @@ pub async fn scan_workspace_problems(
                                         crate::commands::scanner::palschema::validate_palschema_table_with_usmap(
                                             key,
                                             s,
-                                            sdk_index.as_ref(),
+                                            sdk_index.as_deref(),
                                             Path::new(&game_path),
                                         );
 

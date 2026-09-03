@@ -190,6 +190,17 @@ fn extract_lua_symbols(content: &str, source_file: &str, symbols: &mut Vec<Works
 }
 
 /// Get or build the symbol index for the given mod workspace
+fn is_internal_or_hidden_file(file_path: &str) -> bool {
+    let lower = file_path.to_ascii_lowercase();
+    lower.ends_with("modinfo.pmm.json")
+        || lower.ends_with(".pmm.json")
+        || lower.ends_with("modinfo.json")
+        || lower.ends_with(".nexus.json")
+        || lower.starts_with('.')
+        || lower.contains("/.")
+        || lower.contains("\\.")
+}
+
 pub fn get_or_build_mod_symbols(
     mod_info: &ModInfo,
     file_list: &[String],
@@ -205,16 +216,12 @@ pub fn get_or_build_mod_symbols(
 
     // Check if cached entry exists and timestamps are fresh
     if let Some(existing) = cache.get(mod_id) {
-        if existing.file_timestamps.keys().any(|k| {
-            let kl = k.to_ascii_lowercase();
-            kl.ends_with("modinfo.pmm.json") || kl.ends_with(".pmm.json") || kl.ends_with("modinfo.json")
-        }) {
+        if existing.file_timestamps.keys().any(|k| is_internal_or_hidden_file(k)) {
             needs_refresh = true;
         }
 
         for file_rel in file_list {
-            let file_lower = file_rel.to_ascii_lowercase();
-            if file_lower.ends_with("modinfo.pmm.json") || file_lower.ends_with(".pmm.json") || file_lower.ends_with("modinfo.json") {
+            if is_internal_or_hidden_file(file_rel) {
                 continue;
             }
 
@@ -253,8 +260,7 @@ pub fn get_or_build_mod_symbols(
     let mut new_symbols = Vec::new();
 
     for file_rel in file_list {
-        let file_lower = file_rel.to_ascii_lowercase();
-        if file_lower.ends_with("modinfo.pmm.json") || file_lower.ends_with(".pmm.json") || file_lower.ends_with("modinfo.json") {
+        if is_internal_or_hidden_file(file_rel) {
             continue;
         }
 

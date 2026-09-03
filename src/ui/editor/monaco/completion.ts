@@ -29,17 +29,17 @@ export function registerMonacoCompletionProviders(): void {
 
       const range: monaco.IRange = lastQuote !== -1
         ? {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: lastQuote + 2,
-            endColumn: position.column,
-          }
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: lastQuote + 2,
+          endColumn: position.column,
+        }
         : {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn,
-          };
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
 
       try {
         const state = getState();
@@ -86,17 +86,17 @@ export function registerMonacoCompletionProviders(): void {
 
       const range: monaco.IRange = lastQuote !== -1
         ? {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: lastQuote + 2,
-            endColumn: position.column,
-          }
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: lastQuote + 2,
+          endColumn: position.column,
+        }
         : {
-            startLineNumber: position.lineNumber,
-            endLineNumber: position.lineNumber,
-            startColumn: word.startColumn,
-            endColumn: word.endColumn,
-          };
+          startLineNumber: position.lineNumber,
+          endLineNumber: position.lineNumber,
+          startColumn: word.startColumn,
+          endColumn: word.endColumn,
+        };
 
       try {
         const state = getState();
