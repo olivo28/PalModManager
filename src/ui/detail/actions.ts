@@ -92,13 +92,18 @@ export async function handleDetailSetConfig(): Promise<void> {
   if (!state.currentDetailMod) return;
   try {
     const { open } = await import('@tauri-apps/plugin-dialog');
-    const basePath = state.currentDetailMod.enabled
-      ? state.currentDetailMod.gamePath
-      : state.currentDetailMod.disabledPath;
+    const { getModComponentFolders } = await import('./helpers');
+    const compFolders = getModComponentFolders(state.currentDetailMod);
+    const ue4ssComp = compFolders.find(c => c.type === 'ue4ss');
+    const basePath = ue4ssComp
+      ? ue4ssComp.path
+      : (state.currentDetailMod.enabled
+        ? state.currentDetailMod.gamePath
+        : state.currentDetailMod.disabledPath);
     const selected = await open({
       multiple: false,
       defaultPath: basePath,
-      filters: [{ name: 'Config files', extensions: ['json', 'lua'] }],
+      filters: [{ name: 'Config files', extensions: ['json', 'jsonc', 'lua', 'ini', 'cfg', 'txt'] }],
       title: t('detail.dialog_select_config_title', { name: state.currentDetailMod.name }),
     });
     if (!selected) return;

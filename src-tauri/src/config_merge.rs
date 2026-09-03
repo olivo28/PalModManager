@@ -98,13 +98,20 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                         let ext_lower = ext.to_lowercase();
                         if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" || ext_lower == "lua" {
-                            let file_stem = path.file_stem().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+                            let fname_str = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
+                            // Skip metadata, dotfiles, and manifests from config snapshots
+                            if fname_str.starts_with('.')
+                                || fname_str.eq_ignore_ascii_case("modinfo.pmm.json")
+                                || fname_str.eq_ignore_ascii_case("modinfo.json")
+                                || fname_str.eq_ignore_ascii_case("enabled.txt")
+                                || fname_str.ends_with(".manifest.json")
+                            {
+                                continue;
+                            }
+
+                            // Rule: .lua files ONLY merge if they are explicitly configured as the mod's config
                             let is_lua_config = if ext_lower == "lua" {
-                                let is_custom_match = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string());
-                                let stem_matches = file_stem.contains("config") || file_stem.contains("setting") || file_stem.contains("cfg") || file_stem.contains("option") || file_stem == "main";
-                                let path_str = path.to_string_lossy().replace('\\', "/").to_lowercase();
-                                let in_scripts = path_str.contains("/scripts/");
-                                is_custom_match || stem_matches || in_scripts
+                                custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
                             } else {
                                 true
                             };
@@ -174,6 +181,13 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
 /// Apply the merging function to combine snapshot files back into the newly installed folder
 pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_keys: &[String]) {
     for (rel_path, old_content) in &snapshot.entries {
+        let fname_str = rel_path.file_name().and_then(|f| f.to_str()).unwrap_or("");
+        let rel_path_str = rel_path.to_string_lossy();
+        if ignored_keys.iter().any(|k| k.eq_ignore_ascii_case(fname_str) || k.eq_ignore_ascii_case(&rel_path_str)) {
+            crate::logger::log(&format!("Config merge: Skipping explicitly ignored file {}", fname_str));
+            continue;
+        }
+
         let mut target_file: Option<PathBuf> = None;
         let direct = mod_dir.join(rel_path);
         if direct.exists() && direct.is_file() {
@@ -624,6 +638,53 @@ Config.Version = "2.0.0"
         let merged = merge_lua(old_lua, new_lua, &ignored).expect("merge should succeed");
         assert!(merged.contains("Config.Enabled = false"));
         assert!(merged.contains("Config.Version = \"2.0.0\""));
+    }
+
+    #[test]
+    fn test_snapshot_configs_lua_only_when_configured() {
+        let temp_dir = std::env::temp_dir().join(format!("pmm_test_{}", uuid::Uuid::new_v4()));
+        let scripts_dir = temp_dir.join("Scripts");
+        std::fs::create_dir_all(&scripts_dir).unwrap();
+
+        // Create main.lua, config.lua, and .nexus.json
+        std::fs::write(scripts_dir.join("main.lua"), "-- main script").unwrap();
+        std::fs::write(scripts_dir.join("config.lua"), "return { Setting = 1 }").unwrap();
+        std::fs::write(temp_dir.join(".nexus.json"), "{}").unwrap();
+
+        // Scenario 1: No custom_config configured -> main.lua and config.lua must NOT be snapshotted
+        let snap1 = snapshot_configs(&temp_dir, None);
+        assert!(!snap1.entries.iter().any(|(p, _)| p.to_string_lossy().contains("main.lua")));
+        assert!(!snap1.entries.iter().any(|(p, _)| p.to_string_lossy().contains("config.lua")));
+        assert!(!snap1.entries.iter().any(|(p, _)| p.to_string_lossy().contains(".nexus.json")));
+
+        // Scenario 2: custom_config set to "config.lua" -> ONLY config.lua snapshotted, NEVER main.lua
+        let snap2 = snapshot_configs(&temp_dir, Some("Scripts/config.lua"));
+        assert!(!snap2.entries.iter().any(|(p, _)| p.to_string_lossy().contains("main.lua")));
+        assert!(!snap2.entries.iter().any(|(p, _)| p.to_string_lossy().contains(".nexus.json")));
+        assert!(snap2.entries.iter().any(|(p, _)| p.to_string_lossy().contains("config.lua")));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_apply_config_merge_skips_ignored_file() {
+        let temp_dir = std::env::temp_dir().join(format!("pmm_test_{}", uuid::Uuid::new_v4()));
+        std::fs::create_dir_all(&temp_dir).unwrap();
+
+        let cfg_file = temp_dir.join("config.json");
+        std::fs::write(&cfg_file, r#"{"setting": "new_from_author"}"#).unwrap();
+
+        let snap = ConfigSnapshot {
+            entries: vec![(PathBuf::from("config.json"), r#"{"setting": "old_user_value"}"#.to_string())],
+        };
+
+        // If "config.json" is in ignored_keys, it must NOT be merged (keeps new_from_author)
+        apply_config_merge(&temp_dir, &snap, &["config.json".to_string()]);
+        let content = std::fs::read_to_string(&cfg_file).unwrap();
+        assert!(content.contains("new_from_author"));
+        assert!(!content.contains("old_user_value"));
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
     }
 }
 

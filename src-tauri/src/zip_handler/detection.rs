@@ -45,17 +45,70 @@ pub fn list_rar_files(path: &str) -> Result<Vec<String>, String> {
         cmd.creation_flags(0x08000000);
     }
 
-    let output = cmd.output().map_err(|e| format!("Failed to run tar: {}", e))?;
-    if !output.status.success() {
-        let err = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("RAR archive reading failed: {}", err.trim()));
+    if let Ok(output) = cmd.output() {
+        if output.status.success() {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let files: Vec<String> = stdout
+                .lines()
+                .map(|l| l.trim().replace('\\', "/"))
+                .filter(|l| !l.is_empty())
+                .collect();
+            if !files.is_empty() {
+                return Ok(files);
+            }
+        }
     }
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    Ok(stdout
-        .lines()
-        .map(|l| l.trim().replace('\\', "/"))
-        .filter(|l| !l.is_empty())
-        .collect())
+
+    // Fallback: cross-platform probe (7z, unrar)
+    if let Some((extractor, kind)) = crate::zip_handler::extraction::find_cross_platform_rar_extractor() {
+        let mut cmd = std::process::Command::new(&extractor);
+        match kind {
+            crate::zip_handler::extraction::RarExtractorKind::SevenZip => {
+                cmd.args(&["l", "-ba", "-slt", path]);
+            }
+            crate::zip_handler::extraction::RarExtractorKind::Unrar => {
+                cmd.args(&["vb", path]);
+            }
+        }
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+
+        if let Ok(output) = cmd.output() {
+            if output.status.success() {
+                let stdout = String::from_utf8_lossy(&output.stdout);
+                let mut files = Vec::new();
+                match kind {
+                    crate::zip_handler::extraction::RarExtractorKind::SevenZip => {
+                        for line in stdout.lines() {
+                            let trimmed = line.trim();
+                            if trimmed.starts_with("Path = ") {
+                                let f = trimmed.trim_start_matches("Path = ").trim().replace('\\', "/");
+                                if !f.is_empty() && f != path.replace('\\', "/") {
+                                    files.push(f);
+                                }
+                            }
+                        }
+                    }
+                    crate::zip_handler::extraction::RarExtractorKind::Unrar => {
+                        for line in stdout.lines() {
+                            let f = line.trim().replace('\\', "/");
+                            if !f.is_empty() {
+                                files.push(f);
+                            }
+                        }
+                    }
+                }
+                if !files.is_empty() {
+                    return Ok(files);
+                }
+            }
+        }
+    }
+
+    Err("RAR archive reading failed: 'tar' is not available and no external extractor (7-Zip, UnRAR) was found on the system.".to_string())
 }
 
 pub fn detect_archive_format(path: &Path) -> ArchiveFormat {

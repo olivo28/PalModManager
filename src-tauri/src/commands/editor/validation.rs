@@ -106,20 +106,49 @@ pub async fn validate_editor_code(
         lint_json_syntax(clean_content, &mut diagnostics);
 
         // -------------------------------------------------------------
-        // Layer 2: PalSchema DataTables & USMAP Validation
+        // Layer 2: PalSchema DataTables & USMAP Validation (PalSchema files only)
         // -------------------------------------------------------------
-        if !clean_content.trim().is_empty() {
+        let clean_path = file_path.replace('\\', "/");
+        let clean_path_lower = clean_path.to_lowercase();
+        let is_palschema_file = clean_path.starts_with("[PalSchema]")
+            || clean_path_lower.contains("/palschema/")
+            || clean_path_lower.contains("palschema/mods/")
+            || clean_path_lower.ends_with(".palschema.json")
+            || clean_path_lower.ends_with(".palschema.jsonc");
+
+        let is_translation_file = clean_path_lower.contains("/translations/") || clean_path_lower.starts_with("translations/");
+
+        if is_palschema_file && !clean_content.trim().is_empty() {
             let stripped = crate::commands::scanner::utils::strip_jsonc_comments(clean_content);
             if let Ok(val) = serde_json::from_str::<serde_json::Value>(&stripped) {
-                if let Some(ref s) = schema {
-                    let lines: Vec<&str> = clean_content.lines().collect();
-                    if let Some(obj) = val.as_object() {
-                        for (key, nested) in obj {
-                            let is_dt = key.starts_with("DT_") || key.contains("DataTable");
-                            let is_bp = key.starts_with("BP_") || key.ends_with("_C");
-                            if (is_dt || is_bp) && nested.is_object() {
-                                let (line_num, col_num) = find_key_position(&lines, key);
+                let lines: Vec<&str> = clean_content.lines().collect();
+                if let Some(obj) = val.as_object() {
+                    for (key, nested) in obj {
+                        let is_dt = key.starts_with("DT_") || key.contains("DataTable");
+                        let is_bp = key.starts_with("BP_") || key.ends_with("_C");
+                        if (is_dt || is_bp) && nested.is_object() {
+                            let (line_num, col_num) = find_key_position(&lines, key);
 
+                            // For translation files, check if valid PalSchema localization table
+                            if is_translation_file {
+                                let is_valid_text = crate::usmap::is_valid_palschema_table_name(key, &program_path, &game_path);
+                                if !is_valid_text && !key.ends_with("Text") && !key.ends_with("TextData") {
+                                    diagnostics.push(EditorDiagnostic {
+                                        line: line_num,
+                                        column: col_num,
+                                        end_line: line_num,
+                                        end_column: col_num + key.len() as u32,
+                                        severity: "warning".to_string(),
+                                        message: format!("Unrecognized translation table '{}'. PalSchema translations typically target DT_*Text tables.", key),
+                                        target: key.clone(),
+                                        suggestion: Some("DT_ItemNameText".to_string()),
+                                        category: "palschema".to_string(),
+                                    });
+                                }
+                                continue;
+                            }
+
+                            if let Some(ref s) = schema {
                                 let (status, reason, suggestion) =
                                     crate::commands::scanner::palschema::validate_palschema_table_with_usmap(
                                         key,
@@ -260,18 +289,46 @@ pub async fn scan_workspace_problems(
             let clean_content = content.strip_prefix("\u{feff}").unwrap_or(&content);
             lint_json_syntax(clean_content, &mut diagnostics);
 
-            if !clean_content.trim().is_empty() {
+            let clean_path = file_path.replace('\\', "/");
+            let clean_path_lower = clean_path.to_lowercase();
+            let is_palschema_file = clean_path.starts_with("[PalSchema]")
+                || clean_path_lower.contains("/palschema/")
+                || clean_path_lower.contains("palschema/mods/")
+                || clean_path_lower.ends_with(".palschema.json")
+                || clean_path_lower.ends_with(".palschema.jsonc");
+
+            let is_translation_file = clean_path_lower.contains("/translations/") || clean_path_lower.starts_with("translations/");
+
+            if is_palschema_file && !clean_content.trim().is_empty() {
                 let stripped = crate::commands::scanner::utils::strip_jsonc_comments(clean_content);
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&stripped) {
-                    if let Some(ref s) = schema {
-                        let lines: Vec<&str> = clean_content.lines().collect();
-                        if let Some(obj) = val.as_object() {
-                            for (key, nested) in obj {
-                                let is_dt = key.starts_with("DT_") || key.contains("DataTable");
-                                let is_bp = key.starts_with("BP_") || key.ends_with("_C");
-                                if (is_dt || is_bp) && nested.is_object() {
-                                    let (line_num, col_num) = find_key_position(&lines, key);
+                    let lines: Vec<&str> = clean_content.lines().collect();
+                    if let Some(obj) = val.as_object() {
+                        for (key, nested) in obj {
+                            let is_dt = key.starts_with("DT_") || key.contains("DataTable");
+                            let is_bp = key.starts_with("BP_") || key.ends_with("_C");
+                            if (is_dt || is_bp) && nested.is_object() {
+                                let (line_num, col_num) = find_key_position(&lines, key);
 
+                                if is_translation_file {
+                                    let is_valid_text = crate::usmap::is_valid_palschema_table_name(key, &program_path, &game_path);
+                                    if !is_valid_text && !key.ends_with("Text") && !key.ends_with("TextData") {
+                                        diagnostics.push(EditorDiagnostic {
+                                            line: line_num,
+                                            column: col_num,
+                                            end_line: line_num,
+                                            end_column: col_num + key.len() as u32,
+                                            severity: "warning".to_string(),
+                                            message: format!("Unrecognized translation table '{}'. PalSchema translations typically target DT_*Text tables.", key),
+                                            target: key.clone(),
+                                            suggestion: Some("DT_ItemNameText".to_string()),
+                                            category: "palschema".to_string(),
+                                        });
+                                    }
+                                    continue;
+                                }
+
+                                if let Some(ref s) = schema {
                                     let (status, reason, suggestion) =
                                         crate::commands::scanner::palschema::validate_palschema_table_with_usmap(
                                             key,

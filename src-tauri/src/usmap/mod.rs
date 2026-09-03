@@ -18,6 +18,7 @@ pub use palschema_index::{
     PalSchemaCatalogStatus, PalSchemaDefinition, get_palschema_schemas_dir,
     get_or_load_palschema_catalog, invalidate_palschema_catalog_cache,
     load_palschema_definitions_for_monaco, load_single_raw_palschema_definition,
+    get_or_load_palschema_table_names, is_valid_palschema_table_name,
 };
 
 use std::sync::{Arc, Mutex};

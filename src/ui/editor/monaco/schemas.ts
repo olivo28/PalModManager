@@ -85,16 +85,32 @@ function applySchemasToMonaco(defs: PalSchemaDefinition[]): void {
     if (!parsedSchema) {
       try {
         parsedSchema = JSON.parse(def.schema_json);
+        if (parsedSchema && typeof parsedSchema === 'object') {
+          parsedSchema.allowComments = true;
+          parsedSchema.allowTrailingCommas = true;
+        }
         parsedSchemaMap.set(def.uri, parsedSchema);
       } catch (e) {
         console.warn(`Failed to parse JSON for schema ${def.uri}:`, e);
-        parsedSchema = {};
+        parsedSchema = { allowComments: true, allowTrailingCommas: true };
       }
+    } else {
+      parsedSchema.allowComments = true;
+      parsedSchema.allowTrailingCommas = true;
     }
+
+    const sanitizedMatches = def.file_match && def.file_match.length > 0
+      ? def.file_match.map((pattern) => {
+          if (!pattern.startsWith('**') && !pattern.startsWith('file:') && !pattern.startsWith('http')) {
+            return pattern.startsWith('*') ? `**/${pattern}` : `**/*${pattern}*`;
+          }
+          return pattern;
+        })
+      : undefined;
 
     return {
       uri: def.uri,
-      fileMatch: def.file_match && def.file_match.length > 0 ? def.file_match : undefined,
+      fileMatch: sanitizedMatches,
       schema: parsedSchema,
     };
   });
@@ -121,6 +137,62 @@ function applySchemasToMonaco(defs: PalSchemaDefinition[]): void {
       foldingRanges: true,
       selectionRanges: true,
     });
+  }
+}
+
+/**
+ * Explicitly binds an opened model URI directly to its matching PalSchema definition in Monaco.
+ */
+export function associateFileWithPalSchema(filePath: string): void {
+  const jsonLang = (monaco.languages as any).json;
+  if (!jsonLang || !jsonLang.jsonDefaults) return;
+
+  const modelUri = monaco.Uri.file(filePath).toString();
+  const lower = filePath.toLowerCase().replace(/\\/g, '/');
+
+  let targetSchemaUri: string | null = null;
+  if (lower.includes('/items') || lower.endsWith('items.json') || lower.endsWith('items.jsonc') || lower.endsWith('item.json') || lower.endsWith('item.jsonc')) {
+    targetSchemaUri = 'palschema://schemas/items.schema.json';
+  } else if (lower.includes('/pals') || lower.endsWith('pals.json') || lower.endsWith('pals.jsonc') || lower.endsWith('pal.json') || lower.endsWith('pal.jsonc')) {
+    targetSchemaUri = 'palschema://schemas/pals.schema.json';
+  } else if (lower.includes('/buildings') || lower.endsWith('buildings.json') || lower.endsWith('buildings.jsonc')) {
+    targetSchemaUri = 'palschema://schemas/buildings.schema.json';
+  } else if (lower.includes('/skins') || lower.endsWith('skins.json') || lower.endsWith('skins.jsonc')) {
+    targetSchemaUri = 'palschema://schemas/skins.schema.json';
+  } else if (lower.includes('/utility') || lower.endsWith('utility.json') || lower.endsWith('utility.jsonc')) {
+    targetSchemaUri = 'palschema://schemas/utility.schema.json';
+  } else if (lower.includes('dt_') || lower.includes('/raw/')) {
+    targetSchemaUri = 'palschema://schemas/raw.schema.json';
+  }
+
+  if (!targetSchemaUri) return;
+
+  const currentOpts = jsonLang.jsonDefaults.diagnosticsOptions;
+  if (!currentOpts || !currentOpts.schemas) return;
+
+  let needsUpdate = false;
+  for (const s of currentOpts.schemas) {
+    if (s.uri === targetSchemaUri) {
+      if (!s.fileMatch) {
+        s.fileMatch = [modelUri];
+        needsUpdate = true;
+      } else if (!s.fileMatch.includes(modelUri)) {
+        s.fileMatch.push(modelUri);
+        needsUpdate = true;
+      }
+      break;
+    }
+  }
+
+  if (needsUpdate) {
+    jsonLang.jsonDefaults.setDiagnosticsOptions({
+      ...currentOpts,
+      allowComments: true,
+      comments: 'ignore',
+      trailingCommas: 'ignore',
+      schemas: [...currentOpts.schemas],
+    });
+    console.info(`PalSchema: Explicitly associated model ${modelUri} with schema ${targetSchemaUri}`);
   }
 }
 

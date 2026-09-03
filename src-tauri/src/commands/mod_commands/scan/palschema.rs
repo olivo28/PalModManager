@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
 use crate::models::{ModInfo, ModType};
-use super::super::utils::{detect_config, file_install_date};
+use super::super::utils::file_install_date;
 use super::meta::load_pmm_meta;
 
 pub fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::collections::HashSet<String>) {
@@ -61,8 +61,8 @@ pub fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names
                     nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
                     version: "unknown".to_string(), install_date,
-                    source_zip: String::new(), config_path: detect_config(&mod_path),
-                    config_type: Some("auto".to_string()), enabled: true,
+                    source_zip: String::new(), config_path: None,
+                    config_type: None, enabled: true,
                     game_path: mod_path.to_string_lossy().to_string(),
                     disabled_path: String::new(),
                     pak_destination: None, has_enabled_txt: false, mods_txt_order: None,

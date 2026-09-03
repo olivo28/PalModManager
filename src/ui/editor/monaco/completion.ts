@@ -2,6 +2,7 @@ import * as monaco from 'monaco-editor';
 import { getEditorCompletions, EditorCompletion } from '../../../api';
 import { getState } from '../../../state';
 import { getCurrentMonacoFilePath } from './state';
+import { t } from '../../../utils/i18n';
 
 export function registerMonacoCompletionProviders(): void {
   // 1. Lua Completion Provider
@@ -61,9 +62,9 @@ export function registerMonacoCompletionProviders(): void {
     },
   });
 
-  // 2. JSON & JSONC (PalSchema & Workspace) Completion Provider
+  // 2. JSON & JSONC (PalSchema & Reflection) Completion Provider
   const jsonProvider: monaco.languages.CompletionItemProvider = {
-    triggerCharacters: ['"', ':', '{', ' ', '/', '_', 'D', 'd', 'P', 'p', 'B', 'b', 'W', 'w', 'I', 'i'],
+    triggerCharacters: ['"', ':', '/', '_', 'D', 'd', 'P', 'p', 'B', 'b', 'W', 'w', 'I', 'i'],
     async provideCompletionItems(model, position) {
       const filePath = getCurrentMonacoFilePath() || model.uri.fsPath || 'schema.jsonc';
       const textUntilPosition = model.getValueInRange({
@@ -111,7 +112,7 @@ export function registerMonacoCompletionProviders(): void {
           const closeMatches = (lineContent.match(/}/g) || []).length;
           depth += (closeMatches - openMatches);
           if (depth < 0) {
-            const m = lineContent.match(/"([^"]+)"\s*:\s*\{/);
+            const m = lineContent.match(/["']?([a-zA-Z0-9_]+)["']?\s*:\s*\{/);
             if (m) {
               contextPrefix = `[context:${m[1]}] ${textUntilPosition}`;
             }
@@ -140,10 +141,41 @@ export function registerMonacoCompletionProviders(): void {
   monaco.languages.registerCompletionItemProvider('jsonc', jsonProvider);
 }
 
+function localizeDocumentation(doc?: string): string | undefined {
+  if (!doc) return undefined;
+  return doc
+    .replace(/\*\*Class Origin\*\*:/g, `**${t('editor.completions.class_origin') || 'Class Origin'}**:`)
+    .replace(/\*\*Engine Type\*\*:/g, `**${t('editor.completions.engine_type') || 'Engine Type'}**:`)
+    .replace(/\*\*Expected Value\*\*:/g, `**${t('editor.completions.expected_value') || 'Expected Value'}**:`)
+    .replace(/\*\*Expected\*\*:/g, `**${t('editor.completions.expected') || 'Expected'}**:`)
+    .replace(/\*\*Asset Type\*\*:/g, `**${t('editor.completions.asset_type') || 'Asset Type'}**:`)
+    .replace(/\*\*Mount Path\*\*:/g, `**${t('editor.completions.mount_path') || 'Mount Path'}**:`)
+    .replace(/\*\*Source Package\*\*:/g, `**${t('editor.completions.source_package') || 'Source Package'}**:`)
+    .replace(/\*\*Row Struct\*\*:/g, `**${t('editor.completions.row_struct') || 'Row Struct'}**:`)
+    .replace(/\*\*Total Rows\*\*:/g, `**${t('editor.completions.total_rows') || 'Total Rows'}**:`)
+    .replace(/\*\*Package\*\*:/g, `**${t('editor.completions.package') || 'Package'}**:`)
+    .replace(/\*\*Sample Rows\*\*:/g, `**${t('editor.completions.sample_rows') || 'Sample Rows'}**:`)
+    .replace(/Blueprint Generated Class/g, t('editor.completions.blueprint_gen_class') || 'Blueprint Generated Class')
+    .replace(/Palworld Reflection DataTable/g, t('editor.completions.reflection_table_desc') || 'Palworld Reflection DataTable');
+}
+
+function localizeDetail(detail?: string): string | undefined {
+  if (!detail) return undefined;
+  if (detail === 'Blueprint Class') return t('editor.completions.blueprint_class') || detail;
+  if (detail === 'Reflection DataTable') return t('editor.completions.reflection_datatable') || detail;
+  if (detail === 'PalSchema Patch Template' || detail === 'PalSchema DataTable Patch') return t('editor.completions.patch_template') || detail;
+  if (detail.startsWith('Starter template for ')) {
+    const name = detail.replace('Starter template for ', '');
+    return t('editor.completions.template_desc', { name }) || detail;
+  }
+  return detail;
+}
+
 function mapToMonacoCompletionItem(
   item: EditorCompletion,
   range: monaco.IRange,
-  sortIndex: number
+  sortIndex: number,
+  prefix: string = ''
 ): monaco.languages.CompletionItem {
   let kind = monaco.languages.CompletionItemKind.Text;
 
@@ -184,14 +216,18 @@ function mapToMonacoCompletionItem(
       break;
   }
 
-  const sortText = String(sortIndex).padStart(4, '0');
+  const sortText = prefix + String(sortIndex).padStart(4, '0');
   const isSnippet = item.insertText.includes('$') || item.insertText.includes('\n');
 
   return {
     label: item.label,
     kind,
-    detail: item.detail,
-    documentation: item.documentation ? { value: item.documentation } : undefined,
+    detail: localizeDetail(item.detail),
+    documentation: item.documentation ? {
+      value: localizeDocumentation(item.documentation) || item.documentation,
+      isTrusted: true,
+      supportThemeIcons: true,
+    } : undefined,
     insertText: item.insertText,
     insertTextRules: isSnippet ? monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet : undefined,
     range,

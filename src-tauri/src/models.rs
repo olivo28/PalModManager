@@ -193,6 +193,8 @@ pub struct AppSettings {
     pub folder_expand_mode: Option<String>,
     #[serde(default)]
     pub ue4ss_control_mode: Option<String>,
+    #[serde(default)]
+    pub ue4ss_build_flavor: Option<String>,
 }
 
 
@@ -256,8 +258,16 @@ pub struct Profile {
     pub ue4ss_control_mode: Option<String>,
 }
 
+pub const CURRENT_DB_SCHEMA_VERSION: u32 = 2;
+
+fn default_schema_version() -> u32 {
+    1
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct AppData {
+    #[serde(default = "default_schema_version")]
+    pub schema_version: u32,
     pub mods: Vec<ModInfo>,
     pub settings: AppSettings,
     #[serde(default)]
@@ -273,6 +283,7 @@ fn default_profile_id() -> String {
 impl Default for AppData {
     fn default() -> Self {
         Self {
+            schema_version: CURRENT_DB_SCHEMA_VERSION,
             mods: Vec::new(),
             settings: AppSettings {
                 game_path: String::new(),
@@ -297,6 +308,7 @@ impl Default for AppData {
                 cache_remote_images: Some(true),
                 folder_expand_mode: Some("always_expanded".to_string()),
                 ue4ss_control_mode: Some("enabled_txt".to_string()),
+                ue4ss_build_flavor: Some("standard".to_string()),
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),

@@ -218,13 +218,14 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
       localityBonus: true,
       shareSuggestSelections: true,
       showInlineDetails: true,
+      showStatusBar: true,
     },
     quickSuggestions: {
       other: true,
       comments: false,
       strings: true,
     },
-    wordBasedSuggestions: 'matchingDocuments',
+    wordBasedSuggestions: 'off',
     parameterHints: {
       enabled: true,
     },
@@ -237,7 +238,16 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
     foldingHighlight: true,
   });
 
+  // Ensure suggestion documentation details panel is auto-expanded by default
+  try {
+    localStorage.setItem('expandSuggestionDocs', 'true');
+    localStorage.setItem('suggestWidget.detailsVisible', 'true');
+  } catch {}
+
   setMonacoEditorInstance(editorInstance);
+  editorInstance.onDidChangeModelContent(() => {
+    import('../viewer').then((v) => v.updateUnsavedIndicator()).catch(() => {});
+  });
 
   if (!_providersRegistered) {
     registerMonacoCompletionProviders();
@@ -306,8 +316,8 @@ export function setMonacoFile(filePath: string, content: string): void {
     language = 'lua';
   } else if (filePath.endsWith('.jsonc')) {
     language = 'jsonc';
-  } else if (filePath.endsWith('.jsonc') || filePath.endsWith('.json')) {
-    language = 'jsonc';
+  } else if (filePath.endsWith('.json')) {
+    language = 'json';
   } else if (filePath.endsWith('.ini') || filePath.endsWith('.cfg')) {
     language = 'ini';
   } else if (filePath.endsWith('.md')) {
@@ -316,7 +326,11 @@ export function setMonacoFile(filePath: string, content: string): void {
 
   updateStatusBarLanguage(filePath);
 
-  const uri = monaco.Uri.file(filePath);
+  const cleanPath = filePath.replace(/\\/g, '/');
+  const uri = cleanPath.startsWith('/') || cleanPath.includes(':/')
+    ? monaco.Uri.file(cleanPath)
+    : monaco.Uri.parse(`pmm:///${encodeURI(cleanPath)}`);
+
   let model = monaco.editor.getModel(uri);
 
   if (!model) {
@@ -326,17 +340,12 @@ export function setMonacoFile(filePath: string, content: string): void {
     monaco.editor.setModelLanguage(model, language);
   }
 
-  editor.setModel(model);
-
-  // If opening a raw DataTable JSON file, register its specific schema lazily in background
-  if (filePath.includes('DT_') && (filePath.endsWith('.json') || filePath.endsWith('.jsonc'))) {
-    const match = filePath.match(/DT_[A-Za-z0-9_]+/);
-    if (match) {
-      setTimeout(() => {
-        import('./schemas').then((m) => m.registerRawTableSchema(match[0])).catch(() => {});
-      }, 50);
-    }
+  if (language === 'jsonc') {
+    // Clear any stale RFC 8259 standard JSON markers emitted by json.worker
+    monaco.editor.setModelMarkers(model, 'json', []);
   }
+
+  editor.setModel(model);
 }
 
 export function getMonacoContent(): string {

@@ -1,21 +1,19 @@
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { handleEditorSave, _originalContent, clearOriginalContent } from './viewer';
+import { getMonacoContent } from './monaco/instance';
 
 export function hasUnsavedChanges(): boolean {
   if (_originalContent === null) return false;
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
-  if (!editorContent) return false;
-
+  const current = getMonacoContent();
   const normalize = (str: string) => str.replace(/\r\n/g, '\n');
-  return normalize(editorContent.value) !== normalize(_originalContent);
+  return normalize(current) !== normalize(_originalContent);
 }
 
 export async function confirmDiscardOrSave(): Promise<boolean> {
   if (!hasUnsavedChanges()) return true;
 
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
-  const current = editorContent.value;
+  const current = getMonacoContent();
   const original = _originalContent || '';
 
   const choice = await showUnsavedChangesModal(original, current);

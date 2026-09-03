@@ -32,6 +32,111 @@ pub fn read_7z_file(path: &str, target_file: &str) -> Option<String> {
     content
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RarExtractorKind {
+    SevenZip,
+    Unrar,
+}
+
+pub fn find_cross_platform_rar_extractor() -> Option<(PathBuf, RarExtractorKind)> {
+    let candidates = [
+        ("7zz", RarExtractorKind::SevenZip),
+        ("7z", RarExtractorKind::SevenZip),
+        ("7za", RarExtractorKind::SevenZip),
+        ("unrar", RarExtractorKind::Unrar),
+    ];
+
+    for (bin, kind) in candidates {
+        let mut cmd = std::process::Command::new(bin);
+        cmd.arg("--help");
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+        if let Ok(output) = cmd.output() {
+            if output.status.success() || !output.stdout.is_empty() || !output.stderr.is_empty() {
+                return Some((PathBuf::from(bin), kind));
+            }
+        }
+    }
+
+    #[cfg(target_os = "windows")]
+    {
+        let win_paths = [
+            (r"C:\Program Files\7-Zip\7z.exe", RarExtractorKind::SevenZip),
+            (r"C:\Program Files (x86)\7-Zip\7z.exe", RarExtractorKind::SevenZip),
+            (r"C:\Program Files\WinRAR\UnRAR.exe", RarExtractorKind::Unrar),
+            (r"C:\Program Files\WinRAR\WinRAR.exe", RarExtractorKind::SevenZip),
+        ];
+        for (p, kind) in win_paths {
+            let path = PathBuf::from(p);
+            if path.is_file() {
+                return Some((path, kind));
+            }
+        }
+    }
+
+    #[cfg(any(target_os = "linux", target_os = "macos"))]
+    {
+        let unix_paths = [
+            ("/usr/bin/7zz", RarExtractorKind::SevenZip),
+            ("/usr/bin/7z", RarExtractorKind::SevenZip),
+            ("/usr/bin/unrar", RarExtractorKind::Unrar),
+            ("/usr/local/bin/7zz", RarExtractorKind::SevenZip),
+            ("/usr/local/bin/7z", RarExtractorKind::SevenZip),
+            ("/usr/local/bin/unrar", RarExtractorKind::Unrar),
+            ("/opt/homebrew/bin/7zz", RarExtractorKind::SevenZip),
+            ("/opt/homebrew/bin/7z", RarExtractorKind::SevenZip),
+            ("/opt/homebrew/bin/unrar", RarExtractorKind::Unrar),
+        ];
+        for (p, kind) in unix_paths {
+            let path = PathBuf::from(p);
+            if path.is_file() {
+                return Some((path, kind));
+            }
+        }
+    }
+
+    None
+}
+
+pub fn extract_rar_with_fallback(path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
+    if let Some((extractor, kind)) = find_cross_platform_rar_extractor() {
+        let mut cmd = std::process::Command::new(&extractor);
+        match kind {
+            RarExtractorKind::SevenZip => {
+                cmd.args(&[
+                    "x",
+                    "-y",
+                    &format!("-o{}", temp_dir.to_string_lossy()),
+                    path,
+                ]);
+            }
+            RarExtractorKind::Unrar => {
+                let out_dir = format!("{}/", temp_dir.to_string_lossy().trim_end_matches('/'));
+                cmd.args(&["x", "-y", "-idq", path, &out_dir]);
+            }
+        }
+
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::process::CommandExt;
+            cmd.creation_flags(0x08000000);
+        }
+
+        let output = cmd.output().map_err(|e| format!("Failed to run {:?}: {}", extractor, e))?;
+        if output.status.success() {
+            return Ok(temp_dir.to_path_buf());
+        } else {
+            let err = String::from_utf8_lossy(&output.stderr);
+            return Err(format!("RAR extraction fallback failed with {:?}: {}", extractor, err.trim()));
+        }
+    }
+
+    Err("RAR extraction failed: 'tar' is not available and no external extractor (7-Zip, UnRAR) was found on the system.".to_string())
+}
+
 pub fn extract_rar_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
     fs::create_dir_all(temp_dir).map_err(|e| format!("Cannot create temp dir: {}", e))?;
     let mut cmd = std::process::Command::new("tar");
@@ -42,12 +147,13 @@ pub fn extract_rar_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, Strin
         cmd.creation_flags(0x08000000);
     }
 
-    let output = cmd.output().map_err(|e| format!("Failed to run tar: {}", e))?;
-    if !output.status.success() {
-        let err = String::from_utf8_lossy(&output.stderr);
-        return Err(format!("RAR extraction failed: {}", err.trim()));
+    if let Ok(output) = cmd.output() {
+        if output.status.success() {
+            return Ok(temp_dir.to_path_buf());
+        }
     }
-    Ok(temp_dir.to_path_buf())
+
+    extract_rar_with_fallback(path, temp_dir)
 }
 
 pub fn extract_zip_to_temp(zip_path: &str, temp_dir: &Path) -> Result<PathBuf, String> {

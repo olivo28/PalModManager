@@ -37,7 +37,7 @@ pub fn scan_pak_mods(
             continue;
         }
 
-        let mod_name = file_stem.trim_end_matches("_P").to_string();
+        let mod_name = file_stem.strip_suffix("_P").unwrap_or(&file_stem).to_string();
         let mod_path = entry.path();
         let install_date = file_install_date(mod_path);
         let mod_path_str = mod_path.to_string_lossy().to_string();

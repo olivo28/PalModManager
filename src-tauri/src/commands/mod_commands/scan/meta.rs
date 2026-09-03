@@ -88,8 +88,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         let swap_json_dir = parent.join("SwapJSON");
                         let alt_swap_json_dir = parent.parent().map(|p| p.join("~mods").join("SwapJSON"));
                         swap_json_dir.join(format!("{}.json", file_stem)).exists()
-                            || swap_json_dir.join(format!("{}.json", file_stem.trim_end_matches("_P"))).exists()
-                            || alt_swap_json_dir.as_ref().map_or(false, |d| d.join(format!("{}.json", file_stem)).exists() || d.join(format!("{}.json", file_stem.trim_end_matches("_P"))).exists())
+                            || swap_json_dir.join(format!("{}.json", file_stem.strip_suffix("_P").unwrap_or(&file_stem))).exists()
+                            || alt_swap_json_dir.as_ref().map_or(false, |d| d.join(format!("{}.json", file_stem)).exists() || d.join(format!("{}.json", file_stem.strip_suffix("_P").unwrap_or(&file_stem))).exists())
                     } else {
                         false
                     };

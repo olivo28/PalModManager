@@ -139,6 +139,7 @@ export interface AppSettings {
   cacheRemoteImages?: boolean;
   folderExpandMode?: 'always_expanded' | 'always_collapsed' | 'remember';
   ue4ssControlMode?: 'enabled_txt' | 'mods_txt' | string | null;
+  ue4ssBuildFlavor?: 'standard' | 'zdev' | string | null;
 }
 
 export interface ModFolder {

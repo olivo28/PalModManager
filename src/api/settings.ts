@@ -49,6 +49,10 @@ export async function setUe4ssControlMode(mode: string): Promise<AppSettings> {
   return invoke('set_ue4ss_control_mode', { mode });
 }
 
+export async function setUe4ssBuildFlavor(flavor: string): Promise<AppSettings> {
+  return invoke('set_ue4ss_build_flavor', { flavor });
+}
+
 export async function setDnsResolver(dnsMode: string): Promise<AppSettings> {
   return invoke('set_dns_resolver', { dnsMode });
 }

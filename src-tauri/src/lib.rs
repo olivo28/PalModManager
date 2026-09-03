@@ -146,6 +146,8 @@ pub fn run() {
             settings_commands::set_dns_resolver,
             settings_commands::set_cache_remote_images,
             settings_commands::set_folder_expand_mode,
+            settings_commands::set_ue4ss_control_mode,
+            settings_commands::set_ue4ss_build_flavor,
             image_proxy::fetch_and_cache_image,
             image_proxy::get_image_cache_size,
             image_proxy::purge_image_cache,

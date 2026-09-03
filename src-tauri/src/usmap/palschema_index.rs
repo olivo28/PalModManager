@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
@@ -178,6 +179,7 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
 
 static PALSCHEMA_FULL_DEFS_CACHE: Mutex<Option<Arc<Vec<PalSchemaDefinition>>>> = Mutex::new(None);
 static PALSCHEMA_CORE_DEFS_CACHE: Mutex<Option<Arc<Vec<PalSchemaDefinition>>>> = Mutex::new(None);
+static PALSCHEMA_TABLE_NAMES_CACHE: Mutex<Option<Arc<HashSet<String>>>> = Mutex::new(None);
 
 /// Clears the in-memory cache to force a re-read from disk (used after GitHub sync).
 pub fn invalidate_palschema_catalog_cache() {
@@ -190,6 +192,74 @@ pub fn invalidate_palschema_catalog_cache() {
     if let Ok(mut cache) = PALSCHEMA_CORE_DEFS_CACHE.lock() {
         *cache = None;
     }
+    if let Ok(mut cache) = PALSCHEMA_TABLE_NAMES_CACHE.lock() {
+        *cache = None;
+    }
+}
+
+/// Returns a cached set of all available official PalSchema DataTable names.
+pub fn get_or_load_palschema_table_names(program_path: &str, game_path: &str) -> Arc<HashSet<String>> {
+    if let Ok(cache) = PALSCHEMA_TABLE_NAMES_CACHE.lock() {
+        if let Some(ref names) = *cache {
+            return Arc::clone(names);
+        }
+    }
+
+    let dir = get_palschema_schemas_dir(program_path, game_path);
+    let mut names = HashSet::new();
+
+    let raw_dir = dir.join("raw");
+    if raw_dir.is_dir() {
+        if let Ok(entries) = fs::read_dir(&raw_dir) {
+            for entry in entries.filter_map(|e| e.ok()) {
+                let p = entry.path();
+                let fname = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                if fname.ends_with(".schema.json") {
+                    let clean = fname.trim_end_matches(".schema.json");
+                    names.insert(clean.to_string());
+                } else if fname.ends_with(".json") {
+                    let clean = fname.trim_end_matches(".json");
+                    names.insert(clean.to_string());
+                }
+            }
+        }
+    }
+
+    // Include high-level domain schema names
+    names.insert("items".to_string());
+    names.insert("pals".to_string());
+    names.insert("buildings".to_string());
+    names.insert("skins".to_string());
+    names.insert("utility".to_string());
+    names.insert("raw".to_string());
+
+    let arc_names = Arc::new(names);
+    if let Ok(mut cache) = PALSCHEMA_TABLE_NAMES_CACHE.lock() {
+        *cache = Some(Arc::clone(&arc_names));
+    }
+    arc_names
+}
+
+/// Fast in-memory check to verify if a table exists in PalSchema schemas.
+pub fn is_valid_palschema_table_name(table_name: &str, program_path: &str, game_path: &str) -> bool {
+    let clean = table_name.trim();
+    if clean.is_empty() {
+        return false;
+    }
+    let table_names = get_or_load_palschema_table_names(program_path, game_path);
+    if table_names.contains(clean) {
+        return true;
+    }
+    for t in table_names.iter() {
+        if t.eq_ignore_ascii_case(clean) {
+            return true;
+        }
+    }
+    // PalSchema text / localization tables (DT_*Text, DT_*TextData)
+    if clean.starts_with("DT_") && (clean.ends_with("Text") || clean.ends_with("TextData")) {
+        return true;
+    }
+    false
 }
 
 /// Loads the schemas formatted as definitions for Monaco Editor registration.
@@ -225,7 +295,7 @@ pub fn load_palschema_definitions_for_monaco(
     let enums_path = dir.join("enums.schema.json");
     if let Ok(content) = fs::read_to_string(&enums_path) {
         defs.push(PalSchemaDefinition {
-            uri: "http://palschema/enums.schema.json".to_string(),
+            uri: "palschema://schemas/enums.schema.json".to_string(),
             file_match: vec![],
             schema_json: content,
         });
@@ -233,32 +303,60 @@ pub fn load_palschema_definitions_for_monaco(
 
     // 2. High-level domain schemas
     let domain_mappings = [
-        ("items.schema.json", vec!["*items*.json".to_string(), "*items*.jsonc".to_string(), "**/items/*.json".to_string(), "**/items/*.jsonc".to_string()]),
-        ("pals.schema.json", vec!["*pals*.json".to_string(), "*pals*.jsonc".to_string(), "**/pals/*.json".to_string(), "**/pals/*.jsonc".to_string()]),
-        ("buildings.schema.json", vec!["*buildings*.json".to_string(), "*buildings*.jsonc".to_string(), "**/buildings/*.json".to_string()]),
-        ("skins.schema.json", vec!["*skins*.json".to_string(), "*skins*.jsonc".to_string(), "**/skins/*.json".to_string()]),
-        ("utility.schema.json", vec!["*utility*.json".to_string(), "*utility*.jsonc".to_string()]),
+        ("items.schema.json", vec![
+            "**/*items*.json".to_string(), "**/*items*.jsonc".to_string(),
+            "**/*item*.json".to_string(), "**/*item*.jsonc".to_string(),
+            "**/items/*.json".to_string(), "**/items/*.jsonc".to_string(),
+        ]),
+        ("pals.schema.json", vec![
+            "**/*pals*.json".to_string(), "**/*pals*.jsonc".to_string(),
+            "**/*pal*.json".to_string(), "**/*pal*.jsonc".to_string(),
+            "**/pals/*.json".to_string(), "**/pals/*.jsonc".to_string(),
+        ]),
+        ("buildings.schema.json", vec![
+            "**/*buildings*.json".to_string(), "**/*buildings*.jsonc".to_string(),
+            "**/*building*.json".to_string(), "**/*building*.jsonc".to_string(),
+            "**/buildings/*.json".to_string(), "**/buildings/*.jsonc".to_string(),
+        ]),
+        ("skins.schema.json", vec![
+            "**/*skins*.json".to_string(), "**/*skins*.jsonc".to_string(),
+            "**/*skin*.json".to_string(), "**/*skin*.jsonc".to_string(),
+            "**/skins/*.json".to_string(), "**/skins/*.jsonc".to_string(),
+        ]),
+        ("utility.schema.json", vec![
+            "**/*utility*.json".to_string(), "**/*utility*.jsonc".to_string(),
+            "**/*utilities*.json".to_string(), "**/*utilities*.jsonc".to_string(),
+        ]),
         ("raw.schema.json", vec![
-            "*DT_*.json".to_string(),
-            "*DT_*.jsonc".to_string(),
+            "**/*DT_*.json".to_string(),
+            "**/*DT_*.jsonc".to_string(),
             "**/raw/*.json".to_string(),
             "**/raw/*.jsonc".to_string(),
-            "*raw*.json".to_string(),
-            "*raw*.jsonc".to_string(),
-            "*config*.json".to_string(),
-            "*config*.jsonc".to_string(),
-            "*.palschema.json".to_string(),
-            "*.palschema.jsonc".to_string(),
+            "**/*raw*.json".to_string(),
+            "**/*raw*.jsonc".to_string(),
+            "**/*config*.json".to_string(),
+            "**/*config*.jsonc".to_string(),
+            "**/*.palschema.json".to_string(),
+            "**/*.palschema.jsonc".to_string(),
         ]),
     ];
 
     for (fname, matches) in domain_mappings {
         let p = dir.join(fname);
         if let Ok(content) = fs::read_to_string(&p) {
+            let enriched = if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(obj) = val.as_object_mut() {
+                    obj.insert("allowComments".to_string(), serde_json::Value::Bool(true));
+                    obj.insert("allowTrailingCommas".to_string(), serde_json::Value::Bool(true));
+                }
+                serde_json::to_string(&val).unwrap_or(content)
+            } else {
+                content
+            };
             defs.push(PalSchemaDefinition {
-                uri: format!("http://palschema/{}", fname),
+                uri: format!("palschema://schemas/{}", fname),
                 file_match: matches,
-                schema_json: content,
+                schema_json: enriched,
             });
         }
     }
@@ -281,14 +379,44 @@ pub fn load_palschema_definitions_for_monaco(
                 if path.extension().and_then(|x| x.to_str()) == Some("json") {
                     let file_name = path.file_name().unwrap().to_string_lossy().to_string();
                     if let Ok(content) = fs::read_to_string(&path) {
+                        let enriched = enrich_table_schema_content(&content, &file_name, program_path);
                         defs.push(PalSchemaDefinition {
-                            uri: format!("http://palschema/raw/{}", file_name),
+                            uri: format!("palschema://schemas/raw/{}", file_name),
                             file_match: vec![],
-                            schema_json: content,
+                            schema_json: enriched,
                         });
                     }
                 }
             }
+        }
+    }
+
+    // 4. Synthetic Blueprints Schema (Dynamic in-memory reflection)
+    let bp_index = crate::usmap::get_or_load_blueprint_index(program_path);
+    if let Some(ref bpi) = bp_index {
+        if !bpi.blueprints.is_empty() {
+            let mut class_names: Vec<String> = bpi.blueprints.values().map(|b| b.class_name.clone()).collect();
+            class_names.sort();
+            let bp_schema = serde_json::json!({
+                "$schema": "http://json-schema.org/draft-07/schema#",
+                "title": "Palworld Blueprints Configuration Schema",
+                "type": "object",
+                "allowComments": true,
+                "allowTrailingCommas": true,
+                "propertyNames": {
+                    "enum": class_names
+                }
+            });
+            defs.push(PalSchemaDefinition {
+                uri: "palschema://schemas/blueprints.schema.json".to_string(),
+                file_match: vec![
+                    "**/*blueprint*.json".to_string(),
+                    "**/*blueprint*.jsonc".to_string(),
+                    "**/blueprints/*.json".to_string(),
+                    "**/blueprints/*.jsonc".to_string(),
+                ],
+                schema_json: bp_schema.to_string(),
+            });
         }
     }
 
@@ -297,6 +425,38 @@ pub fn load_palschema_definitions_for_monaco(
         *cache = Some(Arc::clone(&arc));
     }
     arc
+}
+
+fn enrich_table_schema_content(content: &str, table_name_hint: &str, program_path: &str) -> String {
+    let dt_index = crate::usmap::get_or_load_datatable_index(program_path);
+    let mut table_name = table_name_hint.trim_end_matches(".schema.json").to_string();
+    if table_name.ends_with(".json") {
+        table_name = table_name.trim_end_matches(".json").to_string();
+    }
+
+    let rows: Option<Vec<String>> = if let Some(ref dti) = dt_index {
+        dti.find_table(&table_name).map(|t| t.rows.clone())
+    } else {
+        None
+    };
+
+    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(content) {
+        if let Some(obj) = val.as_object_mut() {
+            obj.insert("allowComments".to_string(), serde_json::Value::Bool(true));
+            obj.insert("allowTrailingCommas".to_string(), serde_json::Value::Bool(true));
+
+            if let Some(row_list) = rows {
+                if !row_list.is_empty() {
+                    let mut prop_names = serde_json::Map::new();
+                    prop_names.insert("enum".to_string(), serde_json::json!(row_list));
+                    obj.insert("propertyNames".to_string(), serde_json::Value::Object(prop_names));
+                }
+            }
+        }
+        serde_json::to_string(&val).unwrap_or_else(|_| content.to_string())
+    } else {
+        content.to_string()
+    }
 }
 
 /// Loads a single specific raw DataTable schema on-demand (e.g. for "DT_ItemDataTable").
@@ -322,11 +482,12 @@ pub fn load_single_raw_palschema_definition(
     let p = dir.join("raw").join(&file_name);
     if p.exists() {
         if let Ok(content) = fs::read_to_string(&p) {
-            let match_pattern = format!("*{}*", clean_table.trim_end_matches(".schema.json"));
+            let enriched = enrich_table_schema_content(&content, &file_name, program_path);
+            let match_pattern = format!("**/*{}*", clean_table.trim_end_matches(".schema.json"));
             return Some(PalSchemaDefinition {
-                uri: format!("http://palschema/raw/{}", file_name),
+                uri: format!("palschema://schemas/raw/{}", file_name),
                 file_match: vec![format!("{}.json", match_pattern), format!("{}.jsonc", match_pattern)],
-                schema_json: content,
+                schema_json: enriched,
             });
         }
     }

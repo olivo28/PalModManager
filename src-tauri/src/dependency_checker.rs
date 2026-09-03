@@ -398,46 +398,60 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
 /// Returns a tuple: (tag_name, iso_date_string) for the latest UE4SS release.
 /// tag_name is what we show to the user; iso_date is used for update comparison.
 pub async fn check_ue4ss_latest() -> Result<(String, String), String> {
+    check_ue4ss_latest_with_flavor(None).await
+}
+
+pub async fn check_ue4ss_latest_with_flavor(flavor: Option<&str>) -> Result<(String, String), String> {
     let client = reqwest::Client::builder()
         .user_agent(&format!("PalModManager/{}", env!("CARGO_PKG_VERSION")))
         .build()
         .map_err(|e| format!("Failed to create client: {}", e))?;
 
-    let default_tag = "experimental-palworld".to_string();
+    let is_zdev = flavor.map_or(false, |f| f.eq_ignore_ascii_case("zdev"));
+    let default_tag = "latest".to_string();
 
-    // Priority 1: GitHub API (inspects asset upload/update timestamps)
-    let url = "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld";
-    if let Ok(resp) = client.get(url).send().await {
-        if resp.status().is_success() {
-            if let Ok(json) = resp.json::<serde_json::Value>().await {
-                let api_tag = json["tag_name"].as_str().unwrap_or(&default_tag).to_string();
-                let mut latest_asset_dt: Option<chrono::DateTime<chrono::Utc>> = None;
+    // Priority 1: GitHub API (inspects latest release endpoint, with fallback to tag)
+    let api_urls = [
+        "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/latest",
+        "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld",
+    ];
 
-                if let Some(assets) = json["assets"].as_array() {
-                    for asset in assets {
-                        let name = asset["name"].as_str().unwrap_or("");
-                        if name.starts_with("UE4SS-Palworld") {
-                            if let Some(updated) = asset["updated_at"].as_str().or_else(|| asset["created_at"].as_str()) {
-                                if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
-                                    let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
-                                    match latest_asset_dt {
-                                        Some(cur) if dt_utc > cur => { latest_asset_dt = Some(dt_utc); }
-                                        None => { latest_asset_dt = Some(dt_utc); }
-                                        _ => {}
+    for url in api_urls {
+        if let Ok(resp) = client.get(url).send().await {
+            if resp.status().is_success() {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    let api_tag = json["tag_name"].as_str().unwrap_or(&default_tag).to_string();
+                    let mut latest_asset_dt: Option<chrono::DateTime<chrono::Utc>> = None;
+
+                    if let Some(assets) = json["assets"].as_array() {
+                        for asset in assets {
+                            let name = asset["name"].as_str().unwrap_or("");
+                            if name.starts_with("UE4SS-Palworld") && name.ends_with(".zip") && !name.contains("symbols") {
+                                let asset_is_zdev = name.contains("zDev");
+                                if is_zdev == asset_is_zdev {
+                                    if let Some(updated) = asset["updated_at"].as_str().or_else(|| asset["created_at"].as_str()) {
+                                        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
+                                            let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
+                                            match latest_asset_dt {
+                                                Some(cur) if dt_utc > cur => { latest_asset_dt = Some(dt_utc); }
+                                                None => { latest_asset_dt = Some(dt_utc); }
+                                                _ => {}
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
-                }
 
-                if let Some(dt) = latest_asset_dt {
-                    return Ok((api_tag, dt.format("%d.%m.%Y").to_string()));
-                }
-
-                if let Some(published) = json["published_at"].as_str() {
-                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(published) {
+                    if let Some(dt) = latest_asset_dt {
                         return Ok((api_tag, dt.format("%d.%m.%Y").to_string()));
+                    }
+
+                    if let Some(published) = json["published_at"].as_str() {
+                        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(published) {
+                            return Ok((api_tag, dt.format("%d.%m.%Y").to_string()));
+                        }
                     }
                 }
             }
@@ -563,7 +577,7 @@ mod tests {
             let result = check_ue4ss_latest().await;
             assert!(result.is_ok(), "check_ue4ss_latest failed: {:?}", result.err());
             let (tag, date_str) = result.unwrap();
-            assert_eq!(tag, "experimental-palworld");
+            assert!(!tag.is_empty(), "Expected non-empty tag for UE4SS, got: {}", tag);
             assert!(date_str.ends_with("2026"), "Expected 2026 date for UE4SS, got: {}", date_str);
         });
     }

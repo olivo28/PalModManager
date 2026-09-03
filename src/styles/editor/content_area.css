@@ -294,22 +294,60 @@
   display: none !important;
 }
 
-/* Monaco Suggest Widget - Clean Sizing & Visual Polish */
+/* Monaco Suggest Widget & Details - Clean VS Code Native Aesthetic */
 .monaco-editor .suggest-widget {
-  min-width: 560px !important;
-  max-width: 860px !important;
-  border: 1px solid rgba(0, 210, 255, 0.4) !important;
-  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.8) !important;
-  border-radius: 6px !important;
-  background: #181a20 !important;
+  border: 1px solid #3c3c3c !important;
+  background: #252526 !important;
+  background-color: #252526 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+}
+
+.monaco-editor .suggest-widget {
+  min-width: 480px !important;
+  max-width: 720px !important;
+}
+
+.monaco-editor .suggest-details-container {
+  z-index: 50 !important;
+  min-width: 480px !important;
+  max-width: 680px !important;
+}
+
+.monaco-editor .suggest-details,
+.monaco-editor.vs-dark .suggest-details {
+  border: 1px solid #3c3c3c !important;
+  background: #252526 !important;
+  background-color: #252526 !important;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
+  border-radius: 4px !important;
+  overflow: hidden !important;
+  min-width: 480px !important;
+  max-width: 680px !important;
+  min-height: 180px !important;
+  display: flex !important;
+  flex-direction: column !important;
+  box-sizing: border-box !important;
+}
+
+.monaco-editor .suggest-details > .monaco-scrollable-element {
+  height: 100% !important;
 }
 
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row {
   height: 24px !important;
   line-height: 24px !important;
+  border-radius: 2px !important;
+  margin: 1px 4px !important;
 }
 
-/* Give priority to the class/property name being inserted */
+.monaco-editor .suggest-widget .monaco-list .monaco-list-row.focused {
+  background-color: #04395e !important;
+  color: #ffffff !important;
+  border: none !important;
+}
+
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row .contents .main {
   display: flex !important;
   align-items: center !important;
@@ -325,9 +363,10 @@
   max-width: none !important;
   white-space: nowrap !important;
   overflow: visible !important;
+  font-size: 12.5px !important;
+  font-weight: normal !important;
 }
 
-/* Detail path (/Game/Pal/...) yields and takes only remaining space */
 .monaco-editor .suggest-widget .monaco-list .monaco-list-row .contents .main .right {
   flex: 0 1 auto !important;
   max-width: 45% !important;
@@ -336,15 +375,94 @@
   white-space: nowrap !important;
   text-align: right !important;
   margin-left: auto !important;
-  padding-left: 16px !important;
-  color: #7a889b !important;
+  padding-left: 12px !important;
+  color: #858585 !important;
   font-size: 11px !important;
 }
 
-.monaco-editor .suggest-widget .details {
-  border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
-  min-width: 300px !important;
-  max-width: 480px !important;
+/* Details Flyout - VS Code Natural Polish */
+.monaco-editor .suggest-details > .monaco-scrollable-element > .body {
+  padding: 12px 16px !important;
+  background: #252526 !important;
+  min-height: 180px !important;
+  box-sizing: border-box !important;
+}
+
+.monaco-editor .suggest-details > .monaco-scrollable-element > .body > .header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  padding: 0 0 6px 0 !important;
+  margin-bottom: 8px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+}
+
+.monaco-editor .suggest-details > .monaco-scrollable-element > .body > .header > .type {
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+  font-size: 11px !important;
+  color: #858585 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  opacity: 1 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+}
+
+.monaco-editor .suggest-details > .monaco-scrollable-element > .body > .header > .codicon-close {
+  color: #858585 !important;
+  opacity: 0.7 !important;
+  transition: opacity 0.15s ease !important;
+  font-size: 14px !important;
+  cursor: pointer !important;
+}
+
+.monaco-editor .suggest-details > .monaco-scrollable-element > .body > .header > .codicon-close:hover {
+  color: #ffffff !important;
+  opacity: 1 !important;
+}
+
+.monaco-editor .suggest-details > .monaco-scrollable-element > .body > .docs.markdown-docs {
+  font-size: 12px !important;
+  line-height: 1.5 !important;
+  color: #cccccc !important;
+  padding: 0 !important;
+}
+
+.monaco-editor .suggest-details .monaco-tokenized-source,
+.monaco-editor .suggest-details pre {
+  background: #1e1e1e !important;
+  border: 1px solid #333333 !important;
+  border-left: 1px solid #333333 !important;
+  border-radius: 3px !important;
+  padding: 6px 10px !important;
+  margin: 0 0 8px 0 !important;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Consolas', monospace !important;
+  font-size: 12px !important;
+  color: #d4d4d4 !important;
+  box-shadow: none !important;
+}
+
+.monaco-editor .suggest-details p {
+  margin: 0 0 4px 0 !important;
+  line-height: 1.5 !important;
+  color: #9d9d9d !important;
+}
+
+.monaco-editor .suggest-details strong {
+  color: #cccccc !important;
+  font-weight: 600 !important;
+}
+
+.monaco-editor .suggest-details code,
+.monaco-editor .suggest-details p code,
+.monaco-editor.vs-dark .suggest-details code {
+  background: transparent !important;
+  border: none !important;
+  color: #d4d4d4 !important;
+  padding: 0 !important;
+  font-family: 'JetBrains Mono', 'Consolas', monospace !important;
+  font-size: 12px !important;
 }
 
 

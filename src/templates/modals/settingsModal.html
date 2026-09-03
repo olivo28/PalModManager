@@ -168,6 +168,19 @@
 
             <div class="settings-section-card">
               <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.ue4ss_build_flavor_title">UE4SS Release Channel / Build Flavor</span>
+              </div>
+              <div class="settings-hint" data-i18n="settings.ue4ss_build_flavor_hint">Choose which UE4SS build package to install and update from Okaetsu's official releases:</div>
+              <div class="settings-path-row" style="margin-top: 6px;">
+                <select id="settings-ue4ss-flavor-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                  <option value="standard" data-i18n="settings.ue4ss_flavor_standard">Standard Build (Recommended for playing mods)</option>
+                  <option value="zdev" data-i18n="settings.ue4ss_flavor_zdev">Developer Build (zDev / Symbols — For mod creators)</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="settings-section-card">
+              <div class="settings-card-header">
                 <span class="settings-card-title" data-i18n="settings.flo_title">Force Load Order (Experimental)</span>
               </div>
               <div class="settings-hint" style="margin-bottom:6px;" data-i18n="settings.flo_hint">Select which load order system components you want to enforce:</div>
@@ -280,15 +293,15 @@
               <div class="settings-hint font-size-11" data-i18n="settings.usmap_hint">Structural schema mappings used by PalModManager for deep cooked asset inspection, DataTable decoding, and mod compatibility verification. Synced directly from official GitHub repository.</div>
               
               <div id="settings-usmap-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
-                <div><strong>Game Version:</strong> <span id="settings-usmap-game-ver">Detecting...</span></div>
-                <div><strong>Active Mapping:</strong> <span id="settings-usmap-active-file">Palworld.usmap</span></div>
-                <div><strong>Checksum (SHA-256):</strong> <span id="settings-usmap-hash" style="font-family:monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-usmap-game-ver">Detecting...</span></div>
+                <div><strong style="color:var(--text-primary);">Active Mapping:</strong> <span id="settings-usmap-active-file">Palworld.usmap</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-usmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
               <div style="display:flex; gap:8px; margin-top:8px;">
                 <button type="button" id="btn-sync-usmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
                   <span id="btn-sync-usmap-icon">🔄</span>
-                  <span data-i18n="settings.btn_sync_usmap">Sync Mappings Now</span>
+                  <span data-i18n="settings.btn_sync_usmap">Sync Mappings from GitHub</span>
                 </button>
               </div>
             </div>
@@ -299,21 +312,21 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.sdk_title">C++ SDK Headers (Pal.hpp / CXXHeaderDump)</span>
                 </div>
-                <span id="settings-sdk-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-sdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.sdk_hint">C++ header definitions (Pal.hpp, Engine.hpp, BP_*.hpp) used by the Hook Diagnostic Engine to validate exact UE4SS functions, RPCs, and delegates with zero false positives.</div>
               
               <div id="settings-sdk-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
-                <div><strong>Source:</strong> <span id="settings-sdk-source">Detecting...</span></div>
-                <div><strong>Indexed Classes:</strong> <span id="settings-sdk-classes-count">0</span></div>
-                <div><strong>Indexed Functions & Delegates:</strong> <span id="settings-sdk-funcs-count">0</span></div>
-                <div><strong>Location:</strong> <span id="settings-sdk-path" style="font-family:monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Source:</strong> <span id="settings-sdk-source">Detecting...</span></div>
+                <div><strong style="color:var(--text-primary);">Indexed Classes:</strong> <span id="settings-sdk-classes-count">0</span></div>
+                <div><strong style="color:var(--text-primary);">Indexed Functions & Delegates:</strong> <span id="settings-sdk-funcs-count">0</span></div>
+                <div><strong style="color:var(--text-primary);">Location:</strong> <span id="settings-sdk-path" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
               <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
                 <button type="button" id="btn-sync-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
                   <span id="btn-sync-sdk-icon">🔄</span>
-                  <span data-i18n="settings.btn_sync_sdk">Sync SDK from Repo</span>
+                  <span data-i18n="settings.btn_sync_sdk">Sync SDK from GitHub</span>
                 </button>
                 <button type="button" id="btn-import-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
                   <span>📂</span>
@@ -329,15 +342,15 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.blueprints_title">Live Game Blueprints Catalog</span>
                 </div>
-                <span id="settings-blueprints-badge" class="badge" style="background:rgba(249,115,22,0.15); color:#f97316; border:1px solid rgba(249,115,22,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-blueprints-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.blueprints_hint">Extracted game blueprint classes and cooked assets from Pal-Windows.pak used for rich IntelliSense and instant mod overriding. Synced from official GitHub repository.</div>
               
               <div id="settings-blueprints-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
-                <div><strong>Game Version:</strong> <span id="settings-blueprints-game-ver">Detecting...</span></div>
-                <div><strong>Indexed Blueprints:</strong> <span id="settings-blueprints-count">0</span></div>
-                <div><strong>Active Catalog:</strong> <span id="settings-blueprints-active-file">Palworld_Blueprints_24575825.json</span></div>
-                <div><strong>Checksum (SHA-256):</strong> <span id="settings-blueprints-hash" style="font-family:monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-blueprints-game-ver">Detecting...</span></div>
+                <div><strong style="color:var(--text-primary);">Indexed Blueprints:</strong> <span id="settings-blueprints-count">0</span></div>
+                <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-blueprints-active-file">Palworld_Blueprints_24575825.json</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-blueprints-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
               <div style="display:flex; gap:8px; margin-top:8px;">
@@ -354,14 +367,14 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.datatables_title">PalSchema DataTables Catalog</span>
                 </div>
-                <span id="settings-datatables-badge" class="badge" style="background:rgba(168,85,247,0.15); color:#a855f7; border:1px solid rgba(168,85,247,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-datatables-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.datatables_hint">Decoded game row definitions (ItemData, PalData, CharacterData...) and schema templates used for DataTable autocompletion and conflict detection. Synced from official GitHub repository.</div>
               
               <div id="settings-datatables-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
-                <div><strong>Indexed DataTables:</strong> <span id="settings-datatables-count">0</span></div>
-                <div><strong>Total Game Rows:</strong> <span id="settings-datatables-rows-count">0</span></div>
-                <div><strong>Active Catalog:</strong> <span id="settings-datatables-active-file">dt_index.json</span></div>
+                <div><strong style="color:var(--text-primary);">Indexed DataTables:</strong> <span id="settings-datatables-count">0</span></div>
+                <div><strong style="color:var(--text-primary);">Total Game Rows:</strong> <span id="settings-datatables-rows-count">0</span></div>
+                <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-datatables-active-file">dt_index.json</span></div>
               </div>
 
               <div style="display:flex; gap:8px; margin-top:8px;">
@@ -378,16 +391,16 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.schemas_title">PalSchema JSON Schemas Specification</span>
                 </div>
-                <span id="settings-schemas-badge" class="badge" style="background:rgba(14,165,233,0.15); color:#0ea5e9; border:1px solid rgba(14,165,233,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-schemas-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.schemas_hint">Formal JSON Schema (Draft-07) specifications defining all 474 DataTables, Unreal property types, and high-level items/pals/buildings/skins schemas. Powers deep IDE IntelliSense, autocomplete, and real-time linter validation.</div>
               
               <div id="settings-schemas-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
-                <div><strong>Specification Version:</strong> <span id="settings-schemas-version">v0.6.6</span></div>
-                <div><strong>DataTable Schemas:</strong> <span id="settings-schemas-raw-count">474</span></div>
-                <div><strong>Domain Models:</strong> <span id="settings-schemas-domain-count">5</span> (Items, Pals, Buildings, Skins, Utility)</div>
-                <div><strong>Engine Enums:</strong> <span id="settings-schemas-enums">Included (enums.schema.json)</span></div>
-                <div><strong>Active Source:</strong> <span id="settings-schemas-source">Detecting...</span></div>
+                <div><strong style="color:var(--text-primary);">Specification Version:</strong> <span id="settings-schemas-version">v0.6.6</span></div>
+                <div><strong style="color:var(--text-primary);">DataTable Schemas:</strong> <span id="settings-schemas-raw-count">474</span></div>
+                <div><strong style="color:var(--text-primary);">Domain Models:</strong> <span id="settings-schemas-domain-count">5 models (Items, Pals, Buildings, Skins, Utility)</span></div>
+                <div><strong style="color:var(--text-primary);">Engine Enums:</strong> <span id="settings-schemas-enums">Included (enums.schema.json)</span></div>
+                <div><strong style="color:var(--text-primary);">Active Source:</strong> <span id="settings-schemas-source">Detecting...</span></div>
               </div>
 
               <!-- Special Thanks to Okaetsu Acknowledgment Box -->
@@ -395,7 +408,9 @@
                 <div style="display:flex; align-items:center; gap:8px;">
                   <span style="font-size:16px;">✨</span>
                   <div style="font-size:11px; line-height:1.4; color:var(--text-primary);">
-                    <span data-i18n="settings.schemas_okaetsu_credit">Special thanks to <strong>Okaetsu</strong> for creating and maintaining the official PalSchema specification schemas.</span>
+                    <span data-i18n="settings.schemas_okaetsu_credit_prefix">Special thanks to</span>
+                    <strong style="color:var(--text-primary);">Okaetsu</strong>
+                    <span data-i18n="settings.schemas_okaetsu_credit_suffix">for creating and maintaining the official PalSchema specification schemas.</span>
                   </div>
                 </div>
                 <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:10px; padding:4px 8px; white-space:nowrap;" data-i18n="settings.btn_view_source">View Source ↗</button>
@@ -437,7 +452,7 @@
                     <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
                     <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
                   </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/latest" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
                 </div>
 
                 <!-- PalSchema -->

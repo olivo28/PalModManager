@@ -314,9 +314,13 @@ pub async fn apply_palschema_zip_bytes(
 #[tauri::command]
 pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> Result<String, String> {
     crate::logger::log("install_ue4ss: Starting UE4SS installation process...");
-    let (game_path, program_path) = {
+    let (game_path, program_path, flavor) = {
         let locked = state.data.lock().map_err(|e| e.to_string())?;
-        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
+        (
+            locked.settings.game_path.clone(),
+            locked.settings.program_path.clone(),
+            locked.settings.ue4ss_build_flavor.clone().unwrap_or_else(|| "standard".to_string()),
+        )
     };
     if game_path.is_empty() {
         crate::logger::log("install_ue4ss: Error - Game path not configured.");
@@ -336,37 +340,52 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
+    let is_zdev = flavor.eq_ignore_ascii_case("zdev");
     let mut asset_url = String::new();
     let mut publish_date = String::new();
+    let mut release_tag = String::new();
     let mut api_success = false;
 
-    let release_url = "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld";
-    crate::logger::log(&format!("install_ue4ss: Fetching GitHub API release from {}", release_url));
-    if let Ok(resp) = client.get(release_url).send().await {
-        if resp.status().is_success() {
-            if let Ok(json) = resp.json::<serde_json::Value>().await {
-                if let Some(assets) = json["assets"].as_array() {
-                    if let Some(asset) = assets.iter().find(|a| {
-                        a["name"].as_str().map_or(false, |n| n.ends_with(".zip") && !n.contains("symbols"))
-                    }) {
-                        if let Some(url) = asset["browser_download_url"].as_str() {
-                            asset_url = url.to_string();
-                            let mut latest_asset_dt: Option<chrono::DateTime<chrono::FixedOffset>> = None;
-                            for a in assets {
-                                if let Some(updated) = a["updated_at"].as_str() {
-                                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
-                                        match latest_asset_dt {
-                                            Some(cur) if dt > cur => latest_asset_dt = Some(dt),
-                                            None => latest_asset_dt = Some(dt),
-                                            _ => {}
+    let api_urls = [
+        "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/latest",
+        "https://api.github.com/repos/Okaetsu/RE-UE4SS/releases/tags/experimental-palworld",
+    ];
+
+    for release_url in api_urls {
+        crate::logger::log(&format!("install_ue4ss: Fetching GitHub API release from {}", release_url));
+        if let Ok(resp) = client.get(release_url).send().await {
+            if resp.status().is_success() {
+                if let Ok(json) = resp.json::<serde_json::Value>().await {
+                    release_tag = json["tag_name"].as_str().unwrap_or("").to_string();
+                    if let Some(assets) = json["assets"].as_array() {
+                        if let Some(asset) = assets.iter().find(|a| {
+                            let name = a["name"].as_str().unwrap_or("");
+                            if !name.ends_with(".zip") || name.contains("symbols") {
+                                return false;
+                            }
+                            let asset_is_zdev = name.contains("zDev");
+                            is_zdev == asset_is_zdev
+                        }) {
+                            if let Some(url) = asset["browser_download_url"].as_str() {
+                                asset_url = url.to_string();
+                                let mut latest_asset_dt: Option<chrono::DateTime<chrono::FixedOffset>> = None;
+                                for a in assets {
+                                    if let Some(updated) = a["updated_at"].as_str() {
+                                        if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(updated) {
+                                            match latest_asset_dt {
+                                                Some(cur) if dt > cur => latest_asset_dt = Some(dt),
+                                                None => latest_asset_dt = Some(dt),
+                                                _ => {}
+                                            }
                                         }
                                     }
                                 }
+                                if let Some(dt) = latest_asset_dt {
+                                    publish_date = dt.format("%d.%m.%Y").to_string();
+                                }
+                                api_success = true;
+                                break;
                             }
-                            if let Some(dt) = latest_asset_dt {
-                                publish_date = dt.format("%d.%m.%Y").to_string();
-                            }
-                            api_success = true;
                         }
                     }
                 }
@@ -376,42 +395,54 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
 
     if !api_success {
         crate::logger::log("install_ue4ss: GitHub API rate limited or failed. Using HTML fallback...");
-        if let Ok(r) = client.get("https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld").send().await {
-            if let Ok(html) = r.text().await {
-                let mut search_pos = 0;
-                while let Some(pos) = html[search_pos..].find("/Okaetsu/RE-UE4SS/releases/download/experimental-palworld/") {
-                    let start = search_pos + pos;
-                    if let Some(end_quote) = html[start..].find('"') {
-                        let url_path = &html[start..start + end_quote];
-                        search_pos = start + end_quote;
-                        let lower = url_path.to_lowercase();
-                        if lower.ends_with(".zip") && !lower.contains("symbols") {
-                            asset_url = format!("https://github.com{}", url_path);
-                            let mut latest_html_dt: Option<chrono::DateTime<chrono::Utc>> = None;
-                            let mut cursor = 0;
-                            while let Some(pos) = html[cursor..].find("datetime=\"") {
-                                let time_start = cursor + pos + 10;
-                                if let Some(len) = html[time_start..].find('"') {
-                                    let dt_raw = &html[time_start..time_start + len];
-                                    if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
-                                        let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
-                                        match latest_html_dt {
-                                            Some(cur) if dt_utc > cur => { latest_html_dt = Some(dt_utc); }
-                                            None => { latest_html_dt = Some(dt_utc); }
-                                            _ => {}
+        let html_urls = [
+            "https://github.com/Okaetsu/RE-UE4SS/releases/latest",
+            "https://github.com/Okaetsu/RE-UE4SS/releases/tag/experimental-palworld",
+        ];
+        for html_url in html_urls {
+            if let Ok(r) = client.get(html_url).send().await {
+                if let Ok(html) = r.text().await {
+                    let mut search_pos = 0;
+                    while let Some(pos) = html[search_pos..].find("/Okaetsu/RE-UE4SS/releases/download/") {
+                        let start = search_pos + pos;
+                        if let Some(end_quote) = html[start..].find('"') {
+                            let url_path = &html[start..start + end_quote];
+                            search_pos = start + end_quote;
+                            let lower = url_path.to_lowercase();
+                            if lower.ends_with(".zip") && !lower.contains("symbols") {
+                                let asset_is_zdev = lower.contains("zdev");
+                                if is_zdev == asset_is_zdev {
+                                    asset_url = format!("https://github.com{}", url_path);
+                                    let mut latest_html_dt: Option<chrono::DateTime<chrono::Utc>> = None;
+                                    let mut cursor = 0;
+                                    while let Some(pos) = html[cursor..].find("datetime=\"") {
+                                        let time_start = cursor + pos + 10;
+                                        if let Some(len) = html[time_start..].find('"') {
+                                            let dt_raw = &html[time_start..time_start + len];
+                                            if let Ok(dt) = chrono::DateTime::parse_from_rfc3339(dt_raw) {
+                                                let dt_utc: chrono::DateTime<chrono::Utc> = dt.into();
+                                                match latest_html_dt {
+                                                    Some(cur) if dt_utc > cur => { latest_html_dt = Some(dt_utc); }
+                                                    None => { latest_html_dt = Some(dt_utc); }
+                                                    _ => {}
+                                                }
+                                            }
+                                            cursor = time_start + len;
+                                        } else {
+                                            break;
                                         }
                                     }
-                                    cursor = time_start + len;
-                                } else {
+                                    if let Some(dt) = latest_html_dt {
+                                        publish_date = dt.format("%d.%m.%Y").to_string();
+                                    }
                                     break;
                                 }
                             }
-                            if let Some(dt) = latest_html_dt {
-                                publish_date = dt.format("%d.%m.%Y").to_string();
-                            }
+                        } else {
                             break;
                         }
-                    } else {
+                    }
+                    if !asset_url.is_empty() {
                         break;
                     }
                 }
@@ -427,6 +458,18 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
         publish_date = chrono::Utc::now().format("%d.%m.%Y").to_string();
     }
 
+    let version_str = if !release_tag.is_empty() {
+        if is_zdev {
+            format!("{}-zDev ({})", release_tag, publish_date)
+        } else {
+            format!("{} ({})", release_tag, publish_date)
+        }
+    } else if is_zdev {
+        format!("{}-zDev", publish_date)
+    } else {
+        publish_date.clone()
+    };
+
     crate::logger::log(&format!("install_ue4ss: Downloading ZIP from {}", asset_url));
     let bytes = client.get(&asset_url)
         .send()
@@ -439,9 +482,9 @@ pub async fn install_ue4ss(force_download: bool, state: State<'_, AppState>) -> 
     let zip_bytes = bytes.to_vec();
 
     // Save into versioned vault
-    let _ = save_to_vault(&program_path, "ue4ss", &publish_date, &zip_bytes);
+    let _ = save_to_vault(&program_path, "ue4ss", &version_str, &zip_bytes);
 
-    apply_ue4ss_zip_bytes(&zip_bytes, &publish_date, &program_path, &game_path, &state).await
+    apply_ue4ss_zip_bytes(&zip_bytes, &version_str, &program_path, &game_path, &state).await
 }
 
 #[tauri::command]

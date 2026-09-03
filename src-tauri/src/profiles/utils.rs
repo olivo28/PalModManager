@@ -230,7 +230,17 @@ fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
     }
 
     let installed_files = if !m.extra_files.is_empty() {
-        Some(m.extra_files.clone())
+        let mut all_paths = Vec::new();
+        let primary = if !m.game_path.is_empty() { &m.game_path } else { &m.disabled_path };
+        if !primary.is_empty() {
+            all_paths.push(primary.clone());
+        }
+        for extra in &m.extra_files {
+            if !all_paths.contains(extra) {
+                all_paths.push(extra.clone());
+            }
+        }
+        Some(all_paths)
     } else if path.is_dir() {
         let mut files = Vec::new();
         for entry in walkdir::WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
@@ -285,9 +295,7 @@ pub fn save_pmm_meta(m: &ModInfo) -> Result<(), String> {
     let _ = save_pmm_meta_path(m, primary_path);
 
     for extra in &m.extra_files {
-        if extra.to_lowercase().ends_with(".pak") {
-            let _ = save_pmm_meta_path(m, extra);
-        }
+        let _ = save_pmm_meta_path(m, extra);
     }
     Ok(())
 }

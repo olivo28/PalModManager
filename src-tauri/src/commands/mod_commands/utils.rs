@@ -25,26 +25,27 @@ pub fn file_install_date(path: &Path) -> String {
 }
 
 pub fn detect_config(mod_path: &Path) -> Option<String> {
-    let config_names = ["config.json", "settings.json", "options.json"];
+    let config_names = [
+        "config.json",
+        "config.jsonc",
+        "settings.json",
+        "options.json",
+        "config.lua",
+        "settings.lua",
+        "config.cfg",
+        "config.ini",
+    ];
     for name in &config_names {
         if mod_path.join(name).exists() {
             return Some(name.to_string());
         }
     }
-    let config_subdirs = ["config", "settings"];
+    let config_subdirs = ["config", "settings", "scripts", "Scripts"];
     for subdir in &config_subdirs {
         for name in &config_names {
             let full = mod_path.join(subdir).join(name);
             if full.exists() {
                 return Some(format!("{}/{}", subdir, name));
-            }
-        }
-    }
-    if let Ok(rd) = fs::read_dir(mod_path) {
-        for entry in rd.filter_map(|e| e.ok()) {
-            let path = entry.path();
-            if path.is_file() && path.extension().map_or(false, |ext| ext == "json") {
-                return Some(path.file_name().unwrap().to_string_lossy().to_string());
             }
         }
     }

@@ -2,6 +2,19 @@ use std::path::Path;
 use crate::models::{ModInfo, ModType};
 use super::super::utils::get_physical_identity;
 
+pub fn get_path_priority(path: &str) -> u8 {
+    let lower = path.replace('\\', "/").to_lowercase();
+    if lower.contains("nativemods/ue4ss") || lower.contains("ue4ss/mods") || (lower.contains("ue4ss") && !lower.contains("palschema") && !lower.ends_with(".pak")) {
+        1 // UE4SS (Priority 1)
+    } else if lower.contains("palschema/mods") || lower.contains("palschema") {
+        2 // PalSchema (Priority 2)
+    } else if lower.contains("logicmods") || lower.contains("~mods") || lower.ends_with(".pak") {
+        3 // ~mods / LogicMods (Priority 3)
+    } else {
+        4 // Other
+    }
+}
+
 pub fn merge_scan_with_db(
     current_profile_id: &str,
     installed_ids: &[String],
@@ -131,7 +144,46 @@ pub fn merge_scan_with_db(
                     valid_extras.push(extra.clone());
                 }
             }
-            merged.extra_files = valid_extras;
+
+            // Enforce canonical path priority: UE4SS > PalSchema > LogicMods/~mods (.pak)
+            let mut all_paths: Vec<String> = Vec::new();
+            if !merged.game_path.is_empty() {
+                all_paths.push(merged.game_path.clone());
+            }
+            if !fs_mod.game_path.is_empty() && !all_paths.contains(&fs_mod.game_path) {
+                all_paths.push(fs_mod.game_path.clone());
+            }
+            for extra in &valid_extras {
+                if !all_paths.contains(extra) {
+                    all_paths.push(extra.clone());
+                }
+            }
+
+            if all_paths.len() > 1 {
+                all_paths.sort_by_key(|p| get_path_priority(p));
+                merged.game_path = all_paths[0].clone();
+                merged.extra_files = all_paths[1..].to_vec();
+            } else {
+                merged.extra_files = valid_extras;
+            }
+
+            // Sanitize config_path: remove dotfiles, manifests, or nexus metadata
+            if let Some(ref cfg) = merged.config_path {
+                let fname = Path::new(cfg).file_name().and_then(|f| f.to_str()).unwrap_or("");
+                if fname.starts_with('.')
+                    || fname.eq_ignore_ascii_case("modinfo.pmm.json")
+                    || fname.eq_ignore_ascii_case("modinfo.json")
+                    || fname.ends_with(".manifest.json")
+                {
+                    merged.config_path = None;
+                    merged.config_type = None;
+                }
+            }
+            // Auto config normally only applies to UE4SS / Hybrid mods, not PalSchema or Pak
+            if merged.mod_type == ModType::PalSchema || merged.mod_type == ModType::Pak || merged.mod_type == ModType::LogicMods {
+                merged.config_path = None;
+                merged.config_type = None;
+            }
 
             merged.enabled = fs_mod.enabled;
             if fs_mod.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod")) {
@@ -245,9 +297,27 @@ pub fn merge_scan_with_db(
             if merged.config_path.is_none() && m.config_path.is_some() {
                 merged.config_path = m.config_path.clone();
             }
+            if let Some(ref cfg) = merged.config_path {
+                let fname = Path::new(cfg).file_name().and_then(|f| f.to_str()).unwrap_or("");
+                if fname.starts_with('.')
+                    || fname.eq_ignore_ascii_case("modinfo.pmm.json")
+                    || fname.eq_ignore_ascii_case("modinfo.json")
+                    || fname.ends_with(".manifest.json")
+                {
+                    merged.config_path = None;
+                    merged.config_type = None;
+                }
+            }
             final_deduped[existing_idx] = merged;
         } else {
             final_deduped.push(m);
+        }
+    }
+
+    // Auto-migrate & update metadata files on disk for hybrid mods
+    for m in &final_deduped {
+        if m.mod_type == ModType::Hybrid {
+            let _ = crate::profiles::utils::save_pmm_meta(m);
         }
     }
 

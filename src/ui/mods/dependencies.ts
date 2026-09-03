@@ -197,7 +197,7 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
       const latestDisplay = deps.ue4ss_latest_date ? formatDMY(deps.ue4ss_latest_date) : '?';
       ue4ssEl.title = t('dependencies.update_available_ue4ss', { date: latestDisplay });
     } else {
-      ue4ssEl.title = `UE4SS (experimental-palworld) — ${t('dependencies.up_to_date')}`;
+      ue4ssEl.title = `UE4SS${verDisplay} — ${t('dependencies.up_to_date')}`;
     }
   } else {
     ue4ssEl.textContent = 'UE4SS ✕';

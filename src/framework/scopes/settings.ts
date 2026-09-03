@@ -26,6 +26,7 @@ export interface SettingsDomMap {
   'settings-pane-mods': HTMLElement;
   'settings-ue4ss-mode-enabled-txt': HTMLInputElement;
   'settings-ue4ss-mode-mods-txt': HTMLInputElement;
+  'settings-ue4ss-flavor-select': HTMLSelectElement;
   'settings-hide-native-mods': HTMLInputElement;
   'settings-force-load-order-ue4ss': HTMLInputElement;
   'settings-force-load-order-palschema': HTMLInputElement;

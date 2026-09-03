@@ -67,21 +67,10 @@ pub fn execute_manifest(
             component_paths.push(comp_path);
         }
 
-        // Track config file
-        match route.route_type {
-            RouteType::Ue4ss => {
-                if config_path.is_none() {
-                    let u_root = PathBuf::from(&ue4ss_component);
-                    config_path = detect_config_local(&u_root);
-                }
-            }
-            RouteType::PalSchema => {
-                if config_path.is_none() {
-                    let p_root = PathBuf::from(&palschema_component);
-                    config_path = detect_config_local(&p_root);
-                }
-            }
-            _ => {}
+        // Track config file (config normally only applies to UE4SS mods)
+        if route.route_type == RouteType::Ue4ss && config_path.is_none() {
+            let u_root = PathBuf::from(&ue4ss_component);
+            config_path = detect_config_local(&u_root);
         }
     }
 
@@ -185,13 +174,26 @@ pub fn execute_manifest(
                     crate::logger::log(&format!("PalSchema junction creation failed: {}", e));
                 }
 
-                // Update primary_path to point at the junction (not Storage)
-                primary_path = normalize_path_separator(&link_path.to_string_lossy());
+                let junction_str = normalize_path_separator(&link_path.to_string_lossy());
+                if !manifest.has_ue4ss {
+                    primary_path = junction_str.clone();
+                }
+                if let Some(pos) = component_paths.iter().position(|p| p == &palschema_component || p == &extracted_mod_dir.to_string_lossy()) {
+                    component_paths[pos] = junction_str;
+                } else if !component_paths.contains(&junction_str) {
+                    component_paths.push(junction_str);
+                }
             }
         } else {
             // Normal installation without symlinks / Storage
             if extracted_mod_dir.exists() {
-                primary_path = normalize_path_separator(&extracted_mod_dir.to_string_lossy());
+                let normal_str = normalize_path_separator(&extracted_mod_dir.to_string_lossy());
+                if !manifest.has_ue4ss {
+                    primary_path = normal_str.clone();
+                }
+                if !component_paths.contains(&normal_str) {
+                    component_paths.push(normal_str);
+                }
             }
         }
     }

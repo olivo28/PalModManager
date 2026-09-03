@@ -90,17 +90,17 @@ export async function refreshUsmapStatus(): Promise<void> {
 
     if (badge) {
       if (status.isSynced && status.localUsmapExists) {
-        badge.textContent = `✅ ${t('settings.usmap_status_synced')}`;
+        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
         badge.style.background = 'rgba(34,197,94,0.15)';
         badge.style.color = '#22c55e';
         badge.style.borderColor = 'rgba(34,197,94,0.3)';
       } else if (status.localUsmapExists) {
-        badge.textContent = `📦 ${t('settings.usmap_status_available')}`;
+        badge.textContent = `📦 ${t('settings.usmap_status_available') || 'Available (Bundled)'}`;
         badge.style.background = 'rgba(0,188,255,0.15)';
         badge.style.color = '#00bcff';
         badge.style.borderColor = 'rgba(0,188,255,0.3)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.usmap_status_missing')}`;
+        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
         badge.style.color = '#ef4444';
         badge.style.borderColor = 'rgba(239,68,68,0.3)';
@@ -119,7 +119,7 @@ export async function refreshUsmapStatus(): Promise<void> {
         const fileName = status.activeMapping?.usmapFilename || 'Palworld.usmap';
         activeFile.textContent = `${fileName} (${sizeFormatted})`;
       } else {
-        activeFile.textContent = t('settings.usmap_not_installed');
+        activeFile.textContent = t('settings.usmap_not_installed') || 'No mapping file installed';
       }
     }
 
@@ -134,7 +134,7 @@ export async function refreshUsmapStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get USMAP mappings status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.usmap_status_error')}`;
+      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
     }
   }
 }
@@ -154,7 +154,7 @@ export async function refreshSdkStatus(): Promise<void> {
 
     if (badge) {
       if (status.installed && status.totalClasses > 0) {
-        badge.textContent = `✅ ${t('settings.sdk_status_ready') || 'Ready'}`;
+        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
         badge.style.background = 'rgba(34,197,94,0.15)';
         badge.style.color = '#22c55e';
         badge.style.borderColor = 'rgba(34,197,94,0.3)';
@@ -164,7 +164,7 @@ export async function refreshSdkStatus(): Promise<void> {
         badge.style.color = '#00bcff';
         badge.style.borderColor = 'rgba(0,188,255,0.3)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.sdk_status_not_installed') || 'Not Installed'}`;
+        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
         badge.style.color = '#ef4444';
         badge.style.borderColor = 'rgba(239,68,68,0.3)';
@@ -176,11 +176,11 @@ export async function refreshSdkStatus(): Promise<void> {
     }
 
     if (classesElem) {
-      classesElem.textContent = status.totalClasses.toLocaleString();
+      classesElem.textContent = `${status.totalClasses.toLocaleString()} classes`;
     }
 
     if (funcsElem) {
-      funcsElem.textContent = status.totalFunctions.toLocaleString();
+      funcsElem.textContent = `${status.totalFunctions.toLocaleString()} functions & delegates`;
     }
 
     if (pathElem) {
@@ -190,7 +190,7 @@ export async function refreshSdkStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get SDK status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.sdk_status_error') || 'Error'}`;
+      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
     }
   }
 }
@@ -210,12 +210,12 @@ export async function refreshBlueprintsStatus(): Promise<void> {
 
     if (badge) {
       if (status.totalBlueprints > 0) {
-        badge.textContent = `✅ ${t('settings.blueprints_status_synced') || 'Synced & Ready'}`;
+        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
         badge.style.background = 'rgba(34,197,94,0.15)';
         badge.style.color = '#22c55e';
         badge.style.borderColor = 'rgba(34,197,94,0.3)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.blueprints_status_missing') || 'Missing / Not Synced'}`;
+        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
         badge.style.color = '#ef4444';
         badge.style.borderColor = 'rgba(239,68,68,0.3)';
@@ -252,7 +252,7 @@ export async function refreshBlueprintsStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get Blueprints catalog status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.blueprints_status_error') || 'Error'}`;
+      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
     }
   }
 }
@@ -271,12 +271,12 @@ export async function refreshDatatablesStatus(): Promise<void> {
 
     if (badge) {
       if (status.totalDatatables > 0) {
-        badge.textContent = `✅ ${t('settings.datatables_status_synced') || 'Indexed & Ready'}`;
+        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
         badge.style.background = 'rgba(34,197,94,0.15)';
         badge.style.color = '#22c55e';
         badge.style.borderColor = 'rgba(34,197,94,0.3)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.datatables_status_missing') || 'Missing / Not Synced'}`;
+        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
         badge.style.color = '#ef4444';
         badge.style.borderColor = 'rgba(239,68,68,0.3)';
@@ -297,7 +297,7 @@ export async function refreshDatatablesStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get DataTables catalog status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.datatables_status_error') || 'Error'}`;
+      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
     }
   }
 }
@@ -318,12 +318,12 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
 
     if (badge) {
       if (catalog.is_available && catalog.total_raw_schemas > 0) {
-        badge.textContent = `✅ ${t('settings.schemas_status_synced') || 'Ready & Active'}`;
+        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
         badge.style.background = 'rgba(34,197,94,0.15)';
         badge.style.color = '#22c55e';
         badge.style.borderColor = 'rgba(34,197,94,0.3)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.schemas_status_missing') || 'Missing / Not Synced'}`;
+        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
         badge.style.color = '#ef4444';
         badge.style.borderColor = 'rgba(239,68,68,0.3)';
@@ -344,7 +344,7 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
     }
 
     if (enumsElem) {
-      enumsElem.textContent = catalog.has_enums ? `Included (${t('settings.schemas_enums_included') || 'EPalItemTypeA, EPalTribeID...'})` : 'Missing';
+      enumsElem.textContent = catalog.has_enums ? `Included (${t('settings.schemas_enums_included') || 'enums.schema.json'})` : 'Missing';
     }
 
     if (sourceElem) {
@@ -353,7 +353,7 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get PalSchema schemas catalog status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.schemas_status_error') || 'Error'}`;
+      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
     }
   }
 }

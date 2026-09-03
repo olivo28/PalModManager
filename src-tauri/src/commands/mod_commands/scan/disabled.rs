@@ -72,7 +72,7 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                 }
 
                 let file_stem = entry.path().file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-                let mod_name = file_stem.trim_end_matches("_P").to_string();
+                let mod_name = file_stem.strip_suffix("_P").unwrap_or(&file_stem).to_string();
                 let install_date = file_install_date(&entry.path());
                 let mt = if *pak_type == "logicmods" { ModType::LogicMods } else { ModType::Pak };
                 results.push(ModInfo {

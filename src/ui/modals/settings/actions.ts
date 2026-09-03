@@ -197,6 +197,13 @@ export async function handleSaveSettings(): Promise<void> {
       }
     }
 
+    const flavorSelect = settingsDom.elMaybe('settings-ue4ss-flavor-select');
+    if (flavorSelect && flavorSelect.value && flavorSelect.value !== (state.currentSettings?.ue4ssBuildFlavor || 'standard')) {
+      const { setUe4ssBuildFlavor } = await import('../../../api');
+      const settings = await setUe4ssBuildFlavor(flavorSelect.value);
+      updateState({ currentSettings: settings });
+    }
+
     closeSettingsModal();
     showToast(t('toasts.settings_saved'), 'success');
 

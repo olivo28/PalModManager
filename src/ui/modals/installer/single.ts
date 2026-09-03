@@ -473,13 +473,24 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
 
   for (let i = 0; i < diffs.length; i++) {
     const diff = diffs[i];
+    const isFileIgnored = currentIgnoredKeys.includes(diff.file_name);
     html += `
-      <div class="config-diff-card" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:4px;">
+      <div class="config-diff-card" id="config-diff-card-${i}" style="background:var(--bg-secondary); border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.3)' : 'var(--border)'}; border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:4px;">
         <div class="config-diff-file-header" data-index="${i}" style="cursor:pointer; font-weight:700; font-family:monospace; font-size:12px; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between; padding:2px 0; user-select:none; word-break:break-all;">
-          <span>📄 ${escapeHtml(diff.file_name)}</span>
-          <span class="toggle-icon" style="font-size:10px; color:var(--text-muted); padding-left:8px;">${collapseByDefault ? '▲' : '▼'}</span>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <span>📄 ${escapeHtml(diff.file_name)}</span>
+            <span id="diff-file-badge-${i}" style="font-size:9px; padding:1px 6px; border-radius:8px; font-weight:600; text-transform:uppercase; ${isFileIgnored ? 'background:rgba(255,80,0,0.15); color:#ff5000; border:1px solid rgba(255,80,0,0.3);' : 'background:rgba(0,188,255,0.15); color:var(--accent); border:1px solid rgba(0,188,255,0.3);'}">
+              ${isFileIgnored ? escapeHtml(t('installer.diff_file_ignored_badge')) : escapeHtml(t('installer.diff_merge_file'))}
+            </span>
+          </div>
+          <div style="display:flex; align-items:center; gap:8px;">
+            <button type="button" class="btn ignore-file-btn" data-index="${i}" data-file="${escapeHtml(diff.file_name)}" style="font-size:10px; padding:3px 8px; height:auto; line-height:1; margin:0; border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(0,188,255,0.4)'}; background:${isFileIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)'}; color:${isFileIgnored ? '#ff5000' : 'var(--text-primary)'}; border-radius:4px; cursor:pointer;">
+              ${isFileIgnored ? `<span>✕</span> ${escapeHtml(t('installer.diff_use_clean_file'))}` : `<span>✓</span> ${escapeHtml(t('installer.diff_merge_file'))}`}
+            </button>
+            <span class="toggle-icon" style="font-size:10px; color:var(--text-muted); padding-left:4px;">${collapseByDefault ? '▲' : '▼'}</span>
+          </div>
         </div>
-        <div class="config-diff-file-content" id="config-diff-file-content-${i}" style="display: ${collapseByDefault ? 'none' : 'flex'}; flex-direction:column; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.03); padding-top:8px;">
+        <div class="config-diff-file-content" id="config-diff-file-content-${i}" style="display: ${collapseByDefault ? 'none' : 'flex'}; flex-direction:column; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.03); padding-top:8px; opacity:${isFileIgnored ? '0.4' : '1'};">
     `;
 
     if (diff.keys_user_changed && diff.keys_user_changed.length > 0) {
@@ -583,6 +594,56 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       }
 
       setModIgnoredKeys(modId, localIgnoredKeys).then(updatedMod => {
+        const modInState = state.allMods.find(m => m.id === modId);
+        if (modInState) {
+          modInState.ignoredKeys = localIgnoredKeys;
+        }
+      }).catch(err => {
+        console.error("Failed to update ignored keys:", err);
+      });
+    });
+  });
+
+  overlay.querySelectorAll('.ignore-file-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const fileName = (btn as HTMLElement).dataset.file!;
+      const idx = (btn as HTMLElement).dataset.index!;
+      const isCurrentlyIgnored = localIgnoredKeys.includes(fileName);
+
+      if (isCurrentlyIgnored) {
+        localIgnoredKeys = localIgnoredKeys.filter(k => k !== fileName);
+      } else {
+        localIgnoredKeys.push(fileName);
+      }
+
+      const isNowIgnored = !isCurrentlyIgnored;
+      const card = overlay.querySelector(`#config-diff-card-${idx}`) as HTMLElement;
+      const badge = overlay.querySelector(`#diff-file-badge-${idx}`) as HTMLElement;
+      const content = overlay.querySelector(`#config-diff-file-content-${idx}`) as HTMLElement;
+
+      if (card) {
+        card.style.borderColor = isNowIgnored ? 'rgba(255,80,0,0.3)' : 'var(--border)';
+      }
+      if (badge) {
+        badge.style.background = isNowIgnored ? 'rgba(255,80,0,0.15)' : 'rgba(0,188,255,0.15)';
+        badge.style.color = isNowIgnored ? '#ff5000' : 'var(--accent)';
+        badge.style.border = isNowIgnored ? '1px solid rgba(255,80,0,0.3)' : '1px solid rgba(0,188,255,0.3)';
+        badge.textContent = isNowIgnored ? t('installer.diff_file_ignored_badge') : t('installer.diff_merge_file');
+      }
+      if (content) {
+        content.style.opacity = isNowIgnored ? '0.4' : '1';
+      }
+
+      const targetBtn = btn as HTMLElement;
+      targetBtn.style.borderColor = isNowIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(0,188,255,0.4)';
+      targetBtn.style.background = isNowIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)';
+      targetBtn.style.color = isNowIgnored ? '#ff5000' : 'var(--text-primary)';
+      targetBtn.innerHTML = isNowIgnored
+        ? `<span>✕</span> ${escapeHtml(t('installer.diff_use_clean_file'))}`
+        : `<span>✓</span> ${escapeHtml(t('installer.diff_merge_file'))}`;
+
+      setModIgnoredKeys(modId, localIgnoredKeys).then(() => {
         const modInState = state.allMods.find(m => m.id === modId);
         if (modInState) {
           modInState.ignoredKeys = localIgnoredKeys;

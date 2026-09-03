@@ -197,34 +197,76 @@ pub fn load_db(program_path: &str) -> AppData {
                 contents
             };
 
-            match serde_json::from_str::<AppData>(&json) {
-                Ok(mut data) => {
-                    profiles::ensure_default_profile(&mut data);
-                    data
-                }
+            let mut data = match serde_json::from_str::<AppData>(&json) {
+                Ok(data) => data,
                 Err(e) => {
                     eprintln!("Failed to parse DB with new format: {}", e);
                     match convert_old_format(&json) {
-                        Some(mut data) => {
-                            profiles::ensure_default_profile(&mut data);
-                            let _ = save_db(program_path, &data);
-                            data
-                        }
+                        Some(data) => data,
                         None => {
                             eprintln!("Failed to parse DB with old format either");
-                            let mut data = AppData::default();
-                            profiles::ensure_default_profile(&mut data);
-                            data
+                            AppData::default()
                         }
                     }
                 }
+            };
+
+            profiles::ensure_default_profile(&mut data);
+            let current_ver = data.schema_version;
+            if run_db_migrations(&mut data, current_ver, crate::models::CURRENT_DB_SCHEMA_VERSION) {
+                let _ = save_db(program_path, &data);
             }
+            data
         }
         Err(e) => {
             eprintln!("Failed to read DB: {}", e);
             AppData::default()
         }
     }
+}
+
+pub fn run_db_migrations(data: &mut AppData, from_version: u32, target_version: u32) -> bool {
+    if from_version >= target_version {
+        return false;
+    }
+
+    crate::logger::log(&format!("DB Migration: Upgrading AppData schema from v{} to v{}", from_version, target_version));
+
+    // Migration 1 -> 2:
+    // 1. Sanitize config_path: Purge .nexus.json, dotfiles, or modinfo.pmm.json from config_path
+    // 2. Re-prioritize component paths: promote UE4SS over PalSchema in hybrid mods
+    if from_version < 2 {
+        for m in data.mods.iter_mut() {
+            if let Some(ref cp) = m.config_path {
+                let cp_lower = cp.to_lowercase();
+                if cp_lower.ends_with(".nexus.json")
+                    || cp_lower.ends_with(".pmm.json")
+                    || cp_lower.ends_with("modinfo.pmm.json")
+                    || cp_lower.ends_with("enabled.txt")
+                    || cp_lower.ends_with("manifest.json")
+                    || cp.starts_with('.')
+                {
+                    crate::logger::log(&format!("DB Migration v2: Purged metadata config_path {:?} from mod '{}'", cp, m.name));
+                    m.config_path = None;
+                    m.config_type = None;
+                }
+            }
+
+            let is_palschema = m.game_path.to_lowercase().contains("palschema") || m.game_path.to_lowercase().contains("content/pal");
+            if is_palschema {
+                if let Some(pos) = m.extra_files.iter().position(|f| f.to_lowercase().contains("mods/ue4ss") || f.to_lowercase().contains("binaries/win64/ue4ss/mods")) {
+                    let ue4ss_path = m.extra_files.remove(pos);
+                    let old_palschema = std::mem::replace(&mut m.game_path, ue4ss_path);
+                    m.extra_files.push(old_palschema);
+                    crate::logger::log(&format!("DB Migration v2: Re-prioritized primary folder to UE4SS for mod '{}'", m.name));
+                }
+            }
+        }
+
+        data.schema_version = 2;
+    }
+
+    true
 }
 
 fn migrate_from_json(legacy_path: &std::path::Path, program_path: &str) -> AppData {

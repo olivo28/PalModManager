@@ -1,4 +1,4 @@
-import { getState } from '../../../state';
+import { getState, updateState } from '../../../state';
 import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
@@ -75,6 +75,24 @@ export function openSettingsModal(): void {
         } catch (e) {
           showToast(t('toasts.export_failed', { error: String(e) }), 'error');
         }
+      }
+    };
+  }
+
+  // Bind UE4SS Build Flavor
+  const flavorSelect = settingsDom.elMaybe('settings-ue4ss-flavor-select');
+  if (flavorSelect) {
+    flavorSelect.value = state.currentSettings?.ue4ssBuildFlavor || 'standard';
+    flavorSelect.onchange = async () => {
+      try {
+        const { setUe4ssBuildFlavor } = await import('../../../api');
+        const { loadDependencies } = await import('../../mods/dependencies');
+        const settings = await setUe4ssBuildFlavor(flavorSelect.value);
+        updateState({ currentSettings: settings });
+        await loadDependencies(true);
+        showToast(t('toasts.settings_saved'), 'success');
+      } catch (e) {
+        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
       }
     };
   }

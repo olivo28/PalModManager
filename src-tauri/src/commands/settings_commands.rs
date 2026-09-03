@@ -621,5 +621,17 @@ pub fn set_ue4ss_control_mode(mode: String, state: State<AppState>) -> Result<Va
     Ok(result)
 }
 
+#[tauri::command]
+pub fn set_ue4ss_build_flavor(flavor: String, state: State<AppState>) -> Result<Value, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    data.settings.ue4ss_build_flavor = Some(flavor);
+    let settings = get_overridden_settings(&data);
+    let result = serde_json::to_value(&settings).map_err(|e| e.to_string())?;
+    let data_clone = data.clone();
+    drop(data);
+    let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+    Ok(result)
+}
+
 
 

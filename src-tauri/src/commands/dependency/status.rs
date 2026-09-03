@@ -175,9 +175,9 @@ pub fn compare_versions(local: &str, remote: &str) -> bool {
 
 #[tauri::command]
 pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<dependency_checker::DependencyStatus, String> {
-    let game_path = {
+    let (game_path, flavor) = {
         let locked = state.data.lock().map_err(|e| e.to_string())?;
-        locked.settings.game_path.clone()
+        (locked.settings.game_path.clone(), locked.settings.ue4ss_build_flavor.clone().unwrap_or_else(|| "standard".to_string()))
     };
     if game_path.is_empty() {
         return Ok(empty_status());
@@ -187,7 +187,7 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
 
     let is_workshop = status.ue4ss_install_mode == "Workshop";
 
-    if let Ok((ue4ss_tag, ue4ss_date)) = dependency_checker::check_ue4ss_latest().await {
+    if let Ok((ue4ss_tag, ue4ss_date)) = dependency_checker::check_ue4ss_latest_with_flavor(Some(&flavor)).await {
         status.ue4ss_latest_tag = Some(ue4ss_tag.clone());
         status.ue4ss_latest_date = Some(ue4ss_date.clone());
         if is_workshop {
@@ -209,6 +209,12 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
                     false
                 }
                 Some(local) => {
+                    let remote_is_zdev = flavor.eq_ignore_ascii_case("zdev");
+                    let local_is_zdev = local.to_lowercase().contains("zdev");
+                    let flavor_mismatch = remote_is_zdev != local_is_zdev;
+
+                    let is_tag_match = !ue4ss_tag.is_empty() && ue4ss_tag != "latest" && local.contains(&ue4ss_tag);
+
                     let local_date = parse_dmy(local.trim()).or_else(|| {
                         // If version string is not a standard date (e.g. "Palworld_ForPS066" or custom tag),
                         // inspect the physical modification date of the installed UE4SS files!
@@ -223,11 +229,13 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
                             .and_then(|d_str| parse_dmy(&d_str))
                     });
 
-                    let needs_up = match (local_date, parse_dmy(ue4ss_date.trim())) {
+                    let date_older = match (local_date, parse_dmy(ue4ss_date.trim())) {
                         (Some(l), Some(r)) => l < r,
-                        _ => false, // Custom branch / non-dated build / unparsed date: do not falsely claim update needed
+                        _ => false,
                     };
-                    crate::logger::log(&format!("UE4SS check: local='{}' (effective_date: {:?}), remote='{}' (tag: {}), needs_update={}", local, local_date, ue4ss_date, ue4ss_tag, needs_up));
+
+                    let needs_up = flavor_mismatch || (date_older && !is_tag_match);
+                    crate::logger::log(&format!("UE4SS check: local='{}' (effective_date: {:?}), remote='{}' (tag: {}, flavor: {}), needs_update={}", local, local_date, ue4ss_date, ue4ss_tag, flavor, needs_up));
                     needs_up
                 }
                 None => {

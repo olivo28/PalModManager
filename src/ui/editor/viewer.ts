@@ -122,13 +122,6 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
 
       // Initialize Monaco Editor and set file
       setMonacoFile(filePath, result.content);
-      const editor = getMonacoEditor();
-
-      if (editor) {
-        editor.onDidChangeModelContent(() => {
-          updateUnsavedIndicator();
-        });
-      }
 
       if (lineNumber && lineNumber > 0) {
         const { jumpToLineInEditor } = await import('./keybindings');
