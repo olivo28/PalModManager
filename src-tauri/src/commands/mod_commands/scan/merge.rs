@@ -255,22 +255,51 @@ pub fn merge_scan_with_db(
             let em_game = em.game_path.replace('\\', "/").to_lowercase();
             let em_disabled = em.disabled_path.replace('\\', "/").to_lowercase();
 
+            let same_nexus = em.nexus_mod_id.is_some() && em.nexus_mod_id == m.nexus_mod_id;
+            let em_stem = em.name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+            let m_stem = m.name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+            let same_stem = !em_stem.is_empty() && em_stem == m_stem;
+
             (em_id == m_id) ||
             (!m_phys.is_empty() && em_phys == m_phys) ||
             (!m_game.is_empty() && em_game == m_game) ||
             (!m_disabled.is_empty() && em_disabled == m_disabled) ||
-            (!em.name.is_empty() && em.name.to_lowercase() == m.name.to_lowercase())
+            (!em.name.is_empty() && em.name.to_lowercase() == m.name.to_lowercase()) ||
+            (same_nexus && em.mod_type != m.mod_type) ||
+            (same_stem && em.mod_type != m.mod_type)
         }) {
             let existing = final_deduped[existing_idx].clone();
             let mut merged = existing.clone();
             if m.mod_type == ModType::Altermatic || existing.mod_type == ModType::Altermatic {
                 merged.mod_type = ModType::Altermatic;
-            } else if m.mod_type == ModType::Hybrid || existing.mod_type == ModType::Hybrid {
+            } else if m.mod_type == ModType::Hybrid || existing.mod_type == ModType::Hybrid || (existing.mod_type != m.mod_type) {
                 merged.mod_type = ModType::Hybrid;
             }
-            if merged.game_path.is_empty() && !m.game_path.is_empty() {
-                merged.game_path = m.game_path.clone();
+
+            let mut all_paths: Vec<String> = Vec::new();
+            if !merged.game_path.is_empty() {
+                all_paths.push(merged.game_path.clone());
             }
+            if !m.game_path.is_empty() && !all_paths.contains(&m.game_path) {
+                all_paths.push(m.game_path.clone());
+            }
+            for extra in &merged.extra_files {
+                if !all_paths.contains(extra) {
+                    all_paths.push(extra.clone());
+                }
+            }
+            for extra in &m.extra_files {
+                if !all_paths.contains(extra) {
+                    all_paths.push(extra.clone());
+                }
+            }
+
+            if all_paths.len() > 1 {
+                all_paths.sort_by_key(|p| get_path_priority(p));
+                merged.game_path = all_paths[0].clone();
+                merged.extra_files = all_paths[1..].to_vec();
+            }
+
             if merged.disabled_path.is_empty() && !m.disabled_path.is_empty() {
                 merged.disabled_path = m.disabled_path.clone();
             }
@@ -280,11 +309,6 @@ pub fn merge_scan_with_db(
                 merged.nexus_author = m.nexus_author.clone();
                 merged.nexus_summary = m.nexus_summary.clone();
                 merged.nexus_picture_url = m.nexus_picture_url.clone();
-            }
-            for extra in &m.extra_files {
-                if !merged.extra_files.contains(extra) {
-                    merged.extra_files.push(extra.clone());
-                }
             }
             let is_strictly_disabled = (!merged.disabled_path.is_empty() && merged.game_path.is_empty())
                 || (!m.disabled_path.is_empty() && m.game_path.is_empty())

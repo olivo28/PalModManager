@@ -1,5 +1,6 @@
 import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
+import { scannerDom } from '../../../../framework';
 import {
   lastScanResult,
   subTabHeader,
@@ -102,7 +103,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     </div>
   `;
 
-  const downloadAltermaticBtn = document.getElementById('btn-scanner-download-altermatic');
+  const downloadAltermaticBtn = scannerDom.elMaybe('btn-scanner-download-altermatic');
   if (downloadAltermaticBtn) {
     downloadAltermaticBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -112,7 +113,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
   }
 
   // Patch Builder button listeners
-  const openPatchBuilderBtn = document.getElementById('btn-open-patch-builder');
+  const openPatchBuilderBtn = scannerDom.elMaybe('btn-open-patch-builder');
   if (openPatchBuilderBtn && res.pakConflicts) {
     openPatchBuilderBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -121,7 +122,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
     });
   }
 
-  const openExistingPatchesBtn = document.getElementById('btn-open-existing-patches');
+  const openExistingPatchesBtn = scannerDom.elMaybe('btn-open-existing-patches');
   if (openExistingPatchesBtn) {
     openExistingPatchesBtn.addEventListener('click', async (e) => {
       e.stopPropagation();

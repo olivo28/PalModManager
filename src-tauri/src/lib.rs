@@ -44,6 +44,7 @@ use commands::altermatic_commands;
 use commands::usmap_commands;
 use commands::sdk_commands;
 use commands::editor;
+use commands::config_archive;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -164,6 +165,9 @@ pub fn run() {
             mod_commands::open_folder_by_type,
             mod_commands::open_path,
             mod_commands::rename_mod,
+            mod_commands::merge_mods_as_hybrid,
+            config_archive::check_archived_config,
+            config_archive::apply_archived_config,
             mod_commands::save_mod_notes,
             mod_commands::set_mod_version,
             mod_commands::set_mod_ignored_keys,

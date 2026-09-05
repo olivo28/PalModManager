@@ -2,6 +2,7 @@ import { inspectUAssetDeep, decodeUAssetTexture, type UAssetInspectionDetails, t
 import { t } from '../../utils/i18n';
 import { escapeHtml, formatBytes } from '../../utils/helpers';
 import { showToast } from '../toast';
+import { mainDom } from '../../framework';
 
 export async function openUAssetInspectorModal(params: {
   modId?: string | null;
@@ -9,7 +10,7 @@ export async function openUAssetInspectorModal(params: {
   assetInternalPath: string;
   zipPath?: string | null;
 }): Promise<void> {
-  const existing = document.getElementById('uasset-inspector-modal');
+  const existing = mainDom.elMaybe('uasset-inspector-modal');
   if (existing) existing.remove();
 
   const loadingModalHtml = `
@@ -38,9 +39,9 @@ export async function openUAssetInspectorModal(params: {
 
   document.body.insertAdjacentHTML('beforeend', loadingModalHtml);
 
-  const modalEl = document.getElementById('uasset-inspector-modal');
-  const closeBtn = document.getElementById('btn-close-uasset-modal');
-  const bodyEl = document.getElementById('uasset-modal-body');
+  const modalEl = mainDom.elMaybe('uasset-inspector-modal');
+  const closeBtn = mainDom.elMaybe('btn-close-uasset-modal');
+  const bodyEl = mainDom.elMaybe('uasset-modal-body');
 
   const closeModal = () => modalEl?.remove();
   closeBtn?.addEventListener('click', closeModal);
@@ -323,7 +324,7 @@ export async function openUAssetInspectorModal(params: {
       });
     });
 
-    document.getElementById('btn-quick-goto-texture')?.addEventListener('click', () => {
+    mainDom.elMaybe('btn-quick-goto-texture')?.addEventListener('click', () => {
       switchTab('tab-texture');
     });
 
@@ -336,8 +337,8 @@ export async function openUAssetInspectorModal(params: {
       if (isTextureLoading) return;
 
       isTextureLoading = true;
-      const loaderEl = document.getElementById('tex-lazy-loader');
-      const viewportContent = document.getElementById('tex-viewport-content');
+      const loaderEl = mainDom.elMaybe('tex-lazy-loader');
+      const viewportContent = mainDom.elMaybe('tex-viewport-content');
 
       try {
         const tex = await decodeUAssetTexture(params);
@@ -413,10 +414,10 @@ export async function openUAssetInspectorModal(params: {
         let startX = 0;
         let startY = 0;
 
-        const stage = document.getElementById('tex-viewport-stage');
-        const container = document.getElementById('tex-transform-container');
-        const img = document.getElementById('tex-preview-img') as HTMLImageElement | null;
-        const zoomLabel = document.getElementById('tex-zoom-label');
+        const stage = mainDom.elMaybe('tex-viewport-stage');
+        const container = mainDom.elMaybe('tex-transform-container');
+        const img = mainDom.elMaybe('tex-preview-img');
+        const zoomLabel = mainDom.elMaybe('tex-zoom-label');
 
         const updateTransform = () => {
           if (!container) return;
@@ -429,24 +430,24 @@ export async function openUAssetInspectorModal(params: {
           }
         };
 
-        document.getElementById('btn-tex-zoom-in')?.addEventListener('click', () => {
+        mainDom.elMaybe('btn-tex-zoom-in')?.addEventListener('click', () => {
           zoom = Math.min(zoom * 1.25, 8.0);
           updateTransform();
         });
 
-        document.getElementById('btn-tex-zoom-out')?.addEventListener('click', () => {
+        mainDom.elMaybe('btn-tex-zoom-out')?.addEventListener('click', () => {
           zoom = Math.max(zoom / 1.25, 0.15);
           updateTransform();
         });
 
-        document.getElementById('btn-tex-zoom-reset')?.addEventListener('click', () => {
+        mainDom.elMaybe('btn-tex-zoom-reset')?.addEventListener('click', () => {
           zoom = 1.0;
           panX = 0;
           panY = 0;
           updateTransform();
         });
 
-        document.getElementById('btn-tex-zoom-fit')?.addEventListener('click', () => {
+        mainDom.elMaybe('btn-tex-zoom-fit')?.addEventListener('click', () => {
           zoom = 0.85;
           panX = 0;
           panY = 0;
@@ -519,7 +520,7 @@ export async function openUAssetInspectorModal(params: {
         });
 
         // Copy Image to Clipboard
-        document.getElementById('btn-tex-copy-img')?.addEventListener('click', async () => {
+        mainDom.elMaybe('btn-tex-copy-img')?.addEventListener('click', async () => {
           try {
             const image = new Image();
             image.src = tex.dataUrl;
@@ -541,7 +542,7 @@ export async function openUAssetInspectorModal(params: {
         });
 
         // Save PNG
-        document.getElementById('btn-tex-save-png')?.addEventListener('click', () => {
+        mainDom.elMaybe('btn-tex-save-png')?.addEventListener('click', () => {
           try {
             const link = document.createElement('a');
             const cleanName = details.assetName.replace(/\.uasset$/i, '').replace(/\.uexp$/i, '').replace(/\.ubulk$/i, '');
@@ -569,11 +570,11 @@ export async function openUAssetInspectorModal(params: {
     };
 
     // Exports Filter
-    const expInput = document.getElementById('uasset-exports-filter') as HTMLInputElement | null;
+    const expInput = mainDom.elMaybe('uasset-exports-filter');
     if (expInput) {
       expInput.addEventListener('input', () => {
         const q = expInput.value.trim().toLowerCase();
-        modalEl.querySelectorAll('.uasset-export-row').forEach(row => {
+        modalEl?.querySelectorAll('.uasset-export-row').forEach(row => {
           const search = (row as HTMLElement).dataset.search || '';
           (row as HTMLElement).style.display = (!q || search.includes(q)) ? 'flex' : 'none';
         });
@@ -581,11 +582,11 @@ export async function openUAssetInspectorModal(params: {
     }
 
     // Imports Filter
-    const impInput = document.getElementById('uasset-imports-filter') as HTMLInputElement | null;
+    const impInput = mainDom.elMaybe('uasset-imports-filter');
     if (impInput) {
       impInput.addEventListener('input', () => {
         const q = impInput.value.trim().toLowerCase();
-        modalEl.querySelectorAll('.uasset-import-row').forEach(row => {
+        modalEl?.querySelectorAll('.uasset-import-row').forEach(row => {
           const search = (row as HTMLElement).dataset.search || '';
           (row as HTMLElement).style.display = (!q || search.includes(q)) ? 'flex' : 'none';
         });
@@ -593,9 +594,9 @@ export async function openUAssetInspectorModal(params: {
     }
 
     // Names Filter & Click-to-copy
-    const nameInput = document.getElementById('uasset-names-filter') as HTMLInputElement | null;
-    const nameCountEl = document.getElementById('uasset-names-count');
-    const nameTags = modalEl.querySelectorAll('.uasset-name-tag');
+    const nameInput = mainDom.elMaybe('uasset-names-filter');
+    const nameCountEl = mainDom.elMaybe('uasset-names-count');
+    const nameTags = modalEl?.querySelectorAll('.uasset-name-tag') || [];
 
     if (nameInput) {
       nameInput.addEventListener('input', () => {
@@ -628,7 +629,7 @@ export async function openUAssetInspectorModal(params: {
       });
     });
 
-    const closeActionBtn = document.getElementById('btn-close-uasset-action');
+    const closeActionBtn = mainDom.elMaybe('btn-close-uasset-action');
     closeActionBtn?.addEventListener('click', closeModal);
 
   } catch (err: any) {
@@ -641,7 +642,7 @@ export async function openUAssetInspectorModal(params: {
         <button id="btn-close-uasset-fail" class="btn-secondary" style="margin-top: 8px; padding: 5px 14px; font-size: 12px;">${escapeHtml(t('common.close') || 'Close')}</button>
       </div>
     `;
-    document.getElementById('btn-close-uasset-fail')?.addEventListener('click', closeModal);
+    mainDom.elMaybe('btn-close-uasset-fail')?.addEventListener('click', closeModal);
     showToast(t('scanner.uasset_failed_toast', { error: String(err) }) || `Asset inspection failed: ${String(err)}`, 'error');
   }
 }

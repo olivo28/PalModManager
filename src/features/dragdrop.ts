@@ -4,9 +4,10 @@ import { getState, updateState } from '../state';
 import { showInstallModal, setModalStatus, renderInstallPreview, closeInstallModal, renderBatchInstallPreview } from '../ui/modal';
 import { showToast } from '../ui/toast';
 import { t } from '../utils/i18n';
+import { mainDom, packerDom } from '../framework';
 
 export function setupDragAndDrop(): void {
-  const overlay = document.getElementById('drop-overlay')!;
+  const overlay = mainDom.elMaybe('drop-overlay');
   if (!overlay) return;
 
   // ─── Internal DOM drag detection ───────────────────────────────────────────
@@ -34,16 +35,16 @@ export function setupDragAndDrop(): void {
         if (tab !== 'editor' && tab !== 'build' && !getState().isDraggingCard) {
           overlay.classList.add('visible');
         } else if (tab === 'build') {
-          const packerOverlay = document.getElementById('packer-drag-overlay');
+          const packerOverlay = packerDom.elMaybe('packer-drag-overlay');
           if (packerOverlay) packerOverlay.classList.add('drag-over');
         }
       } else if (payload.type === 'leave') {
         overlay.classList.remove('visible');
-        const packerOverlay = document.getElementById('packer-drag-overlay');
+        const packerOverlay = packerDom.elMaybe('packer-drag-overlay');
         if (packerOverlay) packerOverlay.classList.remove('drag-over');
       } else if (payload.type === 'drop') {
         overlay.classList.remove('visible');
-        const packerOverlay = document.getElementById('packer-drag-overlay');
+        const packerOverlay = packerDom.elMaybe('packer-drag-overlay');
         if (packerOverlay) packerOverlay.classList.remove('drag-over');
 
         const tab = getState().activeTab;

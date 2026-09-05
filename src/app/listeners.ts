@@ -1,4 +1,4 @@
-import { mainDom, settingsDom, bind, createBinderGroup, bus } from '../framework';
+import { mainDom, settingsDom, detailDom, editorDom, libraryDom, bind, createBinderGroup, bus } from '../framework';
 import { t } from '../utils/i18n';
 import { getState, updateState, subscribe } from '../state';
 import type { AppState } from '../state';
@@ -51,12 +51,8 @@ import { renderScannerView } from '../ui/scannerView';
 import { applyTheme } from './theme';
 import { setupGlobalShortcuts } from './shortcuts';
 
-function safeEl(id: string): HTMLElement | null {
-  return document.getElementById(id);
-}
-
 function closeProfileModal(): void {
-  document.getElementById('profile-modal')?.classList.remove('visible');
+  mainDom.elMaybe('profile-modal')?.classList.remove('visible');
 }
 
 export function setupEventListeners(): void {
@@ -85,23 +81,23 @@ export function setupEventListeners(): void {
   registerOpenFolderBtn('open-folder-appdata', 'app_data');
   registerOpenFolderBtn('open-folder-profile', 'profile');
 
-  safeEl('theme-toggle-btn')?.addEventListener('click', () => {
+  mainDom.elMaybe('theme-toggle-btn')?.addEventListener('click', () => {
     const current = document.documentElement.dataset.theme || 'dark';
     applyTheme(current === 'dark' ? 'light' : 'dark');
   });
-  safeEl('detail-close')?.addEventListener('click', closeDetailPanel);
-  safeEl('detail-overlay')?.addEventListener('click', (e) => {
+  detailDom.elMaybe('detail-close')?.addEventListener('click', closeDetailPanel);
+  detailDom.elMaybe('detail-overlay')?.addEventListener('click', (e) => {
     if (e.target === e.currentTarget) closeDetailPanel();
   });
-  safeEl('detail-refresh')?.addEventListener('click', handleRefreshDetail);
-  safeEl('detail-config')?.addEventListener('click', handleDetailConfig);
-  safeEl('detail-toggle')?.addEventListener('click', handleDetailToggle);
-  safeEl('detail-remove')?.addEventListener('click', handleDetailRemove);
-  safeEl('check-updates-btn')?.addEventListener('click', handleCheckUpdates);
-  safeEl('open-all-updates-btn')?.addEventListener('click', handleOpenAllUpdates);
-  safeEl('disable-all-btn')?.addEventListener('click', handleDisableAll);
-  safeEl('enable-all-btn')?.addEventListener('click', handleEnableAll);
-  safeEl('export-json-btn')?.addEventListener('click', async () => {
+  detailDom.elMaybe('detail-refresh')?.addEventListener('click', handleRefreshDetail);
+  detailDom.elMaybe('detail-config')?.addEventListener('click', handleDetailConfig);
+  detailDom.elMaybe('detail-toggle')?.addEventListener('click', handleDetailToggle);
+  detailDom.elMaybe('detail-remove')?.addEventListener('click', handleDetailRemove);
+  mainDom.elMaybe('check-updates-btn')?.addEventListener('click', handleCheckUpdates);
+  mainDom.elMaybe('open-all-updates-btn')?.addEventListener('click', handleOpenAllUpdates);
+  mainDom.elMaybe('disable-all-btn')?.addEventListener('click', handleDisableAll);
+  mainDom.elMaybe('enable-all-btn')?.addEventListener('click', handleEnableAll);
+  mainDom.elMaybe('export-json-btn')?.addEventListener('click', async () => {
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const path = await save({
@@ -115,7 +111,7 @@ export function setupEventListeners(): void {
       showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   });
-  safeEl('backup-btn')?.addEventListener('click', async () => {
+  mainDom.elMaybe('backup-btn')?.addEventListener('click', async () => {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({
@@ -132,7 +128,7 @@ export function setupEventListeners(): void {
       showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   });
-  safeEl('restore-backup-btn')?.addEventListener('click', async () => {
+  mainDom.elMaybe('restore-backup-btn')?.addEventListener('click', async () => {
     try {
       const { open } = await import('@tauri-apps/plugin-dialog');
       const selected = await open({
@@ -190,28 +186,28 @@ export function setupEventListeners(): void {
       showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     }
   });
-  safeEl('detail-set-config')?.addEventListener('click', handleDetailSetConfig);
-  safeEl('detail-clear-config')?.addEventListener('click', handleDetailClearConfig);
-  safeEl('detail-open-folder')?.addEventListener('click', handleDetailOpenFolder);
-  safeEl('detail-open-extra-folder')?.addEventListener('click', handleDetailOpenExtraFolder);
-  safeEl('detail-rename-btn')?.addEventListener('click', handleDetailRename);
-  safeEl('editor-save-btn')?.addEventListener('click', handleEditorSave);
-  safeEl('editor-format-btn')?.addEventListener('click', handleEditorFormat);
-  safeEl('editor-mod-select')?.addEventListener('change', handleEditorModChange);
+  detailDom.elMaybe('detail-set-config')?.addEventListener('click', handleDetailSetConfig);
+  detailDom.elMaybe('detail-clear-config')?.addEventListener('click', handleDetailClearConfig);
+  detailDom.elMaybe('detail-open-folder')?.addEventListener('click', handleDetailOpenFolder);
+  detailDom.elMaybe('detail-open-extra-folder')?.addEventListener('click', handleDetailOpenExtraFolder);
+  detailDom.elMaybe('detail-rename-btn')?.addEventListener('click', handleDetailRename);
+  editorDom.elMaybe('editor-save-btn')?.addEventListener('click', handleEditorSave);
+  editorDom.elMaybe('editor-format-btn')?.addEventListener('click', handleEditorFormat);
+  editorDom.elMaybe('editor-mod-select')?.addEventListener('change', handleEditorModChange);
 
   // Profile
-  safeEl('profile-select')?.addEventListener('change', (e) => {
+  mainDom.elMaybe('profile-select')?.addEventListener('change', (e) => {
     const select = e.currentTarget as HTMLSelectElement;
     handleProfileChange(select.value);
   });
-  safeEl('profile-manager-btn')?.addEventListener('click', () => {
-    const modal = document.getElementById('profile-modal');
+  mainDom.elMaybe('profile-manager-btn')?.addEventListener('click', () => {
+    const modal = mainDom.elMaybe('profile-modal');
     if (modal) {
       modal.classList.add('visible');
       modal.focus();
     }
   });
-  safeEl('launch-game-btn')?.addEventListener('click', async () => {
+  mainDom.elMaybe('launch-game-btn')?.addEventListener('click', async () => {
     const { showConfirm } = await import('../ui/confirm');
     const { checkDependencies, checkDependenciesFull } = await import('../api');
     const { getState } = await import('../state');
@@ -294,7 +290,7 @@ export function setupEventListeners(): void {
       showToast(t('toasts.game_launch_failed', { error: String(e) }), 'error');
     }
   });
-  safeEl('new-folder-btn')?.addEventListener('click', async () => {
+  mainDom.elMaybe('new-folder-btn')?.addEventListener('click', async () => {
     const { showInputModal, handleCreateFolder } = await import('../ui/modsView');
     const newName = await showInputModal(
       t('dialogs.prompt_new_folder_name'),
@@ -306,13 +302,13 @@ export function setupEventListeners(): void {
     if (!trimmed) return;
     await handleCreateFolder(trimmed);
   });
-  safeEl('profile-create-btn')?.addEventListener('click', async () => {
-    const input = document.getElementById('profile-new-name') as HTMLInputElement | null;
+  mainDom.elMaybe('profile-create-btn')?.addEventListener('click', async () => {
+    const input = mainDom.elMaybe('profile-new-name');
     if (!input || !input.value.trim()) return;
     await handleCreateProfile(input.value.trim());
     input.value = '';
   });
-  safeEl('profile-new-name')?.addEventListener('keydown', (e) => {
+  mainDom.elMaybe('profile-new-name')?.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') {
       const input = e.currentTarget as HTMLInputElement;
       if (input.value.trim()) {
@@ -321,20 +317,20 @@ export function setupEventListeners(): void {
       }
     }
   });
-  safeEl('profile-import-btn')?.addEventListener('click', async (e) => {
+  mainDom.elMaybe('profile-import-btn')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     const { handleImportProfilePack } = await import('../ui/mods/profiles');
     await handleImportProfilePack();
   });
-  safeEl('profile-modal-close')?.addEventListener('click', (e) => {
+  mainDom.elMaybe('profile-modal-close')?.addEventListener('click', (e) => {
     e.stopPropagation();
     closeProfileModal();
   });
-  safeEl('profile-modal-close-x')?.addEventListener('click', (e) => {
+  mainDom.elMaybe('profile-modal-close-x')?.addEventListener('click', (e) => {
     e.stopPropagation();
     closeProfileModal();
   });
-  safeEl('profile-modal')?.addEventListener('click', (e) => {
+  mainDom.elMaybe('profile-modal')?.addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       e.stopPropagation();
       closeProfileModal();
@@ -342,7 +338,7 @@ export function setupEventListeners(): void {
   });
 
   // Library
-  safeEl('library-refresh-btn')?.addEventListener('click', loadLibrary);
+  libraryDom.elMaybe('library-refresh-btn')?.addEventListener('click', loadLibrary);
 
   document.querySelectorAll('.sidebar-tab').forEach((btn) => {
     btn.addEventListener('click', async () => {
@@ -357,7 +353,7 @@ export function setupEventListeners(): void {
 
       if (tab === 'editor') {
         if (!state.editorModId && state.allMods.length > 0) {
-          const select = document.getElementById('editor-mod-select') as HTMLSelectElement;
+          const select = editorDom.elMaybe('editor-mod-select');
           if (select) {
             select.value = state.allMods[0].id;
             handleEditorModChange();

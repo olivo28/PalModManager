@@ -1,7 +1,8 @@
 import { discState } from './state';
+import { discoveryDom } from '../../framework';
 
 export function setupLightboxPanZoom(): void {
-  const wrap = document.getElementById('discovery-lightbox-img-wrap');
+  const wrap = discoveryDom.elMaybe('discovery-lightbox-img-wrap');
   if (!wrap) return;
 
   let dragOriginX = 0;
@@ -67,20 +68,20 @@ export function updateLightboxTransform(zoom: number, panX: number, panY: number
   discState.lightboxPanX = panX;
   discState.lightboxPanY = panY;
 
-  const img = document.getElementById('discovery-lightbox-img');
+  const img = discoveryDom.elMaybe('discovery-lightbox-img');
   if (img) {
     img.style.transform = `translate(${discState.lightboxPanX}px, ${discState.lightboxPanY}px) scale(${discState.lightboxZoom})`;
   }
 
-  const resetBtn = document.getElementById('discovery-lightbox-zoom-reset');
+  const resetBtn = discoveryDom.elMaybe('discovery-lightbox-zoom-reset');
   if (resetBtn) {
     resetBtn.textContent = `${Math.round(discState.lightboxZoom * 100)}%`;
   }
 }
 
 export function openLightbox(src: string): void {
-  const lightbox = document.getElementById('discovery-image-modal');
-  const img = document.getElementById('discovery-lightbox-img') as HTMLImageElement | null;
+  const lightbox = discoveryDom.elMaybe('discovery-image-modal');
+  const img = discoveryDom.elMaybe('discovery-lightbox-img');
   if (!lightbox || !img) return;
 
   img.src = src;
@@ -97,12 +98,12 @@ export function openLightbox(src: string): void {
 }
 
 export function closeLightbox(): void {
-  const lightbox = document.getElementById('discovery-image-modal');
+  const lightbox = discoveryDom.elMaybe('discovery-image-modal');
   if (lightbox) {
     lightbox.classList.remove('visible');
     lightbox.style.display = 'none';
   }
-  const img = document.getElementById('discovery-lightbox-img') as HTMLImageElement | null;
+  const img = discoveryDom.elMaybe('discovery-lightbox-img');
   if (img) img.src = '';
   updateLightboxTransform(1, 0, 0);
 }

@@ -228,6 +228,7 @@
     "visit_steam_app": "Steam 창작마당에서 열기 (앱)",
     "visit_steam_web": "Steam 창작마당에서 열기 (웹)",
     "move_to_folder": "폴더로 이동...",
+    "merge_as_hybrid": "하이브리드 모드로 병합",
     "folder_none": "(없음 / 미분류)",
     "remove_mod": "모드 제거",
     "folder_enter": "폴더 열기",
@@ -305,6 +306,7 @@
     "comp_other_folder": "폴더",
     "duplicate_label": "중복",
     "duplicate_warning": "잠재적 중복: {names}",
+    "merge_hybrid_btn": "하이브리드로 병합",
     "config_label": "설정 파일",
     "btn_set_config": "지정",
     "btn_clear_config": "지우기",
@@ -324,6 +326,7 @@
     "btn_load_pak_contents": ".pak 에셋 검사"
   },
   "installer": {
+    "log_merged_hybrid": "[MERGE] 기존 모드 '{name}'와(과) 구성 요소를 병합했습니다",
     "modal_title_install": "모드 설치",
     "modal_title_batch": "모드 일괄 설치 ({current}/{total})",
     "mode_update": "업데이트",
@@ -344,6 +347,8 @@
     "internal_assets_count": "{count}개 내부 애셋",
     "by_author": "제작자: {author}",
     "config_merge_title": "설정 병합",
+    "archived_config_detected": "보관된 구성 발견됨 ({count}개 파일)",
+    "restore_archived_config": "이전 설정 복원",
     "config_merge_desc": "설정 파일에서 차이점이 감지되었습니다.",
     "diff_merge_file": "설정 병합",
     "diff_use_clean_file": "새 파일 사용 (병합 건너뛰기)",
@@ -431,6 +436,8 @@
     "btn_preview_title": "미리보기 전환",
     "btn_edit": "편집",
     "btn_save": "저장",
+    "btn_save_all": "모두 저장 ({count})",
+    "toast_saved_all": "{count}개 파일이 성공적으로 저장되었습니다",
     "status_saved": "저장됨",
     "status_saving": "저장 중...",
     "status_modified": "저장되지 않은 변경사항",
@@ -558,7 +565,15 @@
     "btn_check_nexus_updates": "Nexus 업데이트 확인",
     "btn_open_library_folder": "라이브러리 폴더 열기",
     "checking_library_nexus_updates": "로컬 라이브러리의 Nexus Mods 업데이트 확인 중...",
-    "toast_local_library_up_to_date": "로컬 라이브러리의 모든 모드가 Nexus Mods와 최신 상태입니다"
+    "toast_local_library_up_to_date": "로컬 라이브러리의 모든 모드가 Nexus Mods와 최신 상태입니다",
+    "layout_grid_title": "그리드 보기 (카드)",
+    "layout_list_title": "목록 보기 (컴팩트)",
+    "unroll_details": "상세 정보 표시/숨기기",
+    "dialog_delete_installed_title": "설치된 모드 감지됨",
+    "dialog_delete_installed_desc": "\"{name}\" 모드가 현재 게임에 설치되어 있습니다. 게임 폴더에서 완전히 제거(언인스톨)하시겠습니까, 아니면 라이브러리의 백업 압축 파일만 삭제하시겠습니까?",
+    "btn_uninstall_and_remove": "언인스톨 및 삭제",
+    "btn_remove_library_only": "라이브러리에서만 삭제",
+    "toast_uninstalled_and_removed": "모드가 게임에서 제거되었으며 라이브러리에서도 삭제되었습니다."
   },
   "packer": {
     "hub_title": "모드 패커 작업 영역",
@@ -1402,7 +1417,8 @@
     "nexus_protocol_registered": "Windows 프로토콜이 성공적으로 등록되었습니다",
     "nexus_protocol_register_failed": "Windows 프로토콜 등록 실패: {error}",
     "converting_gamepass": "'{name}'을(를) Game Pass IoStore로 변환하는 중...",
-    "convert_gamepass_success": "'{name}'을(를) Game Pass용으로 성공적으로 변환했습니다({count}개 파일 생성)"
+    "convert_gamepass_success": "'{name}'을(를) Game Pass용으로 성공적으로 변환했습니다({count}개 파일 생성)",
+    "merge_hybrid_success": "'{name}' 모드를 하이브리드로 병합했습니다"
   },
   "dialogs": {
     "confirm_remove_mod": "\"{name}\"을(를) 영구적으로 제거하시겠습니까?",

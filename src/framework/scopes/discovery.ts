@@ -68,6 +68,7 @@ export interface DiscoveryDomMap {
   'discovery-tab-media': HTMLElement;
   'discovery-media-gallery': HTMLElement;
   'discovery-image-modal': HTMLElement;
+  'discovery-lightbox-img-wrap': HTMLElement;
   'discovery-lightbox-img': HTMLImageElement;
   'discovery-lightbox-close': HTMLButtonElement;
   'discovery-lightbox-zoom-in': HTMLButtonElement;

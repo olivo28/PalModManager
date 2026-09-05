@@ -5,7 +5,7 @@ import { showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
 import { loadMods } from './loader';
 import { loadProfiles } from './profiles';
-import { bus } from '../../framework';
+import { bus, mainDom } from '../../framework';
 import { renderConflictBanner, removeConflictBanner } from '../conflictBanner';
 
 let _isPromptingUe4ss = false;
@@ -14,8 +14,8 @@ let _loadDepsPromise: Promise<void> | null = null;
 let _lastLoadDepsTime = 0;
 
 async function waitUntilAppReady(): Promise<void> {
-  const loading = document.getElementById('app-loading');
-  const app = document.getElementById('app');
+  const loading = mainDom.elMaybe('app-loading');
+  const app = mainDom.elMaybe('app');
   const isAppVisible = app && app.style.display === 'flex' && (!loading || loading.style.display === 'none');
   if (isAppVisible) {
     return;
@@ -147,8 +147,6 @@ export function handleDepBadgeClick(type: 'ue4ss' | 'palschema'): void {
     console.error('Failed to open dependency modal:', err);
   });
 }
-
-import { mainDom } from '../../framework';
 
 export function renderDependencyBadges(deps: import('../../types').DependencyStatus): void {
   const platformEl = mainDom.elMaybe('game-platform-badge');

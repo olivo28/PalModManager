@@ -119,13 +119,13 @@ export function switchTab(tab: 'mods' | 'editor' | 'library' | 'build' | 'scanne
   const editorView = editorDom.elMaybe('editor-view');
   if (editorView) editorView.style.display = tab === 'editor' ? 'flex' : 'none';
 
-  const libView = document.getElementById('library-view');
+  const libView = mainDom.elMaybe('library-view');
   if (libView) libView.style.display = tab === 'library' ? 'flex' : 'none';
 
-  const buildView = document.getElementById('build-view');
+  const buildView = mainDom.elMaybe('build-view');
   if (buildView) buildView.style.display = tab === 'build' ? 'flex' : 'none';
 
-  const scannerView = document.getElementById('scanner-view');
+  const scannerView = mainDom.elMaybe('scanner-view');
   if (scannerView) scannerView.style.display = tab === 'scanner' ? 'flex' : 'none';
 
   if (tab === 'editor') {

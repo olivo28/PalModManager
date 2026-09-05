@@ -373,15 +373,36 @@ pub fn find_hook_start(line: &str, start_idx: usize) -> Option<usize> {
     let sub = &line[start_idx..];
     let lower = sub.to_ascii_lowercase();
 
-    let keywords = ["registerhook(", "notifyonnewobject(", "staticfindobject(", ":registerhook(", "findfirstof(", "findallof("];
+    let keywords = [
+        "registerhook",
+        "notifyonnewobject",
+        "staticfindobject",
+        "findfirstof",
+        "findallof",
+    ];
     let mut earliest: Option<usize> = None;
 
     for kw in &keywords {
-        if let Some(pos) = lower.find(kw) {
-            let actual_pos = start_idx + pos + kw.len();
-            if earliest.is_none() || actual_pos < earliest.unwrap() {
-                earliest = Some(actual_pos);
+        let mut pos_search = 0;
+        while let Some(rel_pos) = lower[pos_search..].find(kw) {
+            let pos = pos_search + rel_pos;
+            let after_pos = pos + kw.len();
+
+            // Ensure boundary before keyword (avoid false positives on MyCustomRegisterHook)
+            let is_valid_boundary = if pos == 0 {
+                true
+            } else {
+                let prev = lower.as_bytes()[pos - 1];
+                !prev.is_ascii_alphanumeric() && prev != b'_'
+            };
+
+            if is_valid_boundary {
+                let actual_pos = start_idx + after_pos;
+                if earliest.is_none() || actual_pos < earliest.unwrap() {
+                    earliest = Some(actual_pos);
+                }
             }
+            pos_search = after_pos;
         }
     }
 
@@ -404,7 +425,7 @@ pub fn extract_string_literal(line: &str, start_pos: usize) -> Option<(String, c
             quote_char = Some(c);
             quote_col_offset = start_pos + idx + 1;
             break;
-        } else if !c.is_whitespace() {
+        } else if c == '-' && remaining[idx..].starts_with("--") {
             return None;
         }
     }
@@ -599,5 +620,28 @@ pub fn lint_deprecated_and_antipatterns(content: &str, diagnostics: &mut Vec<Edi
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_find_hook_start_and_extract_string_literal() {
+        let line1 = r#"local ok, err = pcall(RegisterHook, "/Script/Pal.PalPlayerController:RequestUseItemToCharacter", function(self) end)"#;
+        let start1 = find_hook_start(line1, 0).expect("Should find hook start");
+        let (target1, _, _) = extract_string_literal(line1, start1).expect("Should extract string literal");
+        assert_eq!(target1, "/Script/Pal.PalPlayerController:RequestUseItemToCharacter");
+
+        let line2 = r#"RegisterHook('/Script/Engine.Actor:K2_DestroyActor', callback)"#;
+        let start2 = find_hook_start(line2, 0).expect("Should find hook start");
+        let (target2, _, _) = extract_string_literal(line2, start2).expect("Should extract string literal");
+        assert_eq!(target2, "/Script/Engine.Actor:K2_DestroyActor");
+
+        let line3 = r#"xpcall(RegisterHook, debug.traceback, "/Script/Pal.PalCharacter:Die", on_die)"#;
+        let start3 = find_hook_start(line3, 0).expect("Should find hook start");
+        let (target3, _, _) = extract_string_literal(line3, start3).expect("Should extract string literal");
+        assert_eq!(target3, "/Script/Pal.PalCharacter:Die");
     }
 }

@@ -10,10 +10,10 @@ export function selectRecord(type: 'mod' | 'profile' | 'settings', id: string, d
   dbState.selectedRecordId = id;
   dbState.selectedUsmapItem = null;
 
-  const customContainer = document.getElementById('db-inspector-custom-container');
+  const customContainer = dbDom.elMaybe('db-inspector-custom-container');
   const editor = dbDom.elMaybe('db-json-editor');
-  const inspectorTitle = document.getElementById('db-inspector-title');
-  const inspectorActions = document.getElementById('db-inspector-actions');
+  const inspectorTitle = dbDom.elMaybe('db-inspector-title');
+  const inspectorActions = dbDom.elMaybe('db-inspector-actions');
 
   if (customContainer) customContainer.style.display = 'none';
   if (editor) {
@@ -40,9 +40,9 @@ export function clearInspector(): void {
   dbState.selectedRecordId = '';
   dbState.selectedUsmapItem = null;
 
-  const customContainer = document.getElementById('db-inspector-custom-container');
+  const customContainer = dbDom.elMaybe('db-inspector-custom-container');
   const editor = dbDom.elMaybe('db-json-editor');
-  const inspectorTitle = document.getElementById('db-inspector-title');
+  const inspectorTitle = dbDom.elMaybe('db-inspector-title');
 
   if (customContainer) customContainer.style.display = 'none';
   if (editor) {

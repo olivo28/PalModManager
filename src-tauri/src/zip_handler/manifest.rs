@@ -102,6 +102,10 @@ pub fn build_manifest_from_files(
     let mut has_ue4ss = false;
     let mut has_palschema = false;
     let mut has_pak = false;
+    let has_scripts_dir = files.iter().any(|f| {
+        let fl = f.replace('\\', "/").to_lowercase();
+        fl.contains("/scripts/") || fl.starts_with("scripts/")
+    });
 
     // First pass: classify files and build relative paths
     let mut temp_routes = Vec::new();
@@ -294,7 +298,8 @@ pub fn build_manifest_from_files(
                     || lower.contains("ue4ss/mods/")
                     || lower.contains("nativemods/ue4ss")
                     || rel_lower.ends_with("enabled.txt")
-                    || rel_segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)));
+                    || segments.iter().any(|seg| detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(seg)))
+                    || (is_valid_root_folder && detected_ue4ss_roots.iter().any(|r| r.eq_ignore_ascii_case(&folder_name)));
 
                 if is_inside_ue4ss {
                     has_ue4ss = true;
@@ -390,14 +395,17 @@ pub fn build_manifest_from_files(
                     }
 
                     if let (Some(root), Some(subpath)) = (matched_root, matched_subpath) {
-                        let final_sub = if subpath.to_lowercase().ends_with(".lua") && !subpath.contains('/') {
+                        let sub_lower = subpath.to_lowercase();
+                        let is_cfg = sub_lower.starts_with("config") || sub_lower.starts_with("setting") || sub_lower.contains("config");
+                        let final_sub = if sub_lower.ends_with(".lua") && !subpath.contains('/') && !is_cfg && !has_scripts_dir {
                             format!("Scripts/{}", subpath)
                         } else {
                             subpath
                         };
                         ue4ss_mods_dest.join(&root).join(final_sub)
                     } else {
-                        let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') {
+                        let is_cfg = rel_lower.starts_with("config") || rel_lower.starts_with("setting") || rel_lower.contains("config");
+                        let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') && !is_cfg && !has_scripts_dir {
                             format!("Scripts/{}", relative_path)
                         } else {
                             relative_path.clone()

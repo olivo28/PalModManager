@@ -4,18 +4,20 @@ import { enableMod, disableMod, removeMod, setModProfileState } from '../api';
 import { showToast } from '../ui/toast';
 import { showConfirm } from '../ui/confirm';
 import { t } from '../utils/i18n';
+import { mainDom, libraryDom } from '../framework';
 
 let isDragging = false;
 let startX = 0;
 let startY = 0;
 let lastSelectedId: string | null = null; // For Shift-click range selection
+let lastSelectedLibraryId: string | null = null; // For Library Shift-click range selection
 
 let activeDragTargetContainer: HTMLElement | null = null;
 
 export function setupSelection(): void {
-  const modsContainer = document.getElementById('mods-container');
-  const libContainer = document.getElementById('library-container');
-  const dragBox = document.getElementById('drag-select-box');
+  const modsContainer = mainDom.elMaybe('mods-container');
+  const libContainer = libraryDom.elMaybe('library-container');
+  const dragBox = mainDom.elMaybe('drag-select-box');
   if (!dragBox) return;
 
   const handleMouseDown = (e: MouseEvent, targetContainer: HTMLElement, isLibrary: boolean) => {
@@ -23,7 +25,7 @@ export function setupSelection(): void {
     const target = e.target as HTMLElement;
 
     if (target.classList.contains('library-card-checkbox') || target.classList.contains('card-checkbox')) {
-      const card = target.closest('.mod-card') as HTMLElement | null;
+      const card = target.closest('.mod-card, .library-card') as HTMLElement | null;
       if (card) {
         const id = card.dataset.id!;
         if (isLibrary) {
@@ -32,6 +34,7 @@ export function setupSelection(): void {
             selectedIds.delete(id);
           } else {
             selectedIds.add(id);
+            lastSelectedLibraryId = id;
           }
           updateState({ selectedLibraryIds: selectedIds });
           const libCards = document.querySelectorAll('.library-card');
@@ -56,7 +59,6 @@ export function setupSelection(): void {
         }
       }
       e.stopPropagation();
-      e.preventDefault();
       return;
     }
 
@@ -64,7 +66,7 @@ export function setupSelection(): void {
       return;
     }
 
-    const card = target.closest('.mod-card') as HTMLElement | null;
+    const card = target.closest('.mod-card, .library-card') as HTMLElement | null;
     if (card) {
       if (isLibrary) {
         handleLibraryCardClick(card, e);
@@ -180,10 +182,10 @@ export function setupSelection(): void {
   });
 
   // Setup Bulk Action button handlers
-  document.getElementById('bulk-enable-btn')?.addEventListener('click', () => handleBulkEnable(true));
-  document.getElementById('bulk-disable-btn')?.addEventListener('click', () => handleBulkEnable(false));
-  document.getElementById('bulk-remove-btn')?.addEventListener('click', handleBulkRemove);
-  document.getElementById('bulk-clear-btn')?.addEventListener('click', () => clearSelection());
+  mainDom.elMaybe('bulk-enable-btn')?.addEventListener('click', () => handleBulkEnable(true));
+  mainDom.elMaybe('bulk-disable-btn')?.addEventListener('click', () => handleBulkEnable(false));
+  mainDom.elMaybe('bulk-remove-btn')?.addEventListener('click', handleBulkRemove);
+  mainDom.elMaybe('bulk-clear-btn')?.addEventListener('click', () => clearSelection());
 }
 
 function handleLibraryCardClick(card: HTMLElement, e: MouseEvent): void {
@@ -194,18 +196,36 @@ function handleLibraryCardClick(card: HTMLElement, e: MouseEvent): void {
   const state = getState();
   const selectedIds = new Set(state.selectedLibraryIds);
 
-  if (e.ctrlKey || e.metaKey) {
+  if (e.shiftKey && lastSelectedLibraryId) {
+    const cards = Array.from(document.querySelectorAll('.library-card:not(.workshop-card)')) as HTMLElement[];
+    const idx1 = cards.findIndex(c => c.dataset.id === lastSelectedLibraryId);
+    const idx2 = cards.findIndex(c => c.dataset.id === id);
+    if (idx1 !== -1 && idx2 !== -1) {
+      const start = Math.min(idx1, idx2);
+      const end = Math.max(idx1, idx2);
+      if (!e.ctrlKey && !e.metaKey) {
+        selectedIds.clear();
+      }
+      for (let i = start; i <= end; i++) {
+        const cId = cards[i].dataset.id;
+        if (cId) selectedIds.add(cId);
+      }
+    }
+  } else if (e.ctrlKey || e.metaKey) {
     if (selectedIds.has(id)) {
       selectedIds.delete(id);
     } else {
       selectedIds.add(id);
+      lastSelectedLibraryId = id;
     }
   } else {
     if (selectedIds.has(id) && selectedIds.size === 1) {
       selectedIds.clear();
+      lastSelectedLibraryId = null;
     } else {
       selectedIds.clear();
       selectedIds.add(id);
+      lastSelectedLibraryId = id;
     }
   }
 
@@ -274,8 +294,8 @@ export function updateSelection(selectedIds: Set<string>): void {
     card.classList.toggle('selected', selectedIds.has(id));
   });
 
-  const bar = document.getElementById('bulk-actions-bar');
-  const countSpan = document.getElementById('bulk-selected-count');
+  const bar = mainDom.elMaybe('bulk-actions-bar');
+  const countSpan = mainDom.elMaybe('bulk-selected-count');
   if (bar && countSpan) {
     if (selectedIds.size > 1) {
       countSpan.textContent = selectedIds.size.toString();
@@ -299,6 +319,7 @@ export function clearSelection(): void {
     updateLibraryBulkBar();
   });
   lastSelectedId = null;
+  lastSelectedLibraryId = null;
 }
 
 async function handleBulkEnable(enable: boolean): Promise<void> {

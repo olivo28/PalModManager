@@ -4,6 +4,7 @@ import { renderModsView } from '../renderer';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { getContextOverlay, hideContextMenu, positionContextMenu } from './menuDom';
+import { mainDom } from '../../../framework';
 
 export function showFolderContextMenu(folderId: string, x: number, y: number): void {
   const state = getState();
@@ -12,7 +13,7 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
   if (!folder) return;
 
   const overlay = getContextOverlay();
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
 
   const modsInFolder = state.allMods.filter(m => folder.mod_ids.includes(m.id));
   const allEnabled = modsInFolder.length > 0 && modsInFolder.every(m => m.enabled);

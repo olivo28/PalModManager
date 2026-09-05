@@ -504,3 +504,12 @@ export interface SdkStatus {
   localGameCxxFound: boolean;
   localGameCxxPath?: string | null;
 }
+
+export interface ArchivedConfigInfo {
+  archiveId: string;
+  modName: string;
+  modId: string;
+  nexusModId: number | null;
+  archivedAt: string;
+  files: string[];
+}

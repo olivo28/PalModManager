@@ -1,5 +1,6 @@
 import { closeInstallModal, closeSettingsModal, closeAboutModal } from '../ui/modal';
 import { closeDetailPanel } from '../ui/detailPanel';
+import { mainDom, detailDom, discoveryDom, settingsDom, scannerDom, installerDom } from '../framework';
 
 export function setupGlobalShortcuts(): void {
   document.addEventListener('keydown', (e) => {
@@ -11,21 +12,21 @@ export function setupGlobalShortcuts(): void {
       }
 
       // 2. Unreal Engine Asset Inspector modal (z-index: 10000)
-      const uassetModal = document.getElementById('uasset-inspector-modal');
+      const uassetModal = mainDom.elMaybe('uasset-inspector-modal');
       if (uassetModal) {
         uassetModal.remove();
         return;
       }
 
       // 3. Save Health Doctor Comparison modal (z-index: 9999)
-      const saveCompareModal = document.getElementById('save-compare-modal');
+      const saveCompareModal = scannerDom.elMaybe('save-compare-modal');
       if (saveCompareModal) {
         saveCompareModal.remove();
         return;
       }
 
       // 4. Discovery Lightbox Image modal
-      const discoveryImageModal = document.getElementById('discovery-image-modal');
+      const discoveryImageModal = discoveryDom.elMaybe('discovery-image-modal');
       if (discoveryImageModal && (discoveryImageModal.classList.contains('visible') || (discoveryImageModal.style.display && discoveryImageModal.style.display !== 'none'))) {
         discoveryImageModal.classList.remove('visible');
         discoveryImageModal.style.display = 'none';
@@ -33,57 +34,57 @@ export function setupGlobalShortcuts(): void {
       }
 
       // 5. File Tree / Show Files Modal from installer or library (z-index: 4500)
-      const fileTreeModal = document.getElementById('file-tree-modal');
+      const fileTreeModal = installerDom.elMaybe('file-tree-modal');
       if (fileTreeModal) {
         fileTreeModal.remove();
         return;
       }
 
       // 6. Full files modal overlay / Archive view modals
-      const fullFilesOverlay = document.getElementById('full-files-modal-overlay');
+      const fullFilesOverlay = installerDom.elMaybe('full-files-modal-overlay');
       if (fullFilesOverlay) {
         fullFilesOverlay.remove();
         return;
       }
-      const archiveViewModal = document.getElementById('archive-view-modal');
+      const archiveViewModal = installerDom.elMaybe('archive-view-modal');
       if (archiveViewModal) {
         archiveViewModal.remove();
         return;
       }
-      const archiveStructureModal = document.getElementById('archive-structure-modal');
+      const archiveStructureModal = installerDom.elMaybe('archive-structure-modal');
       if (archiveStructureModal) {
         archiveStructureModal.remove();
         return;
       }
 
       // 7. Patch Builder & Existing Patches modals
-      const existingPatchesModal = document.getElementById('pmm-existing-patches-modal');
+      const existingPatchesModal = scannerDom.elMaybe('pmm-existing-patches-modal');
       if (existingPatchesModal) {
         existingPatchesModal.remove();
         return;
       }
-      const patchBuilderModal = document.getElementById('pmm-patch-builder-modal-overlay');
+      const patchBuilderModal = scannerDom.elMaybe('pmm-patch-builder-modal-overlay');
       if (patchBuilderModal) {
         patchBuilderModal.remove();
         return;
       }
 
       // 8. Config Diff modal
-      const configDiffOverlay = document.getElementById('config-diff-modal');
+      const configDiffOverlay = installerDom.elMaybe('config-diff-modal');
       if (configDiffOverlay) {
         configDiffOverlay.remove();
         return;
       }
 
       // 8. Install Modal (when open above Discovery or Mods View)
-      const installModal = document.getElementById('install-modal');
+      const installModal = installerDom.elMaybe('install-modal');
       if (installModal?.classList.contains('visible')) {
         closeInstallModal();
         return;
       }
 
       // 9. Discovery Mod Details Modal
-      const discoveryModModal = document.getElementById('discovery-mod-modal');
+      const discoveryModModal = discoveryDom.elMaybe('discovery-mod-modal');
       if (discoveryModModal && (discoveryModModal.classList.contains('visible') || (discoveryModModal.style.display && discoveryModModal.style.display !== 'none'))) {
         import('../ui/discoveryView').then(({ closeDiscoveryModal }) => closeDiscoveryModal()).catch(() => {
           discoveryModModal.classList.remove('visible');
@@ -93,49 +94,49 @@ export function setupGlobalShortcuts(): void {
       }
 
       // 10. Nexus Profile Modal
-      const nexusProfileModal = document.getElementById('nexus-profile-modal');
+      const nexusProfileModal = settingsDom.elMaybe('nexus-profile-modal');
       if (nexusProfileModal?.classList.contains('visible')) {
         nexusProfileModal.classList.remove('visible');
         return;
       }
 
       // 11. Workshop Modal
-      const workshopModal = document.getElementById('workshop-modal');
+      const workshopModal = mainDom.elMaybe('workshop-modal');
       if (workshopModal?.classList.contains('visible')) {
         workshopModal.classList.remove('visible');
         return;
       }
 
       // 12. Console Modal
-      const consoleModal = document.getElementById('console-modal');
+      const consoleModal = mainDom.elMaybe('console-modal');
       if (consoleModal?.classList.contains('visible')) {
         consoleModal.classList.remove('visible');
         return;
       }
 
       // 13. Settings Modal
-      const settingsModal = document.getElementById('settings-modal');
+      const settingsModal = settingsDom.elMaybe('settings-modal');
       if (settingsModal?.classList.contains('visible')) {
         closeSettingsModal();
         return;
       }
 
       // 14. Profile Modal
-      const profileModal = document.getElementById('profile-modal');
+      const profileModal = mainDom.elMaybe('profile-modal');
       if (profileModal?.classList.contains('visible')) {
         profileModal.classList.remove('visible');
         return;
       }
 
       // 15. About Modal
-      const aboutModal = document.getElementById('about-modal');
+      const aboutModal = mainDom.elMaybe('about-modal');
       if (aboutModal?.classList.contains('visible')) {
         closeAboutModal();
         return;
       }
 
       // 16. Detail Overlay Panel
-      const detailOverlay = document.getElementById('detail-overlay');
+      const detailOverlay = detailDom.elMaybe('detail-overlay');
       if (detailOverlay?.classList.contains('visible')) {
         closeDetailPanel();
         return;

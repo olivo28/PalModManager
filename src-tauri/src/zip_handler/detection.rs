@@ -141,3 +141,43 @@ pub fn detect_archive_format(path: &Path) -> ArchiveFormat {
         ArchiveFormat::Zip
     }
 }
+
+/// Scans backwards for the ZIP End of Central Directory (EOCD) signature (`PK\x05\x06`).
+/// Returns the legitimate end offset of the archive (`eocd_pos + 22 + comment_len`).
+pub fn find_resilient_zip_boundary(bytes: &[u8]) -> Option<usize> {
+    if bytes.len() < 22 {
+        return None;
+    }
+    let max_scan = bytes.len() - 22;
+    for i in (0..=max_scan).rev() {
+        if bytes[i] == 0x50 && bytes[i + 1] == 0x4B && bytes[i + 2] == 0x05 && bytes[i + 3] == 0x06 {
+            let comment_len = u16::from_le_bytes([bytes[i + 20], bytes[i + 21]]) as usize;
+            let expected_end = i + 22 + comment_len;
+            if expected_end <= bytes.len() {
+                return Some(expected_end);
+            }
+        }
+    }
+    None
+}
+
+/// Opens a ZIP archive with resilient trailing-byte trimming if standard reader fails.
+pub fn open_resilient_zip(path: &str) -> Result<zip::read::ZipArchive<std::io::Cursor<Vec<u8>>>, String> {
+    let bytes = fs::read(path).map_err(|e| format!("Cannot read file '{}': {}", path, e))?;
+    if let Some(true_end) = find_resilient_zip_boundary(&bytes) {
+        if true_end < bytes.len() {
+            crate::logger::log(&format!(
+                "open_resilient_zip: Detected {} trailing bytes after EOCD in '{}', trimming archive to {} bytes",
+                bytes.len() - true_end,
+                path,
+                true_end
+            ));
+            let trimmed = bytes[0..true_end].to_vec();
+            return zip::read::ZipArchive::new(std::io::Cursor::new(trimmed))
+                .map_err(|e| format!("Invalid resilient zip: {}", e));
+        }
+    }
+    zip::read::ZipArchive::new(std::io::Cursor::new(bytes))
+        .map_err(|e| format!("Invalid zip: {}", e))
+}
+

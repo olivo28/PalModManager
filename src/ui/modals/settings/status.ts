@@ -1,11 +1,12 @@
 import { getImageCacheSize, getStorageUsage, getSafetyBackupInfo } from '../../../api';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
+import { settingsDom } from '../../../framework';
 import { formatBytes } from './helpers';
 
 export async function refreshImageCacheStatus(): Promise<void> {
-  const badgeNet = document.getElementById('settings-image-cache-badge');
-  const badgeStorage = document.getElementById('storage-images-badge');
+  const badgeNet = settingsDom.elMaybe('settings-image-cache-badge');
+  const badgeStorage = settingsDom.elMaybe('storage-images-badge');
   if (!badgeNet && !badgeStorage) return;
 
   try {
@@ -19,10 +20,10 @@ export async function refreshImageCacheStatus(): Promise<void> {
 }
 
 export async function refreshStorageUsageStatus(): Promise<void> {
-  const tempBadge = document.getElementById('storage-temp-badge');
-  const tempDetails = document.getElementById('storage-temp-details');
-  const libBadge = document.getElementById('storage-library-badge');
-  const libDetails = document.getElementById('storage-library-details');
+  const tempBadge = settingsDom.elMaybe('storage-temp-badge');
+  const tempDetails = settingsDom.elMaybe('storage-temp-details');
+  const libBadge = settingsDom.elMaybe('storage-library-badge');
+  const libDetails = settingsDom.elMaybe('storage-library-details');
 
   if (!tempBadge && !libBadge) return;
 
@@ -57,7 +58,7 @@ export async function refreshStorageUsageStatus(): Promise<void> {
 }
 
 export async function refreshSafetyBackupStatus(): Promise<void> {
-  const statusElem = document.getElementById('safety-backup-status-text');
+  const statusElem = settingsDom.elMaybe('safety-backup-status-text');
   if (!statusElem) return;
 
   try {
@@ -77,10 +78,10 @@ export async function refreshSafetyBackupStatus(): Promise<void> {
 }
 
 export async function refreshUsmapStatus(): Promise<void> {
-  const badge = document.getElementById('settings-usmap-badge');
-  const gameVer = document.getElementById('settings-usmap-game-ver');
-  const activeFile = document.getElementById('settings-usmap-active-file');
-  const hashElem = document.getElementById('settings-usmap-hash');
+  const badge = settingsDom.elMaybe('settings-usmap-badge');
+  const gameVer = settingsDom.elMaybe('settings-usmap-game-ver');
+  const activeFile = settingsDom.elMaybe('settings-usmap-active-file');
+  const hashElem = settingsDom.elMaybe('settings-usmap-hash');
 
   if (!badge && !gameVer) return;
 
@@ -140,11 +141,11 @@ export async function refreshUsmapStatus(): Promise<void> {
 }
 
 export async function refreshSdkStatus(): Promise<void> {
-  const badge = document.getElementById('settings-sdk-badge');
-  const sourceElem = document.getElementById('settings-sdk-source');
-  const classesElem = document.getElementById('settings-sdk-classes-count');
-  const funcsElem = document.getElementById('settings-sdk-funcs-count');
-  const pathElem = document.getElementById('settings-sdk-path');
+  const badge = settingsDom.elMaybe('settings-sdk-badge');
+  const sourceElem = settingsDom.elMaybe('settings-sdk-source');
+  const classesElem = settingsDom.elMaybe('settings-sdk-classes-count');
+  const funcsElem = settingsDom.elMaybe('settings-sdk-funcs-count');
+  const pathElem = settingsDom.elMaybe('settings-sdk-path');
 
   if (!badge && !sourceElem) return;
 
@@ -196,11 +197,11 @@ export async function refreshSdkStatus(): Promise<void> {
 }
 
 export async function refreshBlueprintsStatus(): Promise<void> {
-  const badge = document.getElementById('settings-blueprints-badge');
-  const gameVer = document.getElementById('settings-blueprints-game-ver');
-  const countElem = document.getElementById('settings-blueprints-count');
-  const activeFile = document.getElementById('settings-blueprints-active-file');
-  const hashElem = document.getElementById('settings-blueprints-hash');
+  const badge = settingsDom.elMaybe('settings-blueprints-badge');
+  const gameVer = settingsDom.elMaybe('settings-blueprints-game-ver');
+  const countElem = settingsDom.elMaybe('settings-blueprints-count');
+  const activeFile = settingsDom.elMaybe('settings-blueprints-active-file');
+  const hashElem = settingsDom.elMaybe('settings-blueprints-hash');
 
   if (!badge && !gameVer) return;
 
@@ -258,10 +259,10 @@ export async function refreshBlueprintsStatus(): Promise<void> {
 }
 
 export async function refreshDatatablesStatus(): Promise<void> {
-  const badge = document.getElementById('settings-datatables-badge');
-  const countElem = document.getElementById('settings-datatables-count');
-  const rowsElem = document.getElementById('settings-datatables-rows-count');
-  const activeFile = document.getElementById('settings-datatables-active-file');
+  const badge = settingsDom.elMaybe('settings-datatables-badge');
+  const countElem = settingsDom.elMaybe('settings-datatables-count');
+  const rowsElem = settingsDom.elMaybe('settings-datatables-rows-count');
+  const activeFile = settingsDom.elMaybe('settings-datatables-active-file');
 
   if (!badge && !countElem) return;
 
@@ -303,12 +304,12 @@ export async function refreshDatatablesStatus(): Promise<void> {
 }
 
 export async function refreshPalSchemaSchemasStatus(): Promise<void> {
-  const badge = document.getElementById('settings-schemas-badge');
-  const versionElem = document.getElementById('settings-schemas-version');
-  const rawCountElem = document.getElementById('settings-schemas-raw-count');
-  const domainCountElem = document.getElementById('settings-schemas-domain-count');
-  const enumsElem = document.getElementById('settings-schemas-enums');
-  const sourceElem = document.getElementById('settings-schemas-source');
+  const badge = settingsDom.elMaybe('settings-schemas-badge');
+  const versionElem = settingsDom.elMaybe('settings-schemas-version');
+  const rawCountElem = settingsDom.elMaybe('settings-schemas-raw-count');
+  const domainCountElem = settingsDom.elMaybe('settings-schemas-domain-count');
+  const enumsElem = settingsDom.elMaybe('settings-schemas-enums');
+  const sourceElem = settingsDom.elMaybe('settings-schemas-source');
 
   if (!badge && !rawCountElem) return;
 

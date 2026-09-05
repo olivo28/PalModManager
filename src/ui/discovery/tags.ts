@@ -1,8 +1,9 @@
 import { escapeHtml } from '../../utils/helpers';
 import { discState, NEXUS_PALWORLD_TAGS } from './state';
+import { discoveryDom } from '../../framework';
 
 export function renderTagChips(type: 'include' | 'exclude'): void {
-  const container = document.getElementById(type === 'include' ? 'tags-include-chips' : 'tags-exclude-chips');
+  const container = discoveryDom.elMaybe(type === 'include' ? 'tags-include-chips' : 'tags-exclude-chips');
   if (!container) return;
 
   const set = type === 'include' ? discState.selectedIncludeTags : discState.selectedExcludeTags;
@@ -34,7 +35,7 @@ export function renderTagChips(type: 'include' | 'exclude'): void {
 }
 
 export function renderTagMenu(type: 'include' | 'exclude', filterText: string = ''): void {
-  const menu = document.getElementById(type === 'include' ? 'tags-include-menu' : 'tags-exclude-menu');
+  const menu = discoveryDom.elMaybe(type === 'include' ? 'tags-include-menu' : 'tags-exclude-menu');
   if (!menu) return;
 
   const set = type === 'include' ? discState.selectedIncludeTags : discState.selectedExcludeTags;
@@ -75,10 +76,10 @@ export function renderTagMenu(type: 'include' | 'exclude', filterText: string = 
 }
 
 export function setupTagPickers(): void {
-  const incSearch = document.getElementById('tags-include-search') as HTMLInputElement | null;
-  const incMenu = document.getElementById('tags-include-menu');
-  const excSearch = document.getElementById('tags-exclude-search') as HTMLInputElement | null;
-  const excMenu = document.getElementById('tags-exclude-menu');
+  const incSearch = discoveryDom.elMaybe('tags-include-search');
+  const incMenu = discoveryDom.elMaybe('tags-include-menu');
+  const excSearch = discoveryDom.elMaybe('tags-exclude-search');
+  const excMenu = discoveryDom.elMaybe('tags-exclude-menu');
 
   if (incSearch && incMenu) {
     incSearch.addEventListener('focus', () => {

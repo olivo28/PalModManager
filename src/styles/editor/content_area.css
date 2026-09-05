@@ -465,4 +465,49 @@
   font-size: 12px !important;
 }
 
+/* Floating Save Button */
+.editor-floating-save-btn {
+  position: absolute;
+  bottom: 40px;
+  right: 24px;
+  z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  background: rgba(22, 27, 34, 0.92);
+  backdrop-filter: blur(10px);
+  color: var(--text-primary, #ffffff);
+  border: 1px solid var(--accent, #0078d4);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5), 0 0 12px rgba(0, 120, 212, 0.35);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.editor-floating-save-btn:hover {
+  background: var(--accent, #0078d4);
+  color: #ffffff;
+  box-shadow: 0 6px 24px rgba(0, 120, 212, 0.55);
+  transform: translateY(-2px);
+}
+
+.editor-kbd-hint {
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  padding: 1px 6px;
+  font-size: 10px;
+  font-family: monospace;
+  color: var(--text-secondary, #cccccc);
+}
+
+.editor-floating-save-btn:hover .editor-kbd-hint {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
 

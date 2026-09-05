@@ -336,6 +336,13 @@ export async function checkNextInstall(): Promise<void> {
     }, 400);
   });
 
+  const tray = mainDom.elMaybe('nxm-download-tray');
+  if (tray) {
+    tray.classList.add('minimized');
+    const toggleBtn = mainDom.elMaybe('nxm-tray-toggle-collapse');
+    if (toggleBtn) toggleBtn.textContent = '▼';
+  }
+
   openInstallModalForZip(
     nextToInstall.tempZipPath,
     nextToInstall.modName,

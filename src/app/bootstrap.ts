@@ -11,7 +11,7 @@ import { getPreferredTheme, applyTheme } from './theme';
 import { setupEventListeners } from './listeners';
 
 export function showApp(): void {
-  const loading = document.getElementById('app-loading');
+  const loading = mainDom.elMaybe('app-loading');
   const app = mainDom.elMaybe('app');
   if (app) app.style.display = 'flex';
   if (loading) {

@@ -228,6 +228,7 @@
     "visit_steam_app": "Visit Steam Workshop (App)",
     "visit_steam_web": "Visit Steam Workshop (Web)",
     "move_to_folder": "Move to folder...",
+    "merge_as_hybrid": "Merge as Hybrid Mod",
     "folder_none": "(None / Ungrouped)",
     "remove_mod": "Remove mod",
     "folder_enter": "Enter folder",
@@ -305,6 +306,7 @@
     "comp_other_folder": "Folder",
     "duplicate_label": "Duplicate",
     "duplicate_warning": "Possible duplicate: {names}",
+    "merge_hybrid_btn": "Merge as Hybrid",
     "config_label": "Config",
     "btn_set_config": "Set",
     "btn_clear_config": "Clear",
@@ -324,6 +326,7 @@
     "btn_load_pak_contents": "Inspect .pak Assets"
   },
   "installer": {
+    "log_merged_hybrid": "[MERGE] Merged components with existing mod: {name}",
     "modal_title_install": "Install Mod",
     "modal_title_batch": "Batch Mod Installation ({current}/{total})",
     "mode_update": "Update",
@@ -344,6 +347,8 @@
     "internal_assets_count": "{count} internal assets",
     "by_author": "by {author}",
     "config_merge_title": "Config Settings Merge",
+    "archived_config_detected": "Archived configuration found ({count} files)",
+    "restore_archived_config": "Restore previous settings",
     "config_merge_desc": "Differences detected in config files.",
     "diff_merge_file": "Merge Settings",
     "diff_use_clean_file": "Use Clean File (Skip Merge)",
@@ -431,6 +436,8 @@
     "btn_preview_title": "Toggle preview",
     "btn_edit": "Edit",
     "btn_save": "Save",
+    "btn_save_all": "Save All ({count})",
+    "toast_saved_all": "Successfully saved {count} files",
     "status_saved": "Saved",
     "status_saving": "Saving...",
     "status_modified": "Unsaved changes",
@@ -558,7 +565,15 @@
     "btn_check_nexus_updates": "Check Nexus Updates",
     "btn_open_library_folder": "Open Library Folder",
     "checking_library_nexus_updates": "Checking Nexus Mods updates for library...",
-    "toast_local_library_up_to_date": "All Local Library mods are up to date with Nexus Mods"
+    "toast_local_library_up_to_date": "All Local Library mods are up to date with Nexus Mods",
+    "layout_grid_title": "Grid View (Cards)",
+    "layout_list_title": "List View (Compact)",
+    "unroll_details": "Show/Hide details",
+    "dialog_delete_installed_title": "Installed Mod Detected",
+    "dialog_delete_installed_desc": "The mod \"{name}\" is currently installed in your game. Do you want to uninstall it from the game folder, or only remove the backup archive from the library?",
+    "btn_uninstall_and_remove": "Uninstall & Remove",
+    "btn_remove_library_only": "Remove from Library Only",
+    "toast_uninstalled_and_removed": "Mod uninstalled from game and removed from library."
   },
   "packer": {
     "hub_title": "Mod Packer Workspace",
@@ -1400,7 +1415,8 @@
     "nexus_protocol_registered": "Windows protocol registered successfully",
     "nexus_protocol_register_failed": "Failed to register Windows protocol: {error}",
     "converting_gamepass": "Converting \"{name}\" to Game Pass IoStore...",
-    "convert_gamepass_success": "Successfully converted \"{name}\" for Game Pass ({count} files created)"
+    "convert_gamepass_success": "Successfully converted \"{name}\" for Game Pass ({count} files created)",
+    "merge_hybrid_success": "Merged \"{name}\" as a hybrid mod"
   },
   "dialogs": {
     "confirm_remove_mod": "Remove \"{name}\" permanently?",

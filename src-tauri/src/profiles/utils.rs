@@ -229,19 +229,8 @@ fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
         return Ok(());
     }
 
-    let installed_files = if !m.extra_files.is_empty() {
-        let mut all_paths = Vec::new();
-        let primary = if !m.game_path.is_empty() { &m.game_path } else { &m.disabled_path };
-        if !primary.is_empty() {
-            all_paths.push(primary.clone());
-        }
-        for extra in &m.extra_files {
-            if !all_paths.contains(extra) {
-                all_paths.push(extra.clone());
-            }
-        }
-        Some(all_paths)
-    } else if path.is_dir() {
+    let (folder_name, installed_files) = if path.is_dir() {
+        let folder = path.file_name().map(|n| n.to_string_lossy().to_string());
         let mut files = Vec::new();
         for entry in walkdir::WalkDir::new(path).into_iter().filter_map(|e| e.ok()) {
             if entry.file_type().is_file() {
@@ -253,19 +242,78 @@ fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
                 }
             }
         }
-        if !files.is_empty() { Some(files) } else { None }
+        let installed = if !files.is_empty() { Some(files) } else { None };
+        (folder, installed)
+    } else if path.is_file() {
+        let fname = path.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+        let mut files = vec![fname];
+        if let Some(parent) = path.parent() {
+            let stem = path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+            for companion_ext in &["ucas", "utoc"] {
+                let comp = parent.join(format!("{}.{}", stem, companion_ext));
+                if comp.exists() {
+                    let comp_name = comp.file_name().map(|n| n.to_string_lossy().to_string()).unwrap_or_default();
+                    if !files.contains(&comp_name) {
+                        files.push(comp_name);
+                    }
+                }
+            }
+        }
+        (None, Some(files))
     } else {
-        None
+        (None, None)
     };
 
+    // Collect all installed folder names across mod paths (e.g. UE4SS and PalSchema component folders)
+    let mut all_installed_folders: Vec<String> = Vec::new();
+    let mut check_folder_path = |p_str: &str| {
+        if !p_str.is_empty() {
+            let p = Path::new(p_str);
+            let lower = p_str.replace('\\', "/").to_lowercase();
+            let is_known_file = lower.ends_with(".pak")
+                || lower.ends_with(".lua")
+                || lower.ends_with(".dll")
+                || lower.ends_with(".json")
+                || lower.ends_with(".txt")
+                || lower.ends_with(".png");
+            if (!is_known_file || p.is_dir()) && (lower.contains("ue4ss/mods") || lower.contains("palschema/mods") || p.is_dir()) {
+                if let Some(fname) = p.file_name().and_then(|n| n.to_str()) {
+                    let folder_str = fname.to_string();
+                    if !all_installed_folders.iter().any(|f| f.eq_ignore_ascii_case(&folder_str)) {
+                        all_installed_folders.push(folder_str);
+                    }
+                }
+            }
+        }
+    };
+    check_folder_path(&m.game_path);
+    check_folder_path(&m.disabled_path);
+    for extra in &m.extra_files {
+        check_folder_path(extra);
+    }
+
+    let installed_folders = if !all_installed_folders.is_empty() {
+        Some(all_installed_folders.clone())
+    } else {
+        folder_name.clone().map(|f| vec![f])
+    };
+
+    let final_folder_name = folder_name.or_else(|| all_installed_folders.first().cloned());
+
+    let source_zip = if !m.source_zip.is_empty() { Some(m.source_zip.clone()) } else { None };
     let meta = crate::models::PmmMetadata {
         name: m.name.clone(),
         version: m.version.clone(),
         author: m.nexus_author.clone(),
         description: m.nexus_summary.clone(),
         mod_type: Some(format!("{:?}", m.mod_type).to_lowercase()),
+        original_name: m.original_name.clone(),
+        custom_name: m.custom_name.clone(),
+        folder_name: final_folder_name,
+        installed_folders,
+        source_zip,
         nexus_mod_id: m.nexus_mod_id,
-        nexus_file_id: m.nexus_file_id,
+        nexus_file_id: m.nexus_file_id.clone(),
         nexus_picture_url: m.nexus_picture_url.clone(),
         nexus_url: m.nexus_url.clone(),
         custom_notes: m.custom_notes.clone(),

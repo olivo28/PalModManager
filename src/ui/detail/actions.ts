@@ -5,16 +5,17 @@ import { loadMods, renderModsView, loadProfiles, loadDependencies } from '../mod
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
+import { detailDom, bus } from '../../framework';
 
 export function closeDetailPanel(): void {
-  document.getElementById('detail-overlay')!.classList.remove('visible');
+  detailDom.el('detail-overlay').classList.remove('visible');
   updateState({ currentDetailMod: null });
 }
 
 export async function handleRefreshDetail(): Promise<void> {
   const state = getState();
   if (!state.currentDetailMod?.nexusModId) return;
-  const btn = document.getElementById('detail-refresh')! as HTMLButtonElement;
+  const btn = detailDom.el('detail-refresh');
   btn.disabled = true;
   btn.textContent = t('toasts.refreshing');
   try {
@@ -157,7 +158,7 @@ export async function handleDetailRename(): Promise<void> {
   const state = getState();
   if (!state.currentDetailMod) return;
   const currentName = state.currentDetailMod.name;
-  const header = document.getElementById('detail-name-header')!;
+  const header = detailDom.el('detail-name-header');
   const input = document.createElement('input');
   input.type = 'text';
   input.className = 'rename-input';
@@ -174,8 +175,10 @@ export async function handleDetailRename(): Promise<void> {
       if (newName && newName !== currentName) {
         try {
           const updated = await renameMod(state.currentDetailMod!.id, newName);
-          updateState({ currentDetailMod: updated });
+          const newAllMods = state.allMods.map((m) => (m.id === updated.id ? { ...m, name: updated.name } : m));
+          updateState({ currentDetailMod: updated, allMods: newAllMods });
           header.textContent = updated.name;
+          bus.emit('mod:renamed', { modId: updated.id, newName: updated.name });
           renderModsView();
           showToast(t('toasts.mod_updated', { name: newName }), 'success');
         } catch (e) {

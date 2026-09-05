@@ -83,6 +83,12 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         }
     }
 
+    let filename = Path::new(&zip_path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
+    let parsed_nexus = nexus::parse_mod_filename(&filename);
+
     let detected_version = {
         let from_info = modinfo_data.as_ref().and_then(|info| {
             info.get("version").and_then(|v| v.as_str()).map(|s| s.to_string())
@@ -94,11 +100,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         }) {
             Some(from_sc)
         } else {
-            let filename = Path::new(&zip_path)
-                .file_name()
-                .map(|s| s.to_string_lossy().to_string())
-                .unwrap_or_default();
-            nexus::parse_mod_filename(&filename).version
+            parsed_nexus.version.clone()
         }
     };
 
@@ -139,6 +141,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         "rootFolder": analysis.root_folder,
         "fileCount": analysis.files.len(),
         "nexusModId": nexus_id,
+        "nexusFileId": parsed_nexus.nexus_file_id,
         "detectedVersion": detected_version,
         "nexusInfo": nexus_info,
         "modinfo": modinfo_data,

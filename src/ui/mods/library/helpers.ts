@@ -27,3 +27,16 @@ export function parseModFilename(filename: string): { name: string; version: str
   }
   return { name: stem, version: null, nexusId: null };
 }
+
+export function compareVersions(a: string, b: string): number {
+  const parseParts = (v: string) => v.replace(/^[^\d]*/, '').split(/[\.-]/).map(n => parseInt(n, 10) || 0);
+  const partsA = parseParts(a);
+  const partsB = parseParts(b);
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = partsA[i] || 0;
+    const numB = partsB[i] || 0;
+    if (numA !== numB) return numA - numB;
+  }
+  return a.localeCompare(b);
+}
+

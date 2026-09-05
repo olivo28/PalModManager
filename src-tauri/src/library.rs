@@ -76,34 +76,15 @@ pub fn copy_to_library(
             } else {
                 format!("{}.{}", safe_folder_name, clean_ext)
             }
-        } else if let Some(v) = clean_version {
-            let target_stem = sanitized_target.strip_suffix(".zip")
-                .or_else(|| sanitized_target.strip_suffix(".rar"))
-                .or_else(|| sanitized_target.strip_suffix(".7z"))
-                .or_else(|| sanitized_target.strip_suffix(".pak"))
-                .unwrap_or(&sanitized_target);
-            if !target_stem.to_lowercase().contains(&v.to_lowercase()) {
-                format!("{} - {}.{}", target_stem, sanitize_filename(v), clean_ext)
-            } else {
-                sanitized_target
-            }
         } else {
             sanitized_target
         }
-    } else if let Some(v) = clean_version {
-        let orig_stem = original_name.strip_suffix(".zip")
-            .or_else(|| original_name.strip_suffix(".rar"))
-            .or_else(|| original_name.strip_suffix(".7z"))
-            .or_else(|| original_name.strip_suffix(".pak"))
-            .unwrap_or(&original_name);
-
-        if is_temp_or_nexus(&original_name) || !orig_stem.to_lowercase().contains(&v.to_lowercase()) {
+    } else if is_temp_or_nexus(&original_name) {
+        if let Some(v) = clean_version {
             format!("{} - {}.{}", safe_folder_name, sanitize_filename(v), clean_ext)
         } else {
-            sanitize_filename(&original_name)
+            format!("{}.{}", safe_folder_name, clean_ext)
         }
-    } else if is_temp_or_nexus(&original_name) {
-        format!("{}.{}", safe_folder_name, clean_ext)
     } else {
         sanitize_filename(&original_name)
     };
@@ -421,6 +402,11 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
                             custom_notes: None,
                             category: None,
                             routes: None,
+                            original_name: None,
+                            custom_name: None,
+                            folder_name: None,
+                            installed_folders: None,
+                            source_zip: Some(zip_name.clone()),
                             installed_files: None,
                         };
                         let sidecar_dest = PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()));

@@ -531,11 +531,39 @@ async function executeModInstallation(
       manifest.nexusModId = state.currentAnalysis.nexusModId;
     }
 
+    const appState = getState();
+    const existingCompanionMod = state.currentAnalysis.nexusModId
+      ? appState.allMods.find(m => m.nexusModId === state.currentAnalysis.nexusModId && m.id !== _pendingUpdateModId)
+      : null;
+
+    let installedMod: any = null;
     if (_pendingUpdateModId) {
-      await updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId);
+      installedMod = await updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId);
     } else {
-      await installModWithManifest(manifest, state.currentAnalysis.zipPath);
+      installedMod = await installModWithManifest(manifest, state.currentAnalysis.zipPath);
     }
+
+    if (existingCompanionMod) {
+      logs.push(`<div style="color:#00bcff;font-weight:bold;">${escapeHtml(t('installer.log_merged_hybrid', { name: existingCompanionMod.name }))}</div>`);
+      showToast(t('toasts.merge_hybrid_success', { name: existingCompanionMod.name }), 'success');
+    }
+
+    const restoreCheckbox = document.getElementById('restore-archived-config-checkbox') as HTMLInputElement | null;
+    if (restoreCheckbox && restoreCheckbox.checked && restoreCheckbox.dataset.archiveId && installedMod) {
+      try {
+        const { applyArchivedConfig } = await import('../../../api');
+        const targetId = installedMod.id || manifest.displayName || customName || '';
+        const restored = await applyArchivedConfig(targetId, restoreCheckbox.dataset.archiveId);
+        if (restored) {
+          logs.push(`<div style="color:#2ecc71;font-weight:bold;">[OK] Restored previously archived configuration settings!</div>`);
+          resultsList.innerHTML = logs.join('');
+        }
+      } catch (err) {
+        logs.push(`<div style="color:#ffaa00;">[WARN] Could not restore archived config: ${escapeHtml(String(err))}</div>`);
+        resultsList.innerHTML = logs.join('');
+      }
+    }
+
     setLastInstallSuccess(true);
 
     logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] Mod installed successfully!</div>`);

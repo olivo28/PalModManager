@@ -12,9 +12,10 @@ import { hideContextMenu, positionContextMenu, isAnyModalActive } from './menuDo
 import { showContextMenu } from './singleMod';
 import { showFolderContextMenu } from './folders';
 import { showBulkContextMenu } from './batchSelection';
+import { mainDom, editorDom } from '../../../framework';
 
 export function showGlobalContextMenu(x: number, y: number): void {
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
   const state = getState();
   const deps = state.dependencies;
   const activeProfile = state.profiles.find(p => p.id === state.currentProfileId);
@@ -127,19 +128,19 @@ export function showGlobalContextMenu(x: number, y: number): void {
           openWorkshopModal();
           break;
         case 'install':
-          document.getElementById('install-btn')?.click();
+          mainDom.elMaybe('install-btn')?.click();
           break;
         case 'rescan':
-          document.getElementById('scan-btn')?.click();
+          mainDom.elMaybe('scan-btn')?.click();
           break;
         case 'check-updates-global':
-          document.getElementById('check-updates-btn')?.click();
+          mainDom.elMaybe('check-updates-btn')?.click();
           break;
         case 'export-json':
-          document.getElementById('export-json-btn')?.click();
+          mainDom.elMaybe('export-json-btn')?.click();
           break;
         case 'new-folder':
-          document.getElementById('new-folder-btn')?.click();
+          mainDom.elMaybe('new-folder-btn')?.click();
           break;
         case 'check-deps':
           showToast(t('context.checking_deps'), 'info');
@@ -249,7 +250,7 @@ export function showGlobalContextMenu(x: number, y: number): void {
           openFolderByType('paks').catch(e => showToast(t('toasts.export_failed', { error: String(e) }), 'error'));
           break;
         case 'settings':
-          document.getElementById('settings-btn')?.click();
+          mainDom.elMaybe('settings-btn')?.click();
           break;
       }
     });
@@ -259,7 +260,7 @@ export function showGlobalContextMenu(x: number, y: number): void {
 }
 
 export function showEditorContextMenu(x: number, y: number): void {
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
 
   menu.innerHTML = `
     <button type="button" class="context-menu-item" id="editor-ctx-save" style="display:flex;align-items:center;width:100%;">
@@ -286,16 +287,16 @@ export function showEditorContextMenu(x: number, y: number): void {
 
   positionContextMenu(x, y);
 
-  const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement;
+  const editorContent = editorDom.elMaybe('editor-content');
 
-  document.getElementById('editor-ctx-save')!.addEventListener('click', async (e) => {
+  menu.querySelector('#editor-ctx-save')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     const { handleEditorSave } = await import('../../editorView');
     await handleEditorSave();
   });
 
-  document.getElementById('editor-ctx-cut')!.addEventListener('click', async (e) => {
+  menu.querySelector('#editor-ctx-cut')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     if (!editorContent) return;
@@ -310,7 +311,7 @@ export function showEditorContextMenu(x: number, y: number): void {
     }
   });
 
-  document.getElementById('editor-ctx-copy')!.addEventListener('click', async (e) => {
+  menu.querySelector('#editor-ctx-copy')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     if (!editorContent) return;
@@ -320,7 +321,7 @@ export function showEditorContextMenu(x: number, y: number): void {
     }
   });
 
-  document.getElementById('editor-ctx-paste')!.addEventListener('click', async (e) => {
+  menu.querySelector('#editor-ctx-paste')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     if (!editorContent) return;
@@ -336,14 +337,14 @@ export function showEditorContextMenu(x: number, y: number): void {
     }
   });
 
-  document.getElementById('editor-ctx-find')!.addEventListener('click', (e) => {
+  menu.querySelector('#editor-ctx-find')?.addEventListener('click', (e) => {
     e.stopPropagation();
     hideContextMenu();
     const ev = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true });
     document.dispatchEvent(ev);
   });
 
-  document.getElementById('editor-ctx-selectall')!.addEventListener('click', (e) => {
+  menu.querySelector('#editor-ctx-selectall')?.addEventListener('click', (e) => {
     e.stopPropagation();
     hideContextMenu();
     if (editorContent) {
@@ -354,7 +355,7 @@ export function showEditorContextMenu(x: number, y: number): void {
 }
 
 export function showLibraryContextMenu(modId: string | null, zipName: string | null, x: number, y: number): void {
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
   const state = getState();
   const selectedCount = state.selectedLibraryIds.size;
 
@@ -392,14 +393,14 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
 
   positionContextMenu(x, y);
 
-  document.getElementById('lib-ctx-check-updates')?.addEventListener('click', async (e) => {
+  menu.querySelector('#lib-ctx-check-updates')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     const { handleCheckLocalLibraryOnlineUpdates } = await import('../library');
     handleCheckLocalLibraryOnlineUpdates();
   });
 
-  document.getElementById('lib-ctx-open-folder')?.addEventListener('click', async (e) => {
+  menu.querySelector('#lib-ctx-open-folder')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     const { openUrl, getSettings } = await import('../../../api');
@@ -412,7 +413,7 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
     }
   });
 
-  document.getElementById('lib-ctx-install')?.addEventListener('click', (e) => {
+  menu.querySelector('#lib-ctx-install')?.addEventListener('click', (e) => {
     e.stopPropagation();
     hideContextMenu();
     if (selectedCount > 1) {
@@ -422,7 +423,7 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
     }
   });
 
-  document.getElementById('lib-ctx-remove')?.addEventListener('click', async (e) => {
+  menu.querySelector('#lib-ctx-remove')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     const { removeFromLibrary } = await import('../../../api');
@@ -453,7 +454,7 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
 }
 
 export function showWorkshopContextMenu(packageName: string | null, workshopId: string | null, x: number, y: number): void {
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
   
   menu.innerHTML = `
     <button type="button" class="context-menu-item" id="ws-ctx-check-updates" style="display:flex;align-items:center;width:100%;">
@@ -472,14 +473,14 @@ export function showWorkshopContextMenu(packageName: string | null, workshopId: 
 
   positionContextMenu(x, y);
 
-  document.getElementById('ws-ctx-check-updates')?.addEventListener('click', async (e) => {
+  menu.querySelector('#ws-ctx-check-updates')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     const { handleCheckWorkshopOnlineUpdates } = await import('../library');
     handleCheckWorkshopOnlineUpdates();
   });
 
-  document.getElementById('ws-ctx-force-verify')?.addEventListener('click', async (e) => {
+  menu.querySelector('#ws-ctx-force-verify')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
     const { handleTriggerSteamValidation } = await import('../library');
@@ -487,7 +488,7 @@ export function showWorkshopContextMenu(packageName: string | null, workshopId: 
   });
 
   if (workshopId) {
-    document.getElementById('ws-ctx-open-steam')?.addEventListener('click', async (e) => {
+    menu.querySelector('#ws-ctx-open-steam')?.addEventListener('click', async (e) => {
       e.stopPropagation();
       hideContextMenu();
       const { openUrl } = await import('../../../api');
@@ -571,7 +572,7 @@ export function setupContextMenu(): void {
     }
   });
 
-  document.getElementById('context-overlay')!.addEventListener('click', (e) => {
+  mainDom.el('context-overlay').addEventListener('click', (e) => {
     if (e.target === e.currentTarget) {
       hideContextMenu();
     }

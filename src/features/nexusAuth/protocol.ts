@@ -6,6 +6,7 @@ import {
 } from '../../api';
 import { showToast } from '../../ui/toast';
 import { t } from '../../utils/i18n';
+import { settingsDom } from '../../framework';
 
 export async function getProtocolState(): Promise<DetailedProtocolInfo> {
   try {
@@ -18,27 +19,29 @@ export async function getProtocolState(): Promise<DetailedProtocolInfo> {
   }
 }
 
-export async function registerProtocolScheme(): Promise<boolean> {
+export async function setNexusProtocolEnabled(enabled: boolean): Promise<boolean> {
   try {
-    await registerNexusProtocol();
-    showToast(t('toasts.nexus_protocol_registered'), 'success');
-    const { renderNexusAccountUI } = await import('./ui');
-    renderNexusAccountUI();
+    if (enabled) {
+      await registerNexusProtocol('palmodmanager');
+      showToast(t('toasts.nexus_protocol_registered'), 'success');
+    } else {
+      await unregisterNexusProtocol('palmodmanager');
+      showToast(t('toasts.nexus_protocol_unregistered'), 'info');
+    }
     return true;
-  } catch (err: any) {
-    console.error('[NexusAuth] Protocol registration failed:', err);
+  } catch (err) {
     showToast(t('toasts.nexus_protocol_register_failed', { error: String(err) }), 'error');
     return false;
   }
 }
 
 export async function updateProtocolStatusUI(): Promise<void> {
-  const pmmStatusBadge = document.getElementById('nexus-protocol-status-badge');
-  const pmmActionContainer = document.getElementById('nexus-protocol-actions');
+  const pmmStatusBadge = settingsDom.elMaybe('nexus-protocol-status-badge');
+  const pmmActionContainer = settingsDom.elMaybe('nexus-protocol-actions');
 
-  const nxmStatusBadge = document.getElementById('nexus-nxm-status-badge');
-  const nxmCurrentHandler = document.getElementById('nexus-nxm-current-handler');
-  const nxmActionContainer = document.getElementById('nexus-nxm-actions');
+  const nxmStatusBadge = settingsDom.elMaybe('nexus-nxm-status-badge');
+  const nxmCurrentHandler = settingsDom.elMaybe('nexus-nxm-current-handler');
+  const nxmActionContainer = settingsDom.elMaybe('nexus-nxm-actions');
 
   try {
     const details = await checkNexusProtocolStatus();
@@ -56,12 +59,12 @@ export async function updateProtocolStatusUI(): Promise<void> {
             ${t('settings.nexus_proto_unregister_btn')}
           </button>
         `;
-        document.getElementById('btn-re-register-pmm-proto')?.addEventListener('click', async () => {
+        settingsDom.elMaybe('btn-re-register-pmm-proto')?.addEventListener('click', async () => {
           await registerNexusProtocol('palmodmanager');
           showToast(t('toasts.saved'), 'success');
           updateProtocolStatusUI();
         });
-        document.getElementById('btn-unregister-pmm-proto')?.addEventListener('click', async () => {
+        settingsDom.elMaybe('btn-unregister-pmm-proto')?.addEventListener('click', async () => {
           await unregisterNexusProtocol('palmodmanager');
           showToast(t('toasts.saved'), 'info');
           updateProtocolStatusUI();
@@ -74,7 +77,7 @@ export async function updateProtocolStatusUI(): Promise<void> {
             ${t('settings.nexus_proto_update_btn')}
           </button>
         `;
-        document.getElementById('btn-fix-pmm-protocol')?.addEventListener('click', async () => {
+        settingsDom.elMaybe('btn-fix-pmm-protocol')?.addEventListener('click', async () => {
           await registerNexusProtocol('palmodmanager');
           showToast(t('toasts.saved'), 'success');
           updateProtocolStatusUI();
@@ -87,7 +90,7 @@ export async function updateProtocolStatusUI(): Promise<void> {
             ${t('settings.nexus_proto_register_btn')}
           </button>
         `;
-        document.getElementById('btn-register-pmm-protocol')?.addEventListener('click', async () => {
+        settingsDom.elMaybe('btn-register-pmm-protocol')?.addEventListener('click', async () => {
           await registerNexusProtocol('palmodmanager');
           showToast(t('toasts.saved'), 'success');
           updateProtocolStatusUI();
@@ -118,7 +121,7 @@ export async function updateProtocolStatusUI(): Promise<void> {
             ${t('settings.nexus_nxm_release_btn')}
           </button>
         `;
-        document.getElementById('btn-release-nxm')?.addEventListener('click', async () => {
+        settingsDom.elMaybe('btn-release-nxm')?.addEventListener('click', async () => {
           await unregisterNexusProtocol('nxm');
           showToast(t('toasts.saved'), 'info');
           updateProtocolStatusUI();
@@ -131,7 +134,7 @@ export async function updateProtocolStatusUI(): Promise<void> {
             ${t('settings.nexus_nxm_claim_btn')}
           </button>
         `;
-        document.getElementById('btn-claim-nxm')?.addEventListener('click', async () => {
+        settingsDom.elMaybe('btn-claim-nxm')?.addEventListener('click', async () => {
           await registerNexusProtocol('nxm');
           showToast(t('toasts.saved'), 'success');
           updateProtocolStatusUI();

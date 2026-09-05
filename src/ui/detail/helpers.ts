@@ -120,7 +120,16 @@ export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
 
   components.sort((a, b) => (typeOrder[a.type] ?? 99) - (typeOrder[b.type] ?? 99));
 
-  if (components.length === 1) {
+  if (components.length > 1) {
+    components.forEach((c) => {
+      const p = c.path.replace(/\\/g, '/');
+      const parts = p.split('/').filter(Boolean);
+      const last = parts[parts.length - 1] || '';
+      c.buttonLabel = last;
+      const typePrefix = c.type.toUpperCase();
+      c.label = `${typePrefix}: ${last}`;
+    });
+  } else if (components.length === 1) {
     components[0].buttonLabel = t('detail.btn_open_folder');
   }
 

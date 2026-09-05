@@ -13,6 +13,7 @@ export interface AppEventMap {
   'mod:toggled': { id: string; enabled: boolean };
   'mod:installed': { id: string };
   'mod:removed': { id: string };
+  'mod:renamed': { modId: string; newName: string };
   'mod:selected': ModInfo | null;
   'mod:detailsOpened': { mod: ModInfo };
   'mod:detailsClosed': void;

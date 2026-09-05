@@ -10,6 +10,9 @@ export interface LibraryDomMap {
   'library-filter-status': HTMLSelectElement;
   'library-sort-wrap': HTMLElement;
   'library-sort-select': HTMLSelectElement;
+  'library-layout-toggle-bar': HTMLElement;
+  'library-layout-grid-btn': HTMLButtonElement;
+  'library-layout-list-btn': HTMLButtonElement;
   'library-search-wrap': HTMLElement;
   'library-search-input': HTMLInputElement;
   'workshop-check-updates-btn': HTMLButtonElement;

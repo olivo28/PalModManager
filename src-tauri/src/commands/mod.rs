@@ -17,3 +17,4 @@ pub mod altermatic_commands;
 pub mod usmap_commands;
 pub mod sdk_commands;
 pub mod editor;
+pub mod config_archive;

@@ -21,6 +21,9 @@
   --accent: #0078d4;
   --accent-hover: #1a8ae8;
   --accent-dim: rgba(0, 120, 212, 0.15);
+  --selection-bg: #094771;
+  --selection-color: #ffffff;
+  --selection-input-bg: #0078d4;
 
   --success: #2ea043;
   --success-dim: rgba(46, 160, 67, 0.15);
@@ -61,6 +64,9 @@
   --accent: #0078d4;
   --accent-hover: #106ebe;
   --accent-dim: rgba(0, 120, 212, 0.1);
+  --selection-bg: #add6ff;
+  --selection-color: #000000;
+  --selection-input-bg: #0078d4;
 
   --success: #2ea043;
   --success-dim: rgba(46, 160, 67, 0.1);

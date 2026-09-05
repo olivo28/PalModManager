@@ -1,5 +1,5 @@
 import { getState } from '../../../state';
-import { getWorkshopState, setWorkshopGlobalEnabled, activateWorkshopMod, deactivateWorkshopMod, openUrl, removeFromLibrary } from '../../../api';
+import { getWorkshopState, setWorkshopGlobalEnabled, activateWorkshopMod, deactivateWorkshopMod, openUrl } from '../../../api';
 import { showToast } from '../../toast';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
@@ -9,11 +9,13 @@ import {
   _activeLibrarySubTab,
   _libraryFilterStatus,
   _librarySortBy,
+  _libraryLayout,
   _libraryOnlineUpdatesMap,
 } from './state';
-import { formatSize, parseModFilename } from './helpers';
+import { formatSize, parseModFilename, compareVersions } from './helpers';
 import { updateWorkshopTabVisibility, isWorkshopModNew } from './workshop';
-import { updateLibraryBulkBar, triggerInstallFromLibrary } from './actions';
+import { updateLibraryBulkBar, triggerInstallFromLibrary, handleLibraryDelete } from './actions';
+import { renderLibraryListView } from './listView';
 import { libraryDom } from '../../../framework';
 
 export async function renderLibraryView(): Promise<void> {
@@ -21,6 +23,13 @@ export async function renderLibraryView(): Promise<void> {
   if (!container) return;
 
   updateWorkshopTabVisibility();
+
+  const gridBtn = libraryDom.elMaybe('library-layout-grid-btn');
+  const listBtn = libraryDom.elMaybe('library-layout-list-btn');
+  if (gridBtn && listBtn) {
+    gridBtn.classList.toggle('active', _libraryLayout === 'grid');
+    listBtn.classList.toggle('active', _libraryLayout === 'list');
+  }
 
   const masterToggleWrap = libraryDom.elMaybe('library-workshop-master-wrap');
   const bulkBar = libraryDom.elMaybe('library-bulk-actions-bar');
@@ -141,18 +150,6 @@ export async function renderLibraryView(): Promise<void> {
       });
     }
 
-    function compareVersions(a: string, b: string): number {
-      const parseParts = (v: string) => v.replace(/^[^\d]*/, '').split(/[\.-]/).map(n => parseInt(n, 10) || 0);
-      const partsA = parseParts(a);
-      const partsB = parseParts(b);
-      for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
-        const numA = partsA[i] || 0;
-        const numB = partsB[i] || 0;
-        if (numA !== numB) return numA - numB;
-      }
-      return a.localeCompare(b);
-    }
-
     // Filter by installation status
     if (_libraryFilterStatus === 'installed') {
       groups = groups.filter(g => g.isInstalled);
@@ -195,6 +192,21 @@ export async function renderLibraryView(): Promise<void> {
       updateLibraryBulkBar();
       return;
     }
+
+    if (_libraryLayout === 'list') {
+      renderLibraryListView(groups, container);
+      updateLibraryBulkBar();
+      return;
+    }
+
+    container.style.display = 'grid';
+    container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
+    container.style.gap = '16px';
+    container.style.alignContent = 'start';
+    container.style.flexDirection = '';
+    container.style.overflowY = 'auto';
+    container.style.minHeight = '0';
+    container.style.height = '100%';
 
     container.innerHTML = groups.map(group => {
       const isSelected = state.selectedLibraryIds.has(group.modId);
@@ -324,7 +336,7 @@ export async function renderLibraryView(): Promise<void> {
 
             <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
               <button class="library-item-install btn-action ${isUpdateAvailable ? 'btn-action-primary' : ''}" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" style="flex:1;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;">${installBtnText}</button>
-              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:5px 8px;font-size:11px;cursor:pointer;">✕</button>
+              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" data-installed="${group.isInstalled}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:5px 8px;font-size:11px;cursor:pointer;">✕</button>
             </div>
           </div>
         </div>
@@ -372,6 +384,7 @@ export async function renderLibraryView(): Promise<void> {
 
         if (deleteBtn) {
           deleteBtn.dataset.zip = selectedZip;
+          deleteBtn.dataset.installed = String(isInstalled);
         }
 
         if (sizeSpan) {
@@ -413,18 +426,8 @@ export async function renderLibraryView(): Promise<void> {
         ev.stopPropagation();
         const id = (btn as HTMLElement).dataset.id!;
         const zip = (btn as HTMLElement).dataset.zip!;
-        const { showConfirm } = await import('../../confirm');
-        const confirmed = await showConfirm(t('library.confirm_remove_version', { zip }));
-        if (confirmed) {
-          try {
-            await removeFromLibrary(id, zip);
-            showToast(t('toasts.library_mod_version_removed'), 'success');
-            const { loadLibrary } = await import('./listeners');
-            await loadLibrary();
-          } catch (err) {
-            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
-          }
-        }
+        const isInstalled = (btn as HTMLElement).dataset.installed === 'true';
+        await handleLibraryDelete(id, zip, isInstalled);
       });
     });
 

@@ -90,6 +90,62 @@ export async function handleLibraryBulkInstall(): Promise<void> {
   }
 }
 
+export async function handleLibraryDelete(id: string, zip: string, isInstalled?: boolean): Promise<void> {
+  const state = getState();
+  const matchedMod = state.allMods.find(m => m.id === id || m.name === id || (m.nexusModId && state.libraryEntries.find(e => e.modId === id)?.nexusModId === m.nexusModId));
+  const actuallyInstalled = isInstalled || !!matchedMod;
+
+  if (actuallyInstalled && matchedMod) {
+    const { showChoiceDialog } = await import('../../confirm');
+    const choice = await showChoiceDialog(
+      t('library.dialog_delete_installed_title'),
+      t('library.dialog_delete_installed_desc', { name: matchedMod.name }),
+      [
+        { id: 'uninstall', label: t('library.btn_uninstall_and_remove'), variant: 'danger' },
+        { id: 'library_only', label: t('library.btn_remove_library_only'), variant: 'primary' },
+        { id: 'cancel', label: t('common.cancel'), variant: 'muted' },
+      ]
+    );
+
+    if (!choice || choice === 'cancel') return;
+
+    if (choice === 'uninstall') {
+      try {
+        const { removeMod } = await import('../../../api');
+        await removeMod(matchedMod.id);
+        const { loadMods } = await import('../loader');
+        const { loadProfiles } = await import('../profiles');
+        const { loadDependencies } = await import('../dependencies');
+        await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
+      } catch (err) {
+        console.error('Failed to uninstall mod from game:', err);
+      }
+    }
+
+    try {
+      await removeFromLibrary(id, zip);
+      showToast(choice === 'uninstall' ? t('library.toast_uninstalled_and_removed') : t('toasts.library_mod_version_removed'), 'success');
+      const { loadLibrary } = await import('./listeners');
+      await loadLibrary();
+    } catch (err) {
+      showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+    }
+  } else {
+    const { showConfirm } = await import('../../confirm');
+    const confirmed = await showConfirm(t('library.confirm_remove_version', { zip }));
+    if (confirmed) {
+      try {
+        await removeFromLibrary(id, zip);
+        showToast(t('toasts.library_mod_version_removed'), 'success');
+        const { loadLibrary } = await import('./listeners');
+        await loadLibrary();
+      } catch (err) {
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+      }
+    }
+  }
+}
+
 export async function handleLibraryBulkRemove(): Promise<void> {
   const state = getState();
   const selected = Array.from(state.selectedLibraryIds);

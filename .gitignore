@@ -12,6 +12,7 @@ src-tauri/.env
 
 # --- Rust & Tauri ---
 src-tauri/target/
+src-tauri/target-test/
 src-tauri/Cargo.lock
 src-tauri/target-desktop/
 src-tauri/.tauri/
@@ -113,3 +114,5 @@ docs/PALMODSTUDIO_VISION.md
 resources/schemas/palschema/
 resources/sdk/**/sdk_index.json
 sdk_index.json
+docs/ANALISIS_PROYECTO.md
+/src-tauri/target-test/debug

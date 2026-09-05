@@ -1,7 +1,8 @@
 import { openUrl } from '../../api';
+import { mainDom } from '../../framework';
 
 export function openAboutModal(): void {
-  const modal = document.getElementById('about-modal');
+  const modal = mainDom.elMaybe('about-modal');
   if (!modal) return;
   modal.classList.add('visible');
 
@@ -10,23 +11,23 @@ export function openAboutModal(): void {
   document.querySelectorAll('.about-tab-pane').forEach(p => (p as HTMLElement).style.display = 'none');
   
   const firstBtn = document.querySelector('.about-tab-btn[data-about-tab="overview"]');
-  const firstPane = document.getElementById('about-pane-overview');
+  const firstPane = mainDom.elMaybe('about-pane-overview');
   if (firstBtn) firstBtn.classList.add('active');
   if (firstPane) firstPane.style.display = 'block';
 
   // Scroll to top
-  const body = document.getElementById('about-modal-body');
+  const body = mainDom.elMaybe('about-modal-body');
   if (body) body.scrollTop = 0;
 }
 
 export function closeAboutModal(): void {
-  const modal = document.getElementById('about-modal');
+  const modal = mainDom.elMaybe('about-modal');
   if (modal) modal.classList.remove('visible');
 }
 
 export function setupAboutModal(): void {
   // Logo trigger
-  const logoBtn = document.getElementById('sidebar-logo-btn');
+  const logoBtn = mainDom.elMaybe('sidebar-logo-btn');
   if (logoBtn) {
     logoBtn.addEventListener('click', () => {
       openAboutModal();
@@ -34,7 +35,7 @@ export function setupAboutModal(): void {
   }
 
   // Version label in footer trigger as well
-  const versionBtn = document.getElementById('sidebar-version');
+  const versionBtn = mainDom.elMaybe('sidebar-version');
   if (versionBtn) {
     versionBtn.style.cursor = 'pointer';
     versionBtn.title = 'About PalModManager';
@@ -44,8 +45,8 @@ export function setupAboutModal(): void {
   }
 
   // Close buttons
-  const closeX = document.getElementById('about-modal-close-x');
-  const closeBtn = document.getElementById('about-modal-close');
+  const closeX = mainDom.elMaybe('about-modal-close-x');
+  const closeBtn = mainDom.elMaybe('about-modal-close');
   if (closeX) closeX.addEventListener('click', closeAboutModal);
   if (closeBtn) closeBtn.addEventListener('click', closeAboutModal);
 
@@ -65,14 +66,14 @@ export function setupAboutModal(): void {
   });
 
   // External links
-  const githubBtn = document.getElementById('about-open-github');
+  const githubBtn = mainDom.elMaybe('about-open-github');
   if (githubBtn) {
     githubBtn.addEventListener('click', () => {
       openUrl('https://github.com/olivo28/PalModManager').catch(() => {});
     });
   }
 
-  const nexusBtn = document.getElementById('about-open-nexus');
+  const nexusBtn = mainDom.elMaybe('about-open-nexus');
   if (nexusBtn) {
     nexusBtn.addEventListener('click', () => {
       openUrl('https://www.nexusmods.com/palworld/mods/4549').catch(() => {});

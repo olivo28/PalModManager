@@ -34,11 +34,13 @@ export interface ModInfo {
   updateDate: string | null;
   libraryZip: string | null;
   ignoredVersion: string | null;
-  nexusFileId: number | null;
+  nexusFileId: string | number | null;
   ignoredKeys?: string[] | null;
   hasPendingUpdate?: boolean | null;
   originLoadMethod?: string | null;
   customNotes?: string | null;
+  originalName?: string | null;
+  customName?: string | null;
 }
 
 export interface NexusAccountInfo {
@@ -239,7 +241,7 @@ export interface InstallManifest {
   modType: ModType;
   routes: FileRoute[];
   nexusModId: number | null;
-  nexusFileId: number | null;
+  nexusFileId: string | number | null;
   hasPak: boolean;
   hasUe4ss: boolean;
   hasPalschema: boolean;
@@ -379,7 +381,7 @@ export interface PmmMetadata {
   description?: string;
   type?: string;
   nexusModId?: number;
-  nexusFileId?: number;
+  nexusFileId?: string | number;
   nexusPictureUrl?: string;
   nexusUrl?: string;
   customNotes?: string;

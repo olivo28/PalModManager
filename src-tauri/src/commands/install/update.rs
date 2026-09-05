@@ -88,7 +88,9 @@ pub async fn update_mod_command(
 
     let final_mod = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        // Update library zip using mod name instead of UUID (if not already in library)
+        if let Some(ref info) = nexus_info {
+            updated_mod.version = info.version.clone();
+        }
         let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
         if !is_already_in_lib {
             let lib_folder_name = updated_mod.name.clone();
@@ -104,10 +106,10 @@ pub async fn update_mod_command(
         let final_m = if let Some(existing) = data.mods.iter_mut().find(|m| m.id == mod_id) {
             existing.update_date = Some(now.clone());
             existing.source_zip = zip_filename.clone();
+            existing.has_pending_update = Some(false);
+
             if let Some(ref info) = nexus_info {
-                if existing.version == "unknown" || existing.version.is_empty() {
-                    existing.version = info.version.clone();
-                }
+                existing.version = info.version.clone();
                 existing.nexus_version_cached = Some(info.version.clone());
                 existing.nexus_cached_at = Some(now.clone());
                 existing.nexus_picture_url = Some(info.picture_url.clone());
@@ -139,6 +141,12 @@ pub async fn update_mod_command(
                     let _ = fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
                 }
             } else {
+                let parsed_fn = crate::nexus::parse_mod_filename(&zip_filename);
+                if let Some(ref ver) = parsed_fn.version {
+                    existing.version = ver.clone();
+                } else if updated_mod.version != "unknown" && !updated_mod.version.is_empty() && updated_mod.version != "1.0" {
+                    existing.version = updated_mod.version.clone();
+                }
                 existing.nexus_version_cached = Some(existing.version.clone());
                 existing.nexus_cached_at = Some(now.clone());
             }
@@ -147,6 +155,38 @@ pub async fn update_mod_command(
         } else {
             updated_mod.clone()
         };
+
+        // Auto-purge redundant duplicate mod entries that match the updated mod's extra_files or nexus ID
+        let updated_extra_files = final_m.extra_files.clone();
+        let updated_nexus_id = final_m.nexus_mod_id;
+        let mut purged_ids: Vec<String> = Vec::new();
+
+        data.mods.retain(|other| {
+            if other.id == mod_id {
+                return true;
+            }
+            let matches_extra = (!other.game_path.is_empty() && updated_extra_files.contains(&other.game_path))
+                || (!other.disabled_path.is_empty() && updated_extra_files.contains(&other.disabled_path));
+            let matches_nexus = updated_nexus_id.is_some() && other.nexus_mod_id == updated_nexus_id && other.mod_type != final_m.mod_type;
+            if matches_extra || matches_nexus {
+                crate::logger::log(&format!(
+                    "update_mod: Purging redundant duplicate mod entry '{}' (id: {}) merged into updated mod '{}'",
+                    other.name, other.id, final_m.name
+                ));
+                purged_ids.push(other.id.clone());
+                false
+            } else {
+                true
+            }
+        });
+
+        if !purged_ids.is_empty() {
+            for profile in &mut data.profiles {
+                profile.installed_mod_ids.retain(|id| !purged_ids.contains(id));
+                profile.enabled_mod_ids.retain(|id| !purged_ids.contains(id));
+            }
+        }
+
         let data_clone = data.clone();
         drop(data);
         let _ = db::save_db(&program_path, &data_clone);

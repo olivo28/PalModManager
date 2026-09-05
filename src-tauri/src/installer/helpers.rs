@@ -141,7 +141,7 @@ pub fn detect_config_local(dir: &Path) -> Option<String> {
 
 pub fn determine_mod_id(
     nexus_mod_id: Option<u32>,
-    nexus_file_id: Option<u32>,
+    nexus_file_id: Option<&str>,
     folder_name: &str,
     mod_type: &crate::models::ModType,
 ) -> String {
@@ -155,10 +155,11 @@ pub fn determine_mod_id(
     };
     if let Some(nexus_id) = nexus_mod_id {
         if let Some(file_id) = nexus_file_id {
-            format!("{}-{}-{}-{}", nexus_id, file_id, folder_name, type_suffix)
-        } else {
-            format!("{}-{}-{}", nexus_id, folder_name, type_suffix)
+            if !file_id.trim().is_empty() {
+                return format!("{}-{}-{}-{}", nexus_id, file_id.trim(), folder_name, type_suffix);
+            }
         }
+        format!("{}-{}-{}", nexus_id, folder_name, type_suffix)
     } else {
         format!("{}-{}", folder_name, type_suffix)
     }

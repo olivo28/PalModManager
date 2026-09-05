@@ -156,6 +156,41 @@ pub fn extract_rar_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, Strin
     extract_rar_with_fallback(path, temp_dir)
 }
 
+fn unpack_zip_archive<R: Read + std::io::Seek>(archive: &mut ZipArchive<R>, temp_dir: &Path) -> Result<bool, String> {
+    let mut crc_failed = false;
+    for i in 0..archive.len() {
+        let mut entry = archive.by_index(i).map_err(|e| format!("Cannot read entry: {}", e))?;
+        let outpath = temp_dir.join(entry.mangled_name());
+        if entry.is_dir() {
+            fs::create_dir_all(&outpath).map_err(|e| format!("Cannot create dir: {}", e))?;
+        } else {
+            if let Some(parent) = outpath.parent() {
+                if !parent.exists() {
+                    fs::create_dir_all(parent).map_err(|e| format!("Cannot create parent dir: {}", e))?;
+                }
+            }
+            let mut outfile = fs::File::create(&outpath).map_err(|e| format!("Cannot create file: {}", e))?;
+            let mut buf = Vec::new();
+            match entry.read_to_end(&mut buf) {
+                Ok(_) => {
+                    std::io::Write::write_all(&mut outfile, &buf).map_err(|e| format!("Cannot write file: {}", e))?;
+                }
+                Err(e) => {
+                    let msg = e.to_string().to_lowercase();
+                    if msg.contains("checksum") || msg.contains("crc") || msg.contains("invalid") {
+                        crate::logger::log(&format!("unpack_zip_archive: CRC error on entry {}, saving partial buffer: {}", i, e));
+                        let _ = std::io::Write::write_all(&mut outfile, &buf);
+                        crc_failed = true;
+                    } else {
+                        return Err(format!("Cannot read entry: {}", e));
+                    }
+                }
+            }
+        }
+    }
+    Ok(crc_failed)
+}
+
 pub fn extract_zip_to_temp(zip_path: &str, temp_dir: &Path) -> Result<PathBuf, String> {
     let p = Path::new(zip_path);
     let format = detect_archive_format(p);
@@ -178,62 +213,33 @@ pub fn extract_zip_to_temp(zip_path: &str, temp_dir: &Path) -> Result<PathBuf, S
 
             match zip_result {
                 Ok(mut archive) => {
-                    let mut crc_failed = false;
-                    for i in 0..archive.len() {
-                        let mut entry = archive.by_index(i).map_err(|e| format!("Cannot read entry: {}", e))?;
-                        let outpath = temp_dir.join(entry.mangled_name());
-                        if entry.is_dir() {
-                            fs::create_dir_all(&outpath).map_err(|e| format!("Cannot create dir: {}", e))?;
-                        } else {
-                            if let Some(parent) = outpath.parent() {
-                                if !parent.exists() {
-                                    fs::create_dir_all(parent)
-                                        .map_err(|e| format!("Cannot create parent dir: {}", e))?;
-                                }
-                            }
-                            let mut outfile = fs::File::create(&outpath)
-                                .map_err(|e| format!("Cannot create file: {}", e))?;
-                            let mut buf = Vec::new();
-                            match entry.read_to_end(&mut buf) {
-                                Ok(_) => {
-                                    std::io::Write::write_all(&mut outfile, &buf)
-                                        .map_err(|e| format!("Cannot write file: {}", e))?;
-                                }
-                                Err(e) => {
-                                    let msg = e.to_string().to_lowercase();
-                                    // CRC/checksum errors: try writing what we got, then fall back to 7z on finish
-                                    if msg.contains("checksum") || msg.contains("crc") || msg.contains("invalid") {
-                                        crate::logger::log(&format!("extract_zip_to_temp: CRC error on entry {}, will retry with 7z fallback: {}", i, e));
-                                        let _ = std::io::Write::write_all(&mut outfile, &buf);
-                                        crc_failed = true;
-                                    } else {
-                                        return Err(format!("Cannot read entry: {}", e));
-                                    }
-                                }
-                            }
-                        }
-                    }
-
+                    let crc_failed = unpack_zip_archive(&mut archive, temp_dir)?;
                     if crc_failed {
-                        // CRC mismatch in one or more entries — retry with 7z which is more lenient
                         crate::logger::log("extract_zip_to_temp: Retrying extraction with 7z due to CRC errors");
                         let _ = fs::remove_dir_all(temp_dir);
                         fs::create_dir_all(temp_dir).map_err(|e| format!("Cannot recreate temp dir: {}", e))?;
                         if let Ok(res) = extract_7z_to_temp(zip_path, temp_dir) {
                             return Ok(res);
                         }
-                        // If 7z also fails, return temp dir with partially extracted content
-                        crate::logger::log("extract_zip_to_temp: 7z fallback also failed, using partial extraction");
                     }
-
                     Ok(temp_dir.to_path_buf())
                 }
                 Err(orig_err) => {
-                    // EOCD or other structural errors — try 7z and RAR engines
-                    if let Ok(res) = extract_7z_to_temp(zip_path, temp_dir) {
-                        Ok(res)
-                    } else if let Ok(res) = extract_rar_to_temp(zip_path, temp_dir) {
-                        Ok(res)
+                    crate::logger::log(&format!("extract_zip_to_temp: Standard zip opening failed ({}), trying resilient EOCD recovery...", orig_err));
+                    // 1. Resilient EOCD trailing-byte recovery
+                    if let Ok(mut resilient_archive) = super::detection::open_resilient_zip(zip_path) {
+                        if unpack_zip_archive(&mut resilient_archive, temp_dir).is_ok() {
+                            crate::logger::log("extract_zip_to_temp: Successfully extracted archive via resilient EOCD recovery");
+                            return Ok(temp_dir.to_path_buf());
+                        }
+                    }
+
+                    // 2. Try tar (bsdtar handles ZIPs natively) and cross-platform extractors
+                    if let Ok(res) = extract_rar_to_temp(zip_path, temp_dir) {
+                        crate::logger::log("extract_zip_to_temp: Extracted archive via tar/fallback engine");
+                        return Ok(res);
+                    } else if let Ok(res) = extract_7z_to_temp(zip_path, temp_dir) {
+                        return Ok(res);
                     } else {
                         Err(orig_err)
                     }
@@ -303,6 +309,19 @@ pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
                                 if entry.read_to_string(&mut buf).is_ok() {
                                     return Some(buf);
                                 }
+                            }
+                        }
+                    }
+                }
+            }
+            if let Ok(mut archive) = super::detection::open_resilient_zip(zip_path) {
+                for i in 0..archive.len() {
+                    if let Ok(mut entry) = archive.by_index(i) {
+                        let name = entry.name().replace('\\', "/").to_lowercase();
+                        if name == lower_target || name.ends_with(&format!("/{}", lower_target)) {
+                            let mut buf = String::new();
+                            if entry.read_to_string(&mut buf).is_ok() {
+                                return Some(buf);
                             }
                         }
                     }

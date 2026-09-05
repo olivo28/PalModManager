@@ -22,6 +22,13 @@ body {
 ::-webkit-scrollbar-corner { background: transparent; }
 
 ::selection {
-  background: var(--accent-dim);
-  color: var(--text-primary);
+  background: var(--selection-bg, #094771);
+  color: var(--selection-color, #ffffff);
 }
+
+input::selection,
+textarea::selection {
+  background: var(--selection-input-bg, #0078d4);
+  color: #ffffff;
+}
+

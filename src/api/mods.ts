@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ModInfo, InstallManifest, ZipAnalysis, UpdateCheckResult, ConfigDiff } from './types';
+import type { ModInfo, InstallManifest, ZipAnalysis, UpdateCheckResult, ConfigDiff, ArchivedConfigInfo } from './types';
 
 export async function getMods(): Promise<ModInfo[]> {
   return invoke('get_mods');
@@ -137,4 +137,16 @@ export async function previewConfigDiff(zipPath: string, modId: string): Promise
 
 export async function scanConflicts(): Promise<any> {
   return invoke('scan_conflicts');
+}
+
+export async function mergeModsAsHybrid(primaryModId: string, secondaryModId: string): Promise<ModInfo> {
+  return invoke('merge_mods_as_hybrid', { primaryModId, secondaryModId });
+}
+
+export async function checkArchivedConfig(nexusModId: number | null, modName: string): Promise<ArchivedConfigInfo | null> {
+  return invoke('check_archived_config', { nexusModId, modName });
+}
+
+export async function applyArchivedConfig(modId: string, archiveId: string): Promise<boolean> {
+  return invoke('apply_archived_config', { modId, archiveId });
 }

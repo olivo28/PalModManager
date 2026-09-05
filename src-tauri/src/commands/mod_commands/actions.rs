@@ -129,6 +129,14 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
 
     crate::logger::log(&format!("remove_mod: Removing mod '{}' (id: {})", mod_info.name, mod_info.id));
 
+    // Archive config files before purge so they can be restored on future reinstall
+    let _ = crate::commands::config_archive::archive_mod_configs(
+        &mod_info,
+        &program_path,
+        &current_profile_id,
+        &game_path_str,
+    );
+
     let delete_path_and_sidecar = |path_str: &str| {
         if path_str.is_empty() {
             return;
@@ -143,6 +151,12 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
                 let _ = fs::remove_dir_all(p);
             } else {
                 let _ = fs::remove_file(p);
+                for comp_ext in &["ucas", "utoc", "sig"] {
+                    let comp_file = p.with_extension(comp_ext);
+                    if comp_file.exists() {
+                        let _ = fs::remove_file(comp_file);
+                    }
+                }
                 let sidecar = std::path::PathBuf::from(format!("{}.pmm.json", path_str));
                 if sidecar.exists() {
                     let _ = fs::remove_file(sidecar);
@@ -194,57 +208,73 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
     let is_altermatic_framework = mod_info.nexus_mod_id == Some(1626) || mod_info.name.to_lowercase().contains("altermatic");
     let is_unipalui_framework = mod_info.nexus_mod_id == Some(1894) || mod_info.name.to_lowercase().contains("unipalui");
 
-    // Clean up PalSchema storage and junction artifacts if PalSchema/Hybrid
+    // Clean up UE4SS and PalSchema folders, storage, and junction artifacts
     if !game_path_str.is_empty() {
         let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(&game_path_str));
-        let palschema_mods_dir = binaries_dir.join("ue4ss").join("Mods").join("PalSchema").join("mods");
-        let storage_dir = palschema_mods_dir.join("Storage");
-
-        // 1. Remove physical folder from Storage
         let folder_name = crate::profiles::get_mod_folder_name(&mod_info);
-        if storage_dir.exists() {
-            let mod_storage = storage_dir.join(&folder_name);
-            if mod_storage.exists() {
-                let _ = fs::remove_dir_all(&mod_storage);
-            }
-            let mod_storage_name = storage_dir.join(&mod_info.name);
-            if mod_storage_name.exists() {
-                let _ = fs::remove_dir_all(&mod_storage_name);
-            }
-        }
+        let ue4ss_roots = vec![
+            binaries_dir.join("ue4ss").join("Mods"),
+            binaries_dir.join("Mods"),
+            PathBuf::from(&game_path_str).join("Mods").join("NativeMods").join("UE4SS").join("Mods"),
+        ];
 
-        // 2. Scan and remove any junctions/symlinks in PalSchema/mods
-        if palschema_mods_dir.exists() {
-            if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
-                for entry in entries.filter_map(|e| e.ok()) {
-                    let path = entry.path();
-                    let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
-                    let clean_name = if name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_') {
-                        &name[4..]
-                    } else {
-                        &name
-                    };
-                    if clean_name.eq_ignore_ascii_case(&folder_name) || clean_name.eq_ignore_ascii_case(&mod_info.name) {
-                        let _ = crate::profiles::remove_junction_or_symlink(&path);
-                        if path.exists() {
-                            let _ = fs::remove_dir_all(&path);
+        for u_dir in &ue4ss_roots {
+            if !u_dir.exists() { continue; }
+            let target_mod_folder = u_dir.join(&folder_name);
+            if target_mod_folder.exists() {
+                let _ = fs::remove_dir_all(&target_mod_folder);
+            }
+            let target_mod_name = u_dir.join(&mod_info.name);
+            if target_mod_name.exists() {
+                let _ = fs::remove_dir_all(&target_mod_name);
+            }
+
+            let mods_txt = u_dir.join("mods.txt");
+            if mods_txt.exists() {
+                let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &folder_name);
+                let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &mod_info.name);
+                
+                for extra_path_str in &mod_info.extra_files {
+                    let extra_path_lower = extra_path_str.to_lowercase();
+                    if extra_path_lower.contains("mods/") {
+                        let extra_path = Path::new(extra_path_str);
+                        if let Some(extra_folder_name) = extra_path.file_name().map(|n| n.to_string_lossy().to_string()) {
+                            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &extra_folder_name);
                         }
                     }
                 }
             }
-        }
 
-        let mods_txt = binaries_dir.join("ue4ss").join("Mods").join("mods.txt");
-        if mods_txt.exists() {
-            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &folder_name);
-            let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &mod_info.name);
-            
-            for extra_path_str in &mod_info.extra_files {
-                let extra_path_lower = extra_path_str.to_lowercase();
-                if extra_path_lower.contains("ue4ss/mods/") {
-                    let extra_path = Path::new(extra_path_str);
-                    if let Some(extra_folder_name) = extra_path.file_name().map(|n| n.to_string_lossy().to_string()) {
-                        let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &extra_folder_name);
+            // Clean PalSchema Storage & junctions within this ue4ss root
+            let palschema_mods_dir = u_dir.join("PalSchema").join("mods");
+            let storage_dir = palschema_mods_dir.join("Storage");
+            if storage_dir.exists() {
+                let mod_storage = storage_dir.join(&folder_name);
+                if mod_storage.exists() {
+                    let _ = fs::remove_dir_all(&mod_storage);
+                }
+                let mod_storage_name = storage_dir.join(&mod_info.name);
+                if mod_storage_name.exists() {
+                    let _ = fs::remove_dir_all(&mod_storage_name);
+                }
+            }
+
+            if palschema_mods_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                    for entry in entries.filter_map(|e| e.ok()) {
+                        let path = entry.path();
+                        let name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                        let clean_name = if name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_') {
+                            &name[4..]
+                        } else {
+                            &name
+                        };
+                        if clean_name.eq_ignore_ascii_case(&folder_name) || clean_name.eq_ignore_ascii_case(&mod_info.name) {
+                            let _ = crate::profiles::remove_junction_or_symlink(&path);
+                            if path.exists() {
+                                let _ = fs::remove_dir_all(&path);
+                            }
+                        }
                     }
                 }
             }
@@ -287,6 +317,16 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
 
                             if is_match {
                                 let _ = fs::remove_file(entry.path());
+                                for comp_ext in &["ucas", "utoc", "sig"] {
+                                    let comp_file = entry.path().with_extension(comp_ext);
+                                    if comp_file.exists() {
+                                        let _ = fs::remove_file(comp_file);
+                                    }
+                                }
+                                let sidecar = PathBuf::from(format!("{}.pmm.json", entry.path().to_string_lossy()));
+                                if sidecar.exists() {
+                                    let _ = fs::remove_file(sidecar);
+                                }
                             }
                         }
                     }
@@ -387,4 +427,93 @@ pub fn enable_all_mods(state: State<AppState>) -> Result<Value, String> {
         }
     }
     Ok(serde_json::json!({ "success": true, "enabled": enabled_count }))
+}
+
+#[tauri::command]
+pub fn merge_mods_as_hybrid(
+    primary_mod_id: String,
+    secondary_mod_id: String,
+    state: State<AppState>,
+) -> Result<crate::models::ModInfo, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    let program_path = data.settings.program_path.clone();
+
+    let primary_idx = data.mods.iter().position(|m| m.id == primary_mod_id)
+        .ok_or_else(|| format!("Primary mod '{}' not found", primary_mod_id))?;
+    let secondary_idx = data.mods.iter().position(|m| m.id == secondary_mod_id)
+        .ok_or_else(|| format!("Secondary mod '{}' not found", secondary_mod_id))?;
+
+    if primary_idx == secondary_idx {
+        return Err("Cannot merge a mod with itself".to_string());
+    }
+
+    let secondary = data.mods[secondary_idx].clone();
+    let primary = &mut data.mods[primary_idx];
+
+    crate::logger::log(&format!(
+        "merge_mods_as_hybrid: Merging '{}' (id: {}) with secondary '{}' (id: {})",
+        primary.name, primary.id, secondary.name, secondary.id
+    ));
+
+    // Combine paths into extra_files
+    let mut all_paths: Vec<String> = Vec::new();
+    if !primary.game_path.is_empty() {
+        all_paths.push(primary.game_path.clone());
+    }
+    if !secondary.game_path.is_empty() && !all_paths.contains(&secondary.game_path) {
+        all_paths.push(secondary.game_path.clone());
+    }
+    for extra in &primary.extra_files {
+        if !all_paths.contains(extra) {
+            all_paths.push(extra.clone());
+        }
+    }
+    for extra in &secondary.extra_files {
+        if !all_paths.contains(extra) {
+            all_paths.push(extra.clone());
+        }
+    }
+
+    // Sort by canonical priority: UE4SS > PalSchema > LogicMods/~mods (.pak)
+    if all_paths.len() > 1 {
+        all_paths.sort_by_key(|p| crate::commands::mod_commands::scan::merge::get_path_priority(p));
+        primary.game_path = all_paths[0].clone();
+        primary.extra_files = all_paths[1..].to_vec();
+    }
+
+    primary.mod_type = ModType::Hybrid;
+
+    // Inherit metadata if primary was missing it
+    if primary.nexus_mod_id.is_none() && secondary.nexus_mod_id.is_some() {
+        primary.nexus_mod_id = secondary.nexus_mod_id;
+        primary.nexus_url = secondary.nexus_url.clone();
+        primary.nexus_author = secondary.nexus_author.clone();
+        primary.nexus_summary = secondary.nexus_summary.clone();
+        primary.nexus_picture_url = secondary.nexus_picture_url.clone();
+    }
+    if primary.config_path.is_none() && secondary.config_path.is_some() {
+        primary.config_path = secondary.config_path.clone();
+        primary.config_type = secondary.config_type.clone();
+    }
+
+    // Save updated PMM metadata for primary
+    let _ = crate::profiles::save_pmm_meta(primary);
+
+    let final_primary = primary.clone();
+
+    // Remove secondary from data.mods
+    data.mods.retain(|m| m.id != secondary_mod_id);
+
+    // Remove secondary from profile mod lists
+    for profile in &mut data.profiles {
+        profile.installed_mod_ids.retain(|id| id != &secondary_mod_id);
+        profile.enabled_mod_ids.retain(|id| id != &secondary_mod_id);
+    }
+
+    let data_clone = data.clone();
+    drop(data);
+
+    let _ = db::save_db(&program_path, &data_clone);
+
+    Ok(final_primary)
 }

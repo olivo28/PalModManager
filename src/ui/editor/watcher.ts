@@ -4,6 +4,7 @@ import { loadFileContent, _originalContent } from './viewer';
 import { renderEditorModTree } from './tree';
 import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
+import { editorDom } from '../../framework';
 
 let isSettingUpWatcher = false;
 let debounceTimeout: any = null;
@@ -48,10 +49,10 @@ export async function setupEditorFsWatcher(): Promise<void> {
             if (!normLatest.includes(normSelected)) {
               // File was deleted on disk!
               updateState({ editorSelectedFile: null });
-              const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
-              const editorPath = document.getElementById('editor-file-path');
-              const editorStatus = document.getElementById('editor-status');
-              const codeEl = document.getElementById('editor-highlight-code');
+              const editorContent = editorDom.elMaybe('editor-content');
+              const editorPath = editorDom.elMaybe('editor-file-path');
+              const editorStatus = editorDom.elMaybe('editor-status');
+              const codeEl = editorDom.elMaybe('editor-highlight-code');
               if (editorContent) { editorContent.value = ''; editorContent.disabled = true; }
               if (editorPath) editorPath.textContent = '';
               if (editorStatus) editorStatus.textContent = '';
@@ -78,12 +79,12 @@ export async function setupEditorFsWatcher(): Promise<void> {
           });
 
           if (isCurrentFileChanged) {
-            const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+            const editorContent = editorDom.elMaybe('editor-content') as HTMLTextAreaElement | null;
             const hasLocalChanges = editorContent && _originalContent !== null && editorContent.value !== _originalContent;
 
             if (!hasLocalChanges) {
               await loadFileContent(state.editorSelectedFile);
-              const editorStatus = document.getElementById('editor-status');
+              const editorStatus = editorDom.elMaybe('editor-status');
               if (editorStatus) {
                 editorStatus.textContent = 'Auto-reloaded from disk';
                 setTimeout(() => {

@@ -12,6 +12,7 @@ import { escapeHtml } from '../rendering';
 import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
+import { scannerDom } from '../../../framework';
 import { formatBytes } from './helpers';
 import {
   doctorState,
@@ -25,7 +26,7 @@ export async function showPmmBackupsVaultModal(
   parentContainer: HTMLElement,
   rerenderCallback: (container: HTMLElement) => Promise<void>
 ): Promise<void> {
-  const existing = document.getElementById('pmm-backups-vault-modal');
+  const existing = scannerDom.elMaybe('pmm-backups-vault-modal');
   if (existing) existing.remove();
 
   let backups: PmmWorldBackup[] = [];
@@ -116,7 +117,7 @@ export async function showPmmBackupsVaultModal(
   `;
 
   document.body.insertAdjacentHTML('beforeend', modalHtml);
-  const modal = document.getElementById('pmm-backups-vault-modal');
+  const modal = scannerDom.elMaybe('pmm-backups-vault-modal');
   if (!modal) return;
 
   const closeModal = () => modal.remove();

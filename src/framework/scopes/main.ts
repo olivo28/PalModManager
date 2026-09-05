@@ -96,12 +96,27 @@ export interface MainDomMap {
   'about-modal': HTMLElement;
   'about-modal-close-x': HTMLButtonElement;
   'about-modal-close': HTMLButtonElement;
+  'about-modal-body': HTMLElement;
+  'about-pane-overview': HTMLElement;
+  'about-open-github': HTMLButtonElement;
+  'about-open-nexus': HTMLButtonElement;
 
   'workshop-modal': HTMLElement;
   'workshop-modal-close-x': HTMLButtonElement;
   'workshop-modal-close': HTMLButtonElement;
   'workshop-master-toggle': HTMLInputElement;
   'workshop-list-container': HTMLElement;
+
+  'console-modal': HTMLElement;
+  'console-modal-close-x': HTMLButtonElement;
+  'console-modal-close': HTMLButtonElement;
+  'console-clear-btn': HTMLButtonElement;
+  'console-logs-list': HTMLElement;
+
+  'drag-select-box': HTMLElement;
+  'drop-overlay': HTMLElement;
+  'sidebar-logo-btn': HTMLElement;
+  'sidebar-nexus-tier': HTMLElement;
 
   'context-overlay': HTMLElement;
   'context-menu': HTMLElement;
@@ -113,6 +128,30 @@ export interface MainDomMap {
   'nxm-tray-toggle-collapse': HTMLButtonElement;
   'nxm-tray-close': HTMLButtonElement;
   'nxm-download-body': HTMLElement;
+
+  // UAsset Inspector Modal
+  'uasset-inspector-modal': HTMLElement;
+  'btn-close-uasset-modal': HTMLButtonElement;
+  'uasset-modal-body': HTMLElement;
+  'btn-quick-goto-texture': HTMLButtonElement;
+  'tex-lazy-loader': HTMLElement;
+  'tex-viewport-content': HTMLElement;
+  'tex-viewport-stage': HTMLElement;
+  'tex-transform-container': HTMLElement;
+  'tex-preview-img': HTMLImageElement;
+  'tex-zoom-label': HTMLElement;
+  'btn-tex-zoom-in': HTMLButtonElement;
+  'btn-tex-zoom-out': HTMLButtonElement;
+  'btn-tex-zoom-reset': HTMLButtonElement;
+  'btn-tex-zoom-fit': HTMLButtonElement;
+  'btn-tex-copy-img': HTMLButtonElement;
+  'btn-tex-save-png': HTMLButtonElement;
+  'uasset-exports-filter': HTMLInputElement;
+  'uasset-imports-filter': HTMLInputElement;
+  'uasset-names-filter': HTMLInputElement;
+  'uasset-names-count': HTMLElement;
+  'btn-close-uasset-action': HTMLButtonElement;
+  'btn-close-uasset-fail': HTMLButtonElement;
 }
 
 export const mainDom = createScope<MainDomMap>('main');

@@ -5,9 +5,10 @@ import logoUrl from '../../assets/logo.png';
 import { discState, isUserPremium } from './state';
 import { formatDateDisplay } from './helpers';
 import { openModDetails } from './detailsModal';
+import { discoveryDom } from '../../framework';
 
 export function renderGrid(mods: DiscoveryModItem[]): void {
-  const grid = document.getElementById('discovery-grid');
+  const grid = discoveryDom.elMaybe('discovery-grid');
   if (!grid) return;
 
   const isPremium = isUserPremium();

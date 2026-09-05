@@ -224,16 +224,39 @@ export function openDetailPanel(modId: string): void {
   // Duplicate detection
   const duplicateRow = detailDom.el('detail-duplicate-row');
   const duplicateWarning = detailDom.el('detail-duplicate-warning');
+  const mergeHybridBtn = detailDom.elMaybe('detail-merge-hybrid-btn');
   const similar = state.allMods.filter(m =>
     m.id !== mod.id &&
-    (m.name.toLowerCase().includes(mod.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')) ||
+    ((m.nexusModId && mod.nexusModId && m.nexusModId === mod.nexusModId) ||
+      m.name.toLowerCase().includes(mod.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')) ||
       mod.name.toLowerCase().includes(m.name.toLowerCase().split(/[^a-z0-9]/i).slice(0, 3).join(' ')))
   );
   if (similar.length > 0) {
     duplicateWarning.textContent = t('detail.duplicate_warning', { names: similar.map(m => m.name).join(', ') });
     duplicateRow.style.display = '';
+    if (mergeHybridBtn) {
+      const mergeCandidate = similar[0];
+      mergeHybridBtn.style.display = 'inline-flex';
+      mergeHybridBtn.disabled = false;
+      mergeHybridBtn.onclick = async () => {
+        try {
+          mergeHybridBtn.disabled = true;
+          const { mergeModsAsHybrid } = await import('../../api');
+          const merged = await mergeModsAsHybrid(mod.id, mergeCandidate.id);
+          showToast(t('toasts.merge_hybrid_success', { name: merged.name }), 'success');
+          await loadMods();
+          openDetailPanel(merged.id);
+        } catch (err: any) {
+          showToast(String(err), 'error');
+          mergeHybridBtn.disabled = false;
+        }
+      };
+    }
   } else {
     duplicateRow.style.display = 'none';
+    if (mergeHybridBtn) {
+      mergeHybridBtn.style.display = 'none';
+    }
   }
 
   // Game Pass IoStore Compatibility Check & Conversion
@@ -332,8 +355,8 @@ export function openDetailPanel(modId: string): void {
         </div>
       `;
 
-      const loadPakBtn = document.getElementById('detail-load-pak-contents-btn') as HTMLButtonElement | null;
-      const pakBodyEl = document.getElementById('detail-pak-contents-body') as HTMLElement | null;
+      const loadPakBtn = detailDom.elMaybe('detail-load-pak-contents-btn');
+      const pakBodyEl = detailDom.elMaybe('detail-pak-contents-body');
 
       if (loadPakBtn && pakBodyEl) {
         loadPakBtn.addEventListener('click', async () => {
@@ -383,7 +406,7 @@ export function openDetailPanel(modId: string): void {
               </div>
             `;
 
-            const searchInput = document.getElementById('detail-pak-search-input') as HTMLInputElement | null;
+            const searchInput = detailDom.elMaybe('detail-pak-search-input');
             if (searchInput) {
               searchInput.addEventListener('input', () => {
                 const q = searchInput.value.trim().toLowerCase();

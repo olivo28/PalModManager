@@ -44,6 +44,9 @@ export interface EditorDomMap {
   'editor-status-spaces': HTMLElement;
   'editor-status-encoding': HTMLElement;
   'editor-status-language': HTMLElement;
+  'editor-status': HTMLElement;
+  'editor-new-file-btn': HTMLButtonElement;
+  'editor-new-folder-btn': HTMLButtonElement;
   'editor-quickfix-banner': HTMLElement;
   'editor-input-wrap': HTMLElement;
   'editor-gutter': HTMLElement;
@@ -73,6 +76,13 @@ export interface EditorDomMap {
   'diff-modal-restore-btn': HTMLButtonElement;
   'diff-modal-merge-btn': HTMLButtonElement;
   'diff-modal-close-btn': HTMLButtonElement;
+
+  // Unsaved changes confirmation modal
+  'unsaved-modal': HTMLElement;
+  'unsaved-close-x': HTMLButtonElement;
+  'unsaved-cancel': HTMLButtonElement;
+  'unsaved-discard': HTMLButtonElement;
+  'unsaved-save': HTMLButtonElement;
 }
 
 export const editorDom = createScope<EditorDomMap>('editor');

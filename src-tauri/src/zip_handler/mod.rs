@@ -12,7 +12,7 @@ pub mod manifest;
 pub use types::{ArchiveFormat, DetectedModType, ZipAnalysis};
 
 // Re-export detection and analysis
-pub use detection::{detect_archive_format, extract_nexus_id_from_path, find_root_folder, list_7z_files, list_rar_files};
+pub use detection::{detect_archive_format, extract_nexus_id_from_path, find_resilient_zip_boundary, find_root_folder, list_7z_files, list_rar_files, open_resilient_zip};
 pub use analysis::analyze_zip;
 
 // Re-export extraction and reading
@@ -119,5 +119,94 @@ mod tests {
                 );
             }
         }
+    }
+
+    #[test]
+    fn test_resilient_zip_with_trailing_bytes() {
+        use std::io::Write;
+        let mut zip_buffer = std::io::Cursor::new(Vec::new());
+        {
+            let mut writer = zip::write::ZipWriter::new(&mut zip_buffer);
+            let options = zip::write::SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Stored);
+            writer.start_file("test.txt", options).unwrap();
+            writer.write_all(b"Hello World").unwrap();
+            writer.finish().unwrap();
+        }
+        let original_zip_bytes = zip_buffer.into_inner();
+        let original_len = original_zip_bytes.len();
+
+        // Append 70,000 bytes of trailing garbage (exceeding standard 65KB EOCD comment search window)
+        let mut corrupted_bytes = original_zip_bytes.clone();
+        corrupted_bytes.extend_from_slice(&vec![0xCC; 70_000]);
+
+        // Verify resilient boundary detects the exact original length
+        let detected_boundary = find_resilient_zip_boundary(&corrupted_bytes);
+        assert_eq!(detected_boundary, Some(original_len), "Should locate exact EOCD end before trailing bytes");
+
+        // Verify trimmed buffer opens and reads file successfully
+        let trimmed_attempt = zip::read::ZipArchive::new(std::io::Cursor::new(&corrupted_bytes[0..detected_boundary.unwrap()]));
+        assert!(trimmed_attempt.is_ok(), "Trimmed resilient buffer must open successfully");
+        let mut archive = trimmed_attempt.unwrap();
+        assert_eq!(archive.len(), 1);
+        let mut entry = archive.by_index(0).unwrap();
+        let mut text = String::new();
+        std::io::Read::read_to_string(&mut entry, &mut text).unwrap();
+        assert_eq!(text, "Hello World");
+    }
+
+    #[test]
+    fn test_pal_mercy_toggle_assets_routing() {
+        let files = vec![
+            "PalMercyToggle/Assets/mercy_on.png".to_string(),
+            "PalMercyToggle/enabled.txt".to_string(),
+            "PalMercyToggle/Scripts/main.lua".to_string(),
+            "PalMercyToggle/Scripts/uky_pal_mercy_toggle_config.lua".to_string(),
+            "PalMercyToggle/Scripts/uky_pal_mercy_toggle_core.lua".to_string(),
+        ];
+        let game_path = PathBuf::from("C:/FakeGamePath");
+        let manifest = build_manifest_from_files(&files, "PalMercyToggle.zip", &game_path, None, None, None)
+            .expect("Should generate manifest");
+
+        assert_eq!(manifest.mod_type, ModType::Ue4ss);
+        assert_eq!(manifest.folder_name, "PalMercyToggle");
+
+        let asset_route = manifest.routes.iter().find(|r| r.zip_path.contains("mercy_on.png"));
+        assert!(asset_route.is_some(), "mercy_on.png must be present in manifest routes and not dropped");
+        let route = asset_route.unwrap();
+        assert_eq!(route.route_type, RouteType::Ue4ss);
+        assert!(
+            route.dest_path.ends_with("PalMercyToggle\\Assets\\mercy_on.png")
+                || route.dest_path.ends_with("PalMercyToggle/Assets/mercy_on.png"),
+            "Expected PalMercyToggle/Assets/mercy_on.png but got: {}",
+            route.dest_path
+        );
+    }
+
+    #[test]
+    fn test_pal_insight_2_0_2_config_root_routing() {
+        let files = vec![
+            "Pal/Binaries/Win64/ue4ss/Mods/PalInsight/config.lua".to_string(),
+            "Pal/Binaries/Win64/ue4ss/Mods/PalInsight/enabled.txt".to_string(),
+            "Pal/Binaries/Win64/ue4ss/Mods/PalInsight/Scripts/main.lua".to_string(),
+            "Pal/Content/Paks/LogicMods/PalInsightX.pak".to_string(),
+        ];
+        let game_path = PathBuf::from("C:/FakeGamePath");
+        let manifest = build_manifest_from_files(&files, "PalInsight.zip", &game_path, None, None, None)
+            .expect("Should generate manifest");
+
+        let config_route = manifest.routes.iter().find(|r| r.zip_path.ends_with("config.lua"))
+            .expect("config.lua must be routed");
+
+        assert!(
+            !config_route.dest_path.contains("Scripts\\config.lua") && !config_route.dest_path.contains("Scripts/config.lua"),
+            "config.lua must NOT be placed into Scripts/ subdirectory when it was at mod root: {}",
+            config_route.dest_path
+        );
+        assert!(
+            config_route.dest_path.ends_with("PalInsight\\config.lua") || config_route.dest_path.ends_with("PalInsight/config.lua"),
+            "config.lua must remain at root of PalInsight folder: {}",
+            config_route.dest_path
+        );
     }
 }

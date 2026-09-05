@@ -11,6 +11,7 @@ import { renderModsView } from '../renderer';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { getContextOverlay, hideContextMenu, positionContextMenu } from './menuDom';
+import { mainDom, detailDom } from '../../../framework';
 
 export function runContextAction(action: string, modId: string): void {
   const mod = getState().allMods.find(m => m.id === modId);
@@ -187,7 +188,7 @@ export function runContextAction(action: string, modId: string): void {
     case 'edit-notes':
       openDetailPanel(modId);
       setTimeout(() => {
-        const notesArea = document.getElementById('detail-custom-notes') as HTMLTextAreaElement | null;
+        const notesArea = detailDom.elMaybe('detail-custom-notes');
         if (notesArea) {
           notesArea.focus();
         }
@@ -238,7 +239,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   const mod = getState().allMods.find(m => m.id === modId);
   if (!mod) return;
   const overlay = getContextOverlay();
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
 
   const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
   let html = '';

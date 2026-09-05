@@ -20,6 +20,13 @@ export interface InstallerDomMap {
   'mod-type-select': HTMLSelectElement;
   'mod-name-input': HTMLInputElement;
   'mod-version-input': HTMLInputElement;
+  'open-altermatic-nexus-btn': HTMLButtonElement;
+  'open-unipalui-nexus-btn': HTMLButtonElement;
+  'file-tree-modal': HTMLElement;
+  'full-files-modal-overlay': HTMLElement;
+  'archive-view-modal': HTMLElement;
+  'archive-structure-modal': HTMLElement;
+  'config-diff-modal': HTMLElement;
 }
 
 export const installerDom = createScope<InstallerDomMap>('installer');

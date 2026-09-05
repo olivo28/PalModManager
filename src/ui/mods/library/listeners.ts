@@ -12,6 +12,7 @@ import {
   setActiveLibrarySubTab,
   setLibraryFilterStatus,
   setLibrarySortBy,
+  setLibraryLayout,
 } from './state';
 import {
   syncWorkshopModTimestamps,
@@ -52,6 +53,22 @@ export function setupLibraryHandlers(): void {
     sortSelect.addEventListener('change', () => {
       setLibrarySortBy(sortSelect.value as any);
       localStorage.setItem('pmm-library-sort', sortSelect.value);
+      renderLibraryView();
+    });
+  }
+
+  const gridBtn = libraryDom.elMaybe('library-layout-grid-btn');
+  if (gridBtn) {
+    gridBtn.addEventListener('click', () => {
+      setLibraryLayout('grid');
+      renderLibraryView();
+    });
+  }
+
+  const listBtn = libraryDom.elMaybe('library-layout-list-btn');
+  if (listBtn) {
+    listBtn.addEventListener('click', () => {
+      setLibraryLayout('list');
       renderLibraryView();
     });
   }

@@ -5,6 +5,36 @@ use crate::models::{ModInfo, ModType};
 use super::super::utils::file_install_date;
 use super::meta::load_pmm_meta;
 
+fn heal_damaged_paks(dir: &Path) {
+    let entries: Vec<_> = WalkDir::new(dir)
+        .max_depth(1)
+        .into_iter()
+        .filter_map(|e| e.ok())
+        .filter(|e| e.file_type().is_file())
+        .collect();
+
+    for entry in &entries {
+        let p = entry.path();
+        let fname = p.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        if fname.ends_with(".pmm.json") || fname.ends_with(".json") || fname.ends_with(".ucas") || fname.ends_with(".utoc") || fname.ends_with(".sig") || fname.ends_with(".bak") || fname.ends_with(".txt") {
+            continue;
+        }
+        let ext = p.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+        if ext.is_empty() {
+            let sidecar_plain = dir.join(format!("{}.pmm.json", fname));
+            let restored_pak_path = dir.join(format!("{}.pak", fname));
+            let restored_sidecar_path = dir.join(format!("{}.pak.pmm.json", fname));
+
+            if sidecar_plain.exists() {
+                let _ = fs::rename(&sidecar_plain, &restored_sidecar_path);
+            }
+            if fs::rename(p, &restored_pak_path).is_ok() {
+                crate::logger::log(&format!("heal_damaged_paks: Auto-restored extensionless file '{}' to '{}.pak'", fname, fname));
+            }
+        }
+    }
+}
+
 pub fn scan_pak_mods(
     dir: &Path,
     pak_type: &str,
@@ -12,6 +42,7 @@ pub fn scan_pak_mods(
     registered_patches: &[crate::pak_patcher::RegisteredPatch],
 ) {
     if !dir.exists() { return; }
+    heal_damaged_paks(dir);
     for entry in WalkDir::new(dir).max_depth(1).into_iter().filter_map(|e| e.ok()) {
         if !entry.file_type().is_file() { continue; }
         let fname = entry.path().file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
@@ -87,6 +118,8 @@ pub fn scan_pak_mods(
             has_pending_update: None,
             origin_load_method: None,
             custom_notes: None,
+            original_name: None,
+            custom_name: None,
         });
     }
 }

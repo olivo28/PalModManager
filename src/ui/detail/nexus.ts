@@ -4,6 +4,7 @@ import { loadMods, renderModsView } from '../modsView';
 import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
 import type { ModInfo } from '../../types';
+import { bus } from '../../framework';
 
 export async function autoFetchNexusInfo(mod: ModInfo): Promise<void> {
   if (!mod.nexusModId) return;
@@ -49,7 +50,11 @@ export function setupNexusIdEdit(modId: string): void {
     if (!val) return;
     saveBtn.disabled = true;
     try {
-      await setNexusModId(modId, parseInt(val));
+      const updated = await setNexusModId(modId, parseInt(val));
+      const state = getState();
+      const newMods = state.allMods.map(m => m.id === modId ? updated : m);
+      updateState({ allMods: newMods, currentDetailMod: updated });
+      bus.emit('mod:renamed', { modId: updated.id, newName: updated.name });
       await loadMods();
       const { openDetailPanel } = await import('./panel');
       openDetailPanel(modId);

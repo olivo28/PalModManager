@@ -35,7 +35,9 @@ export function formatDateDisplay(dateStr: string): string {
   }
 }
 
+import { discoveryDom } from '../../framework';
+
 export function scrollToTop(): void {
-  const body = document.getElementById('discovery-body');
+  const body = discoveryDom.elMaybe('discovery-body');
   if (body) body.scrollTop = 0;
 }

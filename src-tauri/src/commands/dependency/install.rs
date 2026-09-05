@@ -196,6 +196,8 @@ pub async fn apply_ue4ss_zip_bytes(
                     has_pending_update: None,
                     origin_load_method: Some("mods_txt".to_string()),
                     custom_notes: None,
+                    original_name: None,
+                    custom_name: None,
                 });
             }
         }

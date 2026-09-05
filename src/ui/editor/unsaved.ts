@@ -1,9 +1,11 @@
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
-import { handleEditorSave, _originalContent, clearOriginalContent } from './viewer';
+import { editorDom } from '../../framework';
+import { handleEditorSave, _originalContent, clearOriginalContent, getDirtyBufferCount, clearBufferCache } from './viewer';
 import { getMonacoContent } from './monaco/instance';
 
 export function hasUnsavedChanges(): boolean {
+  if (getDirtyBufferCount() > 0) return true;
   if (_originalContent === null) return false;
   const current = getMonacoContent();
   const normalize = (str: string) => str.replace(/\r\n/g, '\n');
@@ -21,9 +23,11 @@ export async function confirmDiscardOrSave(): Promise<boolean> {
   if (choice === 'save') {
     await handleEditorSave();
     clearOriginalContent();
+    clearBufferCache();
     return true;
   } else if (choice === 'discard') {
     clearOriginalContent();
+    clearBufferCache();
     return true;
   }
 
@@ -178,25 +182,26 @@ function showUnsavedChangesModal(original: string, current: string): Promise<'sa
       </div>
     `;
 
+    overlay.id = 'unsaved-modal';
     document.body.appendChild(overlay);
 
     const cleanUp = () => {
       document.body.removeChild(overlay);
     };
 
-    document.getElementById('unsaved-close-x')!.addEventListener('click', () => {
+    editorDom.elMaybe('unsaved-close-x')?.addEventListener('click', () => {
       cleanUp();
       resolve('cancel');
     });
-    document.getElementById('unsaved-cancel')!.addEventListener('click', () => {
+    editorDom.elMaybe('unsaved-cancel')?.addEventListener('click', () => {
       cleanUp();
       resolve('cancel');
     });
-    document.getElementById('unsaved-discard')!.addEventListener('click', () => {
+    editorDom.elMaybe('unsaved-discard')?.addEventListener('click', () => {
       cleanUp();
       resolve('discard');
     });
-    document.getElementById('unsaved-save')!.addEventListener('click', () => {
+    editorDom.elMaybe('unsaved-save')?.addEventListener('click', () => {
       cleanUp();
       resolve('save');
     });

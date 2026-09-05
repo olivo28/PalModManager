@@ -616,52 +616,163 @@ fn scan_ue4ss_mod(
     }
 }
 
-fn extract_literal_hooks(content: &str) -> Vec<(String, String, u32, String)> {
+pub fn extract_literal_hooks(content: &str) -> Vec<(String, String, u32, String)> {
     let mut results = Vec::new();
     let lines: Vec<&str> = content.lines().collect();
     let mut line_num = 0;
+
     while line_num < lines.len() {
         let trimmed = lines[line_num].trim();
         line_num += 1;
+
         if trimmed.starts_with("--") {
             continue;
         }
-        
+
         for api in &["RegisterHook", "NotifyOnNewObject"] {
-            if let Some(idx) = trimmed.find(api) {
-                let rest = &trimmed[idx + api.len()..];
-                if let Some(start_paren) = rest.find('(') {
-                    let arg_part = rest[start_paren + 1..].trim();
-                    let quote = if arg_part.starts_with('"') {
-                        Some('"')
-                    } else if arg_part.starts_with('\'') {
-                        Some('\'')
-                    } else {
-                        None
-                    };
-                    
-                    if let Some(q) = quote {
-                        let quote_str = &arg_part[1..];
-                        if let Some(end_quote) = quote_str.find(q) {
-                            let target = &quote_str[..end_quote];
-                            if target.contains('/') || target.contains(':') {
-                                let mut code = trimmed.to_string();
-                                if !trimmed.contains("function") && !trimmed.contains(')') && line_num < lines.len() {
-                                    let next_trimmed = lines[line_num].trim();
-                                    code = format!("{} {}", trimmed, next_trimmed);
-                                }
-                                let line_code = if code.len() > 120 {
-                                    format!("{}...", &code[..120])
-                                } else {
-                                    code
-                                };
-                                results.push((api.to_string(), target.to_string(), line_num as u32, line_code));
-                            }
-                        }
+            let mut search_from = 0;
+            while let Some(rel_idx) = trimmed[search_from..].find(api) {
+                let idx = search_from + rel_idx;
+                search_from = idx + api.len();
+
+                // Ensure boundary before api (avoid false positives on MyCustomRegisterHook)
+                if idx > 0 {
+                    let prev_byte = trimmed.as_bytes()[idx - 1];
+                    if prev_byte.is_ascii_alphanumeric() || prev_byte == b'_' {
+                        continue;
+                    }
+                }
+
+                if let Some((target, decl_code)) = find_hook_target_string(&lines, line_num - 1, idx + api.len()) {
+                    let clean_target = target.trim();
+                    let is_valid_target = !clean_target.is_empty()
+                        && !clean_target.starts_with(':')
+                        && !clean_target.ends_with(':')
+                        && !clean_target.starts_with('.')
+                        && clean_target.len() >= 3
+                        && (clean_target.contains('/') || clean_target.contains(':') || clean_target.starts_with("Pal") || clean_target.starts_with("APal") || clean_target.starts_with("UPal") || clean_target.starts_with("BP_"));
+
+                    if is_valid_target {
+                        let line_code = if decl_code.len() > 120 {
+                            format!("{}...", &decl_code[..120])
+                        } else {
+                            decl_code
+                        };
+                        results.push((api.to_string(), clean_target.to_string(), line_num as u32, line_code));
                     }
                 }
             }
         }
     }
     results
+}
+
+fn find_hook_target_string(
+    lines: &[&str],
+    start_line_idx: usize,
+    char_offset: usize,
+) -> Option<(String, String)> {
+    let mut combined_code = String::new();
+    let max_lookahead = (start_line_idx + 4).min(lines.len());
+
+    for i in start_line_idx..max_lookahead {
+        let l = lines[i].trim();
+        if l.starts_with("--") {
+            continue;
+        }
+        if combined_code.is_empty() {
+            combined_code.push_str(l);
+        } else {
+            combined_code.push(' ');
+            combined_code.push_str(l);
+        }
+
+        let slice = if i == start_line_idx {
+            if char_offset < lines[i].len() {
+                &lines[i][char_offset..]
+            } else {
+                ""
+            }
+        } else {
+            l
+        };
+
+        if let Some(target) = extract_first_quoted_target(slice) {
+            return Some((target, combined_code));
+        }
+
+        if l.contains(';') || (l.contains(')') && !l.contains('(')) {
+            break;
+        }
+    }
+
+    None
+}
+
+fn extract_first_quoted_target(text: &str) -> Option<String> {
+    let clean_text = if let Some(c_idx) = text.find("--") {
+        &text[..c_idx]
+    } else {
+        text
+    };
+
+    let mut quote_char = None;
+    let mut start_idx = 0;
+
+    for (i, c) in clean_text.char_indices() {
+        if quote_char.is_none() {
+            if c == '"' || c == '\'' {
+                quote_char = Some(c);
+                start_idx = i + c.len_utf8();
+            }
+        } else if Some(c) == quote_char {
+            let target = &clean_text[start_idx..i];
+            return Some(target.to_string());
+        }
+    }
+
+    None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_literal_hooks_pcall_and_xpcall() {
+        let lua_code = r#"
+-- Direct call
+RegisterHook("/Script/Pal.PalBullet:OnHitToActor", function(self) end)
+
+-- Pcall reference
+local ok, err = pcall(RegisterHook, "/Script/Pal.PalPlayerController:RequestUseItemToCharacter", function(self) end)
+
+-- Single quotes
+local ok2, err2 = pcall(RegisterHook, '/Script/Engine.Actor:K2_DestroyActor', callback)
+
+-- NotifyOnNewObject via pcall
+pcall(NotifyOnNewObject, "/Script/Pal.PalPlayerCharacter", function(self) end)
+
+-- Xpcall
+xpcall(RegisterHook, debug.traceback, "/Script/Pal.PalCharacter:Die", on_die)
+
+-- Multiline pcall
+pcall(
+    RegisterHook,
+    "/Script/Pal.PalDamageSubsystem:ApplyDamage",
+    function(self) end
+)
+"#;
+
+        let hooks = extract_literal_hooks(lua_code);
+        let targets: Vec<String> = hooks.into_iter().map(|(_, t, _, _)| t).collect();
+
+        assert_eq!(targets.len(), 6);
+        assert!(targets.contains(&"/Script/Pal.PalBullet:OnHitToActor".to_string()));
+        assert!(targets.contains(&"/Script/Pal.PalPlayerController:RequestUseItemToCharacter".to_string()));
+        assert!(targets.contains(&"/Script/Engine.Actor:K2_DestroyActor".to_string()));
+        assert!(targets.contains(&"/Script/Pal.PalPlayerCharacter".to_string()));
+        assert!(targets.contains(&"/Script/Pal.PalCharacter:Die".to_string()));
+        assert!(targets.contains(&"/Script/Pal.PalDamageSubsystem:ApplyDamage".to_string()));
+    }
 }

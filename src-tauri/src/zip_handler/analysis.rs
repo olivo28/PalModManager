@@ -2,7 +2,7 @@ use std::fs;
 use std::path::Path;
 use zip::read::ZipArchive;
 use super::types::{ArchiveFormat, DetectedModType, ZipAnalysis};
-use super::detection::{detect_archive_format, find_root_folder, list_7z_files, list_rar_files};
+use super::detection::{detect_archive_format, find_root_folder, list_7z_files, list_rar_files, open_resilient_zip};
 
 pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     let p = Path::new(zip_path);
@@ -30,8 +30,16 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
                     list
                 }
                 Err(orig_err) => {
-                    // Fallback attempt: maybe it's 7z or RAR despite zip extension/header
-                    if let Ok(sevenz_list) = list_7z_files(zip_path) {
+                    // Fallback 1: Resilient EOCD trailing-byte recovery
+                    if let Ok(mut resilient_archive) = open_resilient_zip(zip_path) {
+                        let mut list = Vec::new();
+                        for i in 0..resilient_archive.len() {
+                            if let Ok(entry) = resilient_archive.by_index(i) {
+                                list.push(entry.name().to_string());
+                            }
+                        }
+                        list
+                    } else if let Ok(sevenz_list) = list_7z_files(zip_path) {
                         sevenz_list
                     } else if let Ok(rar_list) = list_rar_files(zip_path) {
                         rar_list

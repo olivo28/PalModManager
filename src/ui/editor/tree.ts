@@ -3,10 +3,12 @@ import { getState, updateState } from '../../state';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { showConfirm } from '../confirm';
-import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData, clearEditorContent } from './viewer';
+import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData, clearEditorContent, _fileBufferCache, _originalContent, clearBufferCache } from './viewer';
+import { getMonacoContent } from './monaco/instance';
+import { editorDom } from '../../framework';
 
 export function renderEditorModTree(): void {
-  const tree = document.getElementById('editor-mod-tree');
+  const tree = editorDom.elMaybe('editor-mod-tree');
   if (!tree) return;
 
   const state = getState();
@@ -24,9 +26,9 @@ export function renderEditorModTree(): void {
       setTimeout(() => switchEditorMod(editableMods[0].id), 0);
     } else {
       updateState({ editorModId: null, editorSelectedFile: null, editorFiles: [] });
-      const fileTree = document.getElementById('editor-file-tree');
+      const fileTree = editorDom.elMaybe('editor-file-tree');
       if (fileTree) fileTree.innerHTML = '';
-      const nameEl = document.getElementById('editor-current-mod-name');
+      const nameEl = editorDom.elMaybe('editor-current-mod-name');
       if (nameEl) nameEl.textContent = '';
       clearEditorContent();
     }
@@ -92,14 +94,15 @@ export async function switchEditorMod(modId: string, targetFile?: string, lineNu
 
   const proceed = await confirmDiscardOrSave();
   if (!proceed) return;
+  clearBufferCache();
 
   updateState({ editorModId: modId, editorSelectedFile: null });
 
-  const select = document.getElementById('editor-mod-select') as HTMLSelectElement;
+  const select = editorDom.elMaybe('editor-mod-select');
   if (select) select.value = modId;
 
   const mod = getState().allMods.find(m => m.id === modId);
-  const nameEl = document.getElementById('editor-current-mod-name');
+  const nameEl = editorDom.elMaybe('editor-current-mod-name');
   if (nameEl) nameEl.textContent = mod?.name || '';
 
   document.querySelectorAll('.editor-mod-item').forEach(el => {
@@ -192,7 +195,7 @@ export function findBestConfigFile(files: string[]): string | null {
 
 export async function revealAndSelectFile(filePath: string, lineNumber?: number): Promise<boolean> {
   if (!filePath) return false;
-  const tree = document.getElementById('editor-file-tree');
+  const tree = editorDom.elMaybe('editor-file-tree');
   if (!tree) return false;
 
   const normalizedTarget = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
@@ -357,7 +360,7 @@ function renderNodeHTML(node: FileTreeNode): string {
 }
 
 export function renderFileTree(files: string[]): void {
-  const tree = document.getElementById('editor-file-tree')!;
+  const tree = editorDom.el('editor-file-tree');
   const rootNode = buildFileTree(files);
 
   const state = getState();
@@ -435,14 +438,14 @@ export function renderFileTree(files: string[]): void {
           showToast(t('editor.toast_deleted') || 'File deleted successfully', 'success');
           if (state.editorSelectedFile === path) {
             updateState({ editorSelectedFile: null });
-            const editorContent = document.getElementById('editor-content') as HTMLTextAreaElement | null;
+            const editorContent = editorDom.elMaybe('editor-content');
             if (editorContent) {
               editorContent.value = '';
               editorContent.disabled = true;
             }
-            const codeEl = document.getElementById('editor-highlight-code');
+            const codeEl = editorDom.elMaybe('editor-highlight-code');
             if (codeEl) codeEl.innerHTML = '';
-            const pathEl = document.getElementById('editor-file-path');
+            const pathEl = editorDom.elMaybe('editor-file-path');
             if (pathEl) pathEl.textContent = '';
           }
           await refreshEditorFileTree(state.editorModId);
@@ -461,8 +464,18 @@ export function renderFileTree(files: string[]): void {
       const state = getState();
       if (state.editorSelectedFile === path) return;
 
-      const proceed = await confirmDiscardOrSave();
-      if (!proceed) return;
+      // Save current in-memory buffer before switching files
+      const currentPath = state.editorSelectedFile;
+      if (currentPath && _originalContent !== null) {
+        const currentContent = getMonacoContent();
+        const normalize = (str: string) => str.replace(/\r\n/g, '\n');
+        const isDirty = normalize(currentContent) !== normalize(_originalContent);
+        _fileBufferCache.set(currentPath, {
+          current: currentContent,
+          original: _originalContent,
+          isDirty,
+        });
+      }
 
       tree.querySelectorAll('.editor-file-item').forEach(el => el.classList.remove('selected'));
       item.classList.add('selected');
@@ -473,7 +486,7 @@ export function renderFileTree(files: string[]): void {
   });
 
   // New File action
-  const newFileBtn = document.getElementById('editor-new-file-btn');
+  const newFileBtn = editorDom.elMaybe('editor-new-file-btn');
   if (newFileBtn) {
     newFileBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -498,7 +511,7 @@ export function renderFileTree(files: string[]): void {
   }
 
   // New Folder action
-  const newFolderBtn = document.getElementById('editor-new-folder-btn');
+  const newFolderBtn = editorDom.elMaybe('editor-new-folder-btn');
   if (newFolderBtn) {
     newFolderBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
@@ -524,7 +537,7 @@ export function renderFileTree(files: string[]): void {
 }
 
 export function populateEditorModSelect(): void {
-  const select = document.getElementById('editor-mod-select') as HTMLSelectElement;
+  const select = editorDom.elMaybe('editor-mod-select');
   if (!select) return;
   const state = getState();
   select.innerHTML = '<option value="">Select a mod...</option>' +

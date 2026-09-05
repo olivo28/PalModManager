@@ -1,13 +1,15 @@
+import { mainDom } from '../../framework';
+
 // Console overlay debug log buffer
 export let _logBuffer: string[] = [];
 
 export function openConsoleModal(): void {
-  const modal = document.getElementById('console-modal')!;
+  const modal = mainDom.el('console-modal');
   modal.classList.add('visible');
 
-  const closeX = document.getElementById('console-modal-close-x')!;
-  const closeBtn = document.getElementById('console-modal-close')!;
-  const clearBtn = document.getElementById('console-clear-btn')!;
+  const closeX = mainDom.el('console-modal-close-x');
+  const closeBtn = mainDom.el('console-modal-close');
+  const clearBtn = mainDom.el('console-clear-btn');
 
   const close = () => {
     modal.classList.remove('visible');
@@ -18,11 +20,11 @@ export function openConsoleModal(): void {
 
   clearBtn.onclick = () => {
     _logBuffer = [];
-    const list = document.getElementById('console-logs-list');
+    const list = mainDom.elMaybe('console-logs-list');
     if (list) list.innerHTML = '';
   };
 
-  const list = document.getElementById('console-logs-list');
+  const list = mainDom.elMaybe('console-logs-list');
   if (list) {
     list.innerHTML = _logBuffer.map(log => {
       let colorClass = '';
@@ -43,8 +45,8 @@ export function pushToLogBuffer(message: string): void {
     _logBuffer.shift();
   }
 
-  const list = document.getElementById('console-logs-list');
-  if (list && document.getElementById('console-modal')!.classList.contains('visible')) {
+  const list = mainDom.elMaybe('console-logs-list');
+  if (list && mainDom.el('console-modal').classList.contains('visible')) {
     const div = document.createElement('div');
     div.className = 'console-log-item';
     if (message.includes('[ERROR]') || message.toLowerCase().includes('failed') || message.toLowerCase().includes('error')) {

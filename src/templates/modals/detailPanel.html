@@ -63,9 +63,14 @@
           <div class="detail-row"><span class="detail-label" data-i18n="detail.source_label">Source</span> <span
               id="detail-source-zip"></span></div>
           <div id="detail-components-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-          <div class="detail-row" id="detail-duplicate-row" style="display:none;">
-            <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span>
-            <span id="detail-duplicate-warning" style="color:var(--danger);font-size:12px;"></span>
+          <div class="detail-row" id="detail-duplicate-row" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
+            <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+              <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span>
+              <span id="detail-duplicate-warning" style="color:var(--danger);font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+            </div>
+            <button id="detail-merge-hybrid-btn" class="btn-primary btn-tiny" style="display:none; margin-left:auto; font-size:11px; padding:2px 8px; align-items:center; gap:4px; white-space:nowrap;">
+              <span>⚡</span> <span data-i18n="detail.merge_hybrid_btn">Merge as Hybrid</span>
+            </button>
           </div>
           <div class="detail-row" id="detail-gamepass-warning-row"
             style="display:none; background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 6px; padding: 10px 12px; margin: 6px 0;">

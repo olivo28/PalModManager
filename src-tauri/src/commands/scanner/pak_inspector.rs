@@ -119,6 +119,31 @@ pub fn inspect_pak_file_tree(
     Err(format!("Pak file not found at '{}'", pak_path))
 }
 
+fn gather_candidate_paks(
+    target_mod: &crate::models::ModInfo,
+    game_path: &str,
+) -> Vec<PathBuf> {
+    let game_dir = Path::new(game_path);
+    let mut candidate_paks = Vec::new();
+
+    let mut add_if_pak = |path_str: &str| {
+        if path_str.to_lowercase().ends_with(".pak") {
+            let resolved = crate::config_merge::resolve_path_in_game(game_dir, path_str);
+            if resolved.exists() && !candidate_paks.contains(&resolved) {
+                candidate_paks.push(resolved);
+            }
+        }
+    };
+
+    add_if_pak(&target_mod.game_path);
+    add_if_pak(&target_mod.disabled_path);
+    for extra in &target_mod.extra_files {
+        add_if_pak(extra);
+    }
+
+    candidate_paks
+}
+
 #[tauri::command]
 pub fn inspect_mod_pak_contents(
     state: State<'_, AppState>,
@@ -129,21 +154,14 @@ pub fn inspect_mod_pak_contents(
     let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
         .ok_or_else(|| "Mod not found".to_string())?;
 
-    let mut candidate_paks = Vec::new();
-    if target_mod.game_path.to_lowercase().ends_with(".pak") {
-        candidate_paks.push(PathBuf::from(&target_mod.game_path));
-    }
-    for extra in &target_mod.extra_files {
-        if extra.to_lowercase().ends_with(".pak") {
-            candidate_paks.push(PathBuf::from(extra));
-        }
-    }
+    let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
 
     let mut results = Vec::new();
     for pak in candidate_paks {
-        if pak.exists() {
-            if let Ok(info) = crate::pak_scanner::list_pak_entries_detailed(&pak) {
-                results.push(info);
+        match crate::pak_scanner::list_pak_entries_detailed(&pak) {
+            Ok(info) => results.push(info),
+            Err(e) => {
+                crate::logger::log(&format!("inspect_mod_pak_contents: Error reading pak '{:?}': {}", pak, e));
             }
         }
     }
@@ -166,22 +184,12 @@ pub fn inspect_pak_asset(
     let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
         .ok_or_else(|| "Mod not found".to_string())?;
 
-    let mut candidate_paks = Vec::new();
-    if target_mod.game_path.to_lowercase().ends_with(".pak") {
-        candidate_paks.push(PathBuf::from(&target_mod.game_path));
-    }
-    for extra in &target_mod.extra_files {
-        if extra.to_lowercase().ends_with(".pak") {
-            candidate_paks.push(PathBuf::from(extra));
-        }
-    }
+    let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
 
     for pak in candidate_paks {
-        if pak.exists() {
-            if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
-                if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
-                    return crate::pak_scanner::list_pak_entries(&pak);
-                }
+        if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
+            if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
+                return crate::pak_scanner::list_pak_entries(&pak);
             }
         }
     }
@@ -210,22 +218,12 @@ pub fn inspect_uasset_deep_cmd(
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
         if let Some(target_mod) = profile_mods.into_iter().find(|m| m.id == mid) {
-            let mut candidate_paks = Vec::new();
-            if target_mod.game_path.to_lowercase().ends_with(".pak") {
-                candidate_paks.push(PathBuf::from(&target_mod.game_path));
-            }
-            for extra in &target_mod.extra_files {
-                if extra.to_lowercase().ends_with(".pak") {
-                    candidate_paks.push(PathBuf::from(extra));
-                }
-            }
+            let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
 
             for pak in candidate_paks {
-                if pak.exists() {
-                    if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
-                        if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
-                            return crate::pak_scanner::inspect_uasset_deep(&pak, &asset_internal_path);
-                        }
+                if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
+                    if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
+                        return crate::pak_scanner::inspect_uasset_deep(&pak, &asset_internal_path);
                     }
                 }
             }

@@ -5,9 +5,10 @@ import { showInputModal } from '../profiles';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { hideContextMenu, positionContextMenu } from './menuDom';
+import { mainDom } from '../../../framework';
 
 export function showBulkContextMenu(x: number, y: number): void {
-  const menu = document.getElementById('context-menu')!;
+  const menu = mainDom.el('context-menu');
   const selectedCount = getState().selectedModIds.size;
 
   const currentProfile = getState().profiles.find(p => p.id === getState().currentProfileId);
@@ -47,7 +48,13 @@ export function showBulkContextMenu(x: number, y: number): void {
           <span>➕</span> ${escapeHtml(t('context.new_folder'))}
         </button>
       </div>
-    </div>
+    ${selectedCount === 2 ? `
+    <div class="context-menu-sep"></div>
+    <button type="button" class="context-menu-item" data-action="bulk-merge-hybrid">
+      <span class="ctx-icon">⚡</span>
+      ${escapeHtml(t('context.merge_as_hybrid'))}
+    </button>
+    ` : ''}
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item danger" data-action="bulk-remove">
       <span class="ctx-icon">✕</span>
@@ -83,11 +90,26 @@ export function showBulkContextMenu(x: number, y: number): void {
       hideContextMenu();
 
       if (action === 'bulk-enable') {
-        document.getElementById('bulk-enable-btn')?.click();
+        mainDom.elMaybe('bulk-enable-btn')?.click();
       } else if (action === 'bulk-disable') {
-        document.getElementById('bulk-disable-btn')?.click();
+        mainDom.elMaybe('bulk-disable-btn')?.click();
       } else if (action === 'bulk-remove') {
-        document.getElementById('bulk-remove-btn')?.click();
+        mainDom.elMaybe('bulk-remove-btn')?.click();
+      } else if (action === 'bulk-merge-hybrid') {
+        const selected = Array.from(getState().selectedModIds);
+        if (selected.length === 2) {
+          (async () => {
+            try {
+              const { mergeModsAsHybrid } = await import('../../../api');
+              const merged = await mergeModsAsHybrid(selected[0], selected[1]);
+              showToast(t('toasts.merge_hybrid_success', { name: merged.name }), 'success');
+              updateState({ selectedModIds: new Set([merged.id]) });
+              await loadMods();
+            } catch (err: any) {
+              showToast(String(err), 'error');
+            }
+          })();
+        }
       }
     });
   });

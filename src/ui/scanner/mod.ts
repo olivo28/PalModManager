@@ -512,7 +512,7 @@ export function setupEventListeners(): void {
     });
   });
 
-  document.getElementById('scanner-rescan-hotkeys-btn')?.addEventListener('click', () => {
+  scannerDom.elMaybe('scanner-rescan-hotkeys-btn')?.addEventListener('click', () => {
     runHotkeysScan();
   });
 

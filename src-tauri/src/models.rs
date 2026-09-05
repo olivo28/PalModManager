@@ -1,5 +1,20 @@
 use serde::{Deserialize, Serialize};
 
+pub fn deserialize_string_or_number<'de, D>(deserializer: D) -> Result<Option<String>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let opt = Option::<serde_json::Value>::deserialize(deserializer)?;
+    match opt {
+        Some(serde_json::Value::String(s)) => {
+            let trimmed = s.trim().to_string();
+            if trimmed.is_empty() { Ok(None) } else { Ok(Some(trimmed)) }
+        }
+        Some(serde_json::Value::Number(n)) => Ok(Some(n.to_string())),
+        _ => Ok(None),
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum ModType {
     #[serde(rename = "ue4ss")]
@@ -65,8 +80,8 @@ pub struct ModInfo {
     pub library_zip: Option<String>,
     #[serde(default)]
     pub ignored_version: Option<String>,
-    #[serde(default)]
-    pub nexus_file_id: Option<u32>,
+    #[serde(default, deserialize_with = "deserialize_string_or_number")]
+    pub nexus_file_id: Option<String>,
     #[serde(default)]
     pub ignored_keys: Option<Vec<String>>,
     #[serde(default)]
@@ -75,6 +90,10 @@ pub struct ModInfo {
     pub origin_load_method: Option<String>,
     #[serde(default)]
     pub custom_notes: Option<String>,
+    #[serde(default)]
+    pub original_name: Option<String>,
+    #[serde(default)]
+    pub custom_name: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -357,8 +376,8 @@ pub struct PmmMetadata {
     pub mod_type: Option<String>,
     #[serde(default, alias = "nexusModId", alias = "nexus_mod_id", alias = "modId")]
     pub nexus_mod_id: Option<u32>,
-    #[serde(default, alias = "nexusFileId", alias = "nexus_file_id", alias = "fileId")]
-    pub nexus_file_id: Option<u32>,
+    #[serde(default, alias = "nexusFileId", alias = "nexus_file_id", alias = "fileId", deserialize_with = "deserialize_string_or_number")]
+    pub nexus_file_id: Option<String>,
     #[serde(default, alias = "nexusPictureUrl", alias = "nexus_picture_url", alias = "pictureUrl")]
     pub nexus_picture_url: Option<String>,
     #[serde(default, alias = "nexusUrl", alias = "nexus_url")]
@@ -369,6 +388,16 @@ pub struct PmmMetadata {
     pub category: Option<String>,
     #[serde(default)]
     pub routes: Option<Vec<PackerRoute>>,
+    #[serde(default, alias = "originalName", alias = "original_name")]
+    pub original_name: Option<String>,
+    #[serde(default, alias = "customName", alias = "custom_name", alias = "changedName", alias = "changed_name")]
+    pub custom_name: Option<String>,
+    #[serde(default, alias = "folderName", alias = "folder_name")]
+    pub folder_name: Option<String>,
+    #[serde(default, alias = "installedFolders", alias = "installed_folders")]
+    pub installed_folders: Option<Vec<String>>,
+    #[serde(default, alias = "sourceZip", alias = "source_zip")]
+    pub source_zip: Option<String>,
     #[serde(default, alias = "installedFiles", alias = "installed_files", alias = "files")]
     pub installed_files: Option<Vec<String>>,
 }
@@ -381,7 +410,8 @@ pub struct InstallManifest {
     pub mod_type: ModType,
     pub routes: Vec<FileRoute>,
     pub nexus_mod_id: Option<u32>,
-    pub nexus_file_id: Option<u32>,
+    #[serde(default, deserialize_with = "deserialize_string_or_number")]
+    pub nexus_file_id: Option<String>,
     pub has_pak: bool,
     pub has_ue4ss: bool,
     pub has_palschema: bool,

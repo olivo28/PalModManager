@@ -139,6 +139,31 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     confirmBtn.textContent = t('installer.btn_install');
   }
 
+  let archivedConfigHtml = '';
+  if (!existingMod) {
+    try {
+      const { checkArchivedConfig } = await import('../../../api');
+      const archivedInfo = await checkArchivedConfig(analysis.nexusModId || null, cleanName);
+      if (archivedInfo && archivedInfo.files.length > 0) {
+        archivedConfigHtml = `
+          <div class="archived-config-banner" style="margin-bottom:6px;padding:8px 12px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
+              <span style="font-size:16px;">💾</span>
+              <div style="display:flex;flex-direction:column;min-width:0;">
+                <span style="font-size:11px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t('installer.archived_config_detected', { count: archivedInfo.files.length }))}</span>
+                <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(archivedInfo.files.join(', '))}">${escapeHtml(archivedInfo.files.join(', '))}</span>
+              </div>
+            </div>
+            <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#2ecc71;cursor:pointer;flex-shrink:0;">
+              <input type="checkbox" id="restore-archived-config-checkbox" data-archive-id="${escapeHtml(archivedInfo.archiveId)}" checked style="accent-color:#2ecc71;cursor:pointer;" />
+              <span>${escapeHtml(t('installer.restore_archived_config'))}</span>
+            </label>
+          </div>
+        `;
+      }
+    } catch { }
+  }
+
   const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
   let versionVal = analysis.modinfo?.version || '';
   if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim()) && analysis.detectedVersion.trim() !== '1.0.0' && analysis.detectedVersion.trim() !== 'unknown') {
@@ -266,6 +291,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         <!-- Right Column: Settings Form -->
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;">
            ${updateHtml}
+           ${archivedConfigHtml}
            ${altermaticAlertHtml}
 
            <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 6px 10px; margin-top: -2px; margin-bottom: 2px; align-items: center; justify-content: space-between; gap: 12px;">
@@ -309,8 +335,8 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
               <div class="manifest-files-list" style="max-height:85px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:6px;font-family:monospace;font-size:10px;display:flex;flex-direction:column;gap:4px;">
                 ${manifest.routes.map((r: any) => `
                   <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:2px;background:rgba(255,255,255,0.02);">
-                    <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
-                    <span style="font-size:8px;padding:1px 3px;border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;">${r.routeType}</span>
+                    <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;margin-right:8px;" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
+                    <span style="font-size:8px;padding:1px 3px;border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;flex-shrink:0;">${r.routeType}</span>
                   </div>
                 `).join('')}
               </div>
@@ -322,11 +348,11 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   `;
 
   // Wire up Altermatic & UniPalUI buttons
-  document.getElementById('open-altermatic-nexus-btn')?.addEventListener('click', (e) => {
+  installerDom.elMaybe('open-altermatic-nexus-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
     openUrl('https://www.nexusmods.com/palworld/mods/1626');
   });
-  document.getElementById('open-unipalui-nexus-btn')?.addEventListener('click', (e) => {
+  installerDom.elMaybe('open-unipalui-nexus-btn')?.addEventListener('click', (e) => {
     e.preventDefault();
     openUrl('https://www.nexusmods.com/palworld/mods/1894');
   });

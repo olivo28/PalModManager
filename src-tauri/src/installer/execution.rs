@@ -217,7 +217,7 @@ pub fn execute_manifest(
     };
 
     Ok(ModInfo {
-        id: determine_mod_id(manifest.nexus_mod_id, manifest.nexus_file_id, &manifest.folder_name, &manifest.mod_type),
+        id: determine_mod_id(manifest.nexus_mod_id, manifest.nexus_file_id.as_deref(), &manifest.folder_name, &manifest.mod_type),
         name: manifest.display_name.clone(),
         mod_type: manifest.mod_type.clone(),
         nexus_mod_id: manifest.nexus_mod_id,
@@ -250,10 +250,12 @@ pub fn execute_manifest(
         update_date: None,
         library_zip: None,
         ignored_version: None,
-        nexus_file_id: manifest.nexus_file_id,
+        nexus_file_id: manifest.nexus_file_id.clone(),
         ignored_keys: None,
         has_pending_update: None,
         origin_load_method: if manifest.mod_type == ModType::Ue4ss { Some("enabled_txt".to_string()) } else { None },
         custom_notes: None,
+        original_name: Some(manifest.display_name.clone()),
+        custom_name: None,
     })
 }

@@ -507,6 +507,8 @@ pub fn import_profile_pack_internal(
                 has_pending_update: None,
                 origin_load_method: m_meta.origin_load_method.clone(),
                 custom_notes: None,
+                original_name: None,
+                custom_name: None,
             });
         }
     }

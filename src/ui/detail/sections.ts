@@ -1,10 +1,12 @@
 import { setModVersion, checkGitHubVersion, setGithubVersion, ignoreModVersion } from '../../api';
 import { getState, updateState } from '../../state';
 import { loadMods, renderModsView } from '../modsView';
+import { isVersionNewer, computeAvailableUpdates } from '../mods/card';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import type { ModInfo } from '../../types';
+import { detailDom } from '../../framework';
 
 let detailTabsSetup = false;
 export function setupDetailTabs(): void {
@@ -15,16 +17,22 @@ export function setupDetailTabs(): void {
       const tabName = (tab as HTMLElement).dataset.tab!;
       document.querySelectorAll('.detail-tab').forEach((t) => t.classList.remove('active'));
       tab.classList.add('active');
-      document.getElementById('detail-info-tab')!.style.display = tabName === 'info' ? '' : 'none';
-      document.getElementById('detail-tech-tab')!.style.display = tabName === 'tech' ? '' : 'none';
+      detailDom.el('detail-info-tab').style.display = tabName === 'info' ? '' : 'none';
+      detailDom.el('detail-tech-tab').style.display = tabName === 'tech' ? '' : 'none';
     });
   });
 }
 
 export function renderVersion(mod: ModInfo): void {
-  const el = document.getElementById('detail-version')!;
+  const el = detailDom.el('detail-version');
   const state = getState();
-  const updateVer = state.availableUpdates?.get(mod.id);
+  const rawUpdateVer = state.availableUpdates?.get(mod.id);
+  const updateVer =
+    rawUpdateVer &&
+    mod.version &&
+    isVersionNewer(mod.version.replace(/^v/i, '').trim(), rawUpdateVer.replace(/^v/i, '').trim())
+      ? rawUpdateVer
+      : null;
 
   let updateBadge = '';
   if (updateVer) {
@@ -93,11 +101,12 @@ export function renderVersion(mod: ModInfo): void {
           try {
             const updated = await setModVersion(mod.id, newVer);
             const state = getState();
-            const idx = state.allMods.findIndex(m => m.id === mod.id);
+            const idx = state.allMods.findIndex((m) => m.id === mod.id);
             if (idx >= 0) {
               const newMods = [...state.allMods];
               newMods[idx] = updated;
-              updateState({ allMods: newMods });
+              const newUpdates = computeAvailableUpdates(newMods, state.libraryEntries);
+              updateState({ allMods: newMods, availableUpdates: newUpdates, currentDetailMod: updated });
             }
             renderVersion(updated);
             renderModsView();
@@ -122,7 +131,7 @@ export function renderVersion(mod: ModInfo): void {
 }
 
 export function renderGithubSection(mod: ModInfo): void {
-  const container = document.getElementById('detail-github') as HTMLElement | null;
+  const container = detailDom.elMaybe('detail-github');
   if (!container) return;
 
   if (!mod.githubRepo) {

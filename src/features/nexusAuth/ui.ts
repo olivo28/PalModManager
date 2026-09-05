@@ -6,6 +6,7 @@ import { DEFAULT_AVATAR, isListening, setIsListening } from './state';
 import { processOAuthCallback, processNxmDownload, triggerOAuthLogin, triggerLogout } from './oauth';
 import { openNexusProfileModal } from './profileModal';
 import { updateProtocolStatusUI } from './protocol';
+import { mainDom, settingsDom } from '../../framework';
 
 export async function initNexusAuth(): Promise<void> {
   // 1. Initial check of account status
@@ -53,7 +54,7 @@ export async function initNexusAuth(): Promise<void> {
 export function renderNexusAccountUI(): void {
   renderSidebarNexusWidget();
 
-  const container = document.getElementById('settings-nexus-account-card');
+  const container = settingsDom.elMaybe('settings-nexus-account-card');
   if (!container) return;
 
   const state = getState();
@@ -93,11 +94,11 @@ export function renderNexusAccountUI(): void {
       </div>
     `;
 
-    document.getElementById('btn-nexus-open-modal-avatar')?.addEventListener('click', () => openNexusProfileModal());
-    document.getElementById('btn-nexus-open-modal-info')?.addEventListener('click', () => openNexusProfileModal());
-    document.getElementById('btn-nexus-open-modal')?.addEventListener('click', () => openNexusProfileModal());
+    settingsDom.elMaybe('btn-nexus-open-modal-avatar')?.addEventListener('click', () => openNexusProfileModal());
+    settingsDom.elMaybe('btn-nexus-open-modal-info')?.addEventListener('click', () => openNexusProfileModal());
+    settingsDom.elMaybe('btn-nexus-open-modal')?.addEventListener('click', () => openNexusProfileModal());
 
-    document.getElementById('btn-nexus-disconnect')?.addEventListener('click', async () => {
+    settingsDom.elMaybe('btn-nexus-disconnect')?.addEventListener('click', async () => {
       await triggerLogout();
     });
   } else {
@@ -117,7 +118,7 @@ export function renderNexusAccountUI(): void {
       </div>
     `;
 
-    document.getElementById('btn-nexus-connect-oauth')?.addEventListener('click', async () => {
+    settingsDom.elMaybe('btn-nexus-connect-oauth')?.addEventListener('click', async () => {
       await triggerOAuthLogin();
     });
   }
@@ -127,19 +128,19 @@ export function renderNexusAccountUI(): void {
 }
 
 export function renderSidebarNexusWidget(): void {
-  const widget = document.getElementById('sidebar-nexus-widget');
+  const widget = mainDom.elMaybe('sidebar-nexus-widget');
   if (!widget) return;
 
   const state = getState();
   const account = state.currentSettings?.nexusAccount;
-  const discoveryTabBtn = document.getElementById('sidebar-tab-discovery');
+  const discoveryTabBtn = mainDom.elMaybe('sidebar-tab-discovery');
 
   if (account && account.username) {
     if (discoveryTabBtn) discoveryTabBtn.style.display = 'flex';
     const avatar = account.avatarUrl || DEFAULT_AVATAR;
-    const avatarEl = document.getElementById('sidebar-nexus-avatar') as HTMLImageElement | null;
-    const nameEl = document.getElementById('sidebar-nexus-name');
-    const tierEl = document.getElementById('sidebar-nexus-tier');
+    const avatarEl = mainDom.elMaybe('sidebar-nexus-avatar');
+    const nameEl = mainDom.elMaybe('sidebar-nexus-name');
+    const tierEl = mainDom.elMaybe('sidebar-nexus-tier');
 
     if (avatarEl) {
       avatarEl.src = avatar;

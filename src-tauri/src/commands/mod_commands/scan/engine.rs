@@ -134,6 +134,8 @@ pub fn scan_mods_internal(
             has_pending_update: Some(wmod.has_pending_update),
             origin_load_method: None,
             custom_notes: None,
+            original_name: None,
+            custom_name: None,
         });
     }
 

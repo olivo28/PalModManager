@@ -10,6 +10,7 @@ import {
   PatchAssetSelection
 } from '../../../api';
 import { getState } from '../../../state';
+import { scannerDom } from '../../../framework';
 
 interface ConflictingModEntry {
   modName: string;
@@ -49,7 +50,7 @@ function getAssetTypeBadgeClass(type: string): string {
  * Opens the Manual Pak Compatibility Patch Builder Modal
  */
 export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Promise<void> {
-  const existingModal = document.getElementById('pmm-patch-builder-modal-overlay');
+  const existingModal = scannerDom.elMaybe('pmm-patch-builder-modal-overlay');
   if (existingModal) existingModal.remove();
 
   const state = getState();
@@ -245,8 +246,8 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
   };
   window.addEventListener('keydown', handleKeyDown);
 
-  document.getElementById('btn-close-patch-builder')?.addEventListener('click', closeModal);
-  document.getElementById('btn-cancel-patch-builder')?.addEventListener('click', closeModal);
+  scannerDom.elMaybe('btn-close-patch-builder')?.addEventListener('click', closeModal);
+  scannerDom.elMaybe('btn-cancel-patch-builder')?.addEventListener('click', closeModal);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) closeModal();
   });
@@ -304,16 +305,16 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
   });
 
   // Existing Patches viewer button
-  document.getElementById('btn-view-managed-patches')?.addEventListener('click', () => {
+  scannerDom.elMaybe('btn-view-managed-patches')?.addEventListener('click', () => {
     openExistingPatchesModal();
   });
 
   // Build confirmation handler
-  document.getElementById('btn-build-patch-confirm')?.addEventListener('click', async () => {
-    const filenameInput = document.getElementById('patch-filename-input') as HTMLInputElement;
-    const gamepassToggle = document.getElementById('patch-gamepass-toggle') as HTMLInputElement;
-    const progressBox = document.getElementById('patch-build-progress-box');
-    const buildBtn = document.getElementById('btn-build-patch-confirm') as HTMLButtonElement;
+  scannerDom.elMaybe('btn-build-patch-confirm')?.addEventListener('click', async () => {
+    const filenameInput = scannerDom.elMaybe('patch-filename-input');
+    const gamepassToggle = scannerDom.elMaybe('patch-gamepass-toggle');
+    const progressBox = scannerDom.elMaybe('patch-build-progress-box');
+    const buildBtn = scannerDom.elMaybe('btn-build-patch-confirm');
 
     const patchName = filenameInput?.value?.trim() || 'zzz_PMM_Patch_Compat_P';
     const isGamepass = gamepassToggle?.checked || false;
@@ -374,7 +375,7 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
  * Modal to view and manage existing generated compatibility patches
  */
 export async function openExistingPatchesModal(): Promise<void> {
-  const existing = document.getElementById('pmm-existing-patches-modal');
+  const existing = scannerDom.elMaybe('pmm-existing-patches-modal');
   if (existing) existing.remove();
 
   let patches: GeneratedPatchInfo[] = [];
@@ -472,8 +473,8 @@ export async function openExistingPatchesModal(): Promise<void> {
   };
   window.addEventListener('keydown', handleKeyDown);
 
-  document.getElementById('btn-close-existing-patches')?.addEventListener('click', close);
-  document.getElementById('btn-close-existing-patches-footer')?.addEventListener('click', close);
+  scannerDom.elMaybe('btn-close-existing-patches')?.addEventListener('click', close);
+  scannerDom.elMaybe('btn-close-existing-patches-footer')?.addEventListener('click', close);
   overlay.addEventListener('click', (e) => {
     if (e.target === overlay) close();
   });

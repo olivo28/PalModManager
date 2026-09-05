@@ -139,8 +139,8 @@ export function renderUsmapView(): void {
 
 function updateUsmapTableAndFooter(): void {
   const panel = dbDom.elMaybe('db-grid-panel');
-  const tableWrap = document.getElementById('db-usmap-table-wrap');
-  const footerWrap = document.getElementById('db-usmap-footer');
+  const tableWrap = dbDom.elMaybe('db-usmap-table-wrap');
+  const footerWrap = dbDom.elMaybe('db-usmap-footer');
   if (!panel || !tableWrap || !footerWrap) return;
 
   const s = dbState.usmapSummary;
@@ -290,10 +290,10 @@ export function closeUsmapInspector(): void {
 }
 
 export function renderUsmapInspector(): void {
-  const customContainer = document.getElementById('db-inspector-custom-container');
+  const customContainer = dbDom.elMaybe('db-inspector-custom-container');
   const jsonEditor = dbDom.elMaybe('db-json-editor');
-  const inspectorTitle = document.getElementById('db-inspector-title');
-  const inspectorActions = document.getElementById('db-inspector-actions');
+  const inspectorTitle = dbDom.elMaybe('db-inspector-title');
+  const inspectorActions = dbDom.elMaybe('db-inspector-actions');
   if (!customContainer || !jsonEditor) return;
 
   if (!dbState.selectedUsmapItem) {
@@ -333,15 +333,15 @@ export function renderUsmapInspector(): void {
       </div>
     `;
 
-    document.getElementById('db-inspector-toggle-visual')?.addEventListener('click', () => {
+    dbDom.elMaybe('db-inspector-toggle-visual')?.addEventListener('click', () => {
       dbState.usmapInspectorMode = 'visual';
       renderUsmapInspector();
     });
-    document.getElementById('db-inspector-toggle-json')?.addEventListener('click', () => {
+    dbDom.elMaybe('db-inspector-toggle-json')?.addEventListener('click', () => {
       dbState.usmapInspectorMode = 'json';
       renderUsmapInspector();
     });
-    document.getElementById('db-inspector-close-btn')?.addEventListener('click', () => {
+    dbDom.elMaybe('db-inspector-close-btn')?.addEventListener('click', () => {
       closeUsmapInspector();
     });
   }
@@ -463,7 +463,7 @@ export function renderUsmapInspector(): void {
       </div>
     `;
 
-    document.getElementById('db-fname-copy-btn')?.addEventListener('click', () => {
+    dbDom.elMaybe('db-fname-copy-btn')?.addEventListener('click', () => {
       navigator.clipboard.writeText(item.name);
       showToast(`Copied: ${item.name}`, 'info');
     });

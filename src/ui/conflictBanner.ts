@@ -2,6 +2,7 @@ import { cleanConflictDlls } from '../api';
 import { showToast } from './toast';
 import { loadDependencies } from './modsView';
 import { t } from '../utils/i18n';
+import { mainDom } from '../framework';
 
 let bannerElement: HTMLElement | null = null;
 
@@ -12,7 +13,7 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
     return;
   }
 
-  const appElement = document.getElementById('app');
+  const appElement = mainDom.elMaybe('app');
   if (!appElement) return;
 
   const mainElement = appElement.querySelector('main');
@@ -39,7 +40,7 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
 
   mainElement.insertBefore(bannerElement, mainElement.firstChild);
 
-  const cleanBtn = document.getElementById('clean-conflict-dlls-btn');
+  const cleanBtn = bannerElement.querySelector('#clean-conflict-dlls-btn') as HTMLButtonElement | null;
   cleanBtn?.addEventListener('click', async () => {
     try {
       if (cleanBtn) cleanBtn.textContent = 'Cleaning...';
@@ -53,7 +54,7 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
     }
   });
 
-  const dismissBtn = document.getElementById('dismiss-conflict-banner-btn');
+  const dismissBtn = bannerElement.querySelector('#dismiss-conflict-banner-btn') as HTMLButtonElement | null;
   dismissBtn?.addEventListener('click', () => {
     removeConflictBanner();
   });

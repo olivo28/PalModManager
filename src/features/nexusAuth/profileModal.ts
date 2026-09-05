@@ -13,32 +13,33 @@ import {
 import { getState, updateState } from '../../state';
 import { showToast } from '../../ui/toast';
 import { t } from '../../utils/i18n';
+import { settingsDom } from '../../framework';
 import { DEFAULT_AVATAR } from './state';
 import { formatDate } from './helpers';
 import { triggerLogout } from './oauth';
 
 export function openNexusProfileModal(): void {
-  const modal = document.getElementById('nexus-profile-modal');
+  const modal = settingsDom.elMaybe('nexus-profile-modal');
   if (!modal) return;
 
   const state = getState();
   const account = state.currentSettings?.nexusAccount;
   if (!account) return;
 
-  const avatarEl = document.getElementById('nexus-profile-modal-avatar') as HTMLImageElement | null;
-  const nameEl = document.getElementById('nexus-profile-modal-name');
-  const idEl = document.getElementById('nexus-profile-modal-id');
-  const badgeEl = document.getElementById('nexus-profile-modal-badge');
-  const authorBadgeEl = document.getElementById('nexus-profile-modal-author-badge');
-  const downloadsEl = document.getElementById('nexus-profile-modal-downloads');
-  const downloadsCountEl = document.getElementById('nexus-profile-modal-downloads-count');
-  const protoEl = document.getElementById('nexus-profile-modal-proto');
-  const endorsementsEl = document.getElementById('nexus-profile-modal-endorsements');
-  const viewsEl = document.getElementById('nexus-profile-modal-views');
-  const kudosEl = document.getElementById('nexus-profile-modal-kudos');
-  const lastActiveEl = document.getElementById('nexus-profile-modal-last-active');
-  const joinedEl = document.getElementById('nexus-profile-modal-joined');
-  const aboutEl = document.getElementById('nexus-profile-modal-about');
+  const avatarEl = settingsDom.elMaybe('nexus-profile-modal-avatar');
+  const nameEl = settingsDom.elMaybe('nexus-profile-modal-name');
+  const idEl = settingsDom.elMaybe('nexus-profile-modal-id');
+  const badgeEl = settingsDom.elMaybe('nexus-profile-modal-badge');
+  const authorBadgeEl = settingsDom.elMaybe('nexus-profile-modal-author-badge');
+  const downloadsEl = settingsDom.elMaybe('nexus-profile-modal-downloads');
+  const downloadsCountEl = settingsDom.elMaybe('nexus-profile-modal-downloads-count');
+  const protoEl = settingsDom.elMaybe('nexus-profile-modal-proto');
+  const endorsementsEl = settingsDom.elMaybe('nexus-profile-modal-endorsements');
+  const viewsEl = settingsDom.elMaybe('nexus-profile-modal-views');
+  const kudosEl = settingsDom.elMaybe('nexus-profile-modal-kudos');
+  const lastActiveEl = settingsDom.elMaybe('nexus-profile-modal-last-active');
+  const joinedEl = settingsDom.elMaybe('nexus-profile-modal-joined');
+  const aboutEl = settingsDom.elMaybe('nexus-profile-modal-about');
 
   const updateAuthorMetrics = (mods: NexusUserAuthoredMod[]) => {
     if (mods && mods.length > 0) {
@@ -107,7 +108,7 @@ export function openNexusProfileModal(): void {
   // Pre-fetch authored mods in background to populate downloads counter & author badge early
   getNexusUserAuthoredMods(false).then(myMods => {
     cachedMyMods = myMods;
-    const authoredCountBadge = document.getElementById('nexus-tab-authored-count');
+    const authoredCountBadge = settingsDom.elMaybe('nexus-tab-authored-count');
     if (authoredCountBadge) authoredCountBadge.textContent = String(myMods.length);
     updateAuthorMetrics(myMods);
   }).catch(() => {});
@@ -115,10 +116,10 @@ export function openNexusProfileModal(): void {
   // Tab Switching Logic
   const tabs = modal.querySelectorAll<HTMLButtonElement>('.nexus-modal-tab');
   const panels: Record<string, HTMLElement | null> = {
-    overview: document.getElementById('nexus-panel-overview'),
-    endorsements: document.getElementById('nexus-panel-endorsements'),
-    tracked: document.getElementById('nexus-panel-tracked'),
-    'my-mods': document.getElementById('nexus-panel-my-mods'),
+    overview: settingsDom.elMaybe('nexus-panel-overview'),
+    endorsements: settingsDom.elMaybe('nexus-panel-endorsements'),
+    tracked: settingsDom.elMaybe('nexus-panel-tracked'),
+    'my-mods': settingsDom.elMaybe('nexus-panel-my-mods'),
   };
 
   let cachedEndorsements: NexusUserEndorsement[] | null = null;
@@ -153,12 +154,12 @@ export function openNexusProfileModal(): void {
 
   // Endorsements Tab Renderer
   const renderEndorsementsList = (items: NexusUserEndorsement[]) => {
-    const listContainer = document.getElementById('nexus-endorsements-list');
-    const countBadge = document.getElementById('nexus-tab-endorsements-count');
+    const listContainer = settingsDom.elMaybe('nexus-endorsements-list');
+    const countBadge = settingsDom.elMaybe('nexus-tab-endorsements-count');
     if (!listContainer) return;
 
-    const palworldOnly = (document.getElementById('nexus-endorsements-palworld-only') as HTMLInputElement)?.checked ?? true;
-    const searchVal = (document.getElementById('nexus-endorsements-search') as HTMLInputElement)?.value.toLowerCase().trim() || '';
+    const palworldOnly = settingsDom.elMaybe('nexus-endorsements-palworld-only')?.checked ?? true;
+    const searchVal = settingsDom.elMaybe('nexus-endorsements-search')?.value.toLowerCase().trim() || '';
 
     let filtered = items.filter(item => {
       if (palworldOnly && item.domainName.toLowerCase() !== 'palworld') return false;
@@ -215,7 +216,7 @@ export function openNexusProfileModal(): void {
   };
 
   const loadEndorsementsTab = async (force = false) => {
-    const listContainer = document.getElementById('nexus-endorsements-list');
+    const listContainer = settingsDom.elMaybe('nexus-endorsements-list');
     if (!cachedEndorsements || force) {
       if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">${t('nexus_profile.loading_endorsements')}</div>`;
       try {
@@ -231,12 +232,12 @@ export function openNexusProfileModal(): void {
 
   // Tracked Tab Renderer
   const renderTrackedList = (items: NexusUserTrackedMod[]) => {
-    const listContainer = document.getElementById('nexus-tracked-list');
-    const countBadge = document.getElementById('nexus-tab-tracked-count');
+    const listContainer = settingsDom.elMaybe('nexus-tracked-list');
+    const countBadge = settingsDom.elMaybe('nexus-tab-tracked-count');
     if (!listContainer) return;
 
-    const palworldOnly = (document.getElementById('nexus-tracked-palworld-only') as HTMLInputElement)?.checked ?? true;
-    const searchVal = (document.getElementById('nexus-tracked-search') as HTMLInputElement)?.value.toLowerCase().trim() || '';
+    const palworldOnly = settingsDom.elMaybe('nexus-tracked-palworld-only')?.checked ?? true;
+    const searchVal = settingsDom.elMaybe('nexus-tracked-search')?.value.toLowerCase().trim() || '';
 
     let filtered = items.filter(item => {
       if (palworldOnly && item.domainName.toLowerCase() !== 'palworld') return false;
@@ -290,7 +291,7 @@ export function openNexusProfileModal(): void {
   };
 
   const loadTrackedTab = async (force = false) => {
-    const listContainer = document.getElementById('nexus-tracked-list');
+    const listContainer = settingsDom.elMaybe('nexus-tracked-list');
     if (!cachedTracked || force) {
       if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">${t('nexus_profile.loading_tracked')}</div>`;
       try {
@@ -306,12 +307,12 @@ export function openNexusProfileModal(): void {
 
   // My Authored Mods Tab
   const renderMyModsList = (items: NexusUserAuthoredMod[]) => {
-    const listContainer = document.getElementById('nexus-my-mods-list');
-    const countBadge = document.getElementById('nexus-tab-authored-count');
+    const listContainer = settingsDom.elMaybe('nexus-my-mods-list');
+    const countBadge = settingsDom.elMaybe('nexus-tab-authored-count');
     if (!listContainer) return;
 
-    const palworldOnly = (document.getElementById('nexus-my-mods-palworld-only') as HTMLInputElement)?.checked ?? true;
-    const searchVal = (document.getElementById('nexus-my-mods-search') as HTMLInputElement)?.value.toLowerCase().trim() || '';
+    const palworldOnly = settingsDom.elMaybe('nexus-my-mods-palworld-only')?.checked ?? true;
+    const searchVal = settingsDom.elMaybe('nexus-my-mods-search')?.value.toLowerCase().trim() || '';
 
     let filtered = items.filter(item => {
       const domain = (item.domainName || '').toLowerCase();
@@ -368,7 +369,7 @@ export function openNexusProfileModal(): void {
   };
 
   const loadMyModsTab = async (force = false) => {
-    const listContainer = document.getElementById('nexus-my-mods-list');
+    const listContainer = settingsDom.elMaybe('nexus-my-mods-list');
     if (!cachedMyMods || force) {
       if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">${t('nexus_profile.loading_my_mods')}</div>`;
       try {
@@ -385,22 +386,22 @@ export function openNexusProfileModal(): void {
   };
 
   // Search & filter event listeners
-  document.getElementById('nexus-endorsements-search')?.addEventListener('input', () => {
+  settingsDom.elMaybe('nexus-endorsements-search')?.addEventListener('input', () => {
     if (cachedEndorsements) renderEndorsementsList(cachedEndorsements);
   });
-  document.getElementById('nexus-endorsements-palworld-only')?.addEventListener('change', () => {
+  settingsDom.elMaybe('nexus-endorsements-palworld-only')?.addEventListener('change', () => {
     if (cachedEndorsements) renderEndorsementsList(cachedEndorsements);
   });
-  document.getElementById('nexus-tracked-search')?.addEventListener('input', () => {
+  settingsDom.elMaybe('nexus-tracked-search')?.addEventListener('input', () => {
     if (cachedTracked) renderTrackedList(cachedTracked);
   });
-  document.getElementById('nexus-tracked-palworld-only')?.addEventListener('change', () => {
+  settingsDom.elMaybe('nexus-tracked-palworld-only')?.addEventListener('change', () => {
     if (cachedTracked) renderTrackedList(cachedTracked);
   });
-  document.getElementById('nexus-my-mods-search')?.addEventListener('input', () => {
+  settingsDom.elMaybe('nexus-my-mods-search')?.addEventListener('input', () => {
     if (cachedMyMods) renderMyModsList(cachedMyMods);
   });
-  document.getElementById('nexus-my-mods-palworld-only')?.addEventListener('change', () => {
+  settingsDom.elMaybe('nexus-my-mods-palworld-only')?.addEventListener('change', () => {
     if (cachedMyMods) renderMyModsList(cachedMyMods);
   });
 
@@ -447,9 +448,9 @@ export function openNexusProfileModal(): void {
       cachedTracked = tracked;
       cachedMyMods = authored;
 
-      const endBadge = document.getElementById('nexus-tab-endorsements-count');
-      const trackBadge = document.getElementById('nexus-tab-tracked-count');
-      const myModsBadge = document.getElementById('nexus-tab-authored-count') || document.getElementById('nexus-tab-my-mods-count');
+      const endBadge = settingsDom.elMaybe('nexus-tab-endorsements-count');
+      const trackBadge = settingsDom.elMaybe('nexus-tab-tracked-count');
+      const myModsBadge = settingsDom.elMaybe('nexus-tab-authored-count') || settingsDom.elMaybe('nexus-tab-my-mods-count');
       if (endBadge) endBadge.textContent = String(endorsements.length);
       if (trackBadge) trackBadge.textContent = String(tracked.length);
       if (myModsBadge) myModsBadge.textContent = String(authored.length);
@@ -474,7 +475,7 @@ export function openNexusProfileModal(): void {
     }
   }).catch(() => {});
 
-  const refreshBtn = document.getElementById('nexus-profile-modal-refresh');
+  const refreshBtn = settingsDom.elMaybe('nexus-profile-modal-refresh');
   if (refreshBtn) {
     refreshBtn.onclick = async () => {
       refreshBtn.setAttribute('disabled', 'true');
@@ -526,17 +527,17 @@ export function openNexusProfileModal(): void {
     });
   };
 
-  const webBtn = document.getElementById('nexus-profile-modal-open-web');
+  const webBtn = settingsDom.elMaybe('nexus-profile-modal-open-web');
   if (webBtn) {
     webBtn.onclick = openWebProfile;
   }
 
-  const modalBanner = document.getElementById('nexus-profile-modal-banner');
+  const modalBanner = settingsDom.elMaybe('nexus-profile-modal-banner');
   if (modalBanner) {
     modalBanner.onclick = openWebProfile;
   }
 
-  const disconnectBtn = document.getElementById('nexus-profile-modal-disconnect');
+  const disconnectBtn = settingsDom.elMaybe('nexus-profile-modal-disconnect');
   if (disconnectBtn) {
     disconnectBtn.onclick = async () => {
       modal.classList.remove('visible');
@@ -544,8 +545,8 @@ export function openNexusProfileModal(): void {
     };
   }
 
-  const closeX = document.getElementById('nexus-profile-modal-close-x');
-  const closeBtn = document.getElementById('nexus-profile-modal-close');
+  const closeX = settingsDom.elMaybe('nexus-profile-modal-close-x');
+  const closeBtn = settingsDom.elMaybe('nexus-profile-modal-close');
   const closeModal = () => closeNexusProfileModal();
   if (closeX) closeX.onclick = closeModal;
   if (closeBtn) closeBtn.onclick = closeModal;
@@ -557,6 +558,6 @@ export function openNexusProfileModal(): void {
 }
 
 export function closeNexusProfileModal(): void {
-  const modal = document.getElementById('nexus-profile-modal');
+  const modal = settingsDom.elMaybe('nexus-profile-modal');
   if (modal) modal.classList.remove('visible');
 }

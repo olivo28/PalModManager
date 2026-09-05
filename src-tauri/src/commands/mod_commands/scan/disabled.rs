@@ -51,6 +51,8 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     has_pending_update: None,
                     origin_load_method: None,
                     custom_notes: None,
+                    original_name: None,
+                    custom_name: None,
                 });
             }
         }
@@ -98,6 +100,8 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     has_pending_update: None,
                     origin_load_method: None,
                     custom_notes: None,
+                    original_name: None,
+                    custom_name: None,
                 });
             }
         }

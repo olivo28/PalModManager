@@ -136,3 +136,69 @@ export function showPrompt(message: string, defaultValue = ''): Promise<string |
   });
 }
 
+export interface ChoiceOption<T extends string = string> {
+  id: T;
+  label: string;
+  variant?: 'danger' | 'primary' | 'muted';
+}
+
+export function showChoiceDialog<T extends string = string>(
+  title: string,
+  message: string,
+  choices: ChoiceOption<T>[]
+): Promise<T | null> {
+  return new Promise((resolve) => {
+    document.querySelectorAll('.confirm-overlay').forEach(el => el.remove());
+
+    const overlay = document.createElement('div');
+    overlay.className = 'confirm-overlay';
+    overlay.style.cssText = 'position:fixed; inset:0; background:rgba(0,0,0,0.65); backdrop-filter:blur(4px); display:flex; align-items:center; justify-content:center; z-index:99999;';
+    const formattedBody = formatConfirmText(message);
+
+    const buttonsHtml = choices.map(c => {
+      let btnStyle = 'padding:7px 14px; border-radius:6px; font-size:12px; font-weight:600; cursor:pointer; transition:all 0.15s ease;';
+      if (c.variant === 'danger') {
+        btnStyle += 'background:#dc2626; color:#fff; border:none;';
+      } else if (c.variant === 'primary') {
+        btnStyle += 'background:var(--accent); color:#fff; border:none;';
+      } else {
+        btnStyle += 'background:transparent; color:var(--text-muted); border:1px solid var(--border);';
+      }
+      return `<button class="choice-btn" data-choice="${escapeHtml(c.id)}" style="${btnStyle}">${escapeHtml(c.label)}</button>`;
+    }).join('');
+
+    overlay.innerHTML = `
+      <div class="confirm-box" style="min-width:360px; max-width:480px; background:var(--bg-secondary); border:1px solid var(--border); padding:22px; border-radius:10px; box-shadow:0 16px 40px rgba(0,0,0,0.6);">
+        <h4 style="margin:0 0 14px 0; font-size:15px; font-weight:700; color:var(--text-primary); border-bottom:1px solid var(--border); padding-bottom:10px;">${escapeHtml(title)}</h4>
+        <div class="confirm-body" style="margin-bottom:20px;">${formattedBody}</div>
+        <div class="confirm-actions" style="display:flex; justify-content:flex-end; gap:8px; flex-wrap:wrap;">
+          ${buttonsHtml}
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const cleanup = (res: T | null) => {
+      document.removeEventListener('keydown', onKeyDown, true);
+      overlay.remove();
+      resolve(res);
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.stopPropagation();
+        e.preventDefault();
+        cleanup(null);
+      }
+    };
+    document.addEventListener('keydown', onKeyDown, true);
+
+    overlay.querySelectorAll('.choice-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const choice = (btn as HTMLElement).dataset.choice as T;
+        cleanup(choice);
+      });
+    });
+  });
+}
+

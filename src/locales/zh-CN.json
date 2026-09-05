@@ -228,6 +228,7 @@
     "visit_steam_app": "在 Steam 客户端创意工坊中打开",
     "visit_steam_web": "在网页浏览器创意工坊中打开",
     "move_to_folder": "移动到文件夹...",
+    "merge_as_hybrid": "合并为混合模组",
     "folder_none": "(无 / 未分组)",
     "remove_mod": "移除模组",
     "folder_enter": "进入文件夹",
@@ -305,6 +306,7 @@
     "comp_other_folder": "文件夹",
     "duplicate_label": "重复项",
     "duplicate_warning": "检测到潜在重复模组：{names}",
+    "merge_hybrid_btn": "合并为混合模组",
     "config_label": "配置文件",
     "btn_set_config": "关联配置",
     "btn_clear_config": "清除关联",
@@ -324,6 +326,7 @@
     "btn_load_pak_contents": "检查 .pak 内部资产"
   },
   "installer": {
+    "log_merged_hybrid": "[MERGE] 已与现有模组合并组件：{name}",
     "modal_title_install": "安装模组",
     "modal_title_batch": "批量安装模组 ({current}/{total})",
     "mode_update": "更新",
@@ -344,6 +347,8 @@
     "internal_assets_count": "{count} 个内部资产",
     "by_author": "作者：{author}",
     "config_merge_title": "配置合并",
+    "archived_config_detected": "检测到已存档的配置（{count} 个文件）",
+    "restore_archived_config": "恢复先前的设置",
     "config_merge_desc": "检测到配置文件与现有版本存在差异。",
     "diff_merge_file": "合并设置",
     "diff_use_clean_file": "使用干净文件（跳过合并）",
@@ -431,6 +436,8 @@
     "btn_preview_title": "切换预览模式",
     "btn_edit": "编辑",
     "btn_save": "保存",
+    "btn_save_all": "保存全部 ({count})",
+    "toast_saved_all": "成功保存 {count} 个文件",
     "status_saved": "已保存",
     "status_saving": "正在保存...",
     "status_modified": "存在未保存的修改",
@@ -558,7 +565,15 @@
     "btn_check_nexus_updates": "检查 Nexus 更新",
     "btn_open_library_folder": "打开模组库文件夹",
     "checking_library_nexus_updates": "正在检查本地模组库的 Nexus Mods 更新...",
-    "toast_local_library_up_to_date": "本地模组库中的所有模组与 Nexus Mods 均为最新"
+    "toast_local_library_up_to_date": "本地模组库中的所有模组与 Nexus Mods 均为最新",
+    "layout_grid_title": "网格视图（卡片）",
+    "layout_list_title": "列表视图（紧凑）",
+    "unroll_details": "显示/隐藏详情",
+    "dialog_delete_installed_title": "检测到已安装的 Mod",
+    "dialog_delete_installed_desc": "Mod \"{name}\" 当前已安装到游戏中。您是要将其从游戏目录卸载，还是仅从备份库中移除压缩包？",
+    "btn_uninstall_and_remove": "卸载并移除",
+    "btn_remove_library_only": "仅从库中移除",
+    "toast_uninstalled_and_removed": "已从游戏中卸载并从库中移除 Mod。"
   },
   "packer": {
     "hub_title": "模组打包器工作区",
@@ -1402,7 +1417,8 @@
     "nexus_protocol_registered": "Windows 协议关联成功",
     "nexus_protocol_register_failed": "注册 Windows 协议失败: {error}",
     "converting_gamepass": "正在将“{name}”转换为 Game Pass IoStore...",
-    "convert_gamepass_success": "已成功为 Game Pass 转换“{name}”（创建了 {count} 个文件）"
+    "convert_gamepass_success": "已成功为 Game Pass 转换“{name}”（创建了 {count} 个文件）",
+    "merge_hybrid_success": "已将“{name}”合并为混合模组"
   },
   "dialogs": {
     "confirm_remove_mod": "确定要永久移除“{name}”吗？",

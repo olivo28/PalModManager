@@ -123,7 +123,7 @@ export function renderCurrentTable(): void {
   }
 
   if (!dbState.snapshot) return;
-  const panel = document.getElementById('db-grid-panel');
+  const panel = dbDom.elMaybe('db-grid-panel');
   if (!panel) return;
 
   if (dbState.activeTable === 'mods') {

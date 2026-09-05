@@ -228,6 +228,7 @@
     "visit_steam_app": "Abrir en Steam Workshop (App)",
     "visit_steam_web": "Abrir en Steam Workshop (Web)",
     "move_to_folder": "Mover a carpeta...",
+    "merge_as_hybrid": "Combinar como Mod Híbrido",
     "folder_none": "(Ninguna / Sin agrupar)",
     "remove_mod": "Eliminar mod",
     "folder_enter": "Abrir carpeta",
@@ -305,6 +306,7 @@
     "comp_other_folder": "Carpeta",
     "duplicate_label": "Duplicado",
     "duplicate_warning": "Posible duplicado: {names}",
+    "merge_hybrid_btn": "Combinar como Híbrido",
     "config_label": "Configuración",
     "btn_set_config": "Definir",
     "btn_clear_config": "Limpiar",
@@ -324,6 +326,7 @@
     "btn_load_pak_contents": "Inspeccionar Assets del .pak"
   },
   "installer": {
+    "log_merged_hybrid": "[MERGE] Componentes combinados con el mod existente: {name}",
     "modal_title_install": "Instalar Mod",
     "modal_title_batch": "Instalación por Lotes de Mods ({current}/{total})",
     "mode_update": "Actualizar",
@@ -344,6 +347,8 @@
     "internal_assets_count": "{count} assets internos",
     "by_author": "por {author}",
     "config_merge_title": "Fusión de Configuración",
+    "archived_config_detected": "Configuración archivada detectada ({count} archivos)",
+    "restore_archived_config": "Restaurar ajustes previos",
     "config_merge_desc": "Diferencias detectadas en los archivos de configuración.",
     "diff_merge_file": "Combinar ajustes",
     "diff_use_clean_file": "Usar archivo limpio (Omitir merge)",
@@ -431,6 +436,8 @@
     "btn_preview_title": "Alternar vista previa",
     "btn_edit": "Editar",
     "btn_save": "Guardar",
+    "btn_save_all": "Guardar todo ({count})",
+    "toast_saved_all": "Se guardaron correctamente {count} archivos",
     "status_saved": "Guardado",
     "status_saving": "Guardando...",
     "status_modified": "Cambios sin guardar",
@@ -558,7 +565,15 @@
     "btn_check_nexus_updates": "Buscar actualizaciones de Nexus",
     "btn_open_library_folder": "Abrir carpeta de la biblioteca",
     "checking_library_nexus_updates": "Buscando actualizaciones de Nexus Mods para la biblioteca...",
-    "toast_local_library_up_to_date": "Todos los mods de la biblioteca local están actualizados con Nexus Mods"
+    "toast_local_library_up_to_date": "Todos los mods de la biblioteca local están actualizados con Nexus Mods",
+    "layout_grid_title": "Vista en cuadrícula (Tarjetas)",
+    "layout_list_title": "Vista de lista (Compacta)",
+    "unroll_details": "Mostrar/Ocultar detalles",
+    "dialog_delete_installed_title": "Mod instalado detectado",
+    "dialog_delete_installed_desc": "El mod \"{name}\" se encuentra instalado actualmente en el juego. ¿Deseas desinstalarlo de la carpeta del juego o únicamente eliminar el archivo comprimido de la biblioteca?",
+    "btn_uninstall_and_remove": "Desinstalar y eliminar",
+    "btn_remove_library_only": "Solo eliminar de la biblioteca",
+    "toast_uninstalled_and_removed": "Mod desinstalado del juego y eliminado de la biblioteca."
   },
   "packer": {
     "hub_title": "Espacio de Trabajo del Empaquetador de Mods",
@@ -1402,7 +1417,8 @@
     "nexus_protocol_registered": "Protocolo de Windows registrado con éxito",
     "nexus_protocol_register_failed": "Error al registrar el protocolo de Windows: {error}",
     "converting_gamepass": "Convirtiendo «{name}» a IoStore de Game Pass...",
-    "convert_gamepass_success": "Se convirtió correctamente «{name}» para Game Pass ({count} archivos creados)"
+    "convert_gamepass_success": "Se convirtió correctamente «{name}» para Game Pass ({count} archivos creados)",
+    "merge_hybrid_success": "Se combinó «{name}» como mod híbrido"
   },
   "dialogs": {
     "confirm_remove_mod": "¿Eliminar \"{name}\" permanentemente?",

@@ -70,6 +70,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                 has_pending_update: None,
                 origin_load_method: None,
                 custom_notes: meta.custom_notes,
+                original_name: meta.original_name,
+                custom_name: meta.custom_name,
             });
         }
     } else if path.is_file() {
@@ -148,6 +150,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         has_pending_update: None,
                         origin_load_method: None,
                         custom_notes: meta.custom_notes,
+                        original_name: meta.original_name,
+                        custom_name: meta.custom_name,
                     });
                 }
             }
