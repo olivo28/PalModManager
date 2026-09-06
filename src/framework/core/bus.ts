@@ -45,6 +45,10 @@ export interface AppEventMap {
   'workshop:updated': { count: number };
   'project:packed': { outputPath: string; format: string; modName: string };
   'hotkey:updated': { modId: string; newHotkey: string };
+
+  // Eventos de Configuración y Biblioteca
+  'settings:changed': { key: string; value: any };
+  'library:refreshed': void;
 }
 
 export type BusHandler<T> = (payload: T) => void;

@@ -757,6 +757,7 @@
     "restoring_backup": "Restoring...",
     "confirm_restore_backup_title": "Restore World Snapshot",
     "confirm_restore_backup_msg": "This will create a safety ZIP of your current world and restore snapshot '{timestamp}'. Proceed?",
+    "toast_restore_success": "World restored successfully from snapshot {timestamp}.",
     "saves_doctor_hero_title": "Save Health Doctor & World Hub",
     "saves_doctor_hero_desc": "Diagnose savegame integrity, detect orphaned mod references, manage auto-backups, and compare save snapshots.",
     "btn_scan_saves_now": "Scan Savegames Now",
@@ -1252,6 +1253,7 @@
     "sources_hint": "Verified GitHub repositories and upstream sources used by PalModManager:",
     "sources_repak_title": "📦 repak & retoc (IoStore & Pak Engine)",
     "sources_repak_desc": "Developed by Truman Kilen (trumank) • Pure Rust Unreal Engine Tooling",
+    "sources_repak_desc_short": "Packs and unpacks Unreal Engine .pak archives.",
     "sources_retoc_desc": "Converts legacy .pak archives into Zen IoStore containers (.utoc / .ucas).",
     "btn_view_source": "View Source ↗",
     "storage_image_cache_title": "Thumbnail Image Cache"

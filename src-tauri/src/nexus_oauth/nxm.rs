@@ -87,7 +87,8 @@ pub async fn fetch_nxm_direct_download_url(access_token: &str, nxm: &NxmLinkInfo
         nxm.game_domain, nxm.mod_id, nxm.file_id, nxm.query
     );
 
-    crate::logger::log(&format!("fetch_nxm_direct_download_url: Calling {}", api_url));
+    // Scrub query tokens from log to avoid writing sensitive credentials to disk
+    crate::logger::log(&format!("fetch_nxm_direct_download_url: Calling download link endpoint for game={}, mod_id={}, file_id={}", nxm.game_domain, nxm.mod_id, nxm.file_id));
 
     let resp = client.get(&api_url)
         .header("Authorization", format!("Bearer {}", access_token))

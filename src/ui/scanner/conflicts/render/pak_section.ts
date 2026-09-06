@@ -137,15 +137,20 @@ export function buildPakConflictsHtml(
               <div class="scanner-conflict-path">
                 <span>📄</span> <span>${escapeHtml(c.internalPath)}</span>
               </div>
-              <div class="scanner-conflict-mods">
-                ${c.mods.map((m: PakModSource) => `
-                  <div class="scanner-conflict-mod-row">
-                    <span style="font-size: 13px;">📦</span>
-                    <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
-                    <span class="scanner-conflict-mod-file">(${escapeHtml(m.pakFilename)})</span>
-                  </div>
-                `).join('')}
-              </div>
+                <div class="scanner-conflict-mods">
+                  ${c.mods.map((m: PakModSource) => `
+                    <div class="scanner-conflict-mod-row" style="display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+                      <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
+                        <span style="font-size: 13px;">📦</span>
+                        <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
+                        <span class="scanner-conflict-mod-file">(${escapeHtml(m.pakFilename)})</span>
+                      </div>
+                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: 10px; padding: 2px 8px; flex-shrink: 0;">
+                        🚫 ${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}
+                      </button>
+                    </div>
+                  `).join('')}
+                </div>
             </div>
           `;
         }).join('')}

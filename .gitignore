@@ -115,4 +115,5 @@ resources/schemas/palschema/
 resources/sdk/**/sdk_index.json
 sdk_index.json
 docs/ANALISIS_PROYECTO.md
+docs/ANALISIS_PROYECTO_ChatGPT.md
 /src-tauri/target-test/debug

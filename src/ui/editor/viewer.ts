@@ -106,6 +106,21 @@ export function updateUnsavedIndicator(): void {
   }
 }
 
+export function renderEditorBreadcrumbs(modName: string, filePath: string): string {
+  const normalized = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  const parts = normalized.split('/').filter(Boolean);
+  if (parts.length === 0) {
+    return `<div class="editor-bc-crumb"><span class="editor-bc-mod">📦 ${escapeHtml(modName)}</span></div>`;
+  }
+  const fileName = parts.pop()!;
+  const segmentsHtml = [
+    `<span class="editor-bc-mod">📦 ${escapeHtml(modName)}</span>`,
+    ...parts.map(p => `<span class="editor-bc-sep">›</span><span class="editor-bc-part">📁 ${escapeHtml(p)}</span>`),
+    `<span class="editor-bc-sep">›</span><span class="editor-bc-file">📄 ${escapeHtml(fileName)}</span>`,
+  ].join('');
+  return `<div class="editor-bc-crumb">${segmentsHtml}</div>`;
+}
+
 export async function loadFileContent(filePath: string, lineNumber?: number): Promise<void> {
   const state = getState();
   if (!state.editorModId) return;
@@ -130,23 +145,26 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
   if (diffBtn) diffBtn.style.display = isBak ? '' : 'none';
   if (restoreBtn) restoreBtn.style.display = isBak ? '' : 'none';
 
+  const currentMod = state.allMods.find(m => m.id === state.editorModId);
+  const modDisplayName = currentMod?.name || state.editorModId;
+
   try {
     const cached = _fileBufferCache.get(filePath);
     if (cached) {
-      editorPath.textContent = filePath;
+      editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, filePath);
       _originalContent = cached.original;
       setMonacoFile(filePath, cached.current);
     } else {
       const result = await readModFile(state.editorModId, filePath);
       if (!result.content) {
-        editorPath.textContent = t('editor.no_content_available');
+        editorPath.innerHTML = `<span class="editor-bc-empty">${escapeHtml(t('editor.no_content_available'))}</span>`;
         _originalContent = null;
         if (monacoContainer) monacoContainer.style.display = 'none';
         if (formatBtn) formatBtn.style.display = 'none';
         if (diffBtn) diffBtn.style.display = 'none';
         if (restoreBtn) restoreBtn.style.display = 'none';
       } else if (result.configType === 'image') {
-        editorPath.textContent = result.path || filePath;
+        editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, result.path || filePath);
         if (preview) {
           preview.innerHTML = `
             <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:20px;box-sizing:border-box;background:var(--bg-secondary);">
@@ -163,7 +181,7 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
         if (restoreBtn) restoreBtn.style.display = 'none';
         return;
       } else {
-        editorPath.textContent = result.path || filePath;
+        editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, result.path || filePath);
         _originalContent = result.content;
         setMonacoFile(filePath, result.content);
         _fileBufferCache.set(filePath, {

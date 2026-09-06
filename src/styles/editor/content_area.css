@@ -14,6 +14,43 @@
   border-bottom: 1px solid var(--border);
   background: var(--bg-secondary);
   font-family: monospace;
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+.editor-bc-crumb {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.editor-bc-mod {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.editor-bc-sep {
+  color: var(--text-muted);
+  opacity: 0.5;
+  margin: 0 4px;
+  font-weight: 400;
+  user-select: none;
+}
+
+.editor-bc-part {
+  color: var(--text-secondary);
+}
+
+.editor-bc-file {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.editor-bc-empty {
+  color: var(--text-muted);
+  font-style: italic;
 }
 
 #editor-monaco-container {

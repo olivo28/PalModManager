@@ -141,7 +141,8 @@ function mdToHtml(text: string): string {
 
 function sanitizeHtml(html: string): string {
   return html
-    .replace(/<script[\s\S]*?>[\s\S]*?<\/script>/gi, '')
-    .replace(/\sonevent\w+\s*=\s*['"][^'"]*['"]/gi, '')
-    .replace(/href\s*=\s*['"]javascript:[^'"]*['"]/gi, 'href="#blocked"');
+    .replace(/<(?:script|object|embed|applet)[\s\S]*?>[\s\S]*?<\/(?:script|object|embed|applet)>/gi, '')
+    .replace(/<(?:script|object|embed|applet)[^>]*\/?>/gi, '')
+    .replace(/\son[a-zA-Z]+\s*=\s*(?:'[^']*'|"[^"]*"|[^\s>]+)/gi, '')
+    .replace(/href\s*=\s*['"]\s*javascript:[^'"]*['"]/gi, 'href="#blocked"');
 }

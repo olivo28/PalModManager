@@ -1,4 +1,4 @@
-import type { ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus } from './types';
+import type { ModInfo, AppSettings, Profile, LibraryEntry, DependencyStatus, WorkshopState } from './types';
 import type { ZipAnalysis } from './api';
 
 export interface AppState {
@@ -32,7 +32,7 @@ export interface AppState {
   expandedFolderIds: Set<string>;
   collapsedFolderIds: Set<string>;
   isDraggingCard: boolean;
-  workshopState: any | null;
+  workshopState: WorkshopState | null;
 }
 
 let state: AppState = {

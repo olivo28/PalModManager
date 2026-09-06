@@ -391,4 +391,21 @@ export interface PmmMetadata {
   installedFiles?: string[];
 }
 
+export interface WorkshopModItem {
+  workshopId?: number;
+  modName: string;
+  packageName: string;
+  author?: string;
+  version?: string;
+  enabled?: boolean;
+  [key: string]: any;
+}
+
+export interface WorkshopState {
+  workshopRoot: string;
+  globalEnabled: boolean;
+  activeModList: string[];
+  mods: WorkshopModItem[];
+}
+
 

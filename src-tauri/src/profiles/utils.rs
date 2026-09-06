@@ -115,11 +115,10 @@ pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), String> {
             if dest_path.exists() {
                 let _ = fs::remove_file(&dest_path);
             }
-            if fs::hard_link(&path, &dest_path).is_err() {
-                fs::copy(&path, &dest_path).map_err(|e| {
-                    format!("Cannot copy file {}: {}", file_name.to_string_lossy(), e)
-                })?;
-            }
+            // Always copy directly to ensure true physical isolation without sharing NTFS inodes
+            fs::copy(&path, &dest_path).map_err(|e| {
+                format!("Cannot copy file {}: {}", file_name.to_string_lossy(), e)
+            })?;
         }
     }
     Ok(())
