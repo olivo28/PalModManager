@@ -49,6 +49,8 @@ pub struct ModInfo {
     pub install_date: String,
     pub source_zip: String,
     pub config_path: Option<String>,
+    #[serde(default)]
+    pub config_paths: Option<Vec<String>>,
     pub config_type: Option<String>,
     pub enabled: bool,
     pub game_path: String,
@@ -189,6 +191,10 @@ pub struct AppSettings {
     #[serde(default)]
     pub window_height: Option<f64>,
     #[serde(default)]
+    pub window_x: Option<f64>,
+    #[serde(default)]
+    pub window_y: Option<f64>,
+    #[serde(default)]
     pub window_maximized: Option<bool>,
     #[serde(default)]
     pub toolbar_scale: Option<f64>,
@@ -315,6 +321,8 @@ impl Default for AppData {
                 custom_data_path: None,
                 window_width: None,
                 window_height: None,
+                window_x: None,
+                window_y: None,
                 window_maximized: None,
                 toolbar_scale: Some(1.0),
                 language: None,
@@ -400,6 +408,8 @@ pub struct PmmMetadata {
     pub source_zip: Option<String>,
     #[serde(default, alias = "installedFiles", alias = "installed_files", alias = "files")]
     pub installed_files: Option<Vec<String>>,
+    #[serde(default, alias = "extraFiles", alias = "extra_files")]
+    pub extra_files: Option<Vec<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

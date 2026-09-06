@@ -1,4 +1,4 @@
-import { disableMod, enableMod, removeMod, refreshNexusCache, setModConfig, openModFolder, renameMod } from '../../api';
+import { disableMod, enableMod, removeMod, refreshNexusCache, setModConfig, setModConfigs, openModFolder, renameMod } from '../../api';
 import { getState, updateState } from '../../state';
 import { openConfigEditor } from '../editorView';
 import { loadMods, renderModsView, loadProfiles, loadDependencies } from '../modsView';
@@ -102,14 +102,17 @@ export async function handleDetailSetConfig(): Promise<void> {
         ? state.currentDetailMod.gamePath
         : state.currentDetailMod.disabledPath);
     const selected = await open({
-      multiple: false,
+      multiple: true,
       defaultPath: basePath,
       filters: [{ name: 'Config files', extensions: ['json', 'jsonc', 'lua', 'ini', 'cfg', 'txt'] }],
       title: t('detail.dialog_select_config_title', { name: state.currentDetailMod.name }),
     });
     if (!selected) return;
-    const configPath = typeof selected === 'string' ? selected : selected as string;
-    await setModConfig(state.currentDetailMod.id, configPath);
+    const configPaths = Array.isArray(selected)
+      ? (selected.filter(Boolean) as string[])
+      : [selected as string];
+    if (configPaths.length === 0) return;
+    await setModConfigs(state.currentDetailMod.id, configPaths);
     await loadMods();
     const { openDetailPanel } = await import('./panel');
     openDetailPanel(state.currentDetailMod.id);
@@ -123,7 +126,7 @@ export async function handleDetailClearConfig(): Promise<void> {
   const state = getState();
   if (!state.currentDetailMod) return;
   try {
-    await setModConfig(state.currentDetailMod.id, null);
+    await setModConfigs(state.currentDetailMod.id, null);
     await loadMods();
     const { openDetailPanel } = await import('./panel');
     openDetailPanel(state.currentDetailMod.id);

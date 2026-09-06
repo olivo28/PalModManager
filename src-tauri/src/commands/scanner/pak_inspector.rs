@@ -119,7 +119,7 @@ pub fn inspect_pak_file_tree(
     Err(format!("Pak file not found at '{}'", pak_path))
 }
 
-fn gather_candidate_paks(
+pub fn gather_candidate_paks(
     target_mod: &crate::models::ModInfo,
     game_path: &str,
 ) -> Vec<PathBuf> {

@@ -327,8 +327,16 @@ export function openDetailPanel(modId: string): void {
       }
     });
   } else {
-    configPathEl.textContent = mod.configPath ? formatDisplayPath(mod.configPath) : t('common.none');
-    configPathEl.title = mod.configPath || '';
+    const allConfigs = mod.configPaths && mod.configPaths.length > 0
+      ? mod.configPaths
+      : (mod.configPath ? [mod.configPath] : []);
+    if (allConfigs.length > 0) {
+      configPathEl.textContent = allConfigs.map(p => formatDisplayPath(p)).join(', ');
+      configPathEl.title = allConfigs.join('\n');
+    } else {
+      configPathEl.textContent = t('common.none');
+      configPathEl.title = '';
+    }
     configRow.style.display = '';
     pakDestRow.style.display = 'none';
   }

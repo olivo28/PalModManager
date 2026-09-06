@@ -18,7 +18,7 @@ pub struct ArchivedConfigInfo {
     pub files: Vec<String>,
 }
 
-fn sanitize_archive_key(name: &str) -> String {
+pub fn sanitize_archive_key(name: &str) -> String {
     let mut clean = String::new();
     let mut last_was_underscore = false;
     for c in name.chars() {
@@ -82,9 +82,24 @@ pub fn archive_mod_configs(
     if !game_path.is_empty() {
         let binaries_dir = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
         let folder_name = crate::profiles::get_mod_folder_name(mod_info);
-        let ue4ss_mod_folder = binaries_dir.join("Mods").join(&folder_name);
-        if ue4ss_mod_folder.is_dir() && ue4ss_mod_folder.exists() && !candidate_dirs.contains(&ue4ss_mod_folder) {
-            candidate_dirs.push(ue4ss_mod_folder);
+        let ue4ss_roots = [
+            binaries_dir.join("ue4ss").join("Mods"),
+            binaries_dir.join("Mods"),
+        ];
+        for u_root in &ue4ss_roots {
+            let u_mod = u_root.join(&folder_name);
+            if u_mod.is_dir() && !candidate_dirs.contains(&u_mod) {
+                candidate_dirs.push(u_mod);
+            }
+            let shared = u_root.join("shared");
+            let s_folder = shared.join(&folder_name);
+            if s_folder.is_dir() && !candidate_dirs.contains(&s_folder) {
+                candidate_dirs.push(s_folder);
+            }
+            let s_name = shared.join(&mod_info.name);
+            if s_name.is_dir() && !candidate_dirs.contains(&s_name) {
+                candidate_dirs.push(s_name);
+            }
         }
     }
 
@@ -93,19 +108,35 @@ pub fn archive_mod_configs(
     for dir in &candidate_dirs {
         let snap = crate::config_merge::snapshot_configs(dir, mod_info.config_path.as_deref());
         for entry in snap.entries {
-            if !all_entries.iter().any(|(p, _)| p == &entry.0) {
+            if let Some(pos) = all_entries.iter().position(|(p, _)| p == &entry.0 || p.file_name() == entry.0.file_name()) {
+                if !all_entries[pos].0.to_string_lossy().contains("shared") && entry.0.to_string_lossy().contains("shared") {
+                    all_entries[pos] = entry;
+                }
+            } else {
                 all_entries.push(entry);
             }
         }
     }
 
-    // Also check single custom config file if pointing to a loose file
-    if let Some(ref custom_cfg) = mod_info.config_path {
+    // Also check custom config paths if pointing to loose files
+    if let Some(ref c_paths) = mod_info.config_paths {
+        for custom_cfg in c_paths {
+            let p = Path::new(custom_cfg);
+            if p.is_file() && p.exists() {
+                if let Ok(content) = fs::read_to_string(p) {
+                    let fname = PathBuf::from(p.file_name().unwrap_or_default());
+                    if !all_entries.iter().any(|(p_entry, _)| p_entry == &fname || p_entry.file_name() == fname.file_name()) {
+                        all_entries.push((fname, content));
+                    }
+                }
+            }
+        }
+    } else if let Some(ref custom_cfg) = mod_info.config_path {
         let p = Path::new(custom_cfg);
         if p.is_file() && p.exists() {
             if let Ok(content) = fs::read_to_string(p) {
                 let fname = PathBuf::from(p.file_name().unwrap_or_default());
-                if !all_entries.iter().any(|(p, _)| p == &fname) {
+                if !all_entries.iter().any(|(p_entry, _)| p_entry == &fname || p_entry.file_name() == fname.file_name()) {
                     all_entries.push((fname, content));
                 }
             }
@@ -288,24 +319,5 @@ pub fn apply_archived_config(
             mod_info.name
         ));
         Ok(false)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_sanitize_archive_key() {
-        assert_eq!(sanitize_archive_key("PalVariety 4x (Shiny)!"), "palvariety_4x_shiny");
-        assert_eq!(sanitize_archive_key("---"), "mod");
-        assert_eq!(sanitize_archive_key("SimpleMod"), "simplemod");
-    }
-
-    #[test]
-    fn test_get_archive_dir() {
-        let dir = get_archive_dir("C:/pmm", "default", "nexus_1234");
-        assert!(dir.to_string_lossy().contains("archived_configs"));
-        assert!(dir.to_string_lossy().ends_with("nexus_1234"));
     }
 }

@@ -172,6 +172,7 @@ pub async fn apply_ue4ss_zip_bytes(
                     install_date: chrono::Utc::now().to_rfc3339(),
                     source_zip: "ue4ss_framework.zip".to_string(),
                     config_path: None,
+                    config_paths: None,
                     config_type: Some("auto".to_string()),
                     enabled: is_enabled,
                     game_path: mod_path.to_string_lossy().to_string(),

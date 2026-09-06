@@ -229,6 +229,18 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
                 let _ = fs::remove_dir_all(&target_mod_name);
             }
 
+            let shared_dir = u_dir.join("shared");
+            if shared_dir.exists() {
+                let s_mod = shared_dir.join(&folder_name);
+                if s_mod.exists() {
+                    let _ = fs::remove_dir_all(&s_mod);
+                }
+                let s_name = shared_dir.join(&mod_info.name);
+                if s_name.exists() {
+                    let _ = fs::remove_dir_all(&s_name);
+                }
+            }
+
             let mods_txt = u_dir.join("mods.txt");
             if mods_txt.exists() {
                 let _ = crate::profiles::remove_from_mods_txt(&mods_txt, &folder_name);

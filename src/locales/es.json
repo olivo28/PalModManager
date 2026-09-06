@@ -505,7 +505,9 @@
     "btn_new_file": "Nuevo Archivo",
     "btn_new_folder": "Nueva Carpeta",
     "prompt_new_file": "Introduce la ruta relativa para el nuevo archivo (ej. scripts/subsistema.lua):",
-    "prompt_new_folder": "Introduce la ruta relativa para la nueva carpeta (ej. scripts/spawners):"
+    "prompt_new_folder": "Introduce la ruta relativa para la nueva carpeta (ej. scripts/spawners):",
+    "badge_config": "Configuración activa",
+    "unsaved_changes": "Cambios sin guardar"
   },
   "library": {
     "title": "Biblioteca de Mods",

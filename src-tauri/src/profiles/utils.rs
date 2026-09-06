@@ -181,6 +181,7 @@ pub fn consolidate_mod_folder_metadata(folder: &Path) -> Option<crate::models::P
                     if meta.category.is_none() && legacy_parsed.category.is_some() { meta.category = legacy_parsed.category; }
                     if meta.routes.is_none() && legacy_parsed.routes.is_some() { meta.routes = legacy_parsed.routes; }
                     if meta.installed_files.is_none() && legacy_parsed.installed_files.is_some() { meta.installed_files = legacy_parsed.installed_files; }
+                    if meta.extra_files.is_none() && legacy_parsed.extra_files.is_some() { meta.extra_files = legacy_parsed.extra_files; }
                 }
             }
         }
@@ -320,6 +321,7 @@ fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
         category: m.nexus_category.clone(),
         routes: None,
         installed_files,
+        extra_files: if !m.extra_files.is_empty() { Some(m.extra_files.clone()) } else { None },
     };
 
     let pmm_path = if path.is_file() {

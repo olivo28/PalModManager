@@ -1,16 +1,16 @@
-mod commands;
-mod profiles;
+pub mod commands;
+pub mod profiles;
 pub mod db;
-mod dependency_checker;
-mod installer;
-mod library;
-mod models;
+pub mod dependency_checker;
+pub mod installer;
+pub mod library;
+pub mod models;
 pub mod nexus;
 pub mod nexus_oauth;
 pub mod protocol_handler;
 mod state;
-mod zip_handler;
-mod logger;
+pub mod zip_handler;
+pub mod logger;
 pub mod config_merge;
 mod workshop;
 mod watcher;
@@ -185,6 +185,7 @@ pub fn run() {
             config_commands::read_config,
             config_commands::save_config,
             config_commands::set_mod_config,
+            config_commands::set_mod_configs,
             config_commands::list_mod_files,
             config_commands::read_mod_file,
             config_commands::save_mod_file,
@@ -355,6 +356,32 @@ pub fn run() {
             if let Some(window) = app.get_webview_window("main") {
                 if let (Some(w), Some(h)) = (settings.window_width, settings.window_height) {
                     let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(w, h)));
+                }
+                if let (Some(x), Some(y)) = (settings.window_x, settings.window_y) {
+                    let is_on_screen = if let Ok(monitors) = window.available_monitors() {
+                        monitors.into_iter().any(|m| {
+                            let m_pos = m.position();
+                            let m_size = m.size();
+                            let sf = m.scale_factor();
+                            let m_log_x = m_pos.x as f64 / sf;
+                            let m_log_y = m_pos.y as f64 / sf;
+                            let m_log_w = m_size.width as f64 / sf;
+                            let m_log_h = m_size.height as f64 / sf;
+                            x >= m_log_x - 100.0
+                                && x < m_log_x + m_log_w - 100.0
+                                && y >= m_log_y - 50.0
+                                && y < m_log_y + m_log_h - 50.0
+                        })
+                    } else {
+                        false
+                    };
+                    if is_on_screen {
+                        let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
+                    } else {
+                        let _ = window.center();
+                    }
+                } else {
+                    let _ = window.center();
                 }
                 if let Some(true) = settings.window_maximized {
                     let _ = window.maximize();
@@ -531,6 +558,13 @@ pub fn run() {
                                             data.settings.window_width = Some(logical.width);
                                             data.settings.window_height = Some(logical.height);
                                         }
+                                    }
+                                }
+                                if let Ok(pos) = window.outer_position() {
+                                    if let Ok(scale_factor) = window.scale_factor() {
+                                        let logical_pos = pos.to_logical::<f64>(scale_factor);
+                                        data.settings.window_x = Some(logical_pos.x);
+                                        data.settings.window_y = Some(logical_pos.y);
                                     }
                                 }
                             }

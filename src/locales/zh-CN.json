@@ -505,7 +505,9 @@
     "btn_new_file": "新建文件",
     "btn_new_folder": "新建文件夹",
     "prompt_new_file": "输入新文件的相对路径（例如 scripts/subsystem.lua）：",
-    "prompt_new_folder": "输入新文件夹的相对路径（例如 scripts/spawners）："
+    "prompt_new_folder": "输入新文件夹的相对路径（例如 scripts/spawners）：",
+    "badge_config": "当前生效配置",
+    "unsaved_changes": "未保存的更改"
   },
   "library": {
     "title": "模组库",

@@ -230,6 +230,7 @@ pub fn execute_manifest(
         version: manifest.version.clone(),
         install_date: now.to_string(),
         source_zip: String::new(),
+        config_paths: config_path.as_ref().map(|cp| vec![cp.clone()]),
         config_path,
         config_type: Some("auto".to_string()),
         enabled: true,

@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 use crate::models::{ModInfo, ModType};
-use super::super::utils::{detect_config, file_install_date};
+use super::super::utils::{detect_configs, file_install_date};
 
 pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
     let path_str = path.to_string_lossy().to_string();
@@ -31,6 +31,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                 }
             };
 
+            let (detected_primary, detected_all) = detect_configs(path);
+
             return Some(ModInfo {
                 id: folder_name,
                 name,
@@ -45,7 +47,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                 version,
                 install_date: file_install_date(path),
                 source_zip: String::new(),
-                config_path: detect_config(path),
+                config_path: detected_primary,
+                config_paths: detected_all,
                 config_type: Some("auto".to_string()),
                 enabled: !is_disabled,
                 game_path,
@@ -53,7 +56,7 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                 pak_destination: None,
                 has_enabled_txt: path.join("enabled.txt").exists(),
                 mods_txt_order: None,
-                extra_files: meta.installed_files.unwrap_or_default(),
+                extra_files: meta.extra_files.unwrap_or_default(),
                 nexus_description: None,
                 nexus_version_cached: None,
                 nexus_cached_at: None,
@@ -111,6 +114,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         }
                     };
 
+                    let (detected_primary, detected_all) = detect_configs(path);
+
                     return Some(ModInfo {
                         id: file_stem,
                         name,
@@ -125,7 +130,8 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         version,
                         install_date: file_install_date(path),
                         source_zip: String::new(),
-                        config_path: detect_config(path),
+                        config_path: detected_primary,
+                        config_paths: detected_all,
                         config_type: Some("auto".to_string()),
                         enabled: !is_disabled,
                         game_path,
@@ -133,7 +139,7 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         pak_destination: None,
                         has_enabled_txt: false,
                         mods_txt_order: None,
-                        extra_files: meta.installed_files.unwrap_or_default(),
+                        extra_files: meta.extra_files.unwrap_or_default(),
                         nexus_description: None,
                         nexus_version_cached: None,
                         nexus_cached_at: None,

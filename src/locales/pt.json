@@ -505,7 +505,9 @@
     "btn_new_file": "Novo Arquivo",
     "btn_new_folder": "Nova Pasta",
     "prompt_new_file": "Digite o caminho relativo para o novo arquivo (ex. scripts/subsistema.lua):",
-    "prompt_new_folder": "Digite o caminho relativo para a nova pasta (ex. scripts/spawners):"
+    "prompt_new_folder": "Digite o caminho relativo para a nova pasta (ex. scripts/spawners):",
+    "badge_config": "Configuração ativa",
+    "unsaved_changes": "Alterações não salvas"
   },
   "library": {
     "title": "Biblioteca de Mods",

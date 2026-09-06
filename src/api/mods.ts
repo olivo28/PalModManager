@@ -83,6 +83,10 @@ export async function setModConfig(modId: string, configPath: string | null): Pr
   return invoke('set_mod_config', { modId, configPath });
 }
 
+export async function setModConfigs(modId: string, configPaths: string[] | null): Promise<ModInfo> {
+  return invoke('set_mod_configs', { modId, configPaths });
+}
+
 export async function saveModNotes(modId: string, notes: string): Promise<void> {
   return invoke('save_mod_notes', { modId, notes });
 }

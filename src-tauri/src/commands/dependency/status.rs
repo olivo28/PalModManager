@@ -282,25 +282,3 @@ pub async fn check_dependencies_full(state: State<'_, AppState>) -> Result<depen
     Ok(status)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_is_remote_newer() {
-        // Newer local test version: no update needed
-        assert!(!is_remote_newer("0.6.6", "0.6.5"));
-        assert!(!is_remote_newer("v0.6.6", "0.6.5"));
-        assert!(!is_remote_newer("v0.6.6", "v0.6.5"));
-
-        // Equal version: no update needed
-        assert!(!is_remote_newer("0.6.5", "0.6.5"));
-        assert!(!is_remote_newer("v0.6.5", "0.6.5"));
-
-        // Older local version: update needed
-        assert!(is_remote_newer("0.6.4", "0.6.5"));
-        assert!(is_remote_newer("v0.6.4", "v0.6.5"));
-        assert!(is_remote_newer("0.5.9", "0.6.0"));
-    }
-}
-

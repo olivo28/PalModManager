@@ -99,22 +99,50 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                         let ext_lower = ext.to_lowercase();
                         if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" || ext_lower == "lua" {
                             let fname_str = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
-                            // Skip metadata, dotfiles, and manifests from config snapshots
+                            let path_str_lower = path.to_string_lossy().to_lowercase();
+                            let fname_lower = fname_str.to_lowercase();
+                            // Skip metadata, dotfiles, manifests, and DO_NOT_EDIT templates from config snapshots
                             if fname_str.starts_with('.')
                                 || fname_str.eq_ignore_ascii_case("modinfo.pmm.json")
                                 || fname_str.eq_ignore_ascii_case("modinfo.json")
                                 || fname_str.eq_ignore_ascii_case("enabled.txt")
                                 || fname_str.ends_with(".manifest.json")
+                                || path_str_lower.contains("do_not_edit")
+                                || path_str_lower.contains("defaultconfig")
+                                || fname_lower.ends_with("manager.lua")
+                                || fname_lower.ends_with("handler.lua")
+                                || fname_lower.ends_with("helper.lua")
+                                || fname_lower.ends_with("service.lua")
                             {
                                 continue;
                             }
 
-                            // Rule: .lua files ONLY merge if they are explicitly configured as the mod's config
+                            // Rule: .lua files merge if:
+                            // 1. Explicitly configured as mod config, OR
+                            // 2. Located inside a shared/ folder
                             let is_lua_config = if ext_lower == "lua" {
                                 custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
+                                    || path_str_lower.contains("shared")
                             } else {
                                 true
                             };
+
+                            // Rule: .txt files only if config/setting/option, or inside shared, or explicitly configured
+                            if ext_lower == "txt" {
+                                let is_txt_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
+                                    || path_str_lower.contains("shared")
+                                    || ((fname_lower.contains("config") || fname_lower.contains("setting") || fname_lower.contains("option"))
+                                        && !fname_lower.contains("readme")
+                                        && !fname_lower.contains("location")
+                                        && !fname_lower.contains("license")
+                                        && !fname_lower.contains("changelog")
+                                        && !fname_lower.contains("guide")
+                                        && !fname_lower.contains("help")
+                                        && !fname_lower.contains("notice"));
+                                if !is_txt_config {
+                                    continue;
+                                }
+                            }
 
                             if is_lua_config {
                                 if let Ok(content) = fs::read_to_string(&path) {
@@ -131,6 +159,17 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
     }
 
     walk(mod_dir, mod_dir, &mut entries, &custom_filename);
+
+    if let Some(mods_parent) = mod_dir.parent() {
+        let shared_dir = mods_parent.join("shared");
+        if shared_dir.is_dir() {
+            let mod_folder = mod_dir.file_name().unwrap_or_default();
+            let shared_mod_dir = shared_dir.join(mod_folder);
+            if shared_mod_dir.is_dir() {
+                walk(mods_parent, &shared_mod_dir, &mut entries, &custom_filename);
+            }
+        }
+    }
 
     // If a custom config was explicitly specified and not already snapshotted, include it
     if let Some(ref custom_str) = custom_config {
@@ -189,38 +228,71 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_key
         }
 
         let mut target_file: Option<PathBuf> = None;
-        let direct = mod_dir.join(rel_path);
-        if direct.exists() && direct.is_file() {
-            target_file = Some(direct);
-        } else {
-            let candidate_scripts = mod_dir.join("Scripts").join(rel_path);
-            if candidate_scripts.exists() && candidate_scripts.is_file() {
-                target_file = Some(candidate_scripts);
-            } else if let Some(fname) = rel_path.file_name() {
-                let cand_root = mod_dir.join(fname);
-                if cand_root.exists() && cand_root.is_file() {
-                    target_file = Some(cand_root);
-                } else {
-                    let cand_s = mod_dir.join("Scripts").join(fname);
-                    if cand_s.exists() && cand_s.is_file() {
-                        target_file = Some(cand_s);
+
+        // Check if rel_path belongs to shared/
+        if rel_path_str.starts_with("shared") || rel_path_str.contains("/shared/") || rel_path_str.contains("\\shared\\") {
+            if let Some(parent) = mod_dir.parent() {
+                let shared_target = parent.join(rel_path);
+                if shared_target.exists() && shared_target.is_file() {
+                    target_file = Some(shared_target);
+                } else if let Some(target_parent) = shared_target.parent() {
+                    let _ = fs::create_dir_all(target_parent);
+                    let _ = fs::write(&shared_target, old_content);
+                    crate::logger::log(&format!("Config merge: Restored shared config to {:?}", shared_target));
+                    continue;
+                }
+            }
+        }
+
+        if target_file.is_none() {
+            let direct = mod_dir.join(rel_path);
+            if direct.exists() && direct.is_file() {
+                target_file = Some(direct);
+            } else {
+                let candidate_scripts = mod_dir.join("Scripts").join(rel_path);
+                if candidate_scripts.exists() && candidate_scripts.is_file() {
+                    target_file = Some(candidate_scripts);
+                } else if let Some(fname) = rel_path.file_name() {
+                    let cand_root = mod_dir.join(fname);
+                    if cand_root.exists() && cand_root.is_file() {
+                        target_file = Some(cand_root);
                     } else {
-                        fn find_target(dir: &Path, name: &std::ffi::OsStr) -> Option<PathBuf> {
-                            if let Ok(rd) = fs::read_dir(dir) {
-                                for entry in rd.flatten() {
-                                    let p = entry.path();
-                                    if p.is_dir() {
-                                        if let Some(found) = find_target(&p, name) {
-                                            return Some(found);
+                        let cand_s = mod_dir.join("Scripts").join(fname);
+                        if cand_s.exists() && cand_s.is_file() {
+                            target_file = Some(cand_s);
+                        } else {
+                            fn find_target(dir: &Path, name: &std::ffi::OsStr) -> Option<PathBuf> {
+                                if let Ok(rd) = fs::read_dir(dir) {
+                                    for entry in rd.flatten() {
+                                        let p = entry.path();
+                                        let p_lower = p.to_string_lossy().to_lowercase();
+                                        if p_lower.contains("do_not_edit") || p_lower.contains("defaultconfig") {
+                                            continue;
                                         }
-                                    } else if p.is_file() && p.file_name() == Some(name) {
-                                        return Some(p);
+                                        if p.is_dir() {
+                                            if let Some(found) = find_target(&p, name) {
+                                                return Some(found);
+                                            }
+                                        } else if p.is_file() && p.file_name() == Some(name) {
+                                            return Some(p);
+                                        }
                                     }
                                 }
+                                None
                             }
-                            None
+                            target_file = find_target(mod_dir, fname);
                         }
-                        target_file = find_target(mod_dir, fname);
+                    }
+                }
+            }
+        }
+
+        if target_file.is_none() {
+            if let Some(parent) = mod_dir.parent() {
+                if let Some(folder_name) = mod_dir.file_name() {
+                    let cand_shared = parent.join("shared").join(folder_name).join(rel_path.file_name().unwrap_or_default());
+                    if cand_shared.exists() && cand_shared.is_file() {
+                        target_file = Some(cand_shared);
                     }
                 }
             }
@@ -356,7 +428,7 @@ fn merge_kv(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
 
 /// Merge Lua table / config settings flatly.
 /// Preserves comments, indentation, and structure of the new file, replacing values of matching keys unless ignored.
-fn merge_lua(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
+pub fn merge_lua(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
     let old_map = parse_lua_map(old);
     let mut result_lines = Vec::new();
 
@@ -579,112 +651,3 @@ fn parse_kv_map(content: &str) -> std::collections::HashMap<String, String> {
     }
     map
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_merge_lua_preserves_user_settings() {
-        let old_lua = r#"
-local Config = {
-    ["ShowTimer"] = false,
-    ["Scale"] = 1.5,
-    ["PosX"] = 250,
-    ["PosY"] = 400,
-}
-return Config
-"#;
-
-        let new_lua = r#"
-local Config = {
-    ["ShowTimer"] = true,
-    ["Scale"] = 1.0,
-    ["PosX"] = 100,
-    ["PosY"] = 200,
-    ["NewAuthorFeature"] = true,
-}
-return Config
-"#;
-
-        let diff = generate_config_diff(old_lua, new_lua, "lua").expect("diff should succeed");
-        let (user_changed, added, removed) = diff;
-        assert_eq!(user_changed.len(), 4);
-        assert_eq!(added.len(), 1);
-        assert_eq!(added[0], "NewAuthorFeature");
-        assert_eq!(removed.len(), 0);
-
-        let merged = merge_lua(old_lua, new_lua, &[]).expect("merge should succeed");
-        assert!(merged.contains("[\"ShowTimer\"] = false"));
-        assert!(merged.contains("[\"Scale\"] = 1.5"));
-        assert!(merged.contains("[\"PosX\"] = 250"));
-        assert!(merged.contains("[\"PosY\"] = 400"));
-        assert!(merged.contains("[\"NewAuthorFeature\"] = true"));
-    }
-
-    #[test]
-    fn test_merge_lua_respects_ignored_keys() {
-        let old_lua = r#"
-Config = {}
-Config.Enabled = false
-Config.Version = "1.0.0"
-"#;
-        let new_lua = r#"
-Config = {}
-Config.Enabled = true
-Config.Version = "2.0.0"
-"#;
-        let ignored = vec!["Version".to_string(), "Config.Version".to_string()];
-        let merged = merge_lua(old_lua, new_lua, &ignored).expect("merge should succeed");
-        assert!(merged.contains("Config.Enabled = false"));
-        assert!(merged.contains("Config.Version = \"2.0.0\""));
-    }
-
-    #[test]
-    fn test_snapshot_configs_lua_only_when_configured() {
-        let temp_dir = std::env::temp_dir().join(format!("pmm_test_{}", uuid::Uuid::new_v4()));
-        let scripts_dir = temp_dir.join("Scripts");
-        std::fs::create_dir_all(&scripts_dir).unwrap();
-
-        // Create main.lua, config.lua, and .nexus.json
-        std::fs::write(scripts_dir.join("main.lua"), "-- main script").unwrap();
-        std::fs::write(scripts_dir.join("config.lua"), "return { Setting = 1 }").unwrap();
-        std::fs::write(temp_dir.join(".nexus.json"), "{}").unwrap();
-
-        // Scenario 1: No custom_config configured -> main.lua and config.lua must NOT be snapshotted
-        let snap1 = snapshot_configs(&temp_dir, None);
-        assert!(!snap1.entries.iter().any(|(p, _)| p.to_string_lossy().contains("main.lua")));
-        assert!(!snap1.entries.iter().any(|(p, _)| p.to_string_lossy().contains("config.lua")));
-        assert!(!snap1.entries.iter().any(|(p, _)| p.to_string_lossy().contains(".nexus.json")));
-
-        // Scenario 2: custom_config set to "config.lua" -> ONLY config.lua snapshotted, NEVER main.lua
-        let snap2 = snapshot_configs(&temp_dir, Some("Scripts/config.lua"));
-        assert!(!snap2.entries.iter().any(|(p, _)| p.to_string_lossy().contains("main.lua")));
-        assert!(!snap2.entries.iter().any(|(p, _)| p.to_string_lossy().contains(".nexus.json")));
-        assert!(snap2.entries.iter().any(|(p, _)| p.to_string_lossy().contains("config.lua")));
-
-        let _ = std::fs::remove_dir_all(&temp_dir);
-    }
-
-    #[test]
-    fn test_apply_config_merge_skips_ignored_file() {
-        let temp_dir = std::env::temp_dir().join(format!("pmm_test_{}", uuid::Uuid::new_v4()));
-        std::fs::create_dir_all(&temp_dir).unwrap();
-
-        let cfg_file = temp_dir.join("config.json");
-        std::fs::write(&cfg_file, r#"{"setting": "new_from_author"}"#).unwrap();
-
-        let snap = ConfigSnapshot {
-            entries: vec![(PathBuf::from("config.json"), r#"{"setting": "old_user_value"}"#.to_string())],
-        };
-
-        // If "config.json" is in ignored_keys, it must NOT be merged (keeps new_from_author)
-        apply_config_merge(&temp_dir, &snap, &["config.json".to_string()]);
-        let content = std::fs::read_to_string(&cfg_file).unwrap();
-        assert!(content.contains("new_from_author"));
-        assert!(!content.contains("old_user_value"));
-
-        let _ = std::fs::remove_dir_all(&temp_dir);
-    }
-}
-

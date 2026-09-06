@@ -19,7 +19,7 @@ pub fn read_config(mod_id: String, state: State<AppState>) -> Result<Value, Stri
     };
 
     let config_path = if let Some(ref custom) = mod_info.config_path {
-        base_dir.join(custom)
+        get_full_mod_file_path(mod_info, custom).unwrap_or_else(|_| base_dir.join(custom))
     } else {
         let found = find_json_config(&base_dir).or_else(|| find_lua_config(&base_dir));
         match found {
@@ -57,7 +57,7 @@ pub fn save_config(mod_id: String, content: String, state: State<AppState>) -> R
     };
 
     let config_path = if let Some(ref custom) = mod_info.config_path {
-        base_dir.join(custom)
+        get_full_mod_file_path(mod_info, custom).unwrap_or_else(|_| base_dir.join(custom))
     } else {
         let found = find_json_config(&base_dir).or_else(|| find_lua_config(&base_dir));
         match found {
@@ -79,15 +79,67 @@ pub fn save_config(mod_id: String, content: String, state: State<AppState>) -> R
 
 #[tauri::command]
 pub fn set_mod_config(mod_id: String, config_path: Option<String>, state: State<AppState>) -> Result<Value, String> {
+    set_mod_configs(mod_id, config_path.map(|p| vec![p]), state)
+}
+
+#[tauri::command]
+pub fn set_mod_configs(mod_id: String, config_paths: Option<Vec<String>>, state: State<AppState>) -> Result<Value, String> {
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     let mod_index = data.mods.iter().position(|m| m.id == mod_id).ok_or("Mod not found")?;
-    data.mods[mod_index].config_path = config_path;
+    let primary = config_paths.as_ref().and_then(|paths| paths.first().cloned());
+    data.mods[mod_index].config_path = primary;
+    data.mods[mod_index].config_paths = config_paths;
     data.mods[mod_index].config_type = Some("manual".to_string());
     let result = serde_json::to_value(&data.mods[mod_index]).map_err(|e| e.to_string())?;
     let data_clone = data.clone();
     drop(data);
     let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
     Ok(result)
+}
+
+pub fn get_mod_shared_dir(mod_info: &crate::models::ModInfo) -> Option<PathBuf> {
+    let base_dir = get_mod_base_dir(mod_info);
+    let parent = base_dir.parent()?;
+    let shared_root = if parent.file_name() == Some(std::ffi::OsStr::new("Mods")) {
+        parent.join("shared")
+    } else {
+        let alt = parent.join("Mods").join("shared");
+        if alt.is_dir() { alt } else { return None; }
+    };
+
+    if !shared_root.is_dir() {
+        return None;
+    }
+
+    let folder_name = crate::profiles::get_mod_folder_name(mod_info);
+    let clean_folder = folder_name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+    let clean_name = mod_info.name.to_lowercase().replace(|c: char| !c.is_alphanumeric(), "");
+
+    let exact = shared_root.join(&folder_name);
+    if exact.is_dir() {
+        return Some(exact);
+    }
+    let by_name = shared_root.join(&mod_info.name);
+    if by_name.is_dir() {
+        return Some(by_name);
+    }
+
+    if let Ok(entries) = fs::read_dir(&shared_root) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.is_dir() {
+                let sub_name = p.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
+                let clean_sub = sub_name.replace(|c: char| !c.is_alphanumeric(), "");
+                if (!clean_folder.is_empty() && clean_sub == clean_folder)
+                    || (!clean_name.is_empty() && clean_sub == clean_name)
+                {
+                    return Some(p);
+                }
+            }
+        }
+    }
+
+    None
 }
 
 fn get_mod_base_dir(mod_info: &crate::models::ModInfo) -> PathBuf {
@@ -114,6 +166,50 @@ fn get_mod_base_dir(mod_info: &crate::models::ModInfo) -> PathBuf {
 }
 
 pub fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str) -> Result<PathBuf, String> {
+    let normalized = file_path.replace('\\', "/");
+
+    // 1. Check if it targets shared/
+    if normalized.starts_with("shared/") || normalized.starts_with("[Shared]/") {
+        if let Some(shared_dir) = get_mod_shared_dir(mod_info) {
+            let subfolder = shared_dir.file_name().unwrap_or_default().to_string_lossy().to_string();
+            let prefix_with_folder = format!("shared/{}/", subfolder);
+            if let Some(rel) = normalized.strip_prefix(&prefix_with_folder) {
+                return Ok(shared_dir.join(rel));
+            } else if let Some(rel) = normalized.strip_prefix("shared/") {
+                if let Some(parent) = shared_dir.parent() {
+                    let direct = parent.join(rel);
+                    if direct.exists() {
+                        return Ok(direct);
+                    }
+                }
+                return Ok(shared_dir.join(rel));
+            } else if let Some(rel) = normalized.strip_prefix("[Shared]/") {
+                return Ok(shared_dir.join(rel));
+            }
+        } else {
+            let base_dir = get_mod_base_dir(mod_info);
+            if let Some(parent) = base_dir.parent() {
+                let shared_root = parent.join("shared");
+                if let Some(rel) = normalized.strip_prefix("shared/") {
+                    return Ok(shared_root.join(rel));
+                }
+            }
+        }
+    }
+
+    // 2. Check if it's an explicit absolute path or matches one of config_paths
+    if let Some(ref c_paths) = mod_info.config_paths {
+        for cp in c_paths {
+            let cp_norm = cp.replace('\\', "/");
+            if cp_norm == normalized || cp_norm.ends_with(&format!("/{}", normalized)) {
+                let p = PathBuf::from(cp);
+                if p.is_absolute() && p.exists() {
+                    return Ok(p);
+                }
+            }
+        }
+    }
+
     if mod_info.mod_type == crate::models::ModType::Hybrid {
         let path_obj = Path::new(file_path);
         let components: Vec<&str> = path_obj.iter().map(|c| c.to_str().unwrap_or_default()).collect();
@@ -160,6 +256,19 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
 
     let mut files = Vec::new();
 
+    // 1. Scan shared/ directory if it exists for this mod
+    if let Some(shared_dir) = get_mod_shared_dir(mod_info) {
+        let subfolder = shared_dir.file_name().unwrap_or_default().to_string_lossy().to_string();
+        let mut shared_files = Vec::new();
+        let _ = walk_dir(&shared_dir, &mut shared_files, &shared_dir);
+        for sf in shared_files {
+            let entry = format!("shared/{}/{}", subfolder, sf);
+            if !files.contains(&entry) {
+                files.push(entry);
+            }
+        }
+    }
+
     if mod_info.mod_type == crate::models::ModType::Hybrid {
         // Collect all hybrid directory roots (primary and extras)
         let mut roots = Vec::new();
@@ -189,6 +298,16 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
     } else {
         let base_path = get_mod_base_dir(mod_info);
         walk_dir(&base_path, &mut files, &base_path).map_err(|e| e.to_string())?;
+    }
+
+    // 2. Add custom config_paths if not already represented
+    if let Some(ref c_paths) = mod_info.config_paths {
+        for cp in c_paths {
+            let norm = cp.replace('\\', "/");
+            if !files.iter().any(|f| f.eq_ignore_ascii_case(&norm) || norm.ends_with(f.as_str())) {
+                files.push(norm);
+            }
+        }
     }
 
     Ok(files)

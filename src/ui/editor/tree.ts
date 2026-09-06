@@ -146,8 +146,43 @@ export function findBestConfigFile(files: string[]): string | null {
 
   if (validFiles.length === 0) return files[0] || null;
 
-  // 1. Exact or near-exact config / settings file matches
-  const exactConfig = validFiles.find(f => {
+  const state = getState();
+  const currentMod = state.allMods.find(m => m.id === state.editorModId);
+
+  // 0. Prioritize registered configPaths or configPath if present in files
+  if (currentMod) {
+    const registered = (currentMod.configPaths && currentMod.configPaths.length > 0)
+      ? currentMod.configPaths
+      : (currentMod.configPath ? [currentMod.configPath] : []);
+    for (const reg of registered) {
+      const regNorm = reg.replace(/\\/g, '/').toLowerCase();
+      const match = validFiles.find(f => {
+        const fNorm = f.toLowerCase();
+        return fNorm === regNorm || fNorm.endsWith(regNorm) || regNorm.endsWith(fNorm);
+      });
+      if (match) return match;
+    }
+  }
+
+  // Avoid DefaultConfig_DO_NOT_EDIT templates
+  const isTemplate = (p: string) => {
+    const lower = p.toLowerCase();
+    return lower.includes('do_not_edit') || lower.includes('defaultconfig');
+  };
+
+  const nonTemplates = validFiles.filter(f => !isTemplate(f));
+  const pool = nonTemplates.length > 0 ? nonTemplates : validFiles;
+
+  // 1. Shared directory config files (highest priority for UE4SS mods)
+  const sharedConfig = pool.find(f => {
+    const lower = f.toLowerCase();
+    return (lower.startsWith('shared/') || lower.includes('/shared/')) &&
+      (lower.includes('config') || lower.includes('setting') || lower.includes('option'));
+  });
+  if (sharedConfig) return sharedConfig;
+
+  // 2. Exact or near-exact config / settings file matches
+  const exactConfig = pool.find(f => {
     const leaf = f.replace(/^.*[/\\]/, '').toLowerCase();
     return (
       leaf === 'config.lua' ||
@@ -164,33 +199,33 @@ export function findBestConfigFile(files: string[]): string | null {
   });
   if (exactConfig) return exactConfig;
 
-  // 2. Any file with "config", "settings", "options", "params" in the filename
-  const namedConfig = validFiles.find(f => {
+  // 3. Any file with "config", "settings", "options", "params" in the filename
+  const namedConfig = pool.find(f => {
     const leaf = f.replace(/^.*[/\\]/, '').toLowerCase();
     return leaf.includes('config') || leaf.includes('setting') || leaf.includes('option') || leaf.includes('param');
   });
   if (namedConfig) return namedConfig;
 
-  // 3. Main script entry points (main.lua, init.lua, mod.lua)
-  const mainScript = validFiles.find(f => {
+  // 4. Main script entry points (main.lua, init.lua, mod.lua)
+  const mainScript = pool.find(f => {
     const leaf = f.replace(/^.*[/\\]/, '').toLowerCase();
     return leaf === 'main.lua' || leaf === 'init.lua' || leaf === 'mod.lua' || leaf === 'index.js';
   });
   if (mainScript) return mainScript;
 
-  // 4. Any JSON / JSONC / INI / CFG files
-  const dataFile = validFiles.find(f => {
+  // 5. Any JSON / JSONC / INI / CFG files
+  const dataFile = pool.find(f => {
     const lower = f.toLowerCase();
     return lower.endsWith('.jsonc') || lower.endsWith('.json') || lower.endsWith('.ini') || lower.endsWith('.cfg');
   });
   if (dataFile) return dataFile;
 
-  // 5. Any Lua scripts
-  const luaScript = validFiles.find(f => f.toLowerCase().endsWith('.lua'));
+  // 6. Any Lua scripts
+  const luaScript = pool.find(f => f.toLowerCase().endsWith('.lua'));
   if (luaScript) return luaScript;
 
-  // 6. First valid file
-  return validFiles[0];
+  // 7. First valid file
+  return pool[0];
 }
 
 export async function revealAndSelectFile(filePath: string, lineNumber?: number): Promise<boolean> {
@@ -331,6 +366,13 @@ function renderNodeHTML(node: FileTreeNode): string {
       const icon = getFileIcon(ext);
       const isSelected = currentSelected === child.path;
       const isBak = ext.toLowerCase().startsWith('bak');
+      const currentMod = state.allMods.find(m => m.id === state.editorModId);
+      const isConfigPath = currentMod && (
+        (currentMod.configPaths && currentMod.configPaths.some(cp => cp.replace(/\\/g, '/').endsWith(child.path) || child.path.endsWith(cp.replace(/\\/g, '/')))) ||
+        (currentMod.configPath && (currentMod.configPath.replace(/\\/g, '/').endsWith(child.path) || child.path.endsWith(currentMod.configPath.replace(/\\/g, '/')))) ||
+        child.path.toLowerCase().startsWith('shared/')
+      );
+      const configBadge = isConfigPath ? `<span class="editor-file-badge" title="${escapeHtml(t('editor.badge_config') || 'Active Configuration')}" style="font-size:10px; margin-left:4px; opacity:0.85;">⚙️</span>` : '';
 
       let actionButtons = '';
       if (isBak) {
@@ -349,7 +391,7 @@ function renderNodeHTML(node: FileTreeNode): string {
       return `
       <div class="editor-file-item${isSelected ? ' selected' : ''}" data-path="${escapeHtml(child.path)}" data-ext="${escapeHtml(ext)}">
         <span class="editor-file-icon">${icon}</span>
-        <span class="editor-file-name" title="${escapeHtml(child.name)}">${escapeHtml(child.name)}</span>
+        <span class="editor-file-name" title="${escapeHtml(child.name)}">${escapeHtml(child.name)}${configBadge}</span>
         <span class="editor-file-dirty-dot" title="${escapeHtml(t('editor.unsaved_changes') || 'Unsaved changes')}">●</span>
         <div class="editor-file-actions">
           ${actionButtons}

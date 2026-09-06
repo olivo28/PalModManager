@@ -26,6 +26,10 @@ pub fn enable_mod_internal(
     let force_ue4ss_effective = effective_force_ue4ss(data);
     let force_palschema_effective = crate::profiles::effective_force_palschema(data);
     let game_paks = PathBuf::from(&data.settings.game_path).join("Pal").join("Content").join("Paks");
+    let disabled_base = PathBuf::from(program_path)
+        .join("profiles")
+        .join(&data.current_profile_id)
+        .join("disabled_mods");
 
     let is_workshop = data.mods[mod_index].nexus_summary.as_deref()
         .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
@@ -344,6 +348,134 @@ pub fn enable_mod_internal(
                         if sidecar.exists() {
                             let c_dest = dest_dir.join(format!("{}.pmm.json", filename));
                             let _ = move_path(&sidecar, &c_dest);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Fallback recovery: restore any orphaned hybrid components matching this mod in disabled_base/hybrid/
+        let disabled_hybrid = disabled_base.join("hybrid");
+        if disabled_hybrid.exists() {
+            let mod_folder_name = get_mod_folder_name(mod_info);
+            let mod_id_clean = mod_info.id.to_lowercase().replace(' ', "").replace('_', "");
+            let mod_name_clean = mod_info.name.to_lowercase().replace(' ', "").replace('_', "");
+            let folder_clean = mod_folder_name.to_lowercase().replace(' ', "").replace('_', "");
+
+            let matches_mod = |candidate_name: &str| -> bool {
+                let cand_clean = candidate_name.to_lowercase().replace(' ', "").replace('_', "");
+                let cand_stem = candidate_name.strip_suffix(".pak").unwrap_or(candidate_name)
+                    .strip_suffix("_P").unwrap_or(candidate_name)
+                    .to_lowercase().replace(' ', "").replace('_', "");
+                
+                cand_clean == mod_id_clean || cand_clean == mod_name_clean || cand_clean == folder_clean
+                    || cand_stem == mod_id_clean || cand_stem == mod_name_clean || cand_stem == folder_clean
+                    || (!mod_id_clean.is_empty() && cand_stem.contains(&mod_id_clean))
+                    || (!mod_name_clean.is_empty() && cand_stem.contains(&mod_name_clean))
+                    || (!folder_clean.is_empty() && cand_stem.contains(&folder_clean))
+            };
+
+            // 1. Check logicmods/
+            let logic_dir = disabled_hybrid.join("logicmods");
+            if logic_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&logic_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let filename = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                        if filename.ends_with(".pak") && matches_mod(&filename) {
+                            let dest_dir = game_paks.join("LogicMods");
+                            let _ = fs::create_dir_all(&dest_dir);
+                            let dest = dest_dir.join(&filename);
+                            let dest_str = dest.to_string_lossy().to_string();
+                            if !moved_back.contains(&dest_str) {
+                                if let Ok(_) = move_path(&path, &dest) {
+                                    crate::logger::log(&format!("enable_mod: Fallback recovered orphaned LogicMods pak '{}' to '{:?}'", filename, dest));
+                                    moved_back.push(dest_str);
+                                    let stem = path.file_stem().unwrap().to_string_lossy().to_string();
+                                    for c_ext in &["ucas", "utoc"] {
+                                        let companion = logic_dir.join(format!("{}.{}", stem, c_ext));
+                                        if companion.exists() {
+                                            let _ = move_path(&companion, &dest_dir.join(format!("{}.{}", stem, c_ext)));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 2. Check pak/ (~mods)
+            let pak_dir = disabled_hybrid.join("pak");
+            if pak_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&pak_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let filename = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                        if filename.ends_with(".pak") && matches_mod(&filename) {
+                            let dest_dir = game_paks.join("~mods");
+                            let _ = fs::create_dir_all(&dest_dir);
+                            let dest = dest_dir.join(&filename);
+                            let dest_str = dest.to_string_lossy().to_string();
+                            if !moved_back.contains(&dest_str) {
+                                if let Ok(_) = move_path(&path, &dest) {
+                                    crate::logger::log(&format!("enable_mod: Fallback recovered orphaned pak '{}' to '{:?}'", filename, dest));
+                                    moved_back.push(dest_str);
+                                    let stem = path.file_stem().unwrap().to_string_lossy().to_string();
+                                    for c_ext in &["ucas", "utoc"] {
+                                        let companion = pak_dir.join(format!("{}.{}", stem, c_ext));
+                                        if companion.exists() {
+                                            let _ = move_path(&companion, &dest_dir.join(format!("{}.{}", stem, c_ext)));
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 3. Check palschema/
+            let schema_dir = disabled_hybrid.join("palschema");
+            if schema_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&schema_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let filename = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                        if matches_mod(&filename) {
+                            let dest_dir = palschema_mods_dir.clone();
+                            let _ = fs::create_dir_all(&dest_dir);
+                            let dest = dest_dir.join(&filename);
+                            let dest_str = dest.to_string_lossy().to_string();
+                            if !moved_back.contains(&dest_str) {
+                                if let Ok(_) = move_path(&path, &dest) {
+                                    crate::logger::log(&format!("enable_mod: Fallback recovered orphaned PalSchema folder '{}' to '{:?}'", filename, dest));
+                                    moved_back.push(dest_str);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            // 4. Check ue4ss/
+            let ue_dir = disabled_hybrid.join("ue4ss");
+            if ue_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&ue_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        let filename = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                        if matches_mod(&filename) {
+                            let dest_dir = ue4ss_mods_dir.clone();
+                            let _ = fs::create_dir_all(&dest_dir);
+                            let dest = dest_dir.join(&filename);
+                            let dest_str = dest.to_string_lossy().to_string();
+                            if !moved_back.contains(&dest_str) {
+                                if let Ok(_) = move_path(&path, &dest) {
+                                    crate::logger::log(&format!("enable_mod: Fallback recovered orphaned UE4SS folder '{}' to '{:?}'", filename, dest));
+                                    moved_back.push(dest_str);
+                                }
+                            }
                         }
                     }
                 }

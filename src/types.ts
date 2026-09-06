@@ -15,6 +15,7 @@ export interface ModInfo {
   installDate: string;
   sourceZip: string;
   configPath: string | null;
+  configPaths?: string[] | null;
   configType: string | null;
   enabled: boolean;
   gamePath: string;

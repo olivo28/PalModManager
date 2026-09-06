@@ -101,7 +101,7 @@ pub fn scan_pak_mods(
             nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
             nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
             version: "unknown".to_string(), install_date,
-            source_zip: String::new(), config_path: None, config_type: None,
+            source_zip: String::new(), config_path: None, config_paths: None, config_type: None,
             enabled: true, game_path: mod_path_str, disabled_path: String::new(),
             pak_destination: Some(pak_type.to_string()), has_enabled_txt: false,
             mods_txt_order: None, extra_files,

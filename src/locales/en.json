@@ -505,7 +505,9 @@
     "btn_new_file": "New File",
     "btn_new_folder": "New Folder",
     "prompt_new_file": "Enter relative path for new file (e.g. scripts/subsystem.lua):",
-    "prompt_new_folder": "Enter relative path for new folder (e.g. scripts/spawners):"
+    "prompt_new_folder": "Enter relative path for new folder (e.g. scripts/spawners):",
+    "badge_config": "Active Configuration",
+    "unsaved_changes": "Unsaved changes"
   },
   "library": {
     "title": "Mod Library",

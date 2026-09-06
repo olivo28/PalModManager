@@ -61,7 +61,7 @@ pub fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names
                     nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
                     version: "unknown".to_string(), install_date,
-                    source_zip: String::new(), config_path: None,
+                    source_zip: String::new(), config_path: None, config_paths: None,
                     config_type: None, enabled: true,
                     game_path: mod_path.to_string_lossy().to_string(),
                     disabled_path: String::new(),

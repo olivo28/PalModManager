@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 use crate::models::{ModInfo, ModType};
-use super::super::utils::{detect_config, file_install_date};
+use super::super::utils::{detect_configs, file_install_date};
 use super::meta::load_pmm_meta;
 
 pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
@@ -28,12 +28,14 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                 }
 
                 let install_date = file_install_date(&mod_path);
+                let (detected_primary, detected_all) = detect_configs(&mod_path);
                 results.push(ModInfo {
                     id: mod_name.clone(), name: mod_name.clone(), mod_type: mod_type.clone(),
                     nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
                     version: "unknown".to_string(), install_date,
-                    source_zip: String::new(), config_path: detect_config(&mod_path),
+                    source_zip: String::new(), config_path: detected_primary,
+                    config_paths: detected_all,
                     config_type: Some("auto".to_string()), enabled: false,
                     game_path: String::new(), disabled_path: mod_path.to_string_lossy().to_string(),
                     pak_destination: None, has_enabled_txt: mod_path.join("enabled.txt").exists(),
@@ -82,7 +84,7 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
                     version: "unknown".to_string(), install_date,
-                    source_zip: String::new(), config_path: None, config_type: None,
+                    source_zip: String::new(), config_path: None, config_paths: None, config_type: None,
                     enabled: false, game_path: String::new(),
                     disabled_path: entry.path().to_string_lossy().to_string(),
                     pak_destination: Some(pak_type.to_string()), has_enabled_txt: false,

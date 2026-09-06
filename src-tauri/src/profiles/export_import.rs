@@ -483,6 +483,7 @@ pub fn import_profile_pack_internal(
                 install_date: chrono::Utc::now().to_rfc3339(),
                 source_zip: "coop_profile_pack.zip".to_string(),
                 config_path: m_meta.config_path.clone(),
+                config_paths: None,
                 config_type: m_meta.config_type.clone(),
                 enabled: m_meta.enabled,
                 game_path: String::new(),

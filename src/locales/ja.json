@@ -505,7 +505,9 @@
     "btn_new_file": "新規ファイル",
     "btn_new_folder": "新規フォルダ",
     "prompt_new_file": "新しいファイルの相対パスを入力してください（例: scripts/subsystem.lua）:",
-    "prompt_new_folder": "新しいフォルダの相対パスを入力してください（例: scripts/spawners）:"
+    "prompt_new_folder": "新しいフォルダの相対パスを入力してください（例: scripts/spawners）:",
+    "badge_config": "有効な設定ファイル",
+    "unsaved_changes": "未保存の変更"
   },
   "library": {
     "title": "MODライブラリ",

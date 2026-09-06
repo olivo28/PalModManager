@@ -135,34 +135,40 @@ pub fn merge_scan_with_db(
             let mut valid_extras = Vec::new();
             for extra in &db_mod.extra_files {
                 let extra_p = Path::new(extra);
-                if extra_p.exists() {
+                if extra_p.is_absolute() && extra_p.exists() {
                     valid_extras.push(extra.clone());
                 }
             }
             for extra in &fs_mod.extra_files {
-                if !valid_extras.contains(extra) {
+                let extra_p = Path::new(extra);
+                if extra_p.is_absolute() && (extra_p.exists() || !db_mod.disabled_path.is_empty()) && !valid_extras.contains(extra) {
                     valid_extras.push(extra.clone());
                 }
             }
 
-            // Enforce canonical path priority: UE4SS > PalSchema > LogicMods/~mods (.pak)
-            let mut all_paths: Vec<String> = Vec::new();
-            if !merged.game_path.is_empty() {
-                all_paths.push(merged.game_path.clone());
-            }
-            if !fs_mod.game_path.is_empty() && !all_paths.contains(&fs_mod.game_path) {
-                all_paths.push(fs_mod.game_path.clone());
-            }
-            for extra in &valid_extras {
-                if !all_paths.contains(extra) {
-                    all_paths.push(extra.clone());
+            let is_disabled = merged.game_path.is_empty() && fs_mod.game_path.is_empty();
+            if !is_disabled {
+                // Enforce canonical path priority: UE4SS > PalSchema > LogicMods/~mods (.pak)
+                let mut all_paths: Vec<String> = Vec::new();
+                if !merged.game_path.is_empty() {
+                    all_paths.push(merged.game_path.clone());
                 }
-            }
+                if !fs_mod.game_path.is_empty() && !all_paths.contains(&fs_mod.game_path) {
+                    all_paths.push(fs_mod.game_path.clone());
+                }
+                for extra in &valid_extras {
+                    if !all_paths.contains(extra) {
+                        all_paths.push(extra.clone());
+                    }
+                }
 
-            if all_paths.len() > 1 {
-                all_paths.sort_by_key(|p| get_path_priority(p));
-                merged.game_path = all_paths[0].clone();
-                merged.extra_files = all_paths[1..].to_vec();
+                if all_paths.len() > 1 {
+                    all_paths.sort_by_key(|p| get_path_priority(p));
+                    merged.game_path = all_paths[0].clone();
+                    merged.extra_files = all_paths[1..].to_vec();
+                } else {
+                    merged.extra_files = valid_extras;
+                }
             } else {
                 merged.extra_files = valid_extras;
             }
@@ -276,28 +282,39 @@ pub fn merge_scan_with_db(
                 merged.mod_type = ModType::Hybrid;
             }
 
-            let mut all_paths: Vec<String> = Vec::new();
-            if !merged.game_path.is_empty() {
-                all_paths.push(merged.game_path.clone());
-            }
-            if !m.game_path.is_empty() && !all_paths.contains(&m.game_path) {
-                all_paths.push(m.game_path.clone());
-            }
-            for extra in &merged.extra_files {
-                if !all_paths.contains(extra) {
-                    all_paths.push(extra.clone());
+            let is_disabled = merged.game_path.is_empty() && m.game_path.is_empty();
+            if !is_disabled {
+                let mut all_paths: Vec<String> = Vec::new();
+                if !merged.game_path.is_empty() {
+                    all_paths.push(merged.game_path.clone());
                 }
-            }
-            for extra in &m.extra_files {
-                if !all_paths.contains(extra) {
-                    all_paths.push(extra.clone());
+                if !m.game_path.is_empty() && !all_paths.contains(&m.game_path) {
+                    all_paths.push(m.game_path.clone());
                 }
-            }
+                for extra in &merged.extra_files {
+                    if Path::new(extra).is_absolute() && !all_paths.contains(extra) {
+                        all_paths.push(extra.clone());
+                    }
+                }
+                for extra in &m.extra_files {
+                    if Path::new(extra).is_absolute() && !all_paths.contains(extra) {
+                        all_paths.push(extra.clone());
+                    }
+                }
 
-            if all_paths.len() > 1 {
-                all_paths.sort_by_key(|p| get_path_priority(p));
-                merged.game_path = all_paths[0].clone();
-                merged.extra_files = all_paths[1..].to_vec();
+                if all_paths.len() > 1 {
+                    all_paths.sort_by_key(|p| get_path_priority(p));
+                    merged.game_path = all_paths[0].clone();
+                    merged.extra_files = all_paths[1..].to_vec();
+                }
+            } else {
+                let mut distinct_extras = Vec::new();
+                for extra in merged.extra_files.iter().chain(m.extra_files.iter()) {
+                    if Path::new(extra).is_absolute() && !distinct_extras.contains(extra) {
+                        distinct_extras.push(extra.clone());
+                    }
+                }
+                merged.extra_files = distinct_extras;
             }
 
             if merged.disabled_path.is_empty() && !m.disabled_path.is_empty() {

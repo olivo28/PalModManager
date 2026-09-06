@@ -566,21 +566,3 @@ pub async fn check_palschema_latest() -> Result<String, String> {
         .ok_or_else(|| "No tag_name in response".to_string())?;
     Ok(tag.to_string())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_check_ue4ss_latest() {
-        tauri::async_runtime::block_on(async {
-            let result = check_ue4ss_latest().await;
-            assert!(result.is_ok(), "check_ue4ss_latest failed: {:?}", result.err());
-            let (tag, date_str) = result.unwrap();
-            assert!(!tag.is_empty(), "Expected non-empty tag for UE4SS, got: {}", tag);
-            assert!(date_str.ends_with("2026"), "Expected 2026 date for UE4SS, got: {}", date_str);
-        });
-    }
-}
-
-

@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 use crate::models::{ModInfo, ModType};
-use super::super::utils::{detect_config, file_install_date};
+use super::super::utils::{detect_configs, file_install_date};
 use super::meta::load_pmm_meta;
 
 pub fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &std::collections::HashSet<String>) {
@@ -37,9 +37,9 @@ pub fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
             let mod_name = entry.file_name().to_string_lossy().to_string();
             if ignored_names.contains(&mod_name.to_lowercase()) { continue; }
             let mod_path = entry.path();
-            if ["ConsoleUnlocker", "LuaPlugin", "PalSchema"].contains(&mod_name.as_str()) { continue; }
+            if ["ConsoleUnlocker", "LuaPlugin", "PalSchema", "shared"].contains(&mod_name.as_str()) { continue; }
 
-            let is_native_mod = ["BPModLoaderMod", "CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod", "Keybinds", "LineTraceMod", "SplitScreenMod", "BPML_GenericFunctions", "shared", "adapters"].contains(&mod_name.as_str());
+            let is_native_mod = ["BPModLoaderMod", "CheatManagerEnablerMod", "ConsoleCommandsMod", "ConsoleEnablerMod", "Keybinds", "LineTraceMod", "SplitScreenMod", "BPML_GenericFunctions", "adapters"].contains(&mod_name.as_str());
 
             let name_lower = mod_name.to_lowercase();
             let is_in_mods_txt = mods_txt_states.contains_key(&name_lower);
@@ -73,6 +73,8 @@ pub fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
             let author = if is_native_mod { Some("UE4SS Native Mod".to_string()) } else { None };
             let summary = if is_native_mod { Some("Core dependency mod installed by UE4SS. Controlled by mods.txt.".to_string()) } else { None };
 
+            let (detected_primary, detected_all) = detect_configs(&mod_path);
+
             results.push(ModInfo {
                 id: mod_name.clone(),
                 name: mod_name.clone(),
@@ -82,7 +84,8 @@ pub fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
                 version: "1.0.0".to_string(),
                 install_date: file_install_date(&mod_path),
                 source_zip: String::new(),
-                config_path: detect_config(&mod_path),
+                config_path: detected_primary,
+                config_paths: detected_all,
                 config_type: Some("auto".to_string()),
                 enabled: is_enabled,
                 game_path: mod_path.to_string_lossy().to_string(),

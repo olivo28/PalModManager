@@ -110,6 +110,7 @@ pub fn scan_mods_internal(
             install_date: String::new(),
             source_zip: String::new(),
             config_path: None,
+            config_paths: None,
             config_type: Some("auto".to_string()),
             enabled: wmod.is_active,
             game_path: game_mod_path.to_string_lossy().to_string(),

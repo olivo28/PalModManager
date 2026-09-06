@@ -408,6 +408,7 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
                             installed_folders: None,
                             source_zip: Some(zip_name.clone()),
                             installed_files: None,
+                            extra_files: None,
                         };
                         let sidecar_dest = PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()));
                         if let Ok(json) = serde_json::to_string_pretty(&pmm_data) {
