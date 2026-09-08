@@ -6,8 +6,12 @@ pub mod sdk_parser;
 pub mod datatable_index;
 pub mod blueprint_index;
 pub mod palschema_index;
+pub mod master_manifest;
+pub mod lua_signatures;
 
 pub use models::*;
+pub use master_manifest::*;
+pub use lua_signatures::*;
 pub use build_detector::detect_installed_game_build;
 pub use sync::{get_mappings_status, sync_mappings_async, get_active_usmap_path};
 pub use parser::{parse_usmap_file, UsmapSchema, UsmapStruct, UsmapProperty};

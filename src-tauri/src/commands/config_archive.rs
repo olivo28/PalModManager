@@ -6,6 +6,7 @@ use tauri::State;
 use crate::models::ModInfo;
 use crate::state::AppState;
 use crate::profiles::utils::get_profile_dir;
+use crate::commands::install::diff::ConfigDiff;
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 #[serde(rename_all = "camelCase")]
@@ -250,18 +251,24 @@ pub fn check_archived_config(
 }
 
 #[tauri::command]
-pub fn apply_archived_config(
-    mod_id: String,
+pub async fn preview_archived_config_diff(
+    zip_path: String,
     archive_id: String,
-    state: State<AppState>,
-) -> Result<bool, String> {
-    let (program_path, current_profile_id, mod_info) = {
+    state: State<'_, AppState>,
+) -> Result<Vec<ConfigDiff>, String> {
+    let (program_path, current_profile_id) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        let m = data.mods.iter().find(|m| m.id == mod_id || m.name.eq_ignore_ascii_case(&mod_id)).cloned().ok_or_else(|| format!("Mod '{}' not found", mod_id))?;
-        (data.settings.program_path.clone(), data.current_profile_id.clone(), m)
+        (data.settings.program_path.clone(), data.current_profile_id.clone())
     };
 
     let archive_dir = get_archive_dir(&program_path, &current_profile_id, &archive_id);
+    preview_archived_config_diff_internal(&zip_path, &archive_dir)
+}
+
+pub fn preview_archived_config_diff_internal(
+    zip_path: &str,
+    archive_dir: &Path,
+) -> Result<Vec<ConfigDiff>, String> {
     if !archive_dir.exists() {
         return Err(format!("Archived config directory not found: {:?}", archive_dir));
     }
@@ -277,9 +284,145 @@ pub fn apply_archived_config(
         Vec::new()
     };
 
-    // Read all archived files into a ConfigSnapshot
+    if file_list.is_empty() {
+        return Ok(Vec::new());
+    }
+
+    let temp_dir = std::env::temp_dir().join(format!("pmm_arch_diff_{}", uuid::Uuid::new_v4()));
+    let extracted = crate::zip_handler::extract_zip_to_temp(zip_path, &temp_dir)?;
+
+    let mut diffs = Vec::new();
+
+    fn find_matching_file_rec(dir: &Path, target_name: &std::ffi::OsStr) -> Option<PathBuf> {
+        if let Ok(rd) = fs::read_dir(dir) {
+            for entry in rd.flatten() {
+                let p = entry.path();
+                if p.is_dir() {
+                    if let Some(found) = find_matching_file_rec(&p, target_name) {
+                        return Some(found);
+                    }
+                } else if p.is_file() && p.file_name() == Some(target_name) {
+                    return Some(p);
+                }
+            }
+        }
+        None
+    }
+
+    for file_rel in file_list {
+        let archived_file = archive_dir.join(&file_rel);
+        if !archived_file.exists() || !archived_file.is_file() {
+            continue;
+        }
+
+        let archived_content = match fs::read_to_string(&archived_file) {
+            Ok(c) => c,
+            Err(_) => continue,
+        };
+
+        let fname = Path::new(&file_rel).file_name().unwrap_or_default();
+        let direct_incoming = extracted.join(&file_rel);
+        let incoming_file = if direct_incoming.exists() && direct_incoming.is_file() {
+            Some(direct_incoming)
+        } else {
+            find_matching_file_rec(&extracted, fname)
+        };
+
+        let ext = Path::new(&file_rel).extension().and_then(|s| s.to_str()).unwrap_or("");
+
+        if let Some(ref inc_path) = incoming_file {
+            if let Ok(incoming_content) = fs::read_to_string(inc_path) {
+                if let Some((user_changed, added, removed)) = crate::config_merge::generate_config_diff(&archived_content, &incoming_content, ext) {
+                    diffs.push(ConfigDiff {
+                        file_name: file_rel.clone(),
+                        keys_user_changed: user_changed,
+                        keys_added_by_author: added,
+                        keys_removed_by_author: removed,
+                    });
+                    continue;
+                }
+            }
+        }
+
+        // If file is only in archive or format is non-diffable, present it with empty key diffs so user can toggle whole file
+        diffs.push(ConfigDiff {
+            file_name: file_rel.clone(),
+            keys_user_changed: Vec::new(),
+            keys_added_by_author: Vec::new(),
+            keys_removed_by_author: Vec::new(),
+        });
+    }
+
+    let _ = fs::remove_dir_all(&temp_dir);
+
+    Ok(diffs)
+}
+
+#[tauri::command]
+pub fn apply_archived_config(
+    mod_id: String,
+    archive_id: String,
+    ignored_files: Option<Vec<String>>,
+    ignored_keys: Option<Vec<String>>,
+    state: State<AppState>,
+) -> Result<bool, String> {
+    let (program_path, current_profile_id, mod_info) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let m = data.mods.iter().find(|m| m.id == mod_id || m.name.eq_ignore_ascii_case(&mod_id)).cloned().ok_or_else(|| format!("Mod '{}' not found", mod_id))?;
+        (data.settings.program_path.clone(), data.current_profile_id.clone(), m)
+    };
+
+    let archive_dir = get_archive_dir(&program_path, &current_profile_id, &archive_id);
+
+    // Determine target mod directory to apply merge into
+    let target_dir = if !mod_info.game_path.is_empty() && Path::new(&mod_info.game_path).is_dir() {
+        PathBuf::from(&mod_info.game_path)
+    } else if !mod_info.disabled_path.is_empty() && Path::new(&mod_info.disabled_path).is_dir() {
+        PathBuf::from(&mod_info.disabled_path)
+    } else if let Some(ref cfg) = mod_info.config_path {
+        Path::new(cfg).parent().unwrap_or_else(|| Path::new("")).to_path_buf()
+    } else {
+        PathBuf::new()
+    };
+
+    apply_archived_config_internal(
+        &archive_dir,
+        &target_dir,
+        &ignored_files.unwrap_or_default(),
+        &ignored_keys.unwrap_or_default(),
+    )
+}
+
+pub fn apply_archived_config_internal(
+    archive_dir: &Path,
+    target_dir: &Path,
+    ignored_files: &[String],
+    ignored_keys: &[String],
+) -> Result<bool, String> {
+    if !archive_dir.exists() {
+        return Err(format!("Archived config directory not found: {:?}", archive_dir));
+    }
+
+    let meta_path = archive_dir.join("archive_meta.json");
+    let file_list = if meta_path.exists() {
+        if let Ok(content) = fs::read_to_string(&meta_path) {
+            serde_json::from_str::<ArchivedConfigInfo>(&content).map(|m| m.files).unwrap_or_default()
+        } else {
+            Vec::new()
+        }
+    } else {
+        Vec::new()
+    };
+
+    // Read all archived files into a ConfigSnapshot (skipping user-ignored files)
     let mut snapshot_entries: Vec<(PathBuf, String)> = Vec::new();
     for file_rel in file_list {
+        let fname_str = Path::new(&file_rel).file_name().unwrap_or_default().to_string_lossy().to_string();
+        if ignored_files.iter().any(|ig| ig.eq_ignore_ascii_case(&file_rel) || ig.eq_ignore_ascii_case(&fname_str)) {
+            crate::logger::log(&format!("apply_archived_config: User ignored file '{}', skipping restore.", file_rel));
+            continue;
+        }
+
         let src_file = archive_dir.join(&file_rel);
         if src_file.exists() && src_file.is_file() {
             if let Ok(content) = fs::read_to_string(&src_file) {
@@ -294,19 +437,8 @@ pub fn apply_archived_config(
 
     let snapshot = crate::config_merge::ConfigSnapshot { entries: snapshot_entries };
 
-    // Determine target mod directory to apply merge into
-    let target_dir = if !mod_info.game_path.is_empty() && Path::new(&mod_info.game_path).is_dir() {
-        PathBuf::from(&mod_info.game_path)
-    } else if !mod_info.disabled_path.is_empty() && Path::new(&mod_info.disabled_path).is_dir() {
-        PathBuf::from(&mod_info.disabled_path)
-    } else if let Some(ref cfg) = mod_info.config_path {
-        Path::new(cfg).parent().unwrap_or_else(|| Path::new("")).to_path_buf()
-    } else {
-        PathBuf::new()
-    };
-
     if target_dir.exists() && target_dir.is_dir() {
-        crate::config_merge::apply_config_merge(&target_dir, &snapshot, &[]);
+        crate::config_merge::apply_config_merge(target_dir, &snapshot, ignored_keys);
         crate::logger::log(&format!(
             "apply_archived_config: Successfully restored {} archived configs into {:?}",
             snapshot.entries.len(),
@@ -315,9 +447,10 @@ pub fn apply_archived_config(
         Ok(true)
     } else {
         crate::logger::log(&format!(
-            "apply_archived_config: Target directory not found for mod '{}'",
-            mod_info.name
+            "apply_archived_config: Target directory not found: {:?}",
+            target_dir
         ));
         Ok(false)
     }
 }
+

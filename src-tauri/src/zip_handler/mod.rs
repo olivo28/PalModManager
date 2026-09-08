@@ -7,6 +7,7 @@ pub mod analysis;
 pub mod extraction;
 pub mod naming;
 pub mod manifest;
+pub mod workshop_rule;
 
 // Re-export types
 pub use types::{ArchiveFormat, DetectedModType, ZipAnalysis};

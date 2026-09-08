@@ -177,12 +177,29 @@ export function openDetailPanel(modId: string): void {
 
   if (componentsContainer) {
     if (compFolders.length > 0) {
-      componentsContainer.innerHTML = compFolders.map(c => `
-        <div class="detail-row" style="display: flex; align-items: flex-start; gap: 8px;">
-          <span class="detail-label" style="min-width: 115px; font-weight: 600;">${escapeHtml(c.label)}</span>
-          <span style="word-break: break-all; font-size: 11px; flex: 1; color: var(--text-primary); font-family: monospace;" title="${escapeHtml(c.path)}">${escapeHtml(formatDisplayPath(c.path))}</span>
-        </div>
-      `).join('');
+      componentsContainer.innerHTML = compFolders.map(c => {
+        let filesHtml = '';
+        if (c.files && c.files.length > 0) {
+          filesHtml = `
+            <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; padding-left: 2px;">
+              ${c.files.map(f => `
+                <span class="badge" style="font-family: monospace; font-size: 9.5px; padding: 2px 6px; background: rgba(0, 188, 255, 0.08); color: var(--accent); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;" title="${escapeHtml(f)}">
+                  <span style="font-size: 10px;">📦</span> <span>${escapeHtml(f)}</span>
+                </span>
+              `).join('')}
+            </div>
+          `;
+        }
+        return `
+          <div class="detail-row" style="display: flex; flex-direction: column; gap: 4px; padding: 4px 0;">
+            <div style="display: flex; align-items: baseline; justify-content: space-between; gap: 8px;">
+              <span class="detail-label" style="min-width: 115px; font-weight: 700; color: var(--text-secondary);">${escapeHtml(c.label)}</span>
+              <span style="word-break: break-all; font-size: 11px; flex: 1; color: var(--text-primary); font-family: monospace; text-align: right;" title="${escapeHtml(c.path)}">${escapeHtml(formatDisplayPath(c.path))}</span>
+            </div>
+            ${filesHtml}
+          </div>
+        `;
+      }).join('');
     } else {
       componentsContainer.innerHTML = `
         <div class="detail-row">
@@ -197,9 +214,9 @@ export function openDetailPanel(modId: string): void {
     if (compFolders.length > 0) {
       folderButtonsContainer.style.display = 'flex';
       folderButtonsContainer.innerHTML = compFolders.map(c => `
-        <button class="btn-action detail-open-comp-folder" data-path="${escapeHtml(c.path)}" style="flex: 1; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; font-size: 11px; font-weight: 600; white-space: nowrap;" title="${escapeHtml(c.path)}">
-          <span style="font-size: 13px;">📁</span>
-          <span>${escapeHtml(c.buttonLabel)}</span>
+        <button class="btn-action detail-open-comp-folder" data-path="${escapeHtml(c.path)}" style="flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; font-size: 11px; font-weight: 600; white-space: nowrap;" title="${escapeHtml(c.path)}">
+          <span style="font-size: 13px; flex-shrink: 0;">📁</span>
+          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.buttonLabel)}</span>
         </button>
       `).join('');
 

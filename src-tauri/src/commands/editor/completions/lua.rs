@@ -9,6 +9,7 @@ pub fn populate_lua_completions(
     schema: Option<&Arc<UsmapSchema>>,
     sdk_index: Option<&Arc<SdkIndex>>,
     dt_index: Option<&Arc<DataTableIndex>>,
+    lua_signatures: Option<&Arc<std::collections::HashMap<String, std::collections::HashMap<String, crate::usmap::LuaMethodInfo>>>>,
     completions: &mut Vec<EditorCompletion>,
     seen: &mut HashSet<String>,
 ) {
@@ -136,11 +137,29 @@ pub fn populate_lua_completions(
                                 let is_delegate = func.ends_with("__DelegateSignature") || func.contains("Delegate");
                                 let full_sig = format!("{}:{}", class_part, func);
                                 if seen.insert(full_sig.clone()) {
+                                    let (insert_text, detail_override) = if let Some(sig_map) = lua_signatures {
+                                        if let Some(method_info) = crate::usmap::find_lua_method_signature(sig_map, &cinfo.clean_name, &func) {
+                                            (method_info.build_snippet(class_part), Some(method_info.build_detail()))
+                                        } else {
+                                            (full_sig, None)
+                                        }
+                                    } else {
+                                        (full_sig, None)
+                                    };
+
+                                    let detail_text = detail_override.unwrap_or_else(|| {
+                                        if is_delegate {
+                                            "Delegate Signature".to_string()
+                                        } else {
+                                            "Class Method".to_string()
+                                        }
+                                    });
+
                                     completions.push(EditorCompletion {
                                         label: format!("{}:{}", cinfo.clean_name, func),
-                                        insert_text: full_sig,
+                                        insert_text,
                                         kind: if is_delegate { "delegate".to_string() } else { "function".to_string() },
-                                        detail: Some(if is_delegate { "Delegate Signature".to_string() } else { "Class Method".to_string() }),
+                                        detail: Some(detail_text),
                                         documentation: Some(format!("Member of class {}\nModule: {}", cinfo.clean_name, cinfo.module_name)),
                                     });
                                 }

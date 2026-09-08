@@ -61,29 +61,51 @@ pub fn get_mappings_dir(program_path: &str) -> PathBuf {
 
 pub fn get_active_usmap_path(program_path: &str) -> PathBuf {
     let dir = get_mappings_dir(program_path);
-    let local_manifest = load_local_manifest(program_path);
 
-    // 1. Check if manifest has an active/best filename (e.g. Palworld_24575825.usmap)
+    // 1. Resolve from Master Resource Manifest (resources/manifest.json)
+    if let Some(master) = super::master_manifest::get_or_load_master_manifest(program_path) {
+        if let Some(rel_path) = super::master_manifest::resolve_usmap_relative_path(&master, None) {
+            let file_name = Path::new(&rel_path).file_name().and_then(|n| n.to_str()).unwrap_or("Palworld.usmap");
+            let local_target = dir.join(file_name);
+            if local_target.exists() {
+                return local_target;
+            }
+
+            // Auto-seed from bundled repository resource if missing in LocalAppData
+            let resource_query = format!("resources/{}", rel_path);
+            if let Some(bundled) = find_bundled_resource(&resource_query) {
+                let _ = fs::create_dir_all(&dir);
+                let _ = fs::copy(&bundled, &local_target);
+                if local_target.exists() {
+                    return local_target;
+                }
+                return bundled;
+            }
+        }
+    }
+
+    // 2. Resolve from mappings/manifest.json
+    let local_manifest = load_local_manifest(program_path);
     if let Some(ref manifest) = local_manifest {
         if let Some(best) = find_best_mapping(manifest, None, None) {
             let target = dir.join(&best.usmap_filename);
             if target.exists() {
                 return target;
             }
+
+            let cand = format!("resources/mappings/{}", best.usmap_filename);
+            if let Some(bundled) = find_bundled_resource(&cand) {
+                let _ = fs::create_dir_all(&dir);
+                let _ = fs::copy(&bundled, &target);
+                if target.exists() {
+                    return target;
+                }
+                return bundled;
+            }
         }
     }
 
-    let default_target = dir.join("Palworld_24575825.usmap");
-    if default_target.exists() {
-        return default_target;
-    }
-
-    let legacy_target = dir.join("Palworld.usmap");
-    if legacy_target.exists() {
-        return legacy_target;
-    }
-
-    // Check if any custom-named .usmap file exists in the directory
+    // 3. Check if any .usmap file exists in the directory
     if let Ok(entries) = fs::read_dir(&dir) {
         for entry in entries.filter_map(|e| e.ok()) {
             let p = entry.path();
@@ -93,44 +115,45 @@ pub fn get_active_usmap_path(program_path: &str) -> PathBuf {
         }
     }
 
-    // Auto-seed from bundled repository resource if missing in LocalAppData
-    let candidates = [
-        "resources/mappings/Palworld_24575825.usmap",
-        "resources/mappings/Palworld.usmap",
-    ];
-    for cand in &candidates {
-        if let Some(bundled) = find_bundled_resource(cand) {
-            let _ = fs::create_dir_all(&dir);
-            let file_name = bundled.file_name().unwrap_or_default();
-            let dest = dir.join(file_name);
-            let _ = fs::copy(&bundled, &dest);
-            if dest.exists() {
-                return dest;
-            }
-            return bundled;
-        }
-    }
-
-    default_target
+    // 4. Default fallback candidate
+    dir.join("Palworld.usmap")
 }
 
 pub fn load_local_manifest(program_path: &str) -> Option<MappingsManifest> {
     let dir = get_mappings_dir(program_path);
     let local_file = dir.join("manifest.json");
-    if local_file.exists() {
-        if let Ok(content) = fs::read_to_string(&local_file) {
-            if let Ok(manifest) = serde_json::from_str::<MappingsManifest>(&content) {
-                return Some(manifest);
+
+    // 1. Check if bundled repository resource is available and newer than local cache
+    if let Some(bundled) = find_bundled_resource("resources/mappings/manifest.json") {
+        if let Ok(content) = fs::read_to_string(&bundled) {
+            if let Ok(bundled_manifest) = serde_json::from_str::<MappingsManifest>(&content) {
+                // If local file exists, check if bundled has newer latest_steam_build_id
+                let should_update = if local_file.exists() {
+                    if let Ok(local_content) = fs::read_to_string(&local_file) {
+                        if let Ok(local_m) = serde_json::from_str::<MappingsManifest>(&local_content) {
+                            local_m.latest_steam_build_id != bundled_manifest.latest_steam_build_id
+                        } else {
+                            true
+                        }
+                    } else {
+                        true
+                    }
+                } else {
+                    true
+                };
+
+                if should_update {
+                    let _ = fs::create_dir_all(&dir);
+                    let _ = fs::write(&local_file, &content);
+                    return Some(bundled_manifest);
+                }
             }
         }
     }
 
-    // 1. Auto-seed from bundled repository resource if missing in LocalAppData
-    if let Some(bundled) = find_bundled_resource("resources/mappings/manifest.json") {
-        if let Ok(content) = fs::read_to_string(&bundled) {
+    if local_file.exists() {
+        if let Ok(content) = fs::read_to_string(&local_file) {
             if let Ok(manifest) = serde_json::from_str::<MappingsManifest>(&content) {
-                let _ = fs::create_dir_all(&dir);
-                let _ = fs::write(&local_file, &content);
                 return Some(manifest);
             }
         }

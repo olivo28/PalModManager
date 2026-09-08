@@ -91,6 +91,7 @@ pub struct ScanResult {
     pub mod_summaries: Vec<ModSummary>,
     pub gamepass_notices: Vec<crate::pak_scanner::GamePassPakNotice>,
     pub schema_notices: Vec<crate::pak_scanner::DeprecatedSchemaNotice>,
+    pub patch_risk_notices: Vec<crate::pak_scanner::PatchRiskNotice>,
     pub usmap_diagnostics: Option<UsmapDiagnosticSummary>,
     pub is_gamepass: bool,
 }

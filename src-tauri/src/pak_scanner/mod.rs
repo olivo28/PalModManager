@@ -6,13 +6,14 @@ pub mod reader;
 pub mod uasset;
 pub mod conflicts;
 pub mod compatibility;
+pub mod patch_risk;
 
 // Re-export all types
 pub use types::{
     PakModSource, PakConflict, PakInternalItem, PakInspectionResult,
     UAssetExportItem, UAssetImportItem, UAssetSummaryInfo, UAssetSchemaProperty,
     UAssetSchemaResolvedInfo, UAssetInspectionDetails,
-    GamePassPakNotice, DeprecatedSchemaNotice,
+    GamePassPakNotice, DeprecatedSchemaNotice, PatchRiskNotice,
 };
 
 // Re-export reader & classifiers
@@ -35,3 +36,5 @@ pub use compatibility::{
     check_gamepass_pak_compatibility,
     check_mod_schema_compatibility,
 };
+
+pub use patch_risk::check_patch_risk_compatibility;

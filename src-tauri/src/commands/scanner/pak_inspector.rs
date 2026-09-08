@@ -205,11 +205,25 @@ pub fn inspect_uasset_deep_cmd(
     asset_internal_path: String,
     zip_path: Option<String>,
 ) -> Result<crate::pak_scanner::UAssetInspectionDetails, String> {
+    // 0. Direct loose file on disk if path exists
+    let direct_p = Path::new(&asset_internal_path);
+    if direct_p.is_file() && direct_p.extension().map_or(false, |e| e.eq_ignore_ascii_case("uasset")) {
+        return crate::pak_scanner::inspect_uasset_deep(direct_p, &asset_internal_path);
+    }
+
     // 1. Direct pak_path if provided
     if let Some(pp) = pak_path.as_deref() {
-        let p = Path::new(pp);
+        let clean_pp = pp.strip_prefix("[Pak] ").unwrap_or(pp).trim();
+        let p = Path::new(clean_pp);
         if p.exists() {
             return crate::pak_scanner::inspect_uasset_deep(p, &asset_internal_path);
+        }
+        if let Ok(data) = state.data.lock() {
+            let game_dir = Path::new(&data.settings.game_path);
+            let in_mods = game_dir.join("Pal").join("Content").join("Paks").join("~mods").join(clean_pp);
+            if in_mods.exists() {
+                return crate::pak_scanner::inspect_uasset_deep(&in_mods, &asset_internal_path);
+            }
         }
     }
 
@@ -218,6 +232,13 @@ pub fn inspect_uasset_deep_cmd(
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
         if let Some(target_mod) = profile_mods.into_iter().find(|m| m.id == mid) {
+            // Check if asset is a loose file inside the mod structure
+            if let Ok(full_path) = crate::commands::config_commands::get_full_mod_file_path(&target_mod, &asset_internal_path) {
+                if full_path.is_file() && full_path.extension().map_or(false, |e| e.eq_ignore_ascii_case("uasset")) {
+                    return crate::pak_scanner::inspect_uasset_deep(&full_path, &asset_internal_path);
+                }
+            }
+
             let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
 
             for pak in candidate_paks {
@@ -309,10 +330,19 @@ pub fn decode_uasset_texture_cmd(
 
     // 1. Direct pak_path if provided
     if let Some(pp) = pak_path.as_deref() {
-        let p = Path::new(pp);
+        let clean_pp = pp.strip_prefix("[Pak] ").unwrap_or(pp).trim();
+        let p = Path::new(clean_pp);
         if p.exists() {
             let names = crate::pak_scanner::list_pak_entries(p).unwrap_or_default();
             return crate::texture_decoder::extract_and_decode_texture(p, &asset_internal_path, &names);
+        }
+        if let Ok(data) = state.data.lock() {
+            let game_dir = Path::new(&data.settings.game_path);
+            let in_mods = game_dir.join("Pal").join("Content").join("Paks").join("~mods").join(clean_pp);
+            if in_mods.exists() {
+                let names = crate::pak_scanner::list_pak_entries(&in_mods).unwrap_or_default();
+                return crate::texture_decoder::extract_and_decode_texture(&in_mods, &asset_internal_path, &names);
+            }
         }
     }
 

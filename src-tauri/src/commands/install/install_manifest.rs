@@ -69,14 +69,18 @@ pub async fn install_mod_with_manifest(
         )
     };
 
+    let author_val = nexus_info.as_ref().map(|i| i.author.clone()).or_else(|| manifest.author.clone());
+    let summary_val = nexus_info.as_ref().map(|i| i.summary.clone()).or_else(|| manifest.summary.clone());
+    let picture_val = nexus_info.as_ref().map(|i| i.picture_url.clone()).or_else(|| manifest.picture_url.clone());
+
     let now_str = Utc::now().to_rfc3339();
     let mut final_mod = installer::execute_manifest(
         &manifest,
         &extracted,
         Path::new(&game_path),
-        nexus_info.as_ref().map(|i| i.author.clone()),
-        nexus_info.as_ref().map(|i| i.summary.clone()),
-        nexus_info.as_ref().map(|i| i.picture_url.clone()),
+        author_val.clone(),
+        summary_val.clone(),
+        picture_val.clone(),
         nexus_info.as_ref().map(|i| i.downloads),
         nexus_info.as_ref().map(|i| i.endorsements),
         &now_str,
@@ -120,6 +124,28 @@ pub async fn install_mod_with_manifest(
         if cache_dir.exists() {
             let _ = std::fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
         }
+    } else if author_val.is_some() || picture_val.is_some() || summary_val.is_some() {
+        let cache_dir = if final_mod.enabled {
+            PathBuf::from(&final_mod.game_path)
+        } else {
+            PathBuf::from(&final_mod.disabled_path)
+        };
+        let cache_json = serde_json::json!({
+            "modId": manifest.nexus_mod_id,
+            "name": final_mod.name,
+            "author": author_val.as_deref().unwrap_or_default(),
+            "summary": summary_val.as_deref().unwrap_or_default(),
+            "description": summary_val.as_deref().unwrap_or_default(),
+            "version": final_mod.version,
+            "downloads": 0,
+            "endorsements": 0,
+            "pictureUrl": picture_val.as_deref().unwrap_or_default(),
+            "createdAt": now_str,
+            "updatedAt": now_str,
+        });
+        if cache_dir.exists() {
+            let _ = std::fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
+        }
     }
 
     let _ = std::fs::remove_dir_all(&temp_dir);
@@ -131,9 +157,9 @@ pub async fn install_mod_with_manifest(
         let lib_entry = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, Some(&final_mod.source_zip), Some(&final_mod.version)).ok();
         let target_zip_name = lib_entry.map(|e| e.zip_name).unwrap_or_else(|| final_mod.source_zip.clone());
 
-        if let Some(ref info) = nexus_info {
-            let lib_dir = library::get_library_path(&program_path, &lib_folder_name);
-            if lib_dir.exists() {
+        let lib_dir = library::get_library_path(&program_path, &lib_folder_name);
+        if lib_dir.exists() {
+            if let Some(ref info) = nexus_info {
                 let cache_json = serde_json::json!({
                     "modId": manifest.nexus_mod_id,
                     "name": info.name,
@@ -146,6 +172,21 @@ pub async fn install_mod_with_manifest(
                     "pictureUrl": info.picture_url,
                     "createdAt": info.created_at,
                     "updatedAt": info.updated_at,
+                });
+                let _ = std::fs::write(lib_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
+            } else if author_val.is_some() || picture_val.is_some() || summary_val.is_some() {
+                let cache_json = serde_json::json!({
+                    "modId": manifest.nexus_mod_id,
+                    "name": final_mod.name,
+                    "author": author_val.as_deref().unwrap_or_default(),
+                    "summary": summary_val.as_deref().unwrap_or_default(),
+                    "description": summary_val.as_deref().unwrap_or_default(),
+                    "version": final_mod.version,
+                    "downloads": 0,
+                    "endorsements": 0,
+                    "pictureUrl": picture_val.as_deref().unwrap_or_default(),
+                    "createdAt": now_str,
+                    "updatedAt": now_str,
                 });
                 let _ = std::fs::write(lib_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
             }

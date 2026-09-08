@@ -178,6 +178,7 @@ pub struct SaveHealthReport {
     pub can_repair: bool,
     pub can_restore_backup: bool,
     pub world_options: Option<WorldOptionSettings>,
+    pub base_deterioration_rate: Option<f32>,
     pub player_roster: Vec<PlayerSaveInfo>,
     pub storage_breakdown: Option<SaveStorageBreakdown>,
     pub custom_meta: Option<WorldCustomMeta>,

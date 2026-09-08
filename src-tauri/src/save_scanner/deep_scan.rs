@@ -379,6 +379,7 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
                 can_repair: false,
                 can_restore_backup,
                 world_options: parse_world_options(world_path),
+                base_deterioration_rate: parse_world_options(world_path).and_then(|o| o.build_object_deterioration_damage_rate),
                 player_roster: parse_player_roster(world_path, host_player_uid.as_deref()),
                 storage_breakdown: Some(calculate_storage_breakdown(world_path, 0)),
                 custom_meta: Some(load_world_custom_meta(world_path)),
@@ -465,6 +466,7 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
     };
 
     let world_options = parse_world_options(world_path);
+    let base_deterioration_rate = world_options.as_ref().and_then(|o| o.build_object_deterioration_damage_rate);
     let player_roster = parse_player_roster(world_path, host_player_uid.as_deref());
     let storage_breakdown = Some(calculate_storage_breakdown(world_path, uncompressed_size));
     let custom_meta = Some(load_world_custom_meta(world_path));
@@ -495,6 +497,7 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
         can_repair: has_orphans && is_valid_gvas,
         can_restore_backup,
         world_options,
+        base_deterioration_rate,
         player_roster,
         storage_breakdown,
         custom_meta,

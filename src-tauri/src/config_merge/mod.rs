@@ -1,6 +1,13 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use serde_json::Value;
+
+pub mod json;
+pub mod kv;
+pub mod lua;
+
+pub use json::*;
+pub use kv::*;
+pub use lua::*;
 
 #[derive(Debug, Clone)]
 pub struct ConfigSnapshot {
@@ -8,8 +15,13 @@ pub struct ConfigSnapshot {
     pub entries: Vec<(PathBuf, String)>,
 }
 
-/// Walk the installed mod directory and collect all files matching config extensions,
-/// plus any custom config file specified by the user in mod_info.config_path.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ChangedKeyDetail {
+    pub key: String,
+    pub old_value: String,
+    pub new_value: String,
+}
+
 /// Resolves a raw mod or config path against the game root or dependency folders.
 pub fn resolve_path_in_game(game_path: &Path, raw_path: &str) -> PathBuf {
     let trimmed = raw_path.trim();
@@ -101,8 +113,10 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                             let fname_str = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
                             let path_str_lower = path.to_string_lossy().to_lowercase();
                             let fname_lower = fname_str.to_lowercase();
-                            // Skip metadata, dotfiles, manifests, and DO_NOT_EDIT templates from config snapshots
+
+                            // Skip metadata, dotfiles, manifests, entry point main.lua, and DO_NOT_EDIT templates from config snapshots
                             if fname_str.starts_with('.')
+                                || fname_str.eq_ignore_ascii_case("main.lua")
                                 || fname_str.eq_ignore_ascii_case("modinfo.pmm.json")
                                 || fname_str.eq_ignore_ascii_case("modinfo.json")
                                 || fname_str.eq_ignore_ascii_case("enabled.txt")
@@ -127,6 +141,10 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                                 true
                             };
 
+                            if !is_lua_config {
+                                continue;
+                            }
+
                             // Rule: .txt files only if config/setting/option, or inside shared, or explicitly configured
                             if ext_lower == "txt" {
                                 let is_txt_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
@@ -144,11 +162,15 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                                 }
                             }
 
-                            if is_lua_config {
-                                if let Ok(content) = fs::read_to_string(&path) {
-                                    if let Ok(rel) = path.strip_prefix(base) {
-                                        entries.push((rel.to_path_buf(), content));
-                                    }
+                            if let Ok(content) = fs::read_to_string(&path) {
+                                // Strictly reject procedural Lua scripts even if inside shared/
+                                if ext_lower == "lua" && !is_lua_config_content(&content) {
+                                    crate::logger::log(&format!("Config snapshot: Skipping executable Lua script {:?}", path));
+                                    continue;
+                                }
+
+                                if let Ok(rel) = path.strip_prefix(base) {
+                                    entries.push((rel.to_path_buf(), content));
                                 }
                             }
                         }
@@ -181,11 +203,15 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                 rel == path_obj || (fname.is_some() && rel.file_name() == fname)
             });
 
-            if !already_present {
+            let is_blacklisted = fname.map(|f| f.to_string_lossy().eq_ignore_ascii_case("main.lua")).unwrap_or(false);
+            if !already_present && !is_blacklisted {
                 if path_obj.is_absolute() && path_obj.is_file() {
                     if let Ok(content) = fs::read_to_string(path_obj) {
-                        let rel = fname.map(PathBuf::from).unwrap_or_else(|| path_obj.to_path_buf());
-                        entries.push((rel, content));
+                        let is_lua = path_obj.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("lua")).unwrap_or(false);
+                        if !is_lua || is_lua_config_content(&content) {
+                            let rel = fname.map(PathBuf::from).unwrap_or_else(|| path_obj.to_path_buf());
+                            entries.push((rel, content));
+                        }
                     }
                 } else if let Some(target_name) = fname {
                     fn find_file_rec(dir: &Path, target: &std::ffi::OsStr, base: &Path) -> Option<(PathBuf, String)> {
@@ -198,8 +224,11 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                                     }
                                 } else if p.is_file() && p.file_name() == Some(target) {
                                     if let Ok(content) = fs::read_to_string(&p) {
-                                        let rel = p.strip_prefix(base).map(|r| r.to_path_buf()).unwrap_or_else(|_| PathBuf::from(target));
-                                        return Some((rel, content));
+                                        let is_lua = p.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("lua")).unwrap_or(false);
+                                        if !is_lua || is_lua_config_content(&content) {
+                                            let rel = p.strip_prefix(base).map(|r| r.to_path_buf()).unwrap_or_else(|_| PathBuf::from(target));
+                                            return Some((rel, content));
+                                        }
                                     }
                                 }
                             }
@@ -327,327 +356,11 @@ pub fn merge_file_contents(old_content: &str, new_content: &str, ext: &str, igno
     }
 }
 
-/// Recursively merge two JSON values.
-/// For matching keys, keep old_val (user edits) unless ignored.
-/// If key only exists in new_val, keep it.
-/// If key is an object, recurse.
-fn merge_json_values(old_val: &Value, new_val: &Value, prefix: &str, ignored_keys: &[String]) -> Value {
-    match (old_val, new_val) {
-        (Value::Object(old_map), Value::Object(new_map)) => {
-            let mut merged_map = serde_json::Map::new();
-            for (key, new_sub_val) in new_map {
-                let full_key = if prefix.is_empty() { key.clone() } else { format!("{}.{}", prefix, key) };
-                if ignored_keys.contains(&full_key) {
-                    // Ignored key: discard user old value, use author new default value
-                    merged_map.insert(key.clone(), new_sub_val.clone());
-                    continue;
-                }
-                if let Some(old_sub_val) = old_map.get(key) {
-                    merged_map.insert(key.clone(), merge_json_values(old_sub_val, new_sub_val, &full_key, ignored_keys));
-                } else {
-                    merged_map.insert(key.clone(), new_sub_val.clone());
-                }
-            }
-            Value::Object(merged_map)
-        }
-        (old_val, _) => old_val.clone(),
-    }
-}
-
-fn merge_json(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
-    let old_clean = crate::commands::scanner::utils::strip_jsonc_comments(old);
-    let new_clean = crate::commands::scanner::utils::strip_jsonc_comments(new);
-    
-    let old_json: Value = serde_json::from_str(&old_clean).ok()?;
-    let new_json: Value = serde_json::from_str(&new_clean).ok()?;
-    
-    let merged_value = merge_json_values(&old_json, &new_json, "", ignored_keys);
-    serde_json::to_string_pretty(&merged_value).ok()
-}
-
-/// Merge key-value settings flatly (INI/CFG/TXT).
-/// Preserves comments and structure of the new file, replacing values of matching keys unless ignored.
-fn merge_kv(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
-    let mut old_map = std::collections::HashMap::new();
-    for line in old.lines() {
-        let line_trimmed = line.trim();
-        if line_trimmed.is_empty() || line_trimmed.starts_with(';') || line_trimmed.starts_with('#') || line_trimmed.starts_with("//") {
-            continue;
-        }
-        if let Some(pos) = line_trimmed.find('=') {
-            let k = line_trimmed[..pos].trim().to_string();
-            let v = line_trimmed[pos + 1..].trim().to_string();
-            if !k.is_empty() {
-                old_map.insert(k, v);
-            }
-        } else if let Some(pos) = line_trimmed.find(':') {
-            let k = line_trimmed[..pos].trim().to_string();
-            let v = line_trimmed[pos + 1..].trim().to_string();
-            if !k.is_empty() {
-                old_map.insert(k, v);
-            }
-        }
-    }
-    
-    let mut result_lines = Vec::new();
-    for line in new.lines() {
-        let line_trimmed = line.trim();
-        if line_trimmed.is_empty() || line_trimmed.starts_with(';') || line_trimmed.starts_with('#') || line_trimmed.starts_with("//") {
-            result_lines.push(line.to_string());
-            continue;
-        }
-        
-        let delimiter = if line_trimmed.contains('=') {
-            Some('=')
-        } else if line_trimmed.contains(':') {
-            Some(':')
-        } else {
-            None
-        };
-        
-        if let Some(delim) = delimiter {
-            if let Some(pos) = line.find(delim) {
-                let k = line[..pos].trim().to_string();
-                if ignored_keys.contains(&k) {
-                    // Ignored key: keep new author default line
-                    result_lines.push(line.to_string());
-                    continue;
-                }
-                if let Some(old_val) = old_map.get(&k) {
-                    let leading_ws = &line[..line.len() - line.trim_start().len()];
-                    result_lines.push(format!("{}{}{} {}", leading_ws, k, delim, old_val));
-                    continue;
-                }
-            }
-        }
-        result_lines.push(line.to_string());
-    }
-    
-    Some(result_lines.join("\r\n"))
-}
-
-/// Merge Lua table / config settings flatly.
-/// Preserves comments, indentation, and structure of the new file, replacing values of matching keys unless ignored.
-pub fn merge_lua(old: &str, new: &str, ignored_keys: &[String]) -> Option<String> {
-    let old_map = parse_lua_map(old);
-    let mut result_lines = Vec::new();
-
-    for line in new.lines() {
-        let line_trimmed = line.trim();
-        if line_trimmed.is_empty() || line_trimmed.starts_with("--") {
-            result_lines.push(line.to_string());
-            continue;
-        }
-
-        if let Some(pos) = line.find('=') {
-            let mut after_eq = line[pos + 1..].trim_start();
-            let mut comment = "";
-            if let Some(c_pos) = after_eq.find("--") {
-                comment = &after_eq[c_pos..];
-                after_eq = after_eq[..c_pos].trim_end();
-            }
-
-            // Skip table openings like `local Config = {`
-            if after_eq.ends_with('{') {
-                result_lines.push(line.to_string());
-                continue;
-            }
-
-            let raw_key = line[..pos].trim();
-            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
-
-            if ignored_keys.iter().any(|k| k == &key || k == raw_key || (raw_key.contains('.') && raw_key.ends_with(&format!(".{}", k)))) {
-                result_lines.push(line.to_string());
-                continue;
-            }
-
-            if let Some(old_val) = old_map.get(&key).or_else(|| old_map.get(raw_key)) {
-                let leading_ws = &line[..line.len() - line.trim_start().len()];
-                let has_comma = after_eq.ends_with(',');
-                let comma_str = if has_comma { "," } else { "" };
-                let comment_prefix = if !comment.is_empty() { " " } else { "" };
-
-                result_lines.push(format!("{}{} = {}{}{}{}", leading_ws, raw_key, old_val, comma_str, comment_prefix, comment));
-                continue;
-            }
-        }
-
-        result_lines.push(line.to_string());
-    }
-
-    Some(result_lines.join("\r\n"))
-}
-
-fn parse_lua_map(content: &str) -> std::collections::HashMap<String, String> {
-    let mut map = std::collections::HashMap::new();
-    for line in content.lines() {
-        let line_trimmed = line.trim();
-        if line_trimmed.is_empty() || line_trimmed.starts_with("--") {
-            continue;
-        }
-        if let Some(pos) = line_trimmed.find('=') {
-            let mut val = line_trimmed[pos + 1..].trim();
-            if let Some(comment_pos) = val.find("--") {
-                val = val[..comment_pos].trim();
-            }
-            if val.ends_with('{') {
-                // Table header
-                continue;
-            }
-            if val.ends_with(',') {
-                val = val[..val.len() - 1].trim();
-            }
-
-            let raw_key = line_trimmed[..pos].trim();
-            let key = raw_key.trim_matches(|c| c == '[' || c == ']' || c == '"' || c == '\'').trim().to_string();
-            if !key.is_empty() {
-                map.insert(key, val.to_string());
-            }
-        }
-    }
-    map
-}
-
-#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct ChangedKeyDetail {
-    pub key: String,
-    pub old_value: String,
-    pub new_value: String,
-}
-
 pub fn generate_config_diff(old_content: &str, new_content: &str, ext: &str) -> Option<(Vec<ChangedKeyDetail>, Vec<String>, Vec<String>)> {
-    let mut keys_user_changed = Vec::new();
-    let mut keys_added_by_author = Vec::new();
-    let mut keys_removed_by_author = Vec::new();
-
-    let ext_lower = ext.to_lowercase();
-    if ext_lower == "json" || ext_lower == "jsonc" {
-        let old_clean = crate::commands::scanner::utils::strip_jsonc_comments(old_content);
-        let new_clean = crate::commands::scanner::utils::strip_jsonc_comments(new_content);
-        
-        let old_json: Value = serde_json::from_str(&old_clean).ok()?;
-        let new_json: Value = serde_json::from_str(&new_clean).ok()?;
-        
-        diff_json_values(&old_json, &new_json, "", &mut keys_user_changed, &mut keys_added_by_author, &mut keys_removed_by_author);
-    } else if ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" {
-        let old_map = parse_kv_map(old_content);
-        let new_map = parse_kv_map(new_content);
-        
-        for (k, new_v) in &new_map {
-            if let Some(old_v) = old_map.get(k) {
-                if old_v != new_v {
-                    keys_user_changed.push(ChangedKeyDetail {
-                        key: k.clone(),
-                        old_value: old_v.clone(),
-                        new_value: new_v.clone(),
-                    });
-                }
-            } else {
-                keys_added_by_author.push(k.clone());
-            }
-        }
-        for (k, _) in &old_map {
-            if !new_map.contains_key(k) {
-                keys_removed_by_author.push(k.clone());
-            }
-        }
-    } else if ext_lower == "lua" {
-        let old_map = parse_lua_map(old_content);
-        let new_map = parse_lua_map(new_content);
-        
-        for (k, new_v) in &new_map {
-            if let Some(old_v) = old_map.get(k) {
-                if old_v != new_v {
-                    keys_user_changed.push(ChangedKeyDetail {
-                        key: k.clone(),
-                        old_value: old_v.clone(),
-                        new_value: new_v.clone(),
-                    });
-                }
-            } else {
-                keys_added_by_author.push(k.clone());
-            }
-        }
-        for (k, _) in &old_map {
-            if !new_map.contains_key(k) {
-                keys_removed_by_author.push(k.clone());
-            }
-        }
-    } else {
-        return None;
+    match ext.to_lowercase().as_str() {
+        "json" | "jsonc" => diff_json(old_content, new_content),
+        "ini" | "cfg" | "txt" => Some(diff_kv(old_content, new_content)),
+        "lua" => Some(diff_lua(old_content, new_content)),
+        _ => None,
     }
-
-    Some((keys_user_changed, keys_added_by_author, keys_removed_by_author))
-}
-
-fn diff_json_values(
-    old_val: &Value,
-    new_val: &Value,
-    prefix: &str,
-    keys_user_changed: &mut Vec<ChangedKeyDetail>,
-    keys_added_by_author: &mut Vec<String>,
-    keys_removed_by_author: &mut Vec<String>,
-) {
-    match (old_val, new_val) {
-        (Value::Object(old_map), Value::Object(new_map)) => {
-            for (k, new_sub) in new_map {
-                let full_k = if prefix.is_empty() { k.clone() } else { format!("{}.{}", prefix, k) };
-                if let Some(old_sub) = old_map.get(k) {
-                    diff_json_values(old_sub, new_sub, &full_k, keys_user_changed, keys_added_by_author, keys_removed_by_author);
-                } else {
-                    keys_added_by_author.push(full_k);
-                }
-            }
-            for (k, _) in old_map {
-                if !new_map.contains_key(k) {
-                    let full_k = if prefix.is_empty() { k.clone() } else { format!("{}.{}", prefix, k) };
-                    keys_removed_by_author.push(full_k);
-                }
-            }
-        }
-        (old_primitive, new_primitive) => {
-            if old_primitive != new_primitive {
-                let old_str = match old_primitive {
-                    Value::String(s) => s.clone(),
-                    other => other.to_string(),
-                };
-                let new_str = match new_primitive {
-                    Value::String(s) => s.clone(),
-                    other => other.to_string(),
-                };
-                keys_user_changed.push(ChangedKeyDetail {
-                    key: prefix.to_string(),
-                    old_value: old_str,
-                    new_value: new_str,
-                });
-            }
-        }
-    }
-}
-
-fn parse_kv_map(content: &str) -> std::collections::HashMap<String, String> {
-    let mut map = std::collections::HashMap::new();
-    for line in content.lines() {
-        let line_trimmed = line.trim();
-        if line_trimmed.is_empty() || line_trimmed.starts_with(';') || line_trimmed.starts_with('#') || line_trimmed.starts_with("//") {
-            continue;
-        }
-        let delimiter = if line_trimmed.contains('=') {
-            Some('=')
-        } else if line_trimmed.contains(':') {
-            Some(':')
-        } else {
-            None
-        };
-        if let Some(delim) = delimiter {
-            if let Some(pos) = line_trimmed.find(delim) {
-                let k = line_trimmed[..pos].trim().to_string();
-                let v = line_trimmed[pos + 1..].trim().to_string();
-                if !k.is_empty() {
-                    map.insert(k, v);
-                }
-            }
-        }
-    }
-    map
 }

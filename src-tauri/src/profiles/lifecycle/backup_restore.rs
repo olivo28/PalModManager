@@ -8,6 +8,51 @@ pub fn game_path_to_workshop_dir(game_path: &str) -> PathBuf {
     Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS")
 }
 
+const UE4SS_DUMP_FOLDERS: &[&str] = &[
+    "cxxheaderdump",
+    "uhtheaderdump",
+    "ue4ss_sdk",
+    "ue4ss_sdk_backends",
+    "liveview",
+    "watches",
+    "mods",
+];
+
+fn is_ue4ss_dump_or_temp_file(path: &Path) -> bool {
+    if let Some(ext) = path.extension().and_then(|x| x.to_str()) {
+        let ext_lower = ext.to_lowercase();
+        if ext_lower == "jmap" || ext_lower == "usmap" || ext_lower == "log" || ext_lower == "dmp" {
+            return true;
+        }
+    }
+    false
+}
+
+pub fn copy_ue4ss_runtime_files(src: &Path, dst: &Path) {
+    if !src.exists() { return; }
+    let _ = fs::create_dir_all(dst);
+    if let Ok(entries) = fs::read_dir(src) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let name = entry.file_name();
+            let lower_name = name.to_string_lossy().to_lowercase();
+            if path.is_dir() {
+                if UE4SS_DUMP_FOLDERS.contains(&lower_name.as_str()) {
+                    continue;
+                }
+                let target = dst.join(&name);
+                let _ = copy_dir_all(&path, &target);
+            } else {
+                if is_ue4ss_dump_or_temp_file(&path) {
+                    continue;
+                }
+                let target = dst.join(&name);
+                let _ = fs::copy(&path, &target);
+            }
+        }
+    }
+}
+
 pub fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile: &Profile) {
     if game_path.is_empty() { return; }
     let win64 = crate::dependency_checker::get_binaries_dir(Path::new(game_path));
@@ -100,7 +145,7 @@ pub fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile
                 let _ = fs::remove_dir_all(&ue4ss_backup);
             }
             if ue4ss_game.exists() {
-                let _ = copy_dir_all(&ue4ss_game, &ue4ss_backup);
+                copy_ue4ss_runtime_files(&ue4ss_game, &ue4ss_backup);
             }
 
             let dwmapi_backup = profile_dir.join("dwmapi.dll");
@@ -239,23 +284,7 @@ pub fn restore_profile_files_to_game(
     let settings_ini = mods_root.join("PalModSettings.ini");
     let managed_mods = mods_root.join("ManagedMods");
 
-    // 1. CLEANUP ALL EXISTING FILES ACROSS BOTH STANDARD AND WORKSHOP LOCATIONS:
-    if dwmapi_game.exists() { let _ = fs::remove_file(&dwmapi_game); }
-    if ue4ss_std_dir.exists() { let _ = fs::remove_dir_all(&ue4ss_std_dir); }
-    if win64_mods_dir.exists() { let _ = fs::remove_dir_all(&win64_mods_dir); }
-    if ws_folder.exists() { let _ = fs::remove_dir_all(&ws_folder); }
-    
-    let native_mods_root = Path::new(game_path).join("Mods").join("NativeMods");
-    if native_mods_root.exists() {
-        let _ = fs::remove_dir_all(&native_mods_root);
-    }
-
-    if managed_mods.exists() { let _ = fs::remove_dir_all(&managed_mods); }
-    if settings_ini.exists() { let _ = fs::remove_file(&settings_ini); }
-    if paks_game.exists() { let _ = fs::remove_dir_all(&paks_game); }
-    if logic_game.exists() { let _ = fs::remove_dir_all(&logic_game); }
-
-    // 2. RESTORE DEPENDENCIES AND MODS FOR THE TARGET PROFILE:
+    // 1. DETERMINE TARGET DEPENDENCY MODE FIRST:
     let target_mode = match target_profile.dependency_mode {
         DependencyMode::None => {
             if target_profile.ue4ss_enabled {
@@ -271,6 +300,85 @@ pub fn restore_profile_files_to_game(
         ref other => other.clone(),
     };
 
+    let keep_standard_ue4ss = target_mode == DependencyMode::Standard && ue4ss_std_dir.exists();
+    let keep_workshop_ue4ss = target_mode == DependencyMode::Workshop && ws_folder.exists();
+
+    // 2. CLEANUP EXISTING FILES ACROSS LOCATIONS:
+    if !keep_standard_ue4ss {
+        if dwmapi_game.exists() { let _ = fs::remove_file(&dwmapi_game); }
+        if ue4ss_std_dir.exists() { let _ = fs::remove_dir_all(&ue4ss_std_dir); }
+    } else {
+        // In-place switch: preserve UE4SS core engine and dumps, clean out only profile-managed mods
+        let target_std_mods_dir = ue4ss_std_dir.join("Mods");
+        if target_std_mods_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&target_std_mods_dir) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    let lower = name.to_lowercase();
+                    if lower == "shared" || lower == "bpmodloadermod" || lower == "linetracemod" || lower == "mods.txt" || lower == "ue4ss_signatures" {
+                        continue;
+                    }
+                    if lower == "palschema" {
+                        let ps_mods = entry.path().join("mods");
+                        if ps_mods.exists() {
+                            let _ = fs::remove_dir_all(&ps_mods);
+                        }
+                        continue;
+                    }
+                    let p = entry.path();
+                    if p.is_dir() {
+                        let _ = fs::remove_dir_all(&p);
+                    } else {
+                        let _ = fs::remove_file(&p);
+                    }
+                }
+            }
+        }
+    }
+
+    if win64_mods_dir.exists() { let _ = fs::remove_dir_all(&win64_mods_dir); }
+
+    if !keep_workshop_ue4ss {
+        if ws_folder.exists() { let _ = fs::remove_dir_all(&ws_folder); }
+        let native_mods_root = Path::new(game_path).join("Mods").join("NativeMods");
+        if native_mods_root.exists() {
+            let _ = fs::remove_dir_all(&native_mods_root);
+        }
+    } else {
+        // In-place switch: clean out only profile-managed workshop mods
+        let target_ws_mods_dir = ws_folder.join("Mods");
+        if target_ws_mods_dir.exists() {
+            if let Ok(entries) = fs::read_dir(&target_ws_mods_dir) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name().to_string_lossy().to_string();
+                    let lower = name.to_lowercase();
+                    if lower == "shared" || lower == "bpmodloadermod" || lower == "linetracemod" || lower == "mods.txt" || lower == "ue4ss_signatures" {
+                        continue;
+                    }
+                    if lower == "palschema" {
+                        let ps_mods = entry.path().join("mods");
+                        if ps_mods.exists() {
+                            let _ = fs::remove_dir_all(&ps_mods);
+                        }
+                        continue;
+                    }
+                    let p = entry.path();
+                    if p.is_dir() {
+                        let _ = fs::remove_dir_all(&p);
+                    } else {
+                        let _ = fs::remove_file(&p);
+                    }
+                }
+            }
+        }
+    }
+
+    if managed_mods.exists() { let _ = fs::remove_dir_all(&managed_mods); }
+    if settings_ini.exists() { let _ = fs::remove_file(&settings_ini); }
+    if paks_game.exists() { let _ = fs::remove_dir_all(&paks_game); }
+    if logic_game.exists() { let _ = fs::remove_dir_all(&logic_game); }
+
+    // 3. RESTORE DEPENDENCIES AND MODS FOR THE TARGET PROFILE:
     match target_mode {
         DependencyMode::Workshop => {
             let settings_backup = profile_dir.join("PalModSettings.ini");
@@ -350,13 +458,17 @@ pub fn restore_profile_files_to_game(
         DependencyMode::Standard => {
             let ue4ss_backup = profile_dir.join("ue4ss");
             let dwmapi_backup = profile_dir.join("dwmapi.dll");
-            if ue4ss_backup.exists() && fs::read_dir(&ue4ss_backup).map(|mut d| d.next().is_some()).unwrap_or(false) {
-                let _ = copy_dir_all(&ue4ss_backup, &ue4ss_std_dir);
-                if dwmapi_backup.exists() {
-                    let _ = fs::copy(&dwmapi_backup, &dwmapi_game);
+            if !keep_standard_ue4ss {
+                if ue4ss_backup.exists() && fs::read_dir(&ue4ss_backup).map(|mut d| d.next().is_some()).unwrap_or(false) {
+                    copy_ue4ss_runtime_files(&ue4ss_backup, &ue4ss_std_dir);
+                    if dwmapi_backup.exists() {
+                        let _ = fs::copy(&dwmapi_backup, &dwmapi_game);
+                    }
+                } else {
+                    let _ = sync_profile_dependencies(game_path, program_path, target_profile);
                 }
-            } else {
-                let _ = sync_profile_dependencies(game_path, program_path, target_profile);
+            } else if dwmapi_backup.exists() {
+                let _ = fs::copy(&dwmapi_backup, &dwmapi_game);
             }
 
             let target_std_mods_dir = ue4ss_std_dir.join("Mods");

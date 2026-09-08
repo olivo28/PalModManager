@@ -154,10 +154,16 @@ pub fn update_mod(
     )?;
 
     // Clean up old paths that differ from newly installed paths
-    if !old_game_path.is_empty() && old_game_path != new_mod_info.game_path {
+    if !old_game_path.is_empty() 
+        && old_game_path != new_mod_info.game_path 
+        && !new_mod_info.extra_files.contains(&old_game_path) 
+    {
         delete_path_and_sidecar(&old_game_path);
     }
-    if !old_disabled_path.is_empty() && old_disabled_path != new_mod_info.disabled_path {
+    if !old_disabled_path.is_empty() 
+        && old_disabled_path != new_mod_info.disabled_path 
+        && !new_mod_info.extra_files.contains(&old_disabled_path) 
+    {
         delete_path_and_sidecar(&old_disabled_path);
     }
     for extra in &old_extras {

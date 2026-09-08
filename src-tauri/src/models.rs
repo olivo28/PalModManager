@@ -426,6 +426,12 @@ pub struct InstallManifest {
     pub has_ue4ss: bool,
     pub has_palschema: bool,
     pub version: String,
+    #[serde(default)]
+    pub author: Option<String>,
+    #[serde(default)]
+    pub summary: Option<String>,
+    #[serde(default)]
+    pub picture_url: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -435,6 +441,7 @@ pub enum WorkshopInstallType {
     UE4SSMod,
     LuaMod,
     PalSchemaMod,
+    PakMod,
     Unknown(String),
 }
 

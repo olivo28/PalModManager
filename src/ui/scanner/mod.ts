@@ -65,6 +65,16 @@ export interface DeprecatedSchemaNotice {
   message: string;
 }
 
+export interface PatchRiskNotice {
+  modId: string;
+  modName: string;
+  pakFilename: string;
+  assetPath: string;
+  assetCategory: string;
+  riskLevel: 'Critical' | 'High' | string;
+  reason: string;
+}
+
 export interface UsmapHookDiagnostic {
   modId: string;
   modName: string;
@@ -102,6 +112,7 @@ export interface ScanResult {
   modSummaries: ModSummary[];
   gamepassNotices?: GamePassPakNotice[];
   schemaNotices?: DeprecatedSchemaNotice[];
+  patchRiskNotices?: PatchRiskNotice[];
   usmapDiagnostics?: UsmapDiagnosticSummary;
   isGamepass?: boolean;
 }

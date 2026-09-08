@@ -190,3 +190,29 @@ fn test_pal_insight_2_0_2_config_root_routing() {
         config_route.dest_path
     );
 }
+
+#[test]
+fn test_txt_data_files_preserved_and_readmes_skipped() {
+    let files = vec![
+        "MyPakMod.pak".to_string(),
+        "README.txt".to_string(),
+        "license.txt".to_string(),
+        "data/pal_coords.txt".to_string(),
+        "items_list.txt".to_string(),
+    ];
+    let game_path = PathBuf::from("C:/FakeGamePath");
+    let manifest = build_manifest_from_files(&files, "MyPakMod.zip", &game_path, None, None, None)
+        .expect("Should generate manifest");
+
+    // Pak file must be present
+    assert!(manifest.routes.iter().any(|r| r.zip_path.ends_with("MyPakMod.pak")));
+
+    // README.txt and license.txt in root must be dropped to prevent collisions
+    assert!(!manifest.routes.iter().any(|r| r.zip_path == "README.txt"));
+    assert!(!manifest.routes.iter().any(|r| r.zip_path == "license.txt"));
+
+    // data/pal_coords.txt and items_list.txt are data files and must be preserved!
+    assert!(manifest.routes.iter().any(|r| r.zip_path.ends_with("data/pal_coords.txt")));
+    assert!(manifest.routes.iter().any(|r| r.zip_path == "items_list.txt"));
+}
+

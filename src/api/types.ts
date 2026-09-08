@@ -70,6 +70,8 @@ export interface ZipAnalysis {
     downloads: number;
     endorsements: number;
     pictureUrl: string;
+    modId?: number | string;
+    isWorkshop?: boolean;
   } | null;
   modinfo?: {
     name?: string;
@@ -378,6 +380,7 @@ export interface SaveHealthReport {
   playerRoster?: PlayerSaveInfo[];
   storageBreakdown?: SaveStorageBreakdown | null;
   customMeta?: WorldCustomMeta | null;
+  baseDeteriorationRate?: number | null;
 }
 
 export interface SaveRepairResult {

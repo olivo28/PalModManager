@@ -74,6 +74,9 @@ export function setupEditorKeybindings(): void {
 
         const res = await restoreModBackup(state.editorModId, backupPath);
         if (res.success) {
+          const { _fileBufferCache } = await import('./viewer');
+          _fileBufferCache.delete(targetPath);
+          _fileBufferCache.delete(backupPath);
           showToast(t('editor.toast_restored') || 'Backup restored successfully', 'success');
           await refreshEditorFileTree(state.editorModId);
           await loadFileContent(targetPath);

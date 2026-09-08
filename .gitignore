@@ -11,8 +11,10 @@ src-tauri/.env
 !src-tauri/.env.example
 
 # --- Rust & Tauri ---
+target/
+target-*/
 src-tauri/target/
-src-tauri/target-test/
+src-tauri/target-*/
 src-tauri/Cargo.lock
 src-tauri/target-desktop/
 src-tauri/.tauri/

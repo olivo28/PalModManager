@@ -209,6 +209,8 @@ export interface DependencyStatus {
   palschema_version: string | null;
   palschema_latest_version: string | null;
   palschema_needs_update: boolean;
+  /** How PalSchema was installed: "Standard", "Workshop", or "NotFound" */
+  palschema_install_mode?: string;
   game_platform: string;
   has_dll_conflict?: boolean;
   conflicting_dlls?: string[];
@@ -247,6 +249,9 @@ export interface InstallManifest {
   hasUe4ss: boolean;
   hasPalschema: boolean;
   version: string;
+  author?: string;
+  summary?: string;
+  pictureUrl?: string;
 }
 
 export interface ChangedKeyDetail {

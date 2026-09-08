@@ -23,7 +23,8 @@ export function showGlobalContextMenu(x: number, y: number): void {
   const profileHasUe4ss = activeProfile?.ue4ss_enabled === true;
   const hasUe4ss = deps?.ue4ss_installed && profileHasUe4ss;
   const hasPalSchema = deps?.palschema_installed && profileHasUe4ss;
-  const isWorkshop = deps?.ue4ss_install_mode === 'Workshop';
+  const isUe4ssWorkshop = deps?.ue4ss_install_mode === 'Workshop';
+  const isPalSchemaWorkshop = deps?.palschema_install_mode === 'Workshop' || deps?.palschema_version === 'Workshop';
 
   const ue4ssInstalled = deps?.ue4ss_installed === true;
   const palschemaInstalled = deps?.palschema_installed === true;
@@ -58,7 +59,7 @@ export function showGlobalContextMenu(x: number, y: number): void {
       ${escapeHtml(t('context.check_deps_updates'))}
     </button>
     ${ue4ssInstalled
-      ? isWorkshop
+      ? isUe4ssWorkshop
         ? `<button type="button" class="context-menu-item disabled" disabled title="${workshopTooltip}">
             <span class="ctx-icon" style="opacity:0.4">✕</span>
             <span style="opacity:0.4">${escapeHtml(t('context.uninstall_ue4ss'))}</span>
@@ -74,7 +75,7 @@ export function showGlobalContextMenu(x: number, y: number): void {
          </button>`
     }
     ${palschemaInstalled
-      ? isWorkshop
+      ? isPalSchemaWorkshop
         ? `<button type="button" class="context-menu-item disabled" disabled title="${workshopTooltip}">
             <span class="ctx-icon" style="opacity:0.4">✕</span>
             <span style="opacity:0.4">${escapeHtml(t('context.uninstall_palschema'))}</span>
@@ -161,7 +162,7 @@ export function showGlobalContextMenu(x: number, y: number): void {
               }
 
               const ue4ssUp = fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop';
-              const psUp = fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_version !== 'Workshop';
+              const psUp = fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_install_mode !== 'Workshop' && fullDeps.palschema_version !== 'Workshop';
 
               if (ue4ssUp || psUp) {
                 const updatesList: string[] = [];

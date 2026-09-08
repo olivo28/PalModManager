@@ -39,6 +39,8 @@ pub async fn get_discovery_mods(
     let token = crate::nexus_oauth::ensure_valid_nexus_token(&state).await;
     let client = get_client(token.as_deref());
 
+    crate::logger::log(&format!("get_discovery_mods: query={:?}, sort={}, page={}, pageSize={}", query, sort, current_page, limit));
+
     // 1. Try GraphQL v2 query
     let gql_sort = match sort.as_str() {
         "date_published" | "newest" | "latest_added" => "[{ createdAt: { direction: DESC } }]",
@@ -60,7 +62,8 @@ pub async fn get_discovery_mods(
     if let Some(ref q) = query {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
-            filter_obj["nameStemmed"] = serde_json::json!([{ "value": trimmed }]);
+            let clean_query = trimmed.split_whitespace().collect::<Vec<_>>().join(" ");
+            filter_obj["name"] = serde_json::json!([{ "value": clean_query, "op": "WILDCARD" }]);
         }
     }
 
@@ -295,6 +298,7 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
                                     }
                                 }
 
+                                crate::logger::log(&format!("get_discovery_mods: returning {} mods (totalCount: {})", items.len(), total));
                                 return Ok(DiscoveryResponse {
                                     mods: items,
                                     total_count: total,
@@ -379,10 +383,12 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
     if let Some(ref q) = query {
         let q_lower = q.trim().to_lowercase();
         if !q_lower.is_empty() {
+            let tokens: Vec<&str> = q_lower.split_whitespace().collect();
             filtered.retain(|m| {
-                m.name.to_lowercase().contains(&q_lower)
-                    || m.summary.as_deref().unwrap_or("").to_lowercase().contains(&q_lower)
-                    || m.author.as_deref().unwrap_or("").to_lowercase().contains(&q_lower)
+                let name = m.name.to_lowercase();
+                let summary = m.summary.as_deref().unwrap_or("").to_lowercase();
+                let author = m.author.as_deref().unwrap_or("").to_lowercase();
+                tokens.iter().all(|t| name.contains(t) || summary.contains(t) || author.contains(t))
             });
         }
     }

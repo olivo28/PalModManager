@@ -64,6 +64,12 @@ export function formatVersionDisplay(rawVer: string | null | undefined, depType:
   }
 
   if (v.toLowerCase() === 'workshop') return 'Steam Workshop';
+  const match = v.match(/^([^(]+?)\s*\(([^)]+)\)$/);
+  if (match) {
+    const tag = match[1].trim().replace(/^v/i, '');
+    const date = match[2].trim();
+    return `v${tag} (${date})`;
+  }
   if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(v)) return v;
   if (/^\d+\.\d+(\.\d+)?/.test(v)) return `v${v}`;
   return v;
@@ -114,7 +120,7 @@ export async function refreshVaultView(depType: 'ue4ss' | 'palschema'): Promise<
   const needsUpdate = isUe4ss ? deps?.ue4ss_needs_update : deps?.palschema_needs_update;
   const isWorkshop = isUe4ss
     ? deps?.ue4ss_install_mode === 'Workshop'
-    : deps?.palschema_version === 'Workshop';
+    : (deps?.palschema_install_mode === 'Workshop' || deps?.palschema_version === 'Workshop');
 
   currentVerEl.textContent = isInstalled ? (formatVersionDisplay(installedVer, depType) || t('dependencies.installed')) : t('dependencies.not_installed');
   

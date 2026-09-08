@@ -93,7 +93,7 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
                 total_raw_schemas: 0,
                 total_domain_schemas: 0,
                 has_enums: false,
-                version: "0.6.6".to_string(),
+                version: "0.6.7".to_string(),
                 author: "Okaetsu".to_string(),
                 source_location: "None".to_string(),
                 schemas_dir: String::new(),
@@ -133,27 +133,77 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
         has_enums = dir.join("enums.schema.json").is_file();
     }
 
-    let mut version = "0.6.6".to_string();
+    let mut version = String::new();
     let mut author = "Okaetsu".to_string();
 
-    // Read manifest.json if present
-    let schemas_base = if !program_path.is_empty() {
-        Path::new(program_path).join("resources").join("schemas")
-    } else {
-        PathBuf::from("resources").join("schemas")
-    };
-    let manifest_path = schemas_base.join("manifest.json");
-    if manifest_path.is_file() {
-        if let Ok(content) = fs::read_to_string(&manifest_path) {
-            if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                if let Some(v) = val.get("latest_palschema_version").and_then(|v| v.as_str()) {
-                    version = v.to_string();
+    // 1. Check live game installation for palschema.version or Info.json
+    if !game_path.is_empty() {
+        let p = Path::new(game_path);
+        let candidates = [
+            p.join("Pal").join("Binaries").join("Win64").join("ue4ss").join("Mods").join("PalSchema"),
+            p.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema"),
+            p.join("Mods").join("ManagedMods").join("PalSchema"),
+        ];
+        for c in candidates {
+            let ver_file = c.join("palschema.version");
+            if ver_file.is_file() {
+                if let Ok(s) = fs::read_to_string(&ver_file) {
+                    let trimmed = s.trim().to_string();
+                    if !trimmed.is_empty() {
+                        version = trimmed;
+                        break;
+                    }
                 }
-                if let Some(a) = val.get("author").and_then(|a| a.as_str()) {
-                    author = a.to_string();
+            }
+            let info_file = c.join("Info.json");
+            if info_file.is_file() {
+                if let Ok(s) = fs::read_to_string(&info_file) {
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&s) {
+                        if let Some(v) = val.get("version").and_then(|x| x.as_str()) {
+                            if !v.is_empty() {
+                                version = v.to_string();
+                                break;
+                            }
+                        }
+                    }
                 }
             }
         }
+    }
+
+    // 2. Read schemas/manifest.json if present
+    if version.is_empty() {
+        let schemas_base = if !program_path.is_empty() {
+            Path::new(program_path).join("resources").join("schemas")
+        } else {
+            PathBuf::from("resources").join("schemas")
+        };
+        let manifest_path = schemas_base.join("manifest.json");
+        if manifest_path.is_file() {
+            if let Ok(content) = fs::read_to_string(&manifest_path) {
+                if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                    if let Some(v) = val.get("latest_palschema_version").and_then(|v| v.as_str()) {
+                        version = v.to_string();
+                    }
+                    if let Some(a) = val.get("author").and_then(|a| a.as_str()) {
+                        author = a.to_string();
+                    }
+                }
+            }
+        }
+    }
+
+    // 3. Fallback to Master Resource Manifest or default latest
+    if version.is_empty() {
+        if let Some(master) = super::master_manifest::get_or_load_master_manifest(program_path) {
+            if let Some(v) = super::master_manifest::resolve_palschema_version(&master, None) {
+                version = v;
+            }
+        }
+    }
+
+    if version.is_empty() {
+        version = "0.6.7".to_string();
     }
 
     let source = if dir.to_string_lossy().contains("Palworld") {

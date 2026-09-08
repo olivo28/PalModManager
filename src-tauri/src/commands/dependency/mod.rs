@@ -4,6 +4,7 @@
 pub mod status;
 pub mod safety;
 pub mod install;
+pub mod uninstall;
 pub mod vault;
 pub mod storage;
 
@@ -25,9 +26,11 @@ pub use safety::{
 // Installation & Uninstallation
 pub use install::{
     install_ue4ss, install_palschema,
-    uninstall_ue4ss, uninstall_palschema,
     apply_ue4ss_zip_bytes, apply_palschema_zip_bytes,
     copy_dir_all, find_extracted_root,
+};
+pub use uninstall::{
+    uninstall_ue4ss, uninstall_palschema,
 };
 
 // Dependency Vault

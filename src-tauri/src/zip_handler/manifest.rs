@@ -15,6 +15,9 @@ pub fn build_manifest_from_files(
 
     let mut custom_routes_map = std::collections::HashMap::new();
     if let Some(ref modinfo) = modinfo_data {
+        if let Some(ws_manifest) = super::workshop_rule::try_build_workshop_manifest(modinfo, files, filename, game_path, custom_display_name.as_deref()) {
+            return Ok(ws_manifest);
+        }
         if let Some(routes_arr) = modinfo.get("routes").and_then(|r| r.as_array()) {
             for route_val in routes_arr {
                 if let (Some(zip_path), Some(route_type_str)) = (
@@ -489,7 +492,38 @@ pub fn build_manifest_from_files(
 
         let is_doc_or_image = {
             let fl = rel_lower.as_str();
-            (fl.ends_with(".txt") && !fl.ends_with("enabled.txt") && !fl.ends_with("mod.txt") && !fl.ends_with("info.txt"))
+            let is_in_subfolder = relative_path.contains('/') || relative_path.contains('\\');
+            let is_doc_txt = fl.ends_with(".txt") && {
+                let fname = std::path::Path::new(&relative_path)
+                    .file_name()
+                    .and_then(|s| s.to_str())
+                    .unwrap_or("")
+                    .to_lowercase();
+                // Never skip standard mod descriptors or active configs
+                if fname == "enabled.txt" || fname == "mod.txt" || fname == "info.txt" {
+                    false
+                } else if is_in_subfolder {
+                    // Inside subfolders (e.g. data/, scripts/, config/), .txt files are mod assets/data
+                    false
+                } else {
+                    // In the root level, only skip files that actually match documentation / readme naming
+                    fname.contains("readme")
+                        || fname.contains("license")
+                        || fname.contains("changelog")
+                        || fname.contains("install")
+                        || fname.contains("instruction")
+                        || fname.contains("credit")
+                        || fname.contains("leeme")
+                        || fname.contains("guia")
+                        || fname.contains("guide")
+                        || fname.contains("help")
+                        || fname.contains("notice")
+                        || fname.contains("note")
+                        || fname.contains("nota")
+                }
+            };
+
+            is_doc_txt
                 || fl.ends_with(".md")
                 || fl.ends_with(".url")
                 || fl.ends_with(".png")
@@ -575,6 +609,9 @@ pub fn build_manifest_from_files(
         has_ue4ss,
         has_palschema,
         version,
+        author: None,
+        summary: None,
+        picture_url: None,
     })
 }
 

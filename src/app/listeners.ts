@@ -252,7 +252,7 @@ export function setupEventListeners(): void {
     let updatePromptMessage = '';
     const fullDeps = await checkDependenciesFull().catch(() => deps);
     const ue4ssNeedsUpdate = fullDeps.ue4ss_installed && fullDeps.ue4ss_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop';
-    const palschemaNeedsUpdate = fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_version !== 'Workshop';
+    const palschemaNeedsUpdate = fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_install_mode !== 'Workshop' && fullDeps.palschema_version !== 'Workshop';
 
     if (ue4ssNeedsUpdate && palschemaNeedsUpdate) {
       updatePromptMessage = t('launch.warn_update_both', {

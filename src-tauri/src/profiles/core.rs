@@ -351,7 +351,8 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
                 continue;
             }
 
-            let is_in_game = !m.game_path.is_empty() && Path::new(&m.game_path).exists();
+            let is_in_game = (!m.game_path.is_empty() && Path::new(&m.game_path).exists())
+                || (m.mod_type == crate::models::ModType::Hybrid && m.extra_files.iter().any(|f| !f.is_empty() && Path::new(f).exists()));
             let is_disabled = !m.disabled_path.is_empty()
                 && m.disabled_path.replace("\\", "/").contains(&format!("/profiles/{}/disabled_mods/", profile.id))
                 && Path::new(&m.disabled_path).exists();

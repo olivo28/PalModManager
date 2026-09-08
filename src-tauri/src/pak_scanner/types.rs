@@ -121,3 +121,15 @@ pub struct DeprecatedSchemaNotice {
     pub struct_name: String,
     pub message: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct PatchRiskNotice {
+    pub mod_id: String,
+    pub mod_name: String,
+    pub pak_filename: String,
+    pub asset_path: String,
+    pub asset_category: String,
+    pub risk_level: String,
+    pub reason: String,
+}

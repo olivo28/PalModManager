@@ -68,12 +68,14 @@ pub async fn get_editor_completions(
         }).unwrap_or(false);
 
     if ext == "lua" {
+        let lua_signatures = crate::usmap::get_or_load_lua_signatures(&game_path, &program_path);
         lua::populate_lua_completions(
             &query,
             &line_prefix,
             schema.as_ref(),
             sdk_index.as_ref(),
             dt_index.as_ref(),
+            lua_signatures.as_ref(),
             &mut completions,
             &mut seen,
         );

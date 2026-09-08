@@ -129,6 +129,65 @@ export function buildSchemaNoticesHtml(res: ScanResult): string {
   `;
 }
 
+export function buildPatchRiskNoticesHtml(res: ScanResult): string {
+  const riskNotices = res.patchRiskNotices || [];
+  if (riskNotices.length === 0) return '';
+
+  const criticalCount = riskNotices.filter(n => n.riskLevel === 'Critical').length;
+
+  return `
+    <div class="scanner-card-section" style="border-color: rgba(239, 68, 68, 0.45); background: var(--bg-card); margin-bottom: 20px;">
+      <div class="scanner-card-header" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+        <span style="color: #ef4444; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px;">
+          <span>🚨</span> <span>${escapeHtml(t('scanner.patch_risk_title', { count: riskNotices.length }) || `Core Game Overwrites / Update Crash Risk (${riskNotices.length})`)}</span>
+        </span>
+        <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">
+          ${criticalCount > 0 ? `<span style="color: #ef4444; font-weight: 700;">⚠ ${criticalCount} Critical</span> · ` : ''}${escapeHtml(t('scanner.patch_risk_version_tag') || 'Palworld Update Compatibility')}
+        </span>
+      </div>
+      <div class="scanner-card-body" style="gap: 10px; padding: 14px 16px;">
+        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+          ${escapeHtml(t('scanner.patch_risk_desc') || 'The following mods overwrite core vanilla game Blueprints or UI widgets. When Palworld updates, older versions of these files cause fatal crashes (CTD) on world load.')}
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+          ${riskNotices.map(n => {
+            const isCrit = n.riskLevel === 'Critical';
+            const borderCol = isCrit ? 'rgba(239, 68, 68, 0.5)' : 'rgba(245, 158, 11, 0.5)';
+            const bgBadge = isCrit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)';
+            const textBadge = isCrit ? '#ef4444' : '#f59e0b';
+
+            return `
+              <div class="scanner-conflict-item" style="border-left: 3px solid ${textBadge}; background: var(--bg-secondary); padding: 10px 14px; border-radius: var(--radius); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    <span style="font-weight: 700; color: var(--text-primary); font-size: 12px;">${escapeHtml(n.modName)}</span>
+                    <span style="font-size: 10px; color: var(--text-muted); font-family: monospace;">(${escapeHtml(n.pakFilename)})</span>
+                    <span style="font-size: 9px; padding: 2px 7px; background: ${bgBadge}; color: ${textBadge}; border: 1px solid ${borderCol}; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+                      ${escapeHtml(n.riskLevel)}
+                    </span>
+                    <span style="font-size: 9px; padding: 2px 7px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; font-weight: 600;">
+                      ${escapeHtml(n.assetCategory)}
+                    </span>
+                  </div>
+                  <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: 10px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px;">
+                    <span>🚫</span> <span>${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}</span>
+                  </button>
+                </div>
+                <div style="font-size: 10.5px; color: var(--text-secondary); font-family: monospace; margin-top: 5px;">
+                  <span>📄</span> <span>${escapeHtml(n.assetPath)}</span>
+                </div>
+                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                  ${escapeHtml(n.reason)}
+                </div>
+              </div>
+            `;
+          }).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
 export function buildFrameworkMissingHtml(): string {
   const state = getState();
   const allMods: ModInfo[] = state.allMods || [];

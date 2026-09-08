@@ -10,6 +10,7 @@ import {
   buildInfoBannerHtml,
   buildGamepassNoticeHtml,
   buildSchemaNoticesHtml,
+  buildPatchRiskNoticesHtml,
   buildFrameworkMissingHtml,
   buildWarningsHtml,
 } from './cards';
@@ -86,6 +87,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
   const gamepassNoticeHtml = buildGamepassNoticeHtml(res);
   const frameworkMissingHtml = buildFrameworkMissingHtml();
   const schemaNoticesHtml = buildSchemaNoticesHtml(res);
+  const patchRiskNoticesHtml = buildPatchRiskNoticesHtml(res);
 
   container.innerHTML = `
     ${subTabHeader()}
@@ -95,6 +97,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       ${infoBannerHtml}
       ${gamepassNoticeHtml}
       ${schemaNoticesHtml}
+      ${patchRiskNoticesHtml}
       ${usmapSectionHtml}
       ${contentHtml}
       ${internalConflictsHtml}

@@ -19,93 +19,131 @@ export function formatDisplayPath(fullPath: string): string {
 export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
   const primaryPath = (mod.enabled ? mod.gamePath : mod.disabledPath) || '';
   const components: ModComponentFolder[] = [];
-  const seenFolders = new Set<string>();
+  const folderMap = new Map<string, ModComponentFolder>();
 
-  const addFolder = (folderPath: string, explicitType?: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other') => {
-    if (!folderPath) return;
-    const normalized = folderPath.replace(/\\/g, '/');
+  const registerItem = (itemPath: string, explicitType?: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other') => {
+    if (!itemPath) return;
+    const normalized = itemPath.replace(/\\/g, '/');
     const lower = normalized.toLowerCase();
 
-    // Check if this folder or an ancestor folder is already registered
-    if (seenFolders.has(lower)) return;
-    for (const seen of seenFolders) {
-      if (lower.startsWith(seen + '/') || seen.startsWith(lower + '/')) {
-        return;
+    const isPakFile = lower.endsWith('.pak');
+    const isLogicMods = lower.includes('logicmods');
+
+    // If it's a pak file, resolve its folder directory
+    let folderDir = normalized;
+    let fileName: string | null = null;
+    if (isPakFile) {
+      const lastSlash = normalized.lastIndexOf('/');
+      if (lastSlash !== -1) {
+        folderDir = normalized.substring(0, lastSlash);
+        fileName = normalized.substring(lastSlash + 1);
       }
     }
-    seenFolders.add(lower);
 
+    const folderLower = folderDir.toLowerCase();
+
+    // Determine type
     let compType: 'ue4ss' | 'palschema' | 'pak' | 'logicmods' | 'other' = explicitType || 'other';
+    if (isLogicMods) {
+      compType = 'logicmods';
+    } else if (isPakFile || folderLower.includes('content/paks') || folderLower.includes('~mods')) {
+      compType = 'pak';
+    } else if (folderLower.includes('palschema/mods') || (folderLower.includes('palschema') && !folderLower.endsWith('.pak'))) {
+      compType = 'palschema';
+    } else if (folderLower.includes('nativemods/ue4ss') || folderLower.includes('ue4ss/mods') || (folderLower.includes('ue4ss') && !folderLower.endsWith('.pak'))) {
+      compType = 'ue4ss';
+    } else if (mod.type === 'ue4ss') {
+      compType = 'ue4ss';
+    } else if (mod.type === 'palschema') {
+      compType = 'palschema';
+    } else if (mod.type === 'pak') {
+      compType = 'pak';
+    } else if (mod.type === 'logicmods') {
+      compType = 'logicmods';
+    }
+
+    // Check if folder is already registered in folderMap
+    let existing = folderMap.get(folderLower);
+    if (!existing) {
+      for (const [fKey, c] of folderMap.entries()) {
+        if (folderLower === fKey || folderLower.startsWith(fKey + '/') || fKey.startsWith(folderLower + '/')) {
+          existing = c;
+          break;
+        }
+      }
+    }
+
+    if (existing) {
+      if (fileName && (!existing.files || !existing.files.includes(fileName))) {
+        existing.files = existing.files || [];
+        existing.files.push(fileName);
+      }
+      return;
+    }
+
+    // Determine clean label and button label
     let label = t('detail.comp_other_folder');
     let buttonLabel = t('detail.btn_open_folder');
 
-    if (lower.includes('palschema/mods') || (lower.includes('palschema') && !lower.endsWith('.pak'))) {
-      compType = 'palschema';
-      label = t('detail.comp_palschema_folder');
-      buttonLabel = t('detail.comp_palschema_folder');
-    } else if (lower.includes('nativemods/ue4ss') || lower.includes('ue4ss/mods') || (lower.includes('ue4ss') && !lower.endsWith('.pak'))) {
-      compType = 'ue4ss';
-      label = t('detail.comp_ue4ss_folder');
-      buttonLabel = t('detail.comp_ue4ss_folder');
-    } else if (lower.includes('logicmods') || (lower.endsWith('.pak') && lower.includes('logicmods'))) {
-      compType = 'logicmods';
-      label = t('detail.comp_logicmods_folder');
-      buttonLabel = t('detail.comp_logicmods_folder');
-    } else if (lower.endsWith('.pak') || lower.includes('content/paks') || lower.includes('~mods')) {
-      compType = 'pak';
-      label = t('detail.comp_pak_folder');
-      buttonLabel = t('detail.comp_pak_folder');
-    } else if (mod.type === 'ue4ss') {
-      compType = 'ue4ss';
-      label = t('detail.comp_ue4ss_folder');
-      buttonLabel = t('detail.comp_ue4ss_folder');
-    } else if (mod.type === 'palschema') {
-      compType = 'palschema';
-      label = t('detail.comp_palschema_folder');
-      buttonLabel = t('detail.comp_palschema_folder');
-    } else if (mod.type === 'pak') {
-      compType = 'pak';
-      label = t('detail.comp_pak_folder');
-      buttonLabel = t('detail.comp_pak_folder');
-    } else if (mod.type === 'logicmods') {
-      compType = 'logicmods';
-      label = t('detail.comp_logicmods_folder');
-      buttonLabel = t('detail.comp_logicmods_folder');
+    const folderName = folderDir.split('/').filter(Boolean).pop() || '';
+    if (compType === 'pak') {
+      label = `Paks (${folderName || '~mods'})`;
+      buttonLabel = folderName || '~mods';
+    } else if (compType === 'logicmods') {
+      label = `LogicMods (${folderName || 'LogicMods'})`;
+      buttonLabel = folderName || 'LogicMods';
+    } else if (compType === 'ue4ss') {
+      label = `UE4SS: ${folderName}`;
+      buttonLabel = `UE4SS (${folderName})`;
+    } else if (compType === 'palschema') {
+      label = `PalSchema: ${folderName}`;
+      buttonLabel = `PalSchema (${folderName})`;
+    } else {
+      label = folderName || t('detail.comp_other_folder');
+      buttonLabel = folderName || t('detail.btn_open_folder');
     }
 
-    components.push({ type: compType, label, buttonLabel, path: folderPath });
+    const newComp: ModComponentFolder = {
+      type: compType,
+      label,
+      buttonLabel,
+      path: folderDir,
+      files: fileName ? [fileName] : undefined,
+    };
+
+    folderMap.set(folderLower, newComp);
+    components.push(newComp);
   };
 
   // 1. Add primary path
   if (primaryPath) {
-    addFolder(primaryPath);
+    registerItem(primaryPath);
   }
 
-  // 2. Add extra files ONLY if they represent distinct external directories / companion packages
+  // 2. Add extra files
   if (mod.extraFiles && Array.isArray(mod.extraFiles)) {
     for (const f of mod.extraFiles) {
       if (!f) continue;
       const fNorm = f.replace(/\\/g, '/');
       const fLower = fNorm.toLowerCase();
 
-      // If this file is an internal child of primaryPath, skip it
-      if (primaryPath) {
+      // If this file is an internal child of primaryPath and not a pak, skip
+      if (primaryPath && !fLower.endsWith('.pak')) {
         const primNorm = primaryPath.replace(/\\/g, '/').toLowerCase();
         if (fLower.startsWith(primNorm + '/') || fLower === primNorm) {
           continue;
         }
       }
 
-      // If it's a standalone companion .pak or .json outside the primary folder
       if (fLower.endsWith('.pak')) {
-        addFolder(f, fLower.includes('logicmods') ? 'logicmods' : 'pak');
+        registerItem(f, fLower.includes('logicmods') ? 'logicmods' : 'pak');
       } else if (fLower.includes('swapjson') || fLower.includes('alterconfig')) {
         const parentDir = f.substring(0, Math.max(f.lastIndexOf('/'), f.lastIndexOf('\\')));
-        addFolder(parentDir || f, 'other');
+        registerItem(parentDir || f, 'other');
       } else if (fLower.includes('palschema')) {
-        addFolder(f, 'palschema');
+        registerItem(f, 'palschema');
       } else if (fLower.includes('ue4ss') || fLower.includes('nativemods')) {
-        addFolder(f, 'ue4ss');
+        registerItem(f, 'ue4ss');
       }
     }
   }
@@ -120,16 +158,7 @@ export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
 
   components.sort((a, b) => (typeOrder[a.type] ?? 99) - (typeOrder[b.type] ?? 99));
 
-  if (components.length > 1) {
-    components.forEach((c) => {
-      const p = c.path.replace(/\\/g, '/');
-      const parts = p.split('/').filter(Boolean);
-      const last = parts[parts.length - 1] || '';
-      c.buttonLabel = last;
-      const typePrefix = c.type.toUpperCase();
-      c.label = `${typePrefix}: ${last}`;
-    });
-  } else if (components.length === 1) {
+  if (components.length === 1) {
     components[0].buttonLabel = t('detail.btn_open_folder');
   }
 

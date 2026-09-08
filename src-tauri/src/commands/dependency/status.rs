@@ -16,6 +16,7 @@ pub fn empty_status() -> dependency_checker::DependencyStatus {
         palschema_version: None,
         palschema_latest_version: None,
         palschema_needs_update: false,
+        palschema_install_mode: "NotFound".to_string(),
         game_platform: "Unknown".to_string(),
         has_dll_conflict: false,
         conflicting_dlls: Vec::new(),

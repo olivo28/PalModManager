@@ -11,14 +11,11 @@ pub fn copy_dir_all(src: &Path, dst: &Path) -> Result<(), String> {
     for entry in fs::read_dir(src).map_err(|e| format!("Cannot read source dir: {}", e))? {
         let entry = entry.map_err(|e| format!("Dir entry error: {}", e))?;
         let path = entry.path();
-        let file_name = path.file_name().unwrap();
-        let dest_path = dst.join(file_name);
+        let dest_path = dst.join(entry.file_name());
         if path.is_dir() {
             copy_dir_all(&path, &dest_path)?;
         } else {
-            fs::copy(&path, &dest_path).map_err(|e| {
-                format!("Cannot copy file {}: {}", file_name.to_string_lossy(), e)
-            })?;
+            fs::copy(&path, &dest_path).map_err(|e| format!("Cannot copy file: {}", e))?;
         }
     }
     Ok(())
@@ -119,6 +116,7 @@ pub async fn apply_ue4ss_zip_bytes(
     let version_file = ue4ss_dir.join("ue4ss.version");
     crate::logger::log(&format!("install_ue4ss: Writing version '{}' to {}", publish_date, version_file.display()));
     let _ = fs::write(&version_file, publish_date);
+    crate::dependency_manifest::record_ue4ss_extracted_install(game_path, publish_date, &framework_src, dwmapi_src.exists());
 
     // Escribir enabled.txt vacíos y registrar mods nativos de UE4SS en DB
     let dest_mods = ue4ss_dir.join("Mods");
@@ -286,6 +284,7 @@ pub async fn apply_palschema_zip_bytes(
     let version_file = palschema_dir.join("palschema.version");
     crate::logger::log(&format!("install_palschema: Escribiendo versión '{}' en {}", clean_tag, version_file.display()));
     let _ = fs::write(&version_file, &clean_tag);
+    crate::dependency_manifest::record_palschema_extracted_install(game_path, &clean_tag, &root);
 
     {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
@@ -594,90 +593,3 @@ pub async fn install_palschema(force_download: bool, state: State<'_, AppState>)
     apply_palschema_zip_bytes(&zip_bytes, &tag, &program_path, &game_path, &state).await
 }
 
-#[tauri::command]
-pub fn uninstall_ue4ss(state: State<'_, AppState>) -> Result<String, String> {
-    let (game_path, program_path) = {
-        let locked = state.data.lock().map_err(|e| e.to_string())?;
-        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
-    };
-    if game_path.is_empty() { return Err("Game path not set".to_string()); }
-
-    // Guard: Workshop installations cannot be uninstalled from PMM
-    let game_profile = crate::dependency_checker::build_game_profile(Path::new(&game_path));
-    if game_profile.ue4ss_install_mode == crate::dependency_checker::UE4SSInstallMode::Workshop {
-        return Err("UE4SS is managed by Steam Workshop. To uninstall, unsubscribe from the mod in Steam.".to_string());
-    }
-
-    let win64 = crate::dependency_checker::get_binaries_dir(Path::new(&game_path));
-    let dwmapi = win64.join("dwmapi.dll");
-    let ue4ss_dir = win64.join("ue4ss");
-    
-    if dwmapi.exists() { let _ = fs::remove_file(dwmapi); }
-    if ue4ss_dir.exists() { let _ = fs::remove_dir_all(ue4ss_dir); }
-    
-    {
-        let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        data.mods.retain(|m| m.mod_type != crate::models::ModType::Ue4ss && m.mod_type != crate::models::ModType::PalSchema);
-
-        let current_profile_id = data.current_profile_id.clone();
-        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
-            profile.ue4ss_enabled = false;
-            profile.palschema_enabled = false;
-            // Also clean non-native UE4SS/PalSchema mods from profile lists
-            profile.installed_mod_ids.clear();
-            profile.enabled_mod_ids.clear();
-
-            let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
-            if let Ok(json) = serde_json::to_string_pretty(profile) {
-                let _ = fs::write(p_dir.join("profile.json"), json);
-            }
-        }
-        let data_clone = data.clone();
-        drop(data);
-        let _ = crate::db::save_db(&program_path, &data_clone);
-    }
-
-    crate::logger::log("uninstall_ue4ss: UE4SS desinstalado con éxito.");
-    Ok("UE4SS uninstalled successfully".to_string())
-}
-
-#[tauri::command]
-pub fn uninstall_palschema(state: State<'_, AppState>) -> Result<String, String> {
-    let (game_path, program_path) = {
-        let locked = state.data.lock().map_err(|e| e.to_string())?;
-        (locked.settings.game_path.clone(), locked.settings.program_path.clone())
-    };
-    if game_path.is_empty() { return Err("Game path not set".to_string()); }
-
-    // Guard: Workshop installations cannot be uninstalled from PMM
-    let game_profile = crate::dependency_checker::build_game_profile(Path::new(&game_path));
-    if game_profile.ue4ss_install_mode == crate::dependency_checker::UE4SSInstallMode::Workshop {
-        return Err("PalSchema is managed by Steam Workshop. To uninstall, unsubscribe from the mod in Steam.".to_string());
-    }
-
-    // Use the profile's resolved palschema path (handles both Standard and edge cases)
-    let palschema_dir = game_profile.ue4ss_mods_dir.join("PalSchema");
-        
-    if palschema_dir.exists() { let _ = fs::remove_dir_all(palschema_dir); }
-    
-    {
-        let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        data.mods.retain(|m| m.mod_type != crate::models::ModType::PalSchema);
-
-        let current_profile_id = data.current_profile_id.clone();
-        if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
-            profile.palschema_enabled = false;
-            
-            let p_dir = crate::profiles::get_profile_dir(&program_path, &profile.id);
-            if let Ok(json) = serde_json::to_string_pretty(profile) {
-                let _ = fs::write(p_dir.join("profile.json"), json);
-            }
-        }
-        let data_clone = data.clone();
-        drop(data);
-        let _ = crate::db::save_db(&program_path, &data_clone);
-    }
-
-    crate::logger::log("uninstall_palschema: PalSchema desinstalado con éxito.");
-    Ok("PalSchema uninstalled successfully".to_string())
-}

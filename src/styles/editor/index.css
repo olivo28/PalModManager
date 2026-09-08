@@ -1,6 +1,7 @@
 @import './explorer.css';
 @import './file_tree.css';
 @import './content_area.css';
+@import './pak_inspector.css';
 @import './diagnostics.css';
 @import './problems_panel.css';
 @import './status_bar.css';

@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::Path;
 use super::types::{
     UAssetExportItem, UAssetImportItem, UAssetInspectionDetails,
@@ -92,7 +93,76 @@ pub fn resolve_usmap_schema(
     None
 }
 
-/// Deep inspection of an internal .uasset (and companion .uexp) from a .pak archive
+/// Pre-validate standard Unreal Engine package binary header before calling `unreal_asset::Asset::new`.
+/// Prevents astronomical memory allocation aborts (e.g. 47GB+) on corrupted, non-standard,
+/// or cooked Zen / IoStore packages.
+fn is_safe_ue5_uasset_header(bytes: &[u8]) -> bool {
+    // 1. Must satisfy minimum package header size (Unreal Engine package summary is >= 128 bytes)
+    if bytes.len() < 128 {
+        return false;
+    }
+
+    // 2. Package File Tag: Must match Unreal PACKAGE_FILE_TAG (0x9E2A83C1)
+    if &bytes[0..4] != &[0xC1, 0x83, 0x2A, 0x9E] {
+        return false;
+    }
+
+    // 3. Legacy File Version (bytes 4..8): Must be negative in modern UE4/UE5 (-7 or -8)
+    let legacy_ver = i32::from_le_bytes(match bytes[4..8].try_into() {
+        Ok(b) => b,
+        Err(_) => return false,
+    });
+    if legacy_ver > -1 || legacy_ver < -10 {
+        return false;
+    }
+
+    // 4. FileVersionUE4 (bytes 12..16): In UE5/Palworld, UE4 version is >= 500 (typically 522 or 524)
+    let ue4_ver = i32::from_le_bytes(match bytes[12..16].try_into() {
+        Ok(b) => b,
+        Err(_) => return false,
+    });
+    if ue4_ver < 500 || ue4_ver > 1000 {
+        return false;
+    }
+
+    // 5. FileVersionUE5 (bytes 16..20): In UE5/Palworld, UE5 version is >= 1000 (typically 1008 for UE 5.1)
+    let ue5_ver = i32::from_le_bytes(match bytes[16..20].try_into() {
+        Ok(b) => b,
+        Err(_) => return false,
+    });
+    if ue5_ver < 1000 || ue5_ver > 5000 {
+        return false;
+    }
+
+    // 6. Custom Versions Count (bytes 24..28)
+    let custom_ver_count = i32::from_le_bytes(match bytes[24..28].try_into() {
+        Ok(b) => b,
+        Err(_) => return false,
+    });
+    if custom_ver_count < 0 || custom_ver_count > 256 {
+        return false;
+    }
+
+    // Each custom version entry is 20 bytes (16 bytes GUID + 4 bytes version)
+    let custom_ver_bytes = (custom_ver_count as usize) * 20;
+    let offset_after_custom_ver = 28 + custom_ver_bytes;
+    if offset_after_custom_ver + 4 > bytes.len() {
+        return false;
+    }
+
+    // 7. Total Header Size
+    let total_header_size = i32::from_le_bytes(match bytes[offset_after_custom_ver..offset_after_custom_ver + 4].try_into() {
+        Ok(b) => b,
+        Err(_) => return false,
+    });
+    if total_header_size <= 0 || (total_header_size as usize) > bytes.len() + 4096 {
+        return false;
+    }
+
+    true
+}
+
+/// Deep inspection of an internal .uasset (and companion .uexp) from a .pak archive or loose file
 pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Result<UAssetInspectionDetails, String> {
     use std::io::Cursor;
     use std::panic::{catch_unwind, AssertUnwindSafe};
@@ -109,17 +179,25 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
         uasset_internal_path.to_string()
     };
 
-    let uasset_bytes = extract_pak_entry(pak_path, &normalized_uasset_path)?;
-    let uasset_size_bytes = uasset_bytes.len();
-    
     // Check if companion .uexp exists
     let uexp_path = if normalized_uasset_path.ends_with(".uasset") {
         format!("{}.uexp", &normalized_uasset_path[..normalized_uasset_path.len() - 7])
     } else {
         format!("{}.uexp", normalized_uasset_path)
     };
-    
-    let uexp_bytes = extract_pak_entry(pak_path, &uexp_path).ok();
+
+    let (uasset_bytes, uexp_bytes) = if pak_path.is_file() && pak_path.extension().map_or(false, |ext| ext.eq_ignore_ascii_case("uasset")) {
+        let uasset_b = fs::read(pak_path).map_err(|e| format!("Cannot read .uasset file: {}", e))?;
+        let uexp_p = pak_path.with_extension("uexp");
+        let uexp_b = if uexp_p.exists() { fs::read(&uexp_p).ok() } else { None };
+        (uasset_b, uexp_b)
+    } else {
+        let uasset_b = extract_pak_entry(pak_path, &normalized_uasset_path)?;
+        let uexp_b = extract_pak_entry(pak_path, &uexp_path).ok();
+        (uasset_b, uexp_b)
+    };
+
+    let uasset_size_bytes = uasset_bytes.len();
     let uexp_size_bytes = uexp_bytes.as_ref().map(|b| b.len());
     
     let asset_name = Path::new(&normalized_uasset_path)
@@ -128,24 +206,23 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
         .unwrap_or_else(|| normalized_uasset_path.clone());
     let asset_type = classify_asset_type(&normalized_uasset_path);
 
-    // Try parsing with unreal_asset across candidate Unreal Engine versions safely inside catch_unwind
-    let engine_versions = [
-        (EngineVersion::VER_UE5_1, "Unreal Engine 5.1 (GVAS/Zen)"),
-        (EngineVersion::VER_UE5_0, "Unreal Engine 5.0"),
-        (EngineVersion::VER_UE5_2, "Unreal Engine 5.2"),
-        (EngineVersion::VER_UE4_27, "Unreal Engine 4.27"),
-        (EngineVersion::UNKNOWN, "Unreal Engine (Generic)"),
-    ];
+    // Only attempt unreal_asset parsing if the header passes strict UE5 structural validation.
+    // Otherwise, skip directly to the high-reliability binary fallback parser to prevent 47GB allocation panics.
+    if is_safe_ue5_uasset_header(&uasset_bytes) {
+        let engine_versions = [
+            (EngineVersion::VER_UE5_1, "Unreal Engine 5.1 (Palworld)"),
+            (EngineVersion::VER_UE5_2, "Unreal Engine 5.2"),
+        ];
 
-    for (ver, ver_label) in engine_versions {
-        let uasset_data = uasset_bytes.clone();
-        let uexp_data = uexp_bytes.clone();
+        for (ver, ver_label) in engine_versions {
+            let uasset_data = uasset_bytes.clone();
+            let uexp_data = uexp_bytes.clone();
 
-        let parse_result = catch_unwind(AssertUnwindSafe(|| {
-            let uasset_cursor = Cursor::new(uasset_data);
-            let uexp_cursor = uexp_data.map(Cursor::new);
-            Asset::new(uasset_cursor, uexp_cursor, ver)
-        }));
+            let parse_result = catch_unwind(AssertUnwindSafe(|| {
+                let uasset_cursor = Cursor::new(uasset_data);
+                let uexp_cursor = uexp_data.map(Cursor::new);
+                Asset::new(uasset_cursor, uexp_cursor, ver)
+            }));
 
         if let Ok(Ok(asset)) = parse_result {
             let mut exports = Vec::new();
@@ -222,6 +299,7 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
             });
         }
     }
+}
 
     // --- High-Reliability Binary Fallback Parser ---
     // If unreal_asset panics or fails on custom/cooked engine structures, extract string tokens,

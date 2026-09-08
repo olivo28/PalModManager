@@ -211,6 +211,17 @@ pub fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str
     }
 
     if mod_info.mod_type == crate::models::ModType::Hybrid {
+        if let Some(pak_name) = file_path.strip_prefix("[Pak] ") {
+            for extra_str in &mod_info.extra_files {
+                let p = PathBuf::from(extra_str);
+                if p.file_name().map(|n| n.to_string_lossy()) == Some(std::borrow::Cow::Borrowed(pak_name)) {
+                    if p.exists() {
+                        return Ok(p);
+                    }
+                }
+            }
+        }
+
         let path_obj = Path::new(file_path);
         let components: Vec<&str> = path_obj.iter().map(|c| c.to_str().unwrap_or_default()).collect();
         if !components.is_empty() {
@@ -242,10 +253,34 @@ pub fn get_full_mod_file_path(mod_info: &crate::models::ModInfo, file_path: &str
                 }
             }
         }
+
+        for extra_str in &mod_info.extra_files {
+            let p = PathBuf::from(extra_str);
+            if p.file_name().map(|n| n.to_string_lossy()) == Some(std::borrow::Cow::Borrowed(file_path)) {
+                if p.exists() {
+                    return Ok(p);
+                }
+            }
+        }
+
         return Err("Invalid hybrid file path prefix".to_string());
     }
 
     let base_dir = get_mod_base_dir(mod_info);
+    if base_dir.is_file() {
+        if file_path == base_dir.file_name().unwrap_or_default().to_string_lossy() {
+            return Ok(base_dir);
+        }
+    }
+    for extra_str in &mod_info.extra_files {
+        let p = PathBuf::from(extra_str);
+        if p.file_name().map(|n| n.to_string_lossy()) == Some(std::borrow::Cow::Borrowed(file_path)) {
+            if p.exists() {
+                return Ok(p);
+            }
+        }
+    }
+
     Ok(base_dir.join(file_path))
 }
 
@@ -295,9 +330,38 @@ pub fn list_mod_files(mod_id: String, state: State<AppState>) -> Result<Vec<Stri
                 files.push(format!("[{}] {}/{}", tag, folder_name, f));
             }
         }
+
+        // Also append standalone extra files (e.g. .pak files)
+        for extra_str in &mod_info.extra_files {
+            let p = PathBuf::from(extra_str);
+            if p.is_file() {
+                let file_name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+                let lower = file_name.to_lowercase();
+                let tag = if lower.ends_with(".pak") { "Pak" } else { "Extra" };
+                let entry = format!("[{}] {}", tag, file_name);
+                if !files.contains(&entry) {
+                    files.push(entry);
+                }
+            }
+        }
     } else {
         let base_path = get_mod_base_dir(mod_info);
-        walk_dir(&base_path, &mut files, &base_path).map_err(|e| e.to_string())?;
+        if base_path.is_file() {
+            let file_name = base_path.file_name().unwrap_or_default().to_string_lossy().to_string();
+            files.push(file_name);
+        } else if base_path.is_dir() {
+            walk_dir(&base_path, &mut files, &base_path).map_err(|e| e.to_string())?;
+        }
+
+        for extra_str in &mod_info.extra_files {
+            let p = PathBuf::from(extra_str);
+            if p.is_file() {
+                let file_name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+                if !files.contains(&file_name) {
+                    files.push(file_name);
+                }
+            }
+        }
     }
 
     // 2. Add custom config_paths if not already represented
@@ -377,6 +441,20 @@ pub fn read_mod_file(mod_id: String, file_path: String, state: State<AppState>) 
         }
         Err(_) => (None, 0),
     };
+
+    let is_binary = matches!(ext.as_str(), "uasset" | "uexp" | "ubulk" | "uptnl" | "pak" | "exe" | "dll");
+    if is_binary {
+        return Ok(serde_json::json!({
+            "content": null,
+            "path": full_path.to_string_lossy(),
+            "relativePath": file_path,
+            "configType": ext,
+            "isBinary": true,
+            "modifiedTime": modified_time,
+            "fileSize": file_size,
+            "modVersion": mod_info.version.clone(),
+        }));
+    }
 
     let content = fs::read_to_string(&full_path).map_err(|e| format!("Cannot read file: {}", e))?;
     crate::logger::log(&format!("read_mod_file: Read '{}' for mod '{}' ({} bytes)", file_path, mod_id, content.len()));

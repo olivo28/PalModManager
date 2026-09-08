@@ -45,6 +45,7 @@ export async function readModFile(modId: string, filePath: string): Promise<{
   content: string | null;
   path: string | null;
   configType: string | null;
+  isBinary?: boolean;
   modifiedTime?: number;
   fileSize?: number;
   modVersion?: string;

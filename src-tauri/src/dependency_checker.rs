@@ -17,6 +17,8 @@ pub struct DependencyStatus {
     pub palschema_version: Option<String>,
     pub palschema_latest_version: Option<String>,
     pub palschema_needs_update: bool,
+    #[serde(default)]
+    pub palschema_install_mode: String,
     pub game_platform: String,
     #[serde(default)]
     pub has_dll_conflict: bool,
@@ -154,15 +156,23 @@ pub fn build_game_profile(game_root: &Path) -> GameProfile {
         (false, false)
     };
 
-    let ue4ss_install_mode = if standard_dwmapi.exists() || standard_ue4ss_dir.exists() {
-        // Standard (manual Nexus) mode takes precedence when dwmapi.dll or binaries/ue4ss exists,
+    let has_workshop_ue4ss_binaries = workshop_ue4ss_dir.join("UE4SS.dll").exists()
+        || workshop_ue4ss_dir.join("dwmapi.dll").exists()
+        || workshop_ue4ss_dir.join("UE4SS-settings.ini").exists();
+
+    let has_standard_ue4ss_binaries = standard_dwmapi.exists()
+        || standard_ue4ss_dir.join("UE4SS.dll").exists()
+        || binaries_dir.join("UE4SS.dll").exists();
+
+    let ue4ss_install_mode = if has_standard_ue4ss_binaries {
+        // Standard (manual Nexus) mode takes precedence when dwmapi.dll or UE4SS.dll exists,
         // UNLESS the user explicitly activated Workshop UE4SS in ActiveModList
         if is_workshop_ue4ss_active {
             UE4SSInstallMode::Workshop
         } else {
             UE4SSInstallMode::Standard
         }
-    } else if is_workshop_ue4ss_active || workshop_ue4ss_dir.exists() {
+    } else if is_workshop_ue4ss_active || (workshop_ue4ss_dir.exists() && has_workshop_ue4ss_binaries) {
         UE4SSInstallMode::Workshop
     } else {
         UE4SSInstallMode::NotFound
@@ -255,73 +265,101 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         }
     };
 
-    let ps_dll_std = profile.ue4ss_mods_dir.join("PalSchema").join("dlls").join("main.dll");
-    let ps_dir_std = profile.ue4ss_mods_dir.join("PalSchema");
+    let standard_ue4ss_dir = profile.binaries_dir.join("ue4ss");
+    let ps_std_dir = standard_ue4ss_dir.join("Mods").join("PalSchema");
+    let ps_active_profile_dir = profile.ue4ss_mods_dir.join("PalSchema");
     let ps_ws_managed = game_path_val.join("Mods").join("ManagedMods").join("PalSchema");
     let ps_ws_native = game_path_val.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema");
-    let ws_settings = if profile.ue4ss_install_mode == UE4SSInstallMode::Workshop {
-        Some(crate::workshop::read_pal_mod_settings(game_path))
-    } else {
+
+    let has_real_palschema_files = |dir: &Path| -> bool {
+        if !dir.exists() {
+            return false;
+        }
+        dir.join("dlls").join("main.dll").exists()
+            || dir.join("scripts").join("main.lua").exists()
+            || dir.join("main.lua").exists()
+            || dir.join("palschema.version").exists()
+    };
+
+    let read_palschema_version = |dir: &Path| -> Option<String> {
+        let version_file = dir.join("palschema.version");
+        if version_file.exists() {
+            if let Ok(s) = fs::read_to_string(&version_file) {
+                let trimmed = s.trim().to_string();
+                if !trimmed.is_empty() {
+                    return Some(trimmed);
+                }
+            }
+        }
+        let info_file = dir.join("Info.json");
+        if info_file.exists() {
+            if let Ok(content) = fs::read_to_string(&info_file) {
+                if let Ok(info) = serde_json::from_str::<crate::workshop::WorkshopInfoJson>(&content) {
+                    if !info.version.is_empty() {
+                        return Some(info.version);
+                    }
+                }
+            }
+        }
         None
     };
 
-    let ps_exists = ps_dll_std.exists()
-        || ps_dir_std.exists()
-        || ps_ws_managed.exists()
-        || ps_ws_native.exists()
-        || ws_settings.as_ref().map_or(false, |s| s.active_mod_list.iter().any(|m| m.eq_ignore_ascii_case("PalSchema")));
+    let ws_settings = crate::workshop::read_pal_mod_settings(game_path);
+    let is_ws_ps_active = ws_settings.global_enabled
+        && ws_settings.active_mod_list.iter().any(|m| m.eq_ignore_ascii_case("PalSchema"));
 
-    let (palschema_installed, palschema_version) = if ps_exists {
-        let ps_active = if profile.ue4ss_install_mode == UE4SSInstallMode::Workshop {
-            ws_settings.as_ref().map_or(true, |s| {
-                s.global_enabled && (
-                    s.active_mod_list.iter().any(|m| m.eq_ignore_ascii_case("PalSchema"))
-                    || ps_ws_managed.exists()
-                    || ps_ws_native.exists()
-                )
-            })
+    let has_std_ps = has_real_palschema_files(&ps_std_dir)
+        || (profile.ue4ss_install_mode == UE4SSInstallMode::Standard && has_real_palschema_files(&ps_active_profile_dir));
+
+    let has_ws_ps = is_ws_ps_active
+        || has_real_palschema_files(&ps_ws_managed)
+        || (profile.ue4ss_install_mode == UE4SSInstallMode::Workshop && has_real_palschema_files(&ps_ws_native));
+
+    let (palschema_installed, palschema_install_mode_str, palschema_version) = if has_std_ps {
+        let target_dir = if has_real_palschema_files(&ps_active_profile_dir) {
+            &ps_active_profile_dir
         } else {
-            ps_dll_std.exists() || ps_dir_std.exists()
+            &ps_std_dir
         };
-
-        if !ps_active {
-            (false, None)
+        let ver = read_palschema_version(target_dir);
+        (true, "Standard".to_string(), ver)
+    } else if has_ws_ps {
+        let target_dir = if has_real_palschema_files(&ps_ws_managed) {
+            &ps_ws_managed
         } else {
-            let version_file = profile.ue4ss_mods_dir.join("PalSchema").join("palschema.version");
-            let mut ver = if version_file.exists() {
-                fs::read_to_string(&version_file).ok().map(|s| s.trim().to_string())
-            } else {
-                None
-            };
-
-            if ver.is_none() {
-                let candidates = [
-                    game_path_val.join("Mods").join("ManagedMods").join("PalSchema").join("Info.json"),
-                    game_path_val.join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema").join("Info.json"),
-                    profile.ue4ss_mods_dir.join("PalSchema").join("Info.json"),
-                ];
-                for c in candidates {
-                    if c.exists() {
-                        if let Ok(info_str) = fs::read_to_string(&c) {
-                            if let Ok(info) = serde_json::from_str::<crate::workshop::WorkshopInfoJson>(&info_str) {
-                                if !info.version.is_empty() {
-                                    ver = Some(info.version);
-                                    break;
+            &ps_ws_native
+        };
+        let mut ver = read_palschema_version(target_dir);
+        if ver.is_none() {
+            // Check Steam Workshop content cache for PalSchema version
+            let ws_content = game_path_val.parent()
+                .and_then(|p| p.parent())
+                .map(|p| p.join("workshop").join("content").join("1623730"));
+            if let Some(content_dir) = ws_content {
+                if content_dir.exists() {
+                    if let Ok(entries) = fs::read_dir(&content_dir) {
+                        for entry in entries.flatten() {
+                            let item_info = entry.path().join("Info.json");
+                            if item_info.exists() {
+                                if let Ok(info_str) = fs::read_to_string(&item_info) {
+                                    if let Ok(info) = serde_json::from_str::<crate::workshop::WorkshopInfoJson>(&info_str) {
+                                        if info.package_name.eq_ignore_ascii_case("PalSchema") || info.mod_name.eq_ignore_ascii_case("PalSchema") {
+                                            if !info.version.is_empty() {
+                                                ver = Some(info.version);
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
-
-            let final_ver = ver.or_else(|| match profile.ue4ss_install_mode {
-                UE4SSInstallMode::Workshop => Some("Workshop".to_string()),
-                _ => None,
-            });
-            (true, final_ver)
         }
+        (true, "Workshop".to_string(), ver.or_else(|| Some("Workshop".to_string())))
     } else {
-        (false, None)
+        (false, "NotFound".to_string(), None)
     };
 
     let ue4ss_install_mode_str = match profile.ue4ss_install_mode {
@@ -385,6 +423,7 @@ pub fn check_dependencies(game_path: &str) -> DependencyStatus {
         palschema_version,
         palschema_latest_version: None,
         palschema_needs_update: false,
+        palschema_install_mode: palschema_install_mode_str,
         game_platform: profile.platform,
         has_dll_conflict,
         conflicting_dlls,

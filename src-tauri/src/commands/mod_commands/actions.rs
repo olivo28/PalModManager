@@ -516,11 +516,30 @@ pub fn merge_mods_as_hybrid(
     // Remove secondary from data.mods
     data.mods.retain(|m| m.id != secondary_mod_id);
 
-    // Remove secondary from profile mod lists
+    // Remove secondary from profile mod lists and migrate folder assignments
     for profile in &mut data.profiles {
         profile.installed_mod_ids.retain(|id| id != &secondary_mod_id);
         profile.enabled_mod_ids.retain(|id| id != &secondary_mod_id);
+
+        let primary_id = final_primary.id.clone();
+        for folder in &mut profile.mod_folders {
+            let mut had_secondary = false;
+            folder.mod_ids.retain(|id| {
+                if id == &secondary_mod_id {
+                    had_secondary = true;
+                    false
+                } else {
+                    true
+                }
+            });
+            if had_secondary && !folder.mod_ids.contains(&primary_id) {
+                folder.mod_ids.push(primary_id.clone());
+            }
+        }
     }
+
+    crate::profiles::cleanup_profile_mod_lists(&mut data);
+    crate::profiles::sync_current_profile_states(&mut data);
 
     let data_clone = data.clone();
     drop(data);

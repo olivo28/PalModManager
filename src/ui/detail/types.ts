@@ -3,4 +3,5 @@ export interface ModComponentFolder {
   label: string;
   buttonLabel: string;
   path: string;
+  files?: string[];
 }

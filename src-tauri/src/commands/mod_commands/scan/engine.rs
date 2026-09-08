@@ -58,10 +58,10 @@ pub fn scan_mods_internal(
     }
 
     for wmod in wmods.iter().filter(|m| !m.is_framework && (m.is_installed || m.is_active)) {
-        let game_mod_path = if wmod.install_type == WorkshopInstallType::PalSchemaMod {
-            gp.palschema_mods_dir.join(&wmod.package_name)
-        } else {
-            gp.ue4ss_mods_dir.join(&wmod.package_name)
+        let game_mod_path = match wmod.install_type {
+            WorkshopInstallType::PalSchemaMod => gp.palschema_mods_dir.join(&wmod.package_name),
+            WorkshopInstallType::PakMod => game.join("Pal").join("Content").join("Paks").join("~mods"),
+            _ => gp.ue4ss_mods_dir.join(&wmod.package_name),
         };
         
         let mut details = format!(
@@ -97,6 +97,7 @@ pub fn scan_mods_internal(
             name: display_name,
             mod_type: match wmod.install_type {
                 WorkshopInstallType::PalSchemaMod => ModType::PalSchema,
+                WorkshopInstallType::PakMod => ModType::Pak,
                 _ => ModType::Ue4ss,
             },
             nexus_mod_id: None,

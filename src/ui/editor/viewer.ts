@@ -1,7 +1,7 @@
 import { readModFile, saveModFile, listModFiles } from '../../api';
 import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
-import { escapeHtml } from '../../utils/helpers';
+import { escapeHtml, formatBytes } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { marked } from 'marked';
 import { confirmDiscardOrSave } from './unsaved';
@@ -15,7 +15,9 @@ import {
   getCurrentMonacoFilePath,
 } from './monaco/instance';
 import { triggerWorkspaceScan, loadWorkspaceDiagnosticsForMod } from './monaco/problemsPanel';
-import { initEditorStatusBar, updateStatusBarModInfo } from './monaco/statusBar';
+import { initEditorStatusBar, updateStatusBarModInfo, setStatusBarMode } from './monaco/statusBar';
+import { renderPakExplorer } from './pakExplorer';
+import { renderInlineUAssetInspector } from './uassetInline';
 
 export interface FileBuffer {
   current: string;
@@ -113,10 +115,13 @@ export function renderEditorBreadcrumbs(modName: string, filePath: string): stri
     return `<div class="editor-bc-crumb"><span class="editor-bc-mod">📦 ${escapeHtml(modName)}</span></div>`;
   }
   const fileName = parts.pop()!;
+  const isPak = fileName.toLowerCase().endsWith('.pak');
+  const cleanFileName = isPak ? fileName.replace(/^\[Pak\]\s*/i, '') : fileName;
+  const fileIcon = isPak ? '📦' : '📄';
   const segmentsHtml = [
     `<span class="editor-bc-mod">📦 ${escapeHtml(modName)}</span>`,
     ...parts.map(p => `<span class="editor-bc-sep">›</span><span class="editor-bc-part">📁 ${escapeHtml(p)}</span>`),
-    `<span class="editor-bc-sep">›</span><span class="editor-bc-file">📄 ${escapeHtml(fileName)}</span>`,
+    `<span class="editor-bc-sep">›</span><span class="editor-bc-file">${fileIcon} ${escapeHtml(cleanFileName)}</span>`,
   ].join('');
   return `<div class="editor-bc-crumb">${segmentsHtml}</div>`;
 }
@@ -133,7 +138,26 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
   const preview = editorDom.elMaybe('editor-preview');
   const monacoContainer = editorDom.elMaybe('editor-monaco-container');
 
-  updateState({ editorPreviewMode: false });
+  updateState({ editorPreviewMode: false, editorSelectedFile: filePath });
+  if (state.editorModId) {
+    _lastFilePerMod[state.editorModId] = filePath;
+  }
+
+  // Ensure file tree selection reflects the loaded file
+  const tree = editorDom.elMaybe('editor-file-tree');
+  if (tree) {
+    const currentActive = tree.querySelector('.editor-file-item.selected');
+    if (!currentActive || currentActive.getAttribute('data-path') !== filePath) {
+      tree.querySelectorAll('.editor-file-item').forEach(el => el.classList.remove('selected'));
+      try {
+        const targetItem = tree.querySelector(`.editor-file-item[data-path="${CSS.escape(filePath)}"]`);
+        if (targetItem) {
+          targetItem.classList.add('selected');
+        }
+      } catch { }
+    }
+  }
+
   if (preview) preview.style.display = 'none';
   if (monacoContainer) monacoContainer.style.display = '';
   if (previewBtn) {
@@ -154,9 +178,70 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
       editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, filePath);
       _originalContent = cached.original;
       setMonacoFile(filePath, cached.current);
+      setStatusBarMode('code');
     } else {
       const result = await readModFile(state.editorModId, filePath);
-      if (!result.content) {
+      const confType = (result.configType || '').toLowerCase();
+      const isUasset = ['uasset', 'uexp', 'ubulk', 'uptnl'].includes(confType);
+      const isPak = confType === 'pak';
+      const isBinary = result.isBinary || isUasset || isPak;
+
+      if (isBinary) {
+        editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, result.path || filePath);
+        if (preview) {
+          preview.style.display = 'block';
+          const assetName = (result.path || filePath).replace(/^.*[/\\]/, '');
+
+          if (isPak) {
+            const cleanPakName = assetName.replace(/^\[Pak\]\s*/i, '');
+            const rawPakPath = result.path || filePath;
+            const loadPakView = () => {
+              renderPakExplorer(preview, {
+                modId: state.editorModId || '',
+                pakFileName: cleanPakName,
+                pakPath: rawPakPath,
+                fileSize: result.fileSize,
+                onInspectAsset: (assetInternalPath: string) => {
+                  renderInlineUAssetInspector(preview, {
+                    modId: state.editorModId || null,
+                    pakPath: rawPakPath,
+                    assetInternalPath,
+                    onBack: () => loadPakView(),
+                  });
+                },
+              });
+            };
+            loadPakView();
+          } else if (isUasset) {
+            renderInlineUAssetInspector(preview, {
+              modId: state.editorModId || null,
+              pakPath: null,
+              assetInternalPath: filePath,
+            });
+            setStatusBarMode('binary', {
+              size: result.fileSize ? formatBytes(result.fileSize) : undefined,
+              lang: 'Asset',
+            });
+          } else {
+            const fileSizeFormatted = result.fileSize ? formatBytes(result.fileSize) : '';
+            preview.innerHTML = `
+              <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 20px;box-sizing:border-box;background:var(--bg-secondary);text-align:center;">
+                <div style="font-size:48px;margin-bottom:12px;opacity:0.85;">⚡</div>
+                <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">${escapeHtml(assetName)}</div>
+                <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">${escapeHtml(t('editor.binary_asset_title') || 'Unreal Engine Binary Asset')}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-bottom:18px;max-width:440px;line-height:1.5;">${escapeHtml(t('editor.binary_asset_desc') || 'Binary compiled asset files (.uasset/.pak) cannot be edited directly as plain text.')}${fileSizeFormatted ? ` (${fileSizeFormatted})` : ''}</div>
+              </div>`;
+            setStatusBarMode('binary', { size: fileSizeFormatted, lang: 'Binary' });
+          }
+        }
+        if (monacoContainer) monacoContainer.style.display = 'none';
+        _originalContent = null;
+        if (formatBtn) formatBtn.style.display = 'none';
+        if (previewBtn) previewBtn.style.display = 'none';
+        if (diffBtn) diffBtn.style.display = 'none';
+        if (restoreBtn) restoreBtn.style.display = 'none';
+        return;
+      } else if (!result.content) {
         editorPath.innerHTML = `<span class="editor-bc-empty">${escapeHtml(t('editor.no_content_available'))}</span>`;
         _originalContent = null;
         if (monacoContainer) monacoContainer.style.display = 'none';
@@ -179,11 +264,16 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
         if (previewBtn) previewBtn.style.display = 'none';
         if (diffBtn) diffBtn.style.display = 'none';
         if (restoreBtn) restoreBtn.style.display = 'none';
+        setStatusBarMode('binary', {
+          size: result.fileSize ? formatBytes(result.fileSize) : undefined,
+          lang: 'Image',
+        });
         return;
       } else {
         editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, result.path || filePath);
         _originalContent = result.content;
         setMonacoFile(filePath, result.content);
+        setStatusBarMode('code');
         _fileBufferCache.set(filePath, {
           current: result.content,
           original: result.content,

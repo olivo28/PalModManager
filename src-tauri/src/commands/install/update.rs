@@ -184,8 +184,49 @@ pub async fn update_mod_command(
             for profile in &mut data.profiles {
                 profile.installed_mod_ids.retain(|id| !purged_ids.contains(id));
                 profile.enabled_mod_ids.retain(|id| !purged_ids.contains(id));
+
+                // Migrate virtual folder assignments from purged duplicate entries to final_m.id
+                for folder in &mut profile.mod_folders {
+                    let mut had_purged = false;
+                    folder.mod_ids.retain(|id| {
+                        if purged_ids.contains(id) {
+                            had_purged = true;
+                            false
+                        } else {
+                            true
+                        }
+                    });
+                    if had_purged && !folder.mod_ids.contains(&final_m.id) {
+                        folder.mod_ids.push(final_m.id.clone());
+                    }
+                }
             }
         }
+
+        // Guarantee final_m is registered in the current profile's installed and enabled lists
+        if final_m.nexus_author.as_deref() != Some("UE4SS Native Mod") {
+            let mod_name = final_m.name.clone();
+            let mod_id = final_m.id.clone();
+            if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+                let in_installed = profile.installed_mod_ids.iter().any(|id| {
+                    id.eq_ignore_ascii_case(&mod_name) || id == &mod_id
+                });
+                if !in_installed {
+                    profile.installed_mod_ids.push(mod_name.clone());
+                }
+                if final_m.enabled {
+                    let in_enabled = profile.enabled_mod_ids.iter().any(|id| {
+                        id.eq_ignore_ascii_case(&mod_name) || id == &mod_id
+                    });
+                    if !in_enabled {
+                        profile.enabled_mod_ids.push(mod_name.clone());
+                    }
+                }
+            }
+        }
+
+        crate::profiles::cleanup_profile_mod_lists(&mut data);
+        crate::profiles::sync_current_profile_states(&mut data);
 
         let data_clone = data.clone();
         drop(data);

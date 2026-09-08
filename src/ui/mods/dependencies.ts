@@ -65,7 +65,7 @@ async function checkAndPromptUpdates(fullDeps: any): Promise<void> {
   }
 
   // Check if PalSchema needs update and ask user (only for GitHub / Standalone mode)
-  if (fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.ue4ss_install_mode !== 'Workshop' && fullDeps.palschema_version !== 'Workshop') {
+  if (fullDeps.palschema_installed && fullDeps.palschema_needs_update && fullDeps.palschema_install_mode !== 'Workshop' && fullDeps.palschema_version !== 'Workshop') {
     const latestVer = fullDeps.palschema_latest_version || 'latest';
     if (!_isPromptingPalschema && sessionStorage.getItem('dismissed_palschema_update') !== latestVer) {
       _isPromptingPalschema = true;
@@ -181,21 +181,33 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
     };
     const isWorkshop = deps.ue4ss_install_mode === 'Workshop' || deps.ue4ss_version === 'Workshop';
     let verDisplay = '';
+    let dateSuffix = '';
     if (deps.ue4ss_version && deps.ue4ss_version !== 'Workshop') {
-      verDisplay = deps.ue4ss_version.includes('.') ? ` · ${formatDMY(deps.ue4ss_version)}` : ` v${deps.ue4ss_version}`;
+      const trimmed = deps.ue4ss_version.trim();
+      const match = trimmed.match(/^([^(]+?)\s*\(([^)]+)\)$/);
+      if (match) {
+        const commitTag = match[1].trim().replace(/^v/i, '');
+        verDisplay = ` v${commitTag}`;
+        dateSuffix = ` (${formatDMY(match[2].trim())})`;
+      } else if (/^\d{1,2}\.\d{1,2}\.\d{4}$/.test(trimmed)) {
+        verDisplay = ` · ${formatDMY(trimmed)}`;
+      } else {
+        verDisplay = ` v${trimmed.replace(/^v/i, '')}`;
+      }
     }
     const workshopSuffix = isWorkshop ? ' (Workshop)' : '';
     ue4ssEl.textContent = `UE4SS${verDisplay}${workshopSuffix}${ue4ssFlo}`;
     ue4ssEl.className = `dep-badge ${isWorkshop ? 'workshop' : (deps.ue4ss_needs_update ? 'warn' : 'ok')}`;
     ue4ssEl.style.display = '';
     ue4ssEl.style.cursor = 'pointer';
+    const fullVerForTitle = `${verDisplay}${dateSuffix}`;
     if (isWorkshop) {
-      ue4ssEl.title = `UE4SS${verDisplay} (Steam Workshop) — ${t('dependencies.managed_by_steam')}`;
+      ue4ssEl.title = `UE4SS${fullVerForTitle} (Steam Workshop) — ${t('dependencies.managed_by_steam')}`;
     } else if (deps.ue4ss_needs_update) {
       const latestDisplay = deps.ue4ss_latest_date ? formatDMY(deps.ue4ss_latest_date) : '?';
       ue4ssEl.title = t('dependencies.update_available_ue4ss', { date: latestDisplay });
     } else {
-      ue4ssEl.title = `UE4SS${verDisplay} — ${t('dependencies.up_to_date')}`;
+      ue4ssEl.title = `UE4SS${fullVerForTitle} — ${t('dependencies.up_to_date')}`;
     }
   } else {
     ue4ssEl.textContent = 'UE4SS ✕';
@@ -207,7 +219,7 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
 
   // PalSchema
   if (deps.palschema_installed) {
-    const isWorkshop = deps.ue4ss_install_mode === 'Workshop' || deps.palschema_version === 'Workshop';
+    const isWorkshop = deps.palschema_install_mode === 'Workshop' || deps.palschema_version === 'Workshop';
     let ver = '';
     if (deps.palschema_version && deps.palschema_version !== 'Workshop') {
       ver = ` v${deps.palschema_version.replace(/^v/i, '')}`;

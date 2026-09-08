@@ -1,5 +1,4 @@
 import { getState } from '../../../state';
-import { getWorkshopState, setWorkshopGlobalEnabled, activateWorkshopMod, deactivateWorkshopMod, openUrl } from '../../../api';
 import { showToast } from '../../toast';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
@@ -13,8 +12,11 @@ import {
   _libraryOnlineUpdatesMap,
 } from './state';
 import { formatSize, parseModFilename, compareVersions } from './helpers';
-import { updateWorkshopTabVisibility, isWorkshopModNew } from './workshop';
 import { updateLibraryBulkBar, triggerInstallFromLibrary, handleLibraryDelete } from './actions';
+import {
+  updateWorkshopTabVisibility,
+  renderWorkshopLibraryTab,
+} from './workshop';
 import { renderLibraryListView } from './listView';
 import { libraryDom } from '../../../framework';
 
@@ -433,211 +435,6 @@ export async function renderLibraryView(): Promise<void> {
 
     updateLibraryBulkBar();
   } else if (_activeLibrarySubTab === 'workshop') {
-    if (masterToggleWrap) masterToggleWrap.style.display = 'flex';
-    if (wsCheckUpdatesBtn) wsCheckUpdatesBtn.style.display = 'inline-flex';
-    if (bulkBar) bulkBar.style.display = 'none';
-
-    try {
-      const wState = await getWorkshopState();
-
-      const masterToggle = libraryDom.elMaybe('library-workshop-master-toggle');
-      if (masterToggle) {
-        masterToggle.checked = wState.globalEnabled;
-        masterToggle.onchange = async () => {
-          showToast(masterToggle.checked ? t('toasts.workshop_enabling') : t('toasts.workshop_disabling'), 'info');
-          await setWorkshopGlobalEnabled(masterToggle.checked);
-          await renderLibraryView();
-          const { loadMods } = await import('../../modsView');
-          await loadMods();
-          showToast(t('toasts.workshop_state_updated'), 'success');
-        };
-      }
-
-      let mods = wState.mods;
-      if (_librarySearchQuery) {
-        mods = mods.filter((m: any) => m.modName.toLowerCase().includes(_librarySearchQuery) || m.author.toLowerCase().includes(_librarySearchQuery));
-      }
-
-      if (_libraryFilterStatus === 'installed') {
-        mods = mods.filter((m: any) => m.isInstalled || wState.activeModList.includes(m.packageName));
-      } else if (_libraryFilterStatus === 'not_installed') {
-        mods = mods.filter((m: any) => !m.isInstalled && !wState.activeModList.includes(m.packageName));
-      } else if (_libraryFilterStatus === 'updates') {
-        mods = mods.filter((m: any) => m.hasPendingUpdate || (m.isInstalled && m.installedVersion && m.installedVersion !== m.version));
-      }
-
-      mods.sort((a: any, b: any) => {
-        const isInstalledA = a.isInstalled || wState.activeModList.includes(a.packageName);
-        const isInstalledB = b.isInstalled || wState.activeModList.includes(b.packageName);
-
-        switch (_librarySortBy) {
-          case 'name:asc':
-            return (a.modName || '').localeCompare(b.modName || '', undefined, { sensitivity: 'base', numeric: true });
-          case 'name:desc':
-            return (b.modName || '').localeCompare(a.modName || '', undefined, { sensitivity: 'base', numeric: true });
-          case 'installed:first':
-            if (isInstalledA !== isInstalledB) return isInstalledB ? 1 : -1;
-            return (a.modName || '').localeCompare(b.modName || '', undefined, { sensitivity: 'base', numeric: true });
-          case 'not_installed:first':
-            if (isInstalledA !== isInstalledB) return isInstalledA ? 1 : -1;
-            return (a.modName || '').localeCompare(b.modName || '', undefined, { sensitivity: 'base', numeric: true });
-          case 'date:desc':
-            return (b.workshopId || 0) - (a.workshopId || 0);
-          default:
-            return (a.modName || '').localeCompare(b.modName || '');
-        }
-      });
-
-      if (mods.length === 0) {
-        container.innerHTML = `<div id="library-empty">${escapeHtml(t('library.empty_workshop'))}</div>`;
-        return;
-      }
-
-      container.innerHTML = mods.map((m: any) => {
-        let typeClass = 'ue4ss';
-        let typeLabel = 'U';
-        if (m.installType === 'palSchemaMod') {
-          typeClass = 'palschema';
-          typeLabel = 'PS';
-        }
-        const thumb = m.thumbnailPath 
-          ? `<div style="width:100%;height:100%;position:relative;"><img src="${convertFileSrc(m.thumbnailPath)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.onerror=null; this.style.display='none'; if (this.nextElementSibling) this.nextElementSibling.style.display='flex';" /><div class="mod-card-image-placeholder ${typeClass}" style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-weight:bold;font-size:24px;color:#fff;">${typeLabel}</div></div>` 
-          : `<div class="mod-card-image-placeholder ${typeClass}" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:24px;color:#fff;">${typeLabel}</div>`;
-        const isDepMissing = m.dependencies.some((dep: string) => !wState.activeModList.includes(dep));
-        const depWarning = isDepMissing ? `<div style="color:#ff4a4a; font-size:10px; margin-top:2px; text-align:center;">${escapeHtml(t('library.missing_deps_warning', { deps: m.dependencies.join(', ') }))}</div>` : '';
-
-        const isNew = isWorkshopModNew(m.packageName);
-        const newBadge = isNew
-          ? `<span style="font-size: 7.5px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 5px; border-radius: 8px; box-shadow: 0 0 6px rgba(0,188,255,0.5); letter-spacing: 0.3px; white-space: nowrap;">✨ ${escapeHtml(t('card.badge_new'))}</span>`
-          : '';
-
-        const badgeText = m.isFramework ? 'FRAMEWORK' : t('card.badge_workshop');
-        const badgeStyle = `font-size: 7.5px; font-weight: bold; background: ${m.isFramework ? 'rgba(0,188,255,0.1)' : 'rgba(255, 157, 0, 0.1)'}; color: ${m.isFramework ? '#00bcff' : '#ff9d00'}; border: 1px solid ${m.isFramework ? 'rgba(0,188,255,0.2)' : 'rgba(255, 157, 0, 0.2)'}; padding: 2px 4px; border-radius: 3px; white-space: nowrap;`;
-
-        const hasUpdate = m.hasPendingUpdate || (m.isInstalled && m.installedVersion && m.installedVersion !== m.version);
-        const updateBadge = hasUpdate
-          ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span>`
-          : '';
-
-        let versionTextHtml = '';
-        if (m.isInstalled) {
-          if (hasUpdate) {
-            versionTextHtml = `
-              <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:3px;">
-                <div>${escapeHtml(t('detail.installed_label'))}: <b style="color:var(--text-primary);">v${escapeHtml(m.installedVersion || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
-                <div style="font-size:9px; color:var(--text-muted);">${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
-              </div>`;
-          } else {
-            versionTextHtml = `
-              <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-                ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('common.installed'))} ✓)</span>
-              </div>`;
-          }
-        } else {
-          versionTextHtml = `
-            <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-              ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})
-            </div>`;
-        }
-
-        const toggleBtnText = m.isActive ? t('common.disable') : t('common.enable');
-        const toggleBtnClass = m.isActive ? 'btn-action btn-action-danger' : 'btn-primary btn-sm';
-
-        const updateBtn = (hasUpdate && m.isActive)
-          ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);" title="${escapeHtml(t('library.btn_update_to', { version: m.version }))}">▲ ${escapeHtml(t('library.btn_update_to', { version: m.version }))}</button>`
-          : '';
-
-        return `
-          <div class="mod-card library-card workshop-card" data-package="${escapeHtml(m.packageName)}" style="position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
-            <div style="position:absolute;top:8px;right:8px;z-index:5;display:flex;align-items:center;gap:3px;max-width:calc(100% - 16px);flex-wrap:wrap;justify-content:flex-end;">
-              <span style="${badgeStyle}">${badgeText}</span>
-              ${updateBadge}
-              ${newBadge}
-            </div>
-            <div style="padding-top:16px;display:flex;flex-direction:column;gap:8px;height:100%;justify-content:space-between;min-height:160px;">
-              <div class="library-card-img-container" style="width:100%;height:80px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;margin-top:6px;">
-                ${thumb}
-              </div>
-              <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:center;word-break:break-word;line-height:1.3;flex:1;min-height:36px;display:flex;align-items:center;justify-content:center;margin-top:4px;">
-                ${escapeHtml(m.modName)}
-              </div>
-              ${versionTextHtml}
-              ${depWarning}
-              ${updateBtn ? `<div style="display:flex;flex-direction:column;margin-top:2px;">${updateBtn}</div>` : ''}
-              <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
-                <button class="workshop-item-toggle-btn ${toggleBtnClass}" data-package="${escapeHtml(m.packageName)}" data-active="${m.isActive}" ${m.isFramework ? 'disabled style="opacity:0.5;"' : ''} style="flex:1;padding:6px;font-size:10px;cursor:pointer;">
-                  ${toggleBtnText}
-                </button>
-                <button class="workshop-item-folder-btn btn-secondary btn-sm" data-path="${escapeHtml(wState.workshopRoot + '/' + m.workshopId)}" style="padding:6px 8px;font-size:10px;cursor:pointer;" title="${escapeHtml(t('library.workshop_open_folder_title'))}">
-                  📁 ${escapeHtml(t('common.folder'))}
-                </button>
-              </div>
-            </div>
-          </div>
-        `;
-      }).join('');
-
-      container.querySelectorAll('.workshop-item-update-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const target = e.currentTarget as HTMLButtonElement;
-          const pkgName = target.dataset.package!;
-          target.disabled = true;
-          showToast(t('toasts.preparing_workshop_update'), 'info');
-          try {
-            await activateWorkshopMod(pkgName);
-            showToast(t('toasts.mod_updated', { name: pkgName }), 'success');
-          } catch (err) {
-            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
-          } finally {
-            target.disabled = false;
-            await renderLibraryView();
-            const { loadMods } = await import('../../modsView');
-            await loadMods();
-          }
-        });
-      });
-
-      container.querySelectorAll('.workshop-item-toggle-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          const target = e.currentTarget as HTMLButtonElement;
-          const pkgName = target.dataset.package!;
-          const isActive = target.dataset.active === 'true';
-
-          target.disabled = true;
-          showToast(!isActive ? t('toasts.workshop_activating') : t('toasts.workshop_deactivating'), 'info');
-          try {
-            if (!isActive) {
-              await activateWorkshopMod(pkgName);
-            } else {
-              await deactivateWorkshopMod(pkgName);
-            }
-            showToast(!isActive ? t('toasts.workshop_activated') : t('toasts.workshop_deactivated'), 'success');
-          } catch (err) {
-            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
-          } finally {
-            target.disabled = false;
-            await renderLibraryView();
-            const { loadMods } = await import('../../modsView');
-            await loadMods();
-          }
-        });
-      });
-
-      container.querySelectorAll('.workshop-item-folder-btn').forEach(btn => {
-        btn.addEventListener('click', async (e) => {
-          e.stopPropagation();
-          const target = e.currentTarget as HTMLButtonElement;
-          const path = target.dataset.path!;
-          try {
-            await openUrl(path);
-          } catch (err) {
-            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
-          }
-        });
-      });
-
-    } catch (err) {
-      container.innerHTML = `<div style="color:#ff4a4a; padding:12px; text-align:center;">Failed to load Workshop state: ${escapeHtml(String(err))}</div>`;
-    }
+    await renderWorkshopLibraryTab(container);
   }
 }

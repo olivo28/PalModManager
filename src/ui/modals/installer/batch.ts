@@ -369,9 +369,6 @@ export async function handleInstallConfirm(): Promise<void> {
     pakDestination = checked ? checked.value : (customType === 'logicmods' ? 'logicmods' : '~mods');
   }
 
-  confirmBtn.textContent = _pendingUpdateModId ? 'Updating...' : 'Installing...';
-  statusEl.textContent = _pendingUpdateModId ? 'Updating mod...' : 'Extracting and installing mod...';
-
   contentEl.innerHTML = `
     <div class="install-console-header" style="display:flex;align-items:center;background:#181818;padding:6px 12px;border-top-left-radius:6px;border-top-right-radius:6px;border-bottom:1px solid #282828;">
       <span style="font-size:10px;font-family:monospace;color:#888;font-weight:600;">install_log.sh</span>
@@ -530,6 +527,11 @@ async function executeModInstallation(
     if (state.currentAnalysis.nexusModId) {
       manifest.nexusModId = state.currentAnalysis.nexusModId;
     }
+    if (state.currentAnalysis.nexusInfo) {
+      manifest.author = state.currentAnalysis.nexusInfo.author;
+      manifest.summary = state.currentAnalysis.nexusInfo.summary;
+      manifest.pictureUrl = state.currentAnalysis.nexusInfo.pictureUrl;
+    }
 
     const appState = getState();
     const existingCompanionMod = state.currentAnalysis.nexusModId
@@ -552,8 +554,10 @@ async function executeModInstallation(
     if (restoreCheckbox && restoreCheckbox.checked && restoreCheckbox.dataset.archiveId && installedMod) {
       try {
         const { applyArchivedConfig } = await import('../../../api');
+        const { getArchivedIgnoredSettings } = await import('./single');
+        const { files, keys } = getArchivedIgnoredSettings();
         const targetId = installedMod.id || manifest.displayName || customName || '';
-        const restored = await applyArchivedConfig(targetId, restoreCheckbox.dataset.archiveId);
+        const restored = await applyArchivedConfig(targetId, restoreCheckbox.dataset.archiveId, files, keys);
         if (restored) {
           logs.push(`<div style="color:#2ecc71;font-weight:bold;">[OK] Restored previously archived configuration settings!</div>`);
           resultsList.innerHTML = logs.join('');
@@ -594,7 +598,14 @@ export async function openInstallModalForZip(
   zipPath: string,
   preferredName?: string,
   preferredNexusId?: number,
-  preferredVersion?: string
+  preferredVersion?: string,
+  extraMetadata?: {
+    author?: string;
+    description?: string;
+    thumbnailPath?: string;
+    pictureUrl?: string;
+    workshopId?: number;
+  }
 ): Promise<void> {
   setLastInstallSuccess(false);
   // Always reset the processing guard so a new install never silently no-ops.
@@ -620,6 +631,20 @@ export async function openInstallModalForZip(
     }
     if (preferredVersion) {
       analysis.detectedVersion = preferredVersion;
+    }
+    if (extraMetadata) {
+      const pic = extraMetadata.pictureUrl || extraMetadata.thumbnailPath || '';
+      (analysis as any).nexusInfo = {
+        modId: extraMetadata.workshopId || 0,
+        name: preferredName || analysis.modinfo?.name || '',
+        author: extraMetadata.author || analysis.modinfo?.author || '',
+        summary: extraMetadata.description || analysis.modinfo?.description || (extraMetadata.workshopId ? `Steam Workshop Mod (ID: ${extraMetadata.workshopId})` : ''),
+        pictureUrl: pic,
+        version: preferredVersion || analysis.detectedVersion || '1.0.0',
+        downloads: 0,
+        endorsements: 0,
+        isWorkshop: !!extraMetadata.workshopId,
+      };
     }
 
     let existingMod: { id: string; name: string, version: string } | null = null;

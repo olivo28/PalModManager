@@ -10,6 +10,8 @@
     "test": "cargo test --manifest-path src-tauri/Cargo.toml --test integration_tests",
     "test:verbose": "cargo test --manifest-path src-tauri/Cargo.toml --test integration_tests -- --nocapture --test-threads=1",
     "clean": "node scripts/clean-cache.js",
+    "dumps:check": "node scripts/sync_ue4ss_dumps.js",
+    "dumps:sync": "node scripts/sync_ue4ss_dumps.js --sync",
     "tauri": "tauri"
   },
   "dependencies": {

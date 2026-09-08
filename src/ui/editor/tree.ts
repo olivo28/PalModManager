@@ -15,8 +15,6 @@ export function renderEditorModTree(): void {
   const currentModId = state.editorModId;
 
   const editableMods = state.allMods.filter(m =>
-    m.type !== 'pak' &&
-    m.type !== 'logicmods' &&
     m.nexusAuthor !== 'UE4SS Native Mod'
   );
 
@@ -37,6 +35,8 @@ export function renderEditorModTree(): void {
   const ue4ssMods = editableMods.filter(m => m.type === 'ue4ss').sort((a, b) => a.name.localeCompare(b.name));
   const palSchemaMods = editableMods.filter(m => m.type === 'palschema').sort((a, b) => a.name.localeCompare(b.name));
   const hybridMods = editableMods.filter(m => m.type === 'hybrid').sort((a, b) => a.name.localeCompare(b.name));
+  const pakMods = editableMods.filter(m => m.type === 'pak').sort((a, b) => a.name.localeCompare(b.name));
+  const logicMods = editableMods.filter(m => m.type === 'logicmods').sort((a, b) => a.name.localeCompare(b.name));
 
   function renderSection(label: string, mods: typeof editableMods, sectionId: string): string {
     if (mods.length === 0) return '';
@@ -61,7 +61,9 @@ export function renderEditorModTree(): void {
   tree.innerHTML =
     renderSection('UE4SS', ue4ssMods, 'ue4ss') +
     renderSection('PalSchema', palSchemaMods, 'palschema') +
-    renderSection('Hybrid', hybridMods, 'hybrid');
+    renderSection('Hybrid', hybridMods, 'hybrid') +
+    renderSection('Pak', pakMods, 'pak') +
+    renderSection('LogicMods', logicMods, 'logicmods');
 
   if (editableMods.length === 0) {
     tree.innerHTML = `<div style="padding:12px;font-size:11px;color:var(--text-muted)">${escapeHtml(t('editor.no_editable_mods'))}</div>`;
@@ -325,6 +327,8 @@ const _collapsedFolders: Set<string> = new Set();
 function getFileIcon(ext: string): string {
   const lower = ext.toLowerCase();
   if (['png', 'jpg', 'jpeg', 'gif', 'webp', 'ico', 'bmp', 'svg'].includes(lower)) return 'IMG';
+  if (['uasset', 'uexp', 'ubulk', 'uptnl'].includes(lower)) return 'UAS';
+  if (lower === 'pak') return 'PAK';
   if (lower === 'json' || lower === 'jsonc') return '{ }';
   if (lower === 'lua') return 'LUA';
   if (lower === 'txt' || lower === 'md') return 'TXT';
@@ -388,10 +392,11 @@ function renderNodeHTML(node: FileTreeNode): string {
         </button>
       `;
 
+      const displayName = child.name.startsWith('[Pak] ') ? child.name.slice(6) : child.name;
       return `
       <div class="editor-file-item${isSelected ? ' selected' : ''}" data-path="${escapeHtml(child.path)}" data-ext="${escapeHtml(ext)}">
         <span class="editor-file-icon">${icon}</span>
-        <span class="editor-file-name" title="${escapeHtml(child.name)}">${escapeHtml(child.name)}${configBadge}</span>
+        <span class="editor-file-name" title="${escapeHtml(displayName)}">${escapeHtml(displayName)}${configBadge}</span>
         <span class="editor-file-dirty-dot" title="${escapeHtml(t('editor.unsaved_changes') || 'Unsaved changes')}">●</span>
         <div class="editor-file-actions">
           ${actionButtons}
@@ -534,8 +539,9 @@ export function renderFileTree(files: string[]): void {
       e.stopPropagation();
       const currentModId = getState().editorModId;
       if (!currentModId) return;
+      const { showPrompt } = await import('../confirm');
       const promptMsg = t('editor.prompt_new_file') || 'Enter relative path for new file (e.g. scripts/subsystem.lua):';
-      const relPath = window.prompt(promptMsg);
+      const relPath = await showPrompt(promptMsg);
       if (!relPath || !relPath.trim()) return;
 
       try {
@@ -559,8 +565,9 @@ export function renderFileTree(files: string[]): void {
       e.stopPropagation();
       const currentModId = getState().editorModId;
       if (!currentModId) return;
+      const { showPrompt } = await import('../confirm');
       const promptMsg = t('editor.prompt_new_folder') || 'Enter relative path for new folder (e.g. scripts/spawners):';
-      const relPath = window.prompt(promptMsg);
+      const relPath = await showPrompt(promptMsg);
       if (!relPath || !relPath.trim()) return;
 
       try {

@@ -151,6 +151,20 @@ export async function checkArchivedConfig(nexusModId: number | null, modName: st
   return invoke('check_archived_config', { nexusModId, modName });
 }
 
-export async function applyArchivedConfig(modId: string, archiveId: string): Promise<boolean> {
-  return invoke('apply_archived_config', { modId, archiveId });
+export async function previewArchivedConfigDiff(zipPath: string, archiveId: string): Promise<ConfigDiff[]> {
+  return invoke('preview_archived_config_diff', { zipPath, archiveId });
+}
+
+export async function applyArchivedConfig(
+  modId: string,
+  archiveId: string,
+  ignoredFiles?: string[],
+  ignoredKeys?: string[],
+): Promise<boolean> {
+  return invoke('apply_archived_config', {
+    modId,
+    archiveId,
+    ignoredFiles: ignoredFiles || null,
+    ignoredKeys: ignoredKeys || null,
+  });
 }

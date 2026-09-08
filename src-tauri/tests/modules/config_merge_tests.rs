@@ -105,3 +105,48 @@ fn test_apply_config_merge_skips_ignored_file() {
 
     let _ = std::fs::remove_dir_all(&temp_dir);
 }
+
+#[test]
+fn test_merge_lua_preserves_comparison_operators() {
+    let old_lua = r#"
+Config = {}
+Config.Speed = 100
+"#;
+    let new_lua = r#"
+Config = {}
+Config.Speed = 50
+if Config.Speed == 50 then
+    print("default speed")
+end
+if Config.Mode ~= "debug" then
+    print("normal")
+end
+"#;
+    let merged = merge_lua(old_lua, new_lua, &[]).expect("merge should succeed");
+    // Should update Config.Speed = 100
+    assert!(merged.contains("Config.Speed = 100"));
+    // Must NEVER mangle conditional comparisons into assignments
+    assert!(merged.contains("if Config.Speed == 50 then"));
+    assert!(merged.contains("if Config.Mode ~= \"debug\" then"));
+    assert!(!merged.contains("if Config.Speed = 100 then"));
+}
+
+#[test]
+fn test_snapshot_configs_strictly_blacklists_main_lua() {
+    let temp_dir = std::env::temp_dir().join(format!("pmm_test_{}", uuid::Uuid::new_v4()));
+    let scripts_dir = temp_dir.join("Scripts");
+    std::fs::create_dir_all(&scripts_dir).unwrap();
+
+    std::fs::write(scripts_dir.join("main.lua"), "-- main entry point").unwrap();
+    std::fs::write(temp_dir.join("main.lua"), "-- root main entry point").unwrap();
+
+    // Even if explicitly requested as custom_config, main.lua must NEVER be snapshotted
+    let snap = snapshot_configs(&temp_dir, Some("main.lua"));
+    assert_eq!(snap.entries.len(), 0);
+
+    let snap2 = snapshot_configs(&temp_dir, Some("Scripts/main.lua"));
+    assert_eq!(snap2.entries.len(), 0);
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}
+

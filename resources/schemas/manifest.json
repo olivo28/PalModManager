@@ -1,12 +1,28 @@
 {
   "schema_version": "1.0.0",
-  "latest_palschema_version": "0.6.6",
-  "latest_game_version": "v1.0.3",
-  "latest_steam_build_id": "24575825",
+  "latest_palschema_version": "0.6.7",
+  "latest_game_version": "v1.0.4",
+  "latest_steam_build_id": "25094871",
   "author": "Okaetsu",
   "upstream_repository": "https://github.com/Okaetsu/PalSchema",
-  "updated_at": "2026-09-02T23:55:00Z",
+  "updated_at": "2026-09-07T16:23:24.400Z",
   "schemas": [
+    {
+      "game_version": "v1.0.4",
+      "steam_build_id": "25094871",
+      "app_id": 1623730,
+      "schemas_filename": "palschema_schemas_0.6.7.zip",
+      "schemas_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/schemas/palschema_schemas_0.6.7.zip",
+      "sha256": "95b7480f210d03e33086cf32e62a4945a7e58f1af81d07fa3277bf89f367d166",
+      "file_size_bytes": 421060,
+      "engine_version": "UE5.1.1",
+      "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-2281fa31",
+      "is_latest": true,
+      "palschema_version": "0.6.7",
+      "total_raw_schemas": 475,
+      "total_domain_schemas": 5,
+      "has_enums": true
+    },
     {
       "palschema_version": "0.6.6",
       "game_version": "v1.0.3",
@@ -19,7 +35,7 @@
       "total_domain_schemas": 5,
       "has_enums": true,
       "engine_version": "UE5.1.1",
-      "is_latest": true
+      "is_latest": false
     }
   ]
 }

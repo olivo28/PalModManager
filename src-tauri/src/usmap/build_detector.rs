@@ -30,10 +30,13 @@ pub fn detect_installed_game_build(game_path: &Path) -> InstalledBuildInfo {
                 }
 
                 if build_id.is_some() {
+                    let master = super::master_manifest::get_or_load_master_manifest("");
+                    let game_version = master.map(|m| super::master_manifest::resolve_game_version(&m, build_id.as_deref()));
+
                     return InstalledBuildInfo {
                         app_id: app_id.or(Some(1623730)),
                         build_id,
-                        game_version: Some("v1.0.3".to_string()), // Default base detected version
+                        game_version,
                         source: "Steam appmanifest".to_string(),
                         is_steam: true,
                         is_gamepass: false,
@@ -51,10 +54,13 @@ pub fn detect_installed_game_build(game_path: &Path) -> InstalledBuildInfo {
         || game_path.to_string_lossy().to_lowercase().contains("content");
 
     if is_gp {
+        let master = super::master_manifest::get_or_load_master_manifest("");
+        let game_version = master.map(|m| format!("{} (Game Pass)", m.latest_game_version));
+
         return InstalledBuildInfo {
             app_id: None,
             build_id: None,
-            game_version: Some("v1.0.3 (Game Pass)".to_string()),
+            game_version,
             source: "Xbox Game Pass (WinGDK)".to_string(),
             is_steam: false,
             is_gamepass: true,
@@ -66,10 +72,13 @@ pub fn detect_installed_game_build(game_path: &Path) -> InstalledBuildInfo {
     let has_exe = game_path.join("Pal").join("Binaries").join("Win64").join("Palworld-Win64-Shipping.exe").exists()
         || game_path.join("Palworld.exe").exists();
 
+    let master = super::master_manifest::get_or_load_master_manifest("");
+    let game_version = if has_exe { master.map(|m| m.latest_game_version) } else { None };
+
     InstalledBuildInfo {
         app_id: if has_exe { Some(1623730) } else { None },
         build_id: None,
-        game_version: if has_exe { Some("v1.0.3".to_string()) } else { None },
+        game_version,
         source: if has_exe { "Standalone / Non-Steam".to_string() } else { "Unknown Location".to_string() },
         is_steam: false,
         is_gamepass: false,

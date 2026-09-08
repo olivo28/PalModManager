@@ -27,6 +27,9 @@ export interface InstallerDomMap {
   'archive-view-modal': HTMLElement;
   'archive-structure-modal': HTMLElement;
   'config-diff-modal': HTMLElement;
+  'review-archived-config-btn': HTMLButtonElement;
+  'restore-archived-config-checkbox': HTMLInputElement;
+  'archived-config-diff-modal': HTMLElement;
 }
 
 export const installerDom = createScope<InstallerDomMap>('installer');

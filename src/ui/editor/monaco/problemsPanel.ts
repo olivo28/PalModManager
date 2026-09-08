@@ -3,7 +3,7 @@ import { EditorDiagnostic, scanWorkspaceProblems } from '../../../api';
 import { editorDom } from '../../../framework';
 import { getState } from '../../../state';
 import { t } from '../../../utils/i18n';
-import { loadFileContent } from '../viewer';
+import { revealAndSelectFile } from '../tree';
 import { getCurrentMonacoFilePath, getMonacoEditor } from './state';
 
 const STORAGE_HEIGHT_KEY = 'pmm_editor_problems_height';
@@ -507,7 +507,7 @@ function renderWorkspaceProblemsView(): void {
 
       const currentPath = getCurrentMonacoFilePath();
       if (currentPath !== targetPath) {
-        await loadFileContent(targetPath);
+        await revealAndSelectFile(targetPath, line);
       }
 
       setTimeout(() => {

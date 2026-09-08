@@ -148,3 +148,63 @@ export async function updateStatusBarEngineInfo(): Promise<void> {
     console.error('Failed to load status bar engine info:', e);
   }
 }
+
+export function setStatusBarMode(mode: 'code' | 'binary', details?: { assetCount?: number; size?: string; lang?: string }): void {
+  const cursorEl = editorDom.elMaybe('editor-status-cursor');
+  const spacesEl = editorDom.elMaybe('editor-status-spaces');
+  const encodingEl = editorDom.elMaybe('editor-status-encoding');
+  const langEl = editorDom.elMaybe('editor-status-language');
+
+  const cursorSep = cursorEl?.previousElementSibling as HTMLElement | null;
+  const spacesSep = spacesEl?.previousElementSibling as HTMLElement | null;
+  const encodingSep = encodingEl?.previousElementSibling as HTMLElement | null;
+  const langSep = langEl?.previousElementSibling as HTMLElement | null;
+
+  if (mode === 'binary') {
+    if (cursorEl) cursorEl.style.display = 'none';
+    if (cursorSep) cursorSep.style.display = 'none';
+    if (spacesEl) spacesEl.style.display = 'none';
+    if (spacesSep) spacesSep.style.display = 'none';
+
+    if (encodingEl) {
+      if (details?.size) {
+        encodingEl.textContent = details.size;
+        encodingEl.style.display = 'inline-flex';
+        if (encodingSep) encodingSep.style.display = 'inline-block';
+      } else {
+        encodingEl.style.display = 'none';
+        if (encodingSep) encodingSep.style.display = 'none';
+      }
+    }
+
+    if (langEl) {
+      if (details?.assetCount !== undefined) {
+        langEl.textContent = `${details.assetCount} assets`;
+        langEl.style.display = 'inline-flex';
+        if (langSep) langSep.style.display = 'inline-block';
+      } else if (details?.lang) {
+        langEl.textContent = details.lang;
+        langEl.style.display = 'inline-flex';
+        if (langSep) langSep.style.display = 'inline-block';
+      } else {
+        langEl.textContent = 'Binary';
+        langEl.style.display = 'inline-flex';
+      }
+    }
+  } else {
+    if (cursorEl) cursorEl.style.display = 'inline-flex';
+    if (cursorSep) cursorSep.style.display = 'inline-block';
+    if (spacesEl) spacesEl.style.display = 'inline-flex';
+    if (spacesSep) spacesSep.style.display = 'inline-block';
+    if (encodingEl) {
+      encodingEl.textContent = 'UTF-8';
+      encodingEl.style.display = 'inline-flex';
+      if (encodingSep) encodingSep.style.display = 'inline-block';
+    }
+    if (langEl) {
+      langEl.style.display = 'inline-flex';
+      if (langSep) langSep.style.display = 'inline-block';
+    }
+  }
+}
+

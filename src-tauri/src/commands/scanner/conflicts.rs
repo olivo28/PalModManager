@@ -248,6 +248,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
     };
 
     let schema_notices = crate::pak_scanner::check_mod_schema_compatibility(&profile_mods);
+    let patch_risk_notices = crate::pak_scanner::check_patch_risk_compatibility(&profile_mods);
 
     // USMAP Unreal Engine Schema Hook Diagnostics & C++ SDK Headers
     let usmap_path = crate::usmap::sync::get_active_usmap_path(&data.settings.program_path);
@@ -444,6 +445,7 @@ pub async fn scan_conflicts(state: State<'_, AppState>) -> Result<ScanResult, St
         mod_summaries,
         gamepass_notices,
         schema_notices,
+        patch_risk_notices,
         usmap_diagnostics,
         is_gamepass,
     })

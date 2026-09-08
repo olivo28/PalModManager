@@ -120,6 +120,16 @@ export function renderDeepScanResultsHtml(
         ` : ''}
       </div>
 
+      ${(curHealth.baseDeteriorationRate !== undefined && curHealth.baseDeteriorationRate !== null && curHealth.baseDeteriorationRate > 0) ? `
+        <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: 10px 14px; display: flex; align-items: flex-start; gap: 10px;">
+          <span style="font-size: 16px; flex-shrink: 0; margin-top: 1px;">🏰</span>
+          <div style="display: flex; flex-direction: column; gap: 3px; font-size: 11px; line-height: 1.45;">
+            <span style="font-weight: 700; color: #38bdf8;">${escapeHtml(t('scanner.save_base_deterioration_tip_title') || 'Base Camp Deterioration Active')} (${curHealth.baseDeteriorationRate}x)</span>
+            <span style="color: var(--text-secondary);">${escapeHtml(t('scanner.save_base_deterioration_tip', { rate: `${curHealth.baseDeteriorationRate}x` }) || `Outer structures built with expanded base radius mods will slowly decay because structure deterioration is set to ${curHealth.baseDeteriorationRate}x. To preserve outer buildings without the mod, set deterioration rate to 0 in World Settings.`)}</span>
+          </div>
+        </div>
+      ` : ''}
+
       ${(curHealth.hasExternalEdits || curHealth.externalEditDetails) ? `
         <div style="background: linear-gradient(135deg, rgba(255, 170, 0, 0.12) 0%, rgba(255, 100, 0, 0.06) 100%); border: 1px solid rgba(255, 170, 0, 0.35); border-radius: 8px; padding: 14px 16px; display: flex; flex-direction: column; gap: 8px;">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">

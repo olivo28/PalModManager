@@ -1,0 +1,32 @@
+{
+  "schema_version": "1.0.0",
+  "latest_game_version": "v1.0.4",
+  "latest_steam_build_id": "25094871",
+  "updated_at": "2026-09-07T16:23:00.000Z",
+  "versions": [
+    {
+      "game_version": "v1.0.4",
+      "steam_build_id": "25094871",
+      "ue4ss_commit": "2281fa31",
+      "engine_version": "UE5.1.1",
+      "is_latest": true,
+      "usmap": "mappings/Palworld_25094871.usmap",
+      "jmap": "jmap/Palworld_25094871.jmap.zip",
+      "sdk": "sdk/Palworld_SDK_25094871.zip",
+      "lua_types": "lua_types/Palworld_LuaTypes_25094871.zip",
+      "uht": "uht/Palworld_UHT_SDK_25094871.zip",
+      "bp_sdk": "bp_sdk/Palworld_BP_SDK_25094871.zip",
+      "palschema_version": "0.6.7"
+    },
+    {
+      "game_version": "v1.0.3",
+      "steam_build_id": "24575825",
+      "ue4ss_commit": "c838a8ac",
+      "engine_version": "UE5.1.1",
+      "is_latest": false,
+      "usmap": "mappings/Palworld_24575825.usmap",
+      "sdk": "sdk/Palworld_SDK_24575825.zip",
+      "palschema_version": "0.6.6"
+    }
+  ]
+}

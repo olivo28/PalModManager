@@ -31,6 +31,8 @@ pub struct MappingsManifest {
     pub schema_version: String,
     #[serde(alias = "latest_game_version")]
     pub latest_game_version: String,
+    #[serde(default, alias = "latest_steam_build_id")]
+    pub latest_steam_build_id: Option<String>,
     #[serde(alias = "updated_at")]
     pub updated_at: String,
     pub mappings: Vec<MappingEntry>,
@@ -61,3 +63,48 @@ pub struct UsmapStatus {
     pub error_message: Option<String>,
     pub mappings_path: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MasterVersionEntry {
+    #[serde(alias = "game_version")]
+    pub game_version: String,
+    #[serde(default, alias = "steam_build_id")]
+    pub steam_build_id: Option<String>,
+    #[serde(default, alias = "ue4ss_commit")]
+    pub ue4ss_commit: Option<String>,
+    #[serde(default, alias = "engine_version")]
+    pub engine_version: Option<String>,
+    #[serde(default, alias = "is_latest")]
+    pub is_latest: bool,
+    #[serde(default)]
+    pub usmap: Option<String>,
+    #[serde(default)]
+    pub jmap: Option<String>,
+    #[serde(default)]
+    pub sdk: Option<String>,
+    #[serde(default, alias = "lua_types")]
+    pub lua_types: Option<String>,
+    #[serde(default)]
+    pub uht: Option<String>,
+    #[serde(default, alias = "bp_sdk")]
+    pub bp_sdk: Option<String>,
+    #[serde(default, alias = "palschema_version")]
+    pub palschema_version: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MasterResourceManifest {
+    #[serde(alias = "schema_version")]
+    pub schema_version: String,
+    #[serde(alias = "latest_game_version")]
+    pub latest_game_version: String,
+    #[serde(alias = "latest_steam_build_id")]
+    pub latest_steam_build_id: String,
+    #[serde(alias = "updated_at")]
+    pub updated_at: String,
+    #[serde(default)]
+    pub versions: Vec<MasterVersionEntry>,
+}
+

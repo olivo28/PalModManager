@@ -1,8 +1,9 @@
+import { convertFileSrc } from '@tauri-apps/api/core';
 import {
   buildInstallManifest,
   fetchNexusInfoAsync,
   previewConfigDiff,
-  setModIgnoredKeys,
+  previewArchivedConfigDiff,
   openUrl
 } from '../../../api';
 import type { ZipAnalysis, InstallManifest } from '../../../api';
@@ -12,9 +13,19 @@ import { t } from '../../../utils/i18n';
 import { getCleanNameFromFilename } from './helpers';
 import { showFileTreeModal } from './fileTree';
 import { setPendingUpdateModId } from './state';
+import { showConfigDiffModal, showArchivedConfigDiffModal } from './diffModal';
 import { installerDom } from '../../../framework';
 
+let _archivedIgnoredFiles: string[] = [];
+let _archivedIgnoredKeys: string[] = [];
+
+export function getArchivedIgnoredSettings(): { files: string[], keys: string[] } {
+  return { files: _archivedIgnoredFiles, keys: _archivedIgnoredKeys };
+}
+
 export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: { id: string; name: string, version: string } | null = null): Promise<void> {
+  _archivedIgnoredFiles = [];
+  _archivedIgnoredKeys = [];
   updateState({ currentAnalysis: analysis });
   const content = installerDom.el('modal-content');
   const confirmBtn = installerDom.el('modal-confirm');
@@ -140,11 +151,13 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   }
 
   let archivedConfigHtml = '';
+  let currentArchivedInfo: any = null;
   if (!existingMod) {
     try {
       const { checkArchivedConfig } = await import('../../../api');
       const archivedInfo = await checkArchivedConfig(analysis.nexusModId || null, cleanName);
       if (archivedInfo && archivedInfo.files.length > 0) {
+        currentArchivedInfo = archivedInfo;
         archivedConfigHtml = `
           <div class="archived-config-banner" style="margin-bottom:6px;padding:8px 12px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
             <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
@@ -154,17 +167,23 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
                 <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(archivedInfo.files.join(', '))}">${escapeHtml(archivedInfo.files.join(', '))}</span>
               </div>
             </div>
-            <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#2ecc71;cursor:pointer;flex-shrink:0;">
-              <input type="checkbox" id="restore-archived-config-checkbox" data-archive-id="${escapeHtml(archivedInfo.archiveId)}" checked style="accent-color:#2ecc71;cursor:pointer;" />
-              <span>${escapeHtml(t('installer.restore_archived_config'))}</span>
-            </label>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+              <button id="review-archived-config-btn" type="button" class="btn btn-secondary" style="font-size: 10px; padding: 3px 8px; border-color: rgba(46, 204, 113, 0.5); color: #2ecc71; white-space: nowrap; height: auto; margin: 0;">⚙ ${escapeHtml(t('installer.btn_review_archived_config') || 'Review')}</button>
+              <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#2ecc71;cursor:pointer;flex-shrink:0;">
+                <input type="checkbox" id="restore-archived-config-checkbox" data-archive-id="${escapeHtml(archivedInfo.archiveId)}" checked style="accent-color:#2ecc71;cursor:pointer;" />
+                <span>${escapeHtml(t('installer.restore_archived_config'))}</span>
+              </label>
+            </div>
           </div>
         `;
       }
     } catch { }
   }
 
-  const picUrl = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
+  const rawPic = analysis.nexusInfo?.pictureUrl || (analysis.nexusInfo as any)?.picture_url || '';
+  const picUrl = (rawPic && !rawPic.startsWith('http://') && !rawPic.startsWith('https://') && !rawPic.startsWith('asset://'))
+    ? convertFileSrc(rawPic)
+    : rawPic;
   let versionVal = analysis.modinfo?.version || '';
   if (!versionVal && analysis.detectedVersion && !/^[0-9a-fA-F-]{6,}$/.test(analysis.detectedVersion.trim()) && analysis.detectedVersion.trim() !== '1.0.0' && analysis.detectedVersion.trim() !== 'unknown') {
     versionVal = analysis.detectedVersion;
@@ -261,14 +280,14 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
        ${analysis.nexusInfo ? `
        <div style="width:230px;min-width:230px;max-width:230px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
           <div style="position:relative;width:100%;height:120px;overflow:hidden;background:#000;">
-             ${picUrl ? `<img src="${escapeHtml(picUrl)}" data-original-src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div style="display:none;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">N</div>`}
-             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:10px;font-size:9px;color:#00ffcc;font-weight:700;letter-spacing:0.5px;">
-                ${analysis.nexusInfo.downloads.toLocaleString()} DLs
+             ${picUrl ? `<img src="${escapeHtml(picUrl)}" data-original-src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div style="display:none;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">${analysis.nexusInfo.isWorkshop ? 'W' : 'N'}</div>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">${analysis.nexusInfo.isWorkshop ? 'W' : 'N'}</div>`}
+             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:10px;font-size:9px;color:${analysis.nexusInfo.isWorkshop ? '#ff9d00' : '#00ffcc'};font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+                ${analysis.nexusInfo.isWorkshop ? `WORKSHOP${analysis.nexusInfo.modId ? ` (ID: ${analysis.nexusInfo.modId})` : ''}` : `${analysis.nexusInfo.downloads.toLocaleString()} DLs`}
              </div>
           </div>
           <div style="padding:10px;display:flex;flex-direction:column;gap:5px;">
              <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
-             <div style="font-size:9.5px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author }))}</div>
+             <div style="font-size:9.5px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author || t('common.unknown') }))}</div>
              <div style="font-size:10.5px;color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
           </div>
        </div>
@@ -473,235 +492,27 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     });
   }
 
+  const reviewArchivedBtn = installerDom.elMaybe('review-archived-config-btn');
+  if (reviewArchivedBtn && currentArchivedInfo) {
+    reviewArchivedBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      try {
+        const diffs = await previewArchivedConfigDiff(analysis.zipPath, currentArchivedInfo.archiveId);
+        showArchivedConfigDiffModal(
+          diffs,
+          _archivedIgnoredFiles,
+          _archivedIgnoredKeys,
+          (newIgnoredFiles, newIgnoredKeys) => {
+            _archivedIgnoredFiles = newIgnoredFiles;
+            _archivedIgnoredKeys = newIgnoredKeys;
+          }
+        );
+      } catch (err) {
+        console.error("Failed to preview archived config diff:", err);
+      }
+    });
+  }
+
   confirmBtn.disabled = false;
 }
 
-export function showConfigDiffModal(diffs: any[], modId: string): void {
-  const overlay = document.createElement('div');
-  overlay.className = 'modal-overlay visible';
-  overlay.id = 'config-diff-modal';
-  overlay.style.zIndex = '4500';
-
-  const state = getState();
-  const currentMod = state.allMods.find(m => m.id === modId);
-  const currentIgnoredKeys = currentMod?.ignoredKeys || [];
-
-  let html = `
-    <div class="modal" style="max-width:850px; width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
-      <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-        <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary);">⚙ Config Settings Merge Preview</h3>
-        <button class="modal-close-btn" id="config-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
-      </div>
-      <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--bg-primary);">
-  `;
-
-  const collapseByDefault = diffs.length > 1;
-
-  for (let i = 0; i < diffs.length; i++) {
-    const diff = diffs[i];
-    const isFileIgnored = currentIgnoredKeys.includes(diff.file_name);
-    html += `
-      <div class="config-diff-card" id="config-diff-card-${i}" style="background:var(--bg-secondary); border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.3)' : 'var(--border)'}; border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:4px;">
-        <div class="config-diff-file-header" data-index="${i}" style="cursor:pointer; font-weight:700; font-family:monospace; font-size:12px; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between; padding:2px 0; user-select:none; word-break:break-all;">
-          <div style="display:flex; align-items:center; gap:8px;">
-            <span>📄 ${escapeHtml(diff.file_name)}</span>
-            <span id="diff-file-badge-${i}" style="font-size:9px; padding:1px 6px; border-radius:8px; font-weight:600; text-transform:uppercase; ${isFileIgnored ? 'background:rgba(255,80,0,0.15); color:#ff5000; border:1px solid rgba(255,80,0,0.3);' : 'background:rgba(0,188,255,0.15); color:var(--accent); border:1px solid rgba(0,188,255,0.3);'}">
-              ${isFileIgnored ? escapeHtml(t('installer.diff_file_ignored_badge')) : escapeHtml(t('installer.diff_merge_file'))}
-            </span>
-          </div>
-          <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="btn ignore-file-btn" data-index="${i}" data-file="${escapeHtml(diff.file_name)}" style="font-size:10px; padding:3px 8px; height:auto; line-height:1; margin:0; border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(0,188,255,0.4)'}; background:${isFileIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)'}; color:${isFileIgnored ? '#ff5000' : 'var(--text-primary)'}; border-radius:4px; cursor:pointer;">
-              ${isFileIgnored ? `<span>✕</span> ${escapeHtml(t('installer.diff_use_clean_file'))}` : `<span>✓</span> ${escapeHtml(t('installer.diff_merge_file'))}`}
-            </button>
-            <span class="toggle-icon" style="font-size:10px; color:var(--text-muted); padding-left:4px;">${collapseByDefault ? '▲' : '▼'}</span>
-          </div>
-        </div>
-        <div class="config-diff-file-content" id="config-diff-file-content-${i}" style="display: ${collapseByDefault ? 'none' : 'flex'}; flex-direction:column; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.03); padding-top:8px; opacity:${isFileIgnored ? '0.4' : '1'};">
-    `;
-
-    if (diff.keys_user_changed && diff.keys_user_changed.length > 0) {
-      html += `
-        <div>
-          <div style="color:#ff9000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🟢 Your changes to preserve</span>
-            <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,144,0,0.15); border:1px solid rgba(255,144,0,0.25);">${diff.keys_user_changed.length}</span>
-          </div>
-          <div style="overflow-x:auto; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:4px;">
-            <table style="width:100%; border-collapse:collapse; font-size:10px; text-align:left; font-family:monospace;">
-              <thead>
-                <tr style="border-bottom:1px solid var(--border); color:var(--text-muted);">
-                  <th style="padding:6px 8px; font-weight:bold; width: 60px;">Preserve</th>
-                  <th style="padding:6px 8px; font-weight:bold;">Setting / Key</th>
-                  <th style="padding:6px 8px; font-weight:bold; width:150px; text-align:right;">Your Value</th>
-                  <th style="padding:6px 8px; font-weight:bold; width:150px; text-align:right;">Default Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${diff.keys_user_changed.map((c: any) => {
-        const isPreserved = !currentIgnoredKeys.includes(c.key);
-        return `
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.02); hover:background:rgba(255,255,255,0.01);">
-                      <td style="padding:6px 8px; text-align:center;">
-                        <input type="checkbox" class="preserve-key-switch" data-key="${escapeHtml(c.key)}" ${isPreserved ? 'checked' : ''} style="cursor:pointer;" />
-                      </td>
-                      <td style="padding:6px 8px; color:var(--text-primary); word-break:break-all;" title="${escapeHtml(c.key)}">${escapeHtml(c.key)}</td>
-                      <td style="padding:6px 8px; color:#ff9000; font-weight:bold; text-align:right; word-break:break-all;">${escapeHtml(c.old_value)}</td>
-                      <td style="padding:6px 8px; opacity:0.6; text-decoration:line-through; text-align:right; word-break:break-all;">${escapeHtml(c.new_value)}</td>
-                    </tr>
-                  `;
-      }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      `;
-    }
-
-    if (diff.keys_added_by_author && diff.keys_added_by_author.length > 0) {
-      html += `
-        <div>
-          <div style="color:#00bcff; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🔵 New settings added by author</span>
-            <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.25);">${diff.keys_added_by_author.length}</span>
-          </div>
-          <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
-            ${diff.keys_added_by_author.map((k: string) => `
-              <span style="font-family:monospace; font-size:9px; padding:2px 6px; background:rgba(0,188,255,0.08); border:1px solid rgba(0,188,255,0.15); border-radius:4px; color:#00bcff; word-break:break-all;" title="${escapeHtml(k)}">${escapeHtml(k)}</span>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    if (diff.keys_removed_by_author && diff.keys_removed_by_author.length > 0) {
-      html += `
-        <div>
-          <div style="color:#ff5000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🔴 Settings removed by author</span>
-            <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,80,0,0.15); border:1px solid rgba(255,80,0,0.25);">${diff.keys_removed_by_author.length}</span>
-          </div>
-          <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
-            ${diff.keys_removed_by_author.map((k: string) => `
-              <span style="font-family:monospace; font-size:9px; padding:2px 6px; background:rgba(255,80,0,0.08); border:1px solid rgba(255,80,0,0.15); border-radius:4px; color:#ff5000; word-break:break-all;" title="${escapeHtml(k)}">${escapeHtml(k)}</span>
-            `).join('')}
-          </div>
-        </div>
-      `;
-    }
-
-    html += `
-        </div>
-      </div>
-    `;
-  }
-
-  html += `
-      </div>
-      <div class="modal-footer" style="padding:14px 20px; border-top:1px solid var(--border); display:flex; justify-content:flex-end; background:var(--bg-secondary); border-bottom-left-radius:8px; border-bottom-right-radius:8px;">
-        <button id="config-diff-modal-close-btn" class="btn btn-secondary">${escapeHtml(t('common.close'))}</button>
-      </div>
-    </div>
-  `;
-
-  overlay.innerHTML = html;
-  document.body.appendChild(overlay);
-
-  let localIgnoredKeys = [...currentIgnoredKeys];
-  overlay.querySelectorAll('.preserve-key-switch').forEach(checkbox => {
-    checkbox.addEventListener('change', (e) => {
-      const target = e.target as HTMLInputElement;
-      const key = target.dataset.key!;
-      if (target.checked) {
-        localIgnoredKeys = localIgnoredKeys.filter(k => k !== key);
-      } else {
-        if (!localIgnoredKeys.includes(key)) {
-          localIgnoredKeys.push(key);
-        }
-      }
-
-      setModIgnoredKeys(modId, localIgnoredKeys).then(updatedMod => {
-        const modInState = state.allMods.find(m => m.id === modId);
-        if (modInState) {
-          modInState.ignoredKeys = localIgnoredKeys;
-        }
-      }).catch(err => {
-        console.error("Failed to update ignored keys:", err);
-      });
-    });
-  });
-
-  overlay.querySelectorAll('.ignore-file-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      const fileName = (btn as HTMLElement).dataset.file!;
-      const idx = (btn as HTMLElement).dataset.index!;
-      const isCurrentlyIgnored = localIgnoredKeys.includes(fileName);
-
-      if (isCurrentlyIgnored) {
-        localIgnoredKeys = localIgnoredKeys.filter(k => k !== fileName);
-      } else {
-        localIgnoredKeys.push(fileName);
-      }
-
-      const isNowIgnored = !isCurrentlyIgnored;
-      const card = overlay.querySelector(`#config-diff-card-${idx}`) as HTMLElement;
-      const badge = overlay.querySelector(`#diff-file-badge-${idx}`) as HTMLElement;
-      const content = overlay.querySelector(`#config-diff-file-content-${idx}`) as HTMLElement;
-
-      if (card) {
-        card.style.borderColor = isNowIgnored ? 'rgba(255,80,0,0.3)' : 'var(--border)';
-      }
-      if (badge) {
-        badge.style.background = isNowIgnored ? 'rgba(255,80,0,0.15)' : 'rgba(0,188,255,0.15)';
-        badge.style.color = isNowIgnored ? '#ff5000' : 'var(--accent)';
-        badge.style.border = isNowIgnored ? '1px solid rgba(255,80,0,0.3)' : '1px solid rgba(0,188,255,0.3)';
-        badge.textContent = isNowIgnored ? t('installer.diff_file_ignored_badge') : t('installer.diff_merge_file');
-      }
-      if (content) {
-        content.style.opacity = isNowIgnored ? '0.4' : '1';
-      }
-
-      const targetBtn = btn as HTMLElement;
-      targetBtn.style.borderColor = isNowIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(0,188,255,0.4)';
-      targetBtn.style.background = isNowIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)';
-      targetBtn.style.color = isNowIgnored ? '#ff5000' : 'var(--text-primary)';
-      targetBtn.innerHTML = isNowIgnored
-        ? `<span>✕</span> ${escapeHtml(t('installer.diff_use_clean_file'))}`
-        : `<span>✓</span> ${escapeHtml(t('installer.diff_merge_file'))}`;
-
-      setModIgnoredKeys(modId, localIgnoredKeys).then(() => {
-        const modInState = state.allMods.find(m => m.id === modId);
-        if (modInState) {
-          modInState.ignoredKeys = localIgnoredKeys;
-        }
-      }).catch(err => {
-        console.error("Failed to update ignored keys:", err);
-      });
-    });
-  });
-
-  overlay.querySelectorAll('.config-diff-file-header').forEach(header => {
-    header.addEventListener('click', () => {
-      const idx = (header as HTMLElement).dataset.index;
-      const content = overlay.querySelector(`#config-diff-file-content-${idx}`) as HTMLElement;
-      const icon = header.querySelector('.toggle-icon') as HTMLElement;
-      if (content && icon) {
-        if (content.style.display === 'none') {
-          content.style.display = 'flex';
-          icon.textContent = '▼';
-        } else {
-          content.style.display = 'none';
-          icon.textContent = '▲';
-        }
-      }
-    });
-  });
-
-  const close = () => {
-    overlay.classList.remove('visible');
-    setTimeout(() => overlay.remove(), 200);
-  };
-
-  overlay.querySelector('#config-diff-modal-close-x')!.addEventListener('click', close);
-  overlay.querySelector('#config-diff-modal-close-btn')!.addEventListener('click', close);
-}
