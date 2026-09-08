@@ -136,7 +136,7 @@ pub async fn install_mod_command(
     let lib_folder_name = final_mod.name.clone();
     let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
     if !is_already_in_lib {
-        let lib_entry = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, None, Some(&final_mod.version)).ok();
+        let lib_entry = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, Some(&zip_filename), Some(&final_mod.version)).ok();
         let target_zip_name = lib_entry.map(|e| e.zip_name).unwrap_or_else(|| zip_filename.clone());
 
         if let Some(ref info) = nexus_info {

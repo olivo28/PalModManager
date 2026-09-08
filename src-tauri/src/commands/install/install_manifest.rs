@@ -88,12 +88,9 @@ pub async fn install_mod_with_manifest(
         force_load_order_palschema,
     )?;
 
-    let raw_source_name = Path::new(&zip_path).file_name().unwrap_or_default().to_string_lossy().to_string();
-    if raw_source_name.to_lowercase().starts_with("nexus_") || (raw_source_name.contains('-') && raw_source_name.len() > 30) {
-        final_mod.source_zip = format!("{}.zip", manifest.display_name);
-    } else {
-        final_mod.source_zip = raw_source_name;
-    }
+    // Always preserve the exact original filename — rollback depends on it.
+    // Temp/nexus filenames (nexus_*, disc_*, temp_*) are already handled inside copy_to_library.
+    final_mod.source_zip = Path::new(&zip_path).file_name().unwrap_or_default().to_string_lossy().to_string();
 
     if let Some(ref info) = nexus_info {
         if final_mod.version == "unknown" || final_mod.version.is_empty() || final_mod.version.contains('-') {

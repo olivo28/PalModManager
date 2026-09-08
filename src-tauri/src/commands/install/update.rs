@@ -94,7 +94,7 @@ pub async fn update_mod_command(
         let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
         if !is_already_in_lib {
             let lib_folder_name = updated_mod.name.clone();
-            let lib_entry = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, None, Some(&updated_mod.version)).ok();
+            let lib_entry = library::copy_to_library(&zip_path, &program_path, &lib_folder_name, Some(&zip_filename), Some(&updated_mod.version)).ok();
             if let Some(entry) = lib_entry {
                 let lib_zip_dest = library::get_library_path(&program_path, &lib_folder_name).join(&entry.zip_name);
                 let pmm_dest = std::path::PathBuf::from(format!("{}.pmm.json", lib_zip_dest.to_string_lossy()));
