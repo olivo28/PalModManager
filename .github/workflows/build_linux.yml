@@ -1,0 +1,106 @@
+name: Build Linux (AppImage & Deb)
+
+on:
+  workflow_dispatch: # Permite disparar la build manualmente con un botón en GitHub
+  push:
+    branches:
+      - main
+    paths:
+      - 'src/**'
+      - 'src-tauri/**'
+      - 'package.json'
+      - 'pnpm-lock.yaml'
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-22.04 # glibc 2.35 para máxima compatibilidad con SteamOS / Steam Deck
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies (Tauri v2 Linux)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libwebkit2gtk-4.1-dev \
+            build-essential \
+            curl \
+            wget \
+            file \
+            libxdo-dev \
+            libssl-dev \
+            libayatana-appindicator3-dev \
+            librsvg2-dev \
+            squashfs-tools
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Setup Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Inject .env credentials
+        env:
+          NEXUS_CLIENT_ID: ${{ secrets.NEXUS_CLIENT_ID }}
+          NEXUS_CLIENT_SECRET: ${{ secrets.NEXUS_CLIENT_SECRET }}
+          NEXUS_REDIRECT_URI: ${{ secrets.NEXUS_REDIRECT_URI || 'palmodmanager://oauth/callback' }}
+        run: |
+          # 1. Crear el archivo .env en la raíz para Vite y frontend
+          cat <<EOF > .env
+          NEXUS_CLIENT_ID=${NEXUS_CLIENT_ID}
+          NEXUS_CLIENT_SECRET=${NEXUS_CLIENT_SECRET}
+          NEXUS_REDIRECT_URI=${NEXUS_REDIRECT_URI}
+          EOF
+
+          # 2. Copiar también en src-tauri si aplica
+          cp .env src-tauri/.env
+          echo "Environment credentials successfully staged."
+
+      - name: Build Tauri Application (AppImage & Deb)
+        env:
+          # Estas variables se exportan al entorno del proceso para option_env! en Rust
+          NEXUS_CLIENT_ID: ${{ secrets.NEXUS_CLIENT_ID }}
+          NEXUS_CLIENT_SECRET: ${{ secrets.NEXUS_CLIENT_SECRET }}
+          NEXUS_REDIRECT_URI: ${{ secrets.NEXUS_REDIRECT_URI || 'palmodmanager://oauth/callback' }}
+        run: |
+          pnpm tauri build
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PalModManager-Linux-Build
+          path: |
+            src-tauri/target/release/bundle/appimage/*.AppImage
+            src-tauri/target/release/bundle/deb/*.deb
+          if-no-files-found: error
+          retention-days: 14
