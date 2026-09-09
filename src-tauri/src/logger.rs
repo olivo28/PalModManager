@@ -48,9 +48,19 @@ pub fn set_console_visibility(visible: bool) {
     let _ = visible;
 }
 
+fn get_log_dir() -> Option<PathBuf> {
+    #[cfg(target_os = "windows")]
+    {
+        std::env::var("LOCALAPPDATA").ok().map(|l| PathBuf::from(l).join("PalModManager"))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        std::env::var("HOME").ok().map(|h| PathBuf::from(h).join(".local").join("share").join("PalModManager"))
+    }
+}
+
 pub fn init_logger() {
-    if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
-        let log_dir = PathBuf::from(local_app_data).join("PalModManager");
+    if let Some(log_dir) = get_log_dir() {
         let log_file = log_dir.join("app.log");
         let _ = std::fs::create_dir_all(&log_dir);
         // Truncate (reset) log file on each application launch
@@ -73,8 +83,7 @@ pub fn log(msg: &str) {
     
     eprint!("{}", log_line);
     
-    if let Ok(local_app_data) = std::env::var("LOCALAPPDATA") {
-        let log_dir = PathBuf::from(local_app_data).join("PalModManager");
+    if let Some(log_dir) = get_log_dir() {
         let log_file = log_dir.join("app.log");
         let _ = std::fs::create_dir_all(&log_dir);
         if let Ok(mut file) = OpenOptions::new()

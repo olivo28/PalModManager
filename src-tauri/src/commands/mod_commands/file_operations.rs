@@ -6,6 +6,17 @@ use serde_json::Value;
 use crate::models::ModType;
 use crate::state::AppState;
 
+fn to_native_path(p: &str) -> PathBuf {
+    #[cfg(target_os = "windows")]
+    {
+        PathBuf::from(p.replace('/', "\\"))
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        PathBuf::from(p.replace('\\', "/"))
+    }
+}
+
 #[tauri::command]
 pub fn open_folder(mod_id: String, state: State<AppState>) -> Result<(), String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
@@ -14,14 +25,14 @@ pub fn open_folder(mod_id: String, state: State<AppState>) -> Result<(), String>
     let primary = if mod_info.enabled { &mod_info.game_path } else { &mod_info.disabled_path };
     let fallback = if mod_info.enabled { &mod_info.disabled_path } else { &mod_info.game_path };
 
-    let mut dir = PathBuf::from(primary.replace('/', "\\"));
+    let mut dir = to_native_path(primary);
     if dir.is_file() {
         if let Some(parent) = dir.parent() {
             dir = parent.to_path_buf();
         }
     }
     if !dir.exists() && !fallback.is_empty() {
-        let mut alt_dir = PathBuf::from(fallback.replace('/', "\\"));
+        let mut alt_dir = to_native_path(fallback);
         if alt_dir.is_file() {
             if let Some(parent) = alt_dir.parent() {
                 alt_dir = parent.to_path_buf();
@@ -47,7 +58,7 @@ pub fn open_folder(mod_id: String, state: State<AppState>) -> Result<(), String>
 
 #[tauri::command]
 pub fn open_path(path: String) -> Result<(), String> {
-    let mut dir = PathBuf::from(path.replace('/', "\\"));
+    let mut dir = to_native_path(&path);
     if dir.is_file() {
         if let Some(parent) = dir.parent() {
             dir = parent.to_path_buf();
@@ -131,7 +142,7 @@ pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), S
         return Err("No extra files".to_string());
     }
     let first_extra = &mod_info.extra_files[0];
-    let mut dir = PathBuf::from(first_extra.replace('/', "\\"));
+    let mut dir = to_native_path(first_extra);
     if dir.is_file() {
         if let Some(parent) = dir.parent() {
             dir = parent.to_path_buf();
@@ -427,7 +438,7 @@ pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> R
         _ => return Err("Unknown folder type".to_string()),
     };
 
-    let path = PathBuf::from(path.to_string_lossy().replace('/', "\\"));
+    let path = to_native_path(&path.to_string_lossy());
     if !path.exists() {
         if folder_type == "app_data" || folder_type == "profile" {
             let _ = std::fs::create_dir_all(&path);

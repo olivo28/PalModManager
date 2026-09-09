@@ -18,6 +18,7 @@ pub struct DetailedProtocolInfo {
     pub nxm_handler_path: Option<String>,
 }
 
+#[cfg(target_os = "windows")]
 const SCHEMES: &[(&str, &str)] = &[
     ("palmodmanager", "URL:PalModManager Protocol"),
     ("nxm", "URL:NXM Protocol"),

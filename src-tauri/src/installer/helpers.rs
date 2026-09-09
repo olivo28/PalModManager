@@ -66,14 +66,28 @@ pub fn clean_zip_name(zip_filename: &str) -> String {
 }
 
 pub fn normalize_path_separator(p: &str) -> String {
-    let mut s = p.replace('/', "\\");
-    while s.contains("\\\\") {
-        s = s.replace("\\\\", "\\");
+    #[cfg(target_os = "windows")]
+    {
+        let mut s = p.replace('/', "\\");
+        while s.contains("\\\\") {
+            s = s.replace("\\\\", "\\");
+        }
+        if s.ends_with('\\') && s.len() > 3 {
+            s.pop();
+        }
+        s
     }
-    if s.ends_with('\\') && s.len() > 3 {
-        s.pop();
+    #[cfg(not(target_os = "windows"))]
+    {
+        let mut s = p.replace('\\', "/");
+        while s.contains("//") {
+            s = s.replace("//", "/");
+        }
+        if s.ends_with('/') && s.len() > 1 {
+            s.pop();
+        }
+        s
     }
-    s
 }
 
 pub fn get_ue4ss_component_root(dest_path: &str) -> Option<String> {

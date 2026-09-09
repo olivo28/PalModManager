@@ -73,8 +73,32 @@ pub async fn ensure_retoc_available(app_data_dir: &Path) -> Result<PathBuf, Stri
 
     #[cfg(not(target_os = "windows"))]
     {
-        // On Unix-like systems write raw binary and set executable permission
-        fs::write(&bin_path, &bytes).map_err(|e| format!("Failed to write retoc binary: {e}"))?;
+        let temp_archive = tools_dir.join("retoc_download.tar.xz");
+        fs::write(&temp_archive, &bytes).map_err(|e| format!("Failed to write retoc archive: {e}"))?;
+
+        let tar_res = Command::new("tar")
+            .args(["-xf", temp_archive.to_str().unwrap_or_default(), "-C", tools_dir.to_str().unwrap_or_default()])
+            .status();
+
+        let _ = fs::remove_file(&temp_archive);
+
+        if let Err(e) = tar_res {
+            return Err(format!("Failed to extract retoc archive with tar: {e}"));
+        }
+
+        if !bin_path.exists() {
+            if let Ok(entries) = fs::read_dir(&tools_dir) {
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    let name = p.file_name().unwrap_or_default().to_string_lossy();
+                    if (name == "retoc" || name.starts_with("retoc_cli") || name.starts_with("retoc")) && p.is_file() && !name.contains(".tar") {
+                        let _ = fs::rename(&p, &bin_path);
+                        break;
+                    }
+                }
+            }
+        }
+
         #[cfg(unix)]
         {
             use std::os::unix::fs::PermissionsExt;
