@@ -1,15 +1,7 @@
 name: Build Linux (AppImage & Deb)
 
 on:
-  workflow_dispatch: # Permite disparar la build manualmente con un botón en GitHub
-  push:
-    branches:
-      - main
-    paths:
-      - 'src/**'
-      - 'src-tauri/**'
-      - 'package.json'
-      - 'pnpm-lock.yaml'
+  workflow_dispatch: # Se ejecuta ÚNICAMENTE de forma manual cuando tú pulsas el botón "Run workflow" en GitHub
 
 jobs:
   build-linux:
@@ -37,7 +29,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v3
