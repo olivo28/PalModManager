@@ -7,7 +7,7 @@ use tauri::State;
 pub fn get_library(state: State<AppState>) -> Result<Vec<LibraryEntry>, String> {
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let program_path = data.settings.program_path.clone();
-    let installed_mods = data.mods.clone();
+    let installed_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
     drop(data);
     library::list_library(&program_path, &installed_mods)
 }

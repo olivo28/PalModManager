@@ -57,7 +57,16 @@ pub fn scan_mods_internal(
         scan_disabled_mods(&disabled_base, &mut fs_mods);
     }
 
-    for wmod in wmods.iter().filter(|m| !m.is_framework && (m.is_installed || m.is_active)) {
+    for wmod in wmods.iter().filter(|m| {
+        if m.is_framework {
+            return false;
+        }
+        installed_ids.iter().any(|id| {
+            id.eq_ignore_ascii_case(&m.package_name)
+                || id.eq_ignore_ascii_case(&m.mod_name)
+                || id.eq_ignore_ascii_case(&format!("{} (Workshop)", m.mod_name))
+        }) || (m.is_active && installed_ids.is_empty())
+    }) {
         let game_mod_path = match wmod.install_type {
             WorkshopInstallType::PalSchemaMod => gp.palschema_mods_dir.join(&wmod.package_name),
             WorkshopInstallType::PakMod => game.join("Pal").join("Content").join("Paks").join("~mods"),
@@ -76,7 +85,7 @@ pub fn scan_mods_internal(
         }
 
         let display_name = format!("{} (Workshop)", wmod.mod_name);
-        let installed_version = if wmod.is_installed {
+        let installed_version = {
             let manifest_dir = game.join("Mods").join("ManagedMods").join(&wmod.package_name);
             let installed_info_path = manifest_dir.join("Info.json");
             let mut inst_ver = "unknown".to_string();
@@ -87,9 +96,10 @@ pub fn scan_mods_internal(
                     }
                 }
             }
+            if inst_ver == "unknown" && !wmod.version.is_empty() {
+                inst_ver = wmod.version.clone();
+            }
             inst_ver
-        } else {
-            "unknown".to_string()
         };
 
         fs_mods.push(ModInfo {

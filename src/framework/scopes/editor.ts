@@ -10,6 +10,7 @@ export interface EditorDomMap {
   'editor-diff-btn': HTMLButtonElement;
   'editor-restore-btn': HTMLButtonElement;
   'editor-save-btn': HTMLButtonElement;
+  'editor-revert-btn': HTMLButtonElement;
   'editor-body': HTMLElement;
   'editor-mod-panel': HTMLElement;
   'editor-mod-tree': HTMLElement;

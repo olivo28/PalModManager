@@ -11,78 +11,60 @@ pub fn open_folder(mod_id: String, state: State<AppState>) -> Result<(), String>
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let mod_info = data.mods.iter().find(|m| m.id == mod_id)
         .ok_or_else(|| "Mod not found".to_string())?;
-    let path = if mod_info.enabled { &mod_info.game_path } else { &mod_info.disabled_path };
+    let primary = if mod_info.enabled { &mod_info.game_path } else { &mod_info.disabled_path };
+    let fallback = if mod_info.enabled { &mod_info.disabled_path } else { &mod_info.game_path };
 
-    let mut dir = Path::new(path);
+    let mut dir = PathBuf::from(primary.replace('/', "\\"));
     if dir.is_file() {
         if let Some(parent) = dir.parent() {
-            dir = parent;
+            dir = parent.to_path_buf();
+        }
+    }
+    if !dir.exists() && !fallback.is_empty() {
+        let mut alt_dir = PathBuf::from(fallback.replace('/', "\\"));
+        if alt_dir.is_file() {
+            if let Some(parent) = alt_dir.parent() {
+                alt_dir = parent.to_path_buf();
+            }
+        }
+        if alt_dir.exists() {
+            dir = alt_dir;
         }
     }
     if !dir.exists() {
-        return Err("Directory does not exist".to_string());
+        if let Some(parent) = dir.parent() {
+            if parent.exists() {
+                dir = parent.to_path_buf();
+            }
+        }
+    }
+    if !dir.exists() {
+        return Err(format!("Directory does not exist: {}", dir.display()));
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        std::process::Command::new("explorer")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-
-    Ok(())
+    open::that(&dir).map_err(|e| format!("Failed to open folder: {}", e))
 }
 
 #[tauri::command]
 pub fn open_path(path: String) -> Result<(), String> {
-    let mut dir = Path::new(&path);
+    let mut dir = PathBuf::from(path.replace('/', "\\"));
     if dir.is_file() {
         if let Some(parent) = dir.parent() {
-            dir = parent;
+            dir = parent.to_path_buf();
         }
     }
     if !dir.exists() {
-        return Err("Directory does not exist".to_string());
+        if let Some(parent) = dir.parent() {
+            if parent.exists() {
+                dir = parent.to_path_buf();
+            }
+        }
+    }
+    if !dir.exists() {
+        return Err(format!("Directory does not exist: {}", dir.display()));
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        std::process::Command::new("explorer")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open path: {}", e))?;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open path: {}", e))?;
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open path: {}", e))?;
-    }
-
-    Ok(())
+    open::that(&dir).map_err(|e| format!("Failed to open path: {}", e))
 }
 
 #[allow(unused_imports)]
@@ -149,38 +131,24 @@ pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), S
         return Err("No extra files".to_string());
     }
     let first_extra = &mod_info.extra_files[0];
-    let mut dir = Path::new(first_extra);
+    let mut dir = PathBuf::from(first_extra.replace('/', "\\"));
     if dir.is_file() {
         if let Some(parent) = dir.parent() {
-            dir = parent;
+            dir = parent.to_path_buf();
         }
     }
     if !dir.exists() {
-        return Err("Directory does not exist".to_string());
+        if let Some(parent) = dir.parent() {
+            if parent.exists() {
+                dir = parent.to_path_buf();
+            }
+        }
+    }
+    if !dir.exists() {
+        return Err(format!("Directory does not exist: {}", dir.display()));
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        std::process::Command::new("explorer")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(dir)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    Ok(())
+    open::that(&dir).map_err(|e| format!("Failed to open folder: {}", e))
 }
 
 fn determine_category_for_path(path: &Path) -> &'static str {
@@ -459,6 +427,7 @@ pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> R
         _ => return Err("Unknown folder type".to_string()),
     };
 
+    let path = PathBuf::from(path.to_string_lossy().replace('/', "\\"));
     if !path.exists() {
         if folder_type == "app_data" || folder_type == "profile" {
             let _ = std::fs::create_dir_all(&path);
@@ -467,28 +436,7 @@ pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> R
         }
     }
 
-    #[cfg(target_os = "windows")]
-    {
-        std::process::Command::new("explorer")
-            .arg(path)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(path)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(path)
-            .spawn()
-            .map_err(|e| format!("Failed to open folder: {}", e))?;
-    }
-    Ok(())
+    open::that(&path).map_err(|e| format!("Failed to open folder: {}", e))
 }
 
 

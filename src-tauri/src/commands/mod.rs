@@ -18,3 +18,5 @@ pub mod usmap_commands;
 pub mod sdk_commands;
 pub mod editor;
 pub mod config_archive;
+pub mod resource_commands;
+pub mod pak_tweaker;

@@ -1,115 +1,226 @@
-# PalModManager (PMM) - Next-Gen Mod Manager & Config Editor for Palworld
+# PalModManager (PMM) — Palworld Mod Manager & Modding Toolkit
 
 ---
-Latest version: 1.7.1
+Latest version: **1.7.1**
 
-Changelog: You can find the latest update notes in the pinned comments section or check the full history on [GitHub](https://github.com/olivo28/PalModManager).
-
----
-
-## Description
-**PalModManager** is a modern, high-performance desktop application built specifically for **Palworld** players and modders on **Steam** and **Xbox Game Pass (PC)**.
-
-Unlike generic mod managers, PalModManager is tailor-made for Palworld: it natively handles all mod structures (**UE4SS**, **PalSchema**, **Pak**, **LogicMods**, and **Hybrids**), features a full **Nexus Mods OAuth 2.0 SSO & in-app Discovery browser**, provides conflict detection, and includes a full-featured built-in JSON configuration code editor.
-
-Built with **Tauri v2** and **Rust**, PalModManager launches instantly and uses minimal RAM and CPU.
+Changelog: Latest notes in the pinned comments · Full history on [GitHub](https://github.com/olivo28/PalModManager)
 
 ---
 
-## Installation instructions
-1. Download **PalModManager** from the Files section (choose Portable EXE or Installer).
-2. Run **PalModManager.exe**.
-3. Open **Settings** (⚙ icon) and select your Palworld installation directory.
-4. Log into your Nexus Mods account with 1-click SSO, browse the **Discover** tab, or drag & drop any mod *.zip* or *.rar* file directly into the app window to install!
+## What is PalModManager?
+
+**PalModManager (PMM)** is a native desktop application built around the Palworld modding ecosystem, covering the complete modding workflow:
+
+- Discover and download mods from Nexus Mods without leaving the app.
+- Install and update **UE4SS, PalSchema, Pak, LogicMods, Hybrid, and Altermatic** mods automatically.
+- Manage UE4SS and PalSchema load order.
+- Manage Steam Workshop content.
+- Maintain isolated mod profiles with instant switching.
+- Inspect Pak archives and Unreal Engine assets inline.
+- Detect mod conflicts and game update crash risks.
+- Inspect and repair Palworld save files.
+- Edit configuration files in a full Monaco code editor.
+- Build and package distributable mods.
+- Work with Palworld development resources: SDKs, UHT data, Lua types, JMAP, USMAP mappings.
+
+Built with **Tauri v2 + Rust** — launches in milliseconds and uses minimal RAM.
 
 ---
 
-## Main features
-- **Full Nexus Mods SSO & Profile Suite**: 1-click OAuth 2.0 authentication. Displays your Nexus avatar, tier, and live metrics (*Endorsements, Tracked Mods, Published Mods*).
-- **In-App Mod Discovery Browser (Discover Tab)**: Browse, search, filter, and install Palworld mods directly from Nexus Mods with 1 click without leaving the app.
-- **Advanced Discovery Filtering**: Filter across all 13 official Palworld categories (*Gameplay, Pals, Characters, Visuals, etc.*), interactive Tag multi-selectors (*Includes / Excludes* with quick chip removal), search parameters (*Title, Description, Author, Uploader*), language checkboxes, and adult content filters.
-- **Rich Mod Details & Media Lightbox**: View formatted mod descriptions with BBCode/HTML parsing, screenshot gallery with mouse-wheel zoom and drag-to-pan lightbox, changelogs, virus scan safety badges (*Verified, Manual, Quarantine*), and categorized downloadable files (*Main, Updates, Optionals, Archived*).
-- **Native `nxm://` Protocol Integration**: Associate PalModManager with the `nxm://` protocol for direct 1-click browser downloads from NexusMods.com, complete with a live download queue tray and automated installation.
-- **Social Actions & Author Recognition**: Endorse, track/untrack, and access Community/Bugs with automatic author detection (`👑 Author`) to protect against self-endorsement errors.
-- **Smart Lua & JSON Config Merging**: Automatically snapshot and merge custom configurations (`config.lua`, `settings.lua`, `config.jsonc`, `settings.json`) across mod updates, preserving your custom keybindings and settings.
-- **Ultra-Fast & Lightweight**: Built on Rust and Tauri v2 for instantaneous response times and zero bloat.
-- **Smart Mod Auto-Detection**: Automatically identifies and categorizes UE4SS, PalSchema, Pak, and LogicMods.
-- **Smart Heuristic Zip Unpacker**: Never worry about how mod files are structured. Generic managers fail when mod authors zip their files with custom structures or nested folders. PalModManager implements a custom layout sanitizer that automatically parses, flattens, and reorganizes any zipped layout into clean game-ready directories before installation.
-- **Interactive File Preview Tree**: Open a collapsible tree viewer in both single and batch mod installers to inspect ZIP contents and installation targets in real-time before deploying.
-- **Dynamic UE4SS Load Order Manager**: Manage mod loading sequences interactively with a drag-and-drop ordering interface in the sidebar, syncing state transitions between `enabled.txt` and `mods.txt` dynamically.
-- **Exclusive PalSchema Load Order Manager (Unique Feature! - Windows Only)**: Control the load order of PalSchema mods! PalSchema natively reads files without any sorting logic. PMM solves this by isolating mods in a `/Storage` directory and creating zero-padded NTFS Junctions (e.g. `001_ModName`, `002_ModName`) inside `/mods` that do *not* require Administrator/UAC permissions.
-- **Automated Dependency Management**: Detects missing core dependencies (UE4SS or PalSchema) and offers one-click automatic installation using official GitHub releases.
-- **Batch & Drag-and-Drop Installation**: Drop single or multiple zip files to preview mod details, check versions, and install in bulk.
-- **Installed Version Warnings**: The upgrade assistant explicitly warns and displays your currently installed version when dragging files to update existing mods.
-- **Mod Library**: Maintain a centralized library of downloaded mods complete with auto-fetched NexusMods thumbnails, authors, and summary metadata.
-- **Reactive Profile Manager (File Explorer style)**: Create and switch between isolated mod profiles (e.g. Singleplayer, Multiplayer, Hardcore) with instant physical folder deployment. Shows virtual folders as folder cards side-by-side with ungrouped mods, supporting double-click navigation and a right-click custom folder options menu.
-- **ID Stability System**: Uses the **Nexus Mod ID** or **Sanitized descriptive names** to identify mods (no random UUIDs), ensuring upgrades and profile matching are 100% stable.
-- **Built-in Code Editor**: Edit mod json and jsonc configuration files directly within the application with syntax highlighting, auto-formatting, search (Ctrl+F), and safety checks preventing loss of changes when switching profiles.
-- **Save Health Doctor & World Hub**: Dedicated world diagnostics suite that auto-discovers saves, validates GVAS integrity, detects orphaned mod references from uninstalled mods, rescues saves with 1-click backups/cleaning, features a side-by-side backup snapshot comparison diff inspector, and extracts WorldOption difficulty rules.
-- **Deep Pak & UAsset Package Inspector**: Pure-Rust virtual file tree inspection for `.pak` archives (`repak`) and Unreal Engine binary assets (`unreal_asset`), displaying export classes, dependencies, and embedded name tokens.
-- **Automated Pak Compatibility Patch Engine**: Detects colliding asset nodes across `.pak` mods and generates merged priority compatibility patches (`zzz_Patch_*.pak`) with 1 click.
-- **Xbox Game Pass & PC WinGDK Compatibility**: Automatic detection, card warning badges, and 1-click generation of `.utoc` and `.ucas` table-of-contents files (`retoc`) for Game Pass mod support.
-- **PMM-Core Reactive Engine & Live Download Telemetry**: Built on an ultra-lightweight zero-VDOM internal framework with real-time sliding-window download rate calculations (`⚡ MB/s` • `⏳ ETA`) in the NXM queue tray.
-- **Modern Dark Mode**: Sleek glassmorphism UI designed for maximum usability and aesthetic clarity.
+## Installation
+
+1. Download **PalModManager** from the Files section (Installer or Portable EXE).
+2. Run `PalModManager.exe` — or use the portable version directly, no installation needed.
+3. Open **Settings** (⚙) and select your Palworld installation folder.
+4. Log into Nexus Mods with 1-click SSO, browse the **Discover** tab, or drag & drop any `.zip`, `.rar`, or `.7z` mod file directly into the app to install.
 
 ---
 
-## 🐧 Linux Native Support & Troubleshooting
-PalModManager features native compatibility for Linux systems. If you run the Linux version and experience crashes on startup or a blank screen, execute the app using these parameters:
+## Features
 
-- **Force X11 Backend** (resolves crashes related to Wayland windowing layers in WebKitGTK):
-  ```bash
-  GDK_BACKEND=x11 ./palmodmanager
-  ```
-- **Disable DMABUF Rendering** (resolves blank/invisible interface issues caused by graphics driver/Nvidia rendering conflicts):
-  ```bash
-  WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
-  ```
-- **Combined execution**:
-  ```bash
-  GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
-  ```
+### 🌐 Nexus Mods Integration
+
+- **OAuth 2.0 SSO** — 1-click login with persistent session, showing your Nexus avatar, tier, endorsements, tracked mods, and published mods.
+- **In-App Discovery Browser** — Search and browse the entire Palworld Nexus catalog with 13 category filters, tag multi-selectors (Includes/Excludes), Title/Description/Author search, language toggles, and adult content filters.
+- **Rich Mod Details** — Formatted descriptions (BBCode/HTML), image gallery with zoom & pan lightbox, changelogs, file lists, and virus scan safety badges (Verified / Manual / Quarantine).
+- **Native `nxm://` Protocol** — 1-click browser downloads piped directly into PMM's download queue with live speed (⚡ MB/s) and ETA (⏳).
+- **Social Actions** — Endorse, track/untrack mods, open Community & Bug pages. `👑 Author` badge automatically detected to prevent self-endorsements.
 
 ---
 
-## ⚠️ Important Safety & Backup Recommendation
-> **Before using PalModManager (or installing mods in general), we strongly recommend manually backing up your game's mod directories.**
+### 📦 Smart Mod Installer
 
-While **PalModManager automatically handles and backs up UE4SS/PalSchema/Paks files**, it is always best practice to create a copy of the following folders in your Palworld directory:
-- 📁 *Pal/Content/Paks*
-- 📁 *Pal/Binaries/Win64/ue4ss* (Steam) or *Pal/Binaries/WinGDK/ue4ss* (Xbox GDK)
+- **Auto-Type Detection** — Automatically identifies UE4SS, PalSchema, Pak, LogicMods, Hybrid, Altermatic, and UniPalUI mods from the archive structure.
+- **Smart Heuristic Unpacker** — Handles any ZIP layout regardless of how nested or disorganized. Automatically bypasses `(STEAM)`, `(XBOX)`, `Win64`, `WinGDK`, and helper directory wrappers.
+- **Interactive File Preview Tree** — Inspect ZIP contents and projected install targets before deploying, in both single and batch modes.
+- **Batch Installation** — Drag and drop multiple archives at once to preview and install in bulk.
+- **Installed Version Comparison** — Side-by-side view of installed vs. incoming version when updating.
+- **Smart Config Merging** — Snapshots and merges `config.lua`, `settings.lua`, `config.jsonc`, and `settings.json` across updates, preserving your keybindings and settings.
+- **Granular Config Review Dialog** — Interactive diff modal lets you toggle which config files or individual keys to restore before applying.
+- **Pak Destination Selector** — Choose between `~mods` and `LogicMods` targets per Pak mod.
 
 ---
 
-## 🛡️ Anti-Virus & False Positives Note
-This application is built using **Rust + Tauri** for maximum efficiency and security.
+### 🔀 UE4SS & PalSchema Load Order
 
-Because this is an independent community project without a commercial Code Signing Certificate, some antivirus engines (like Windows Defender or SecureAge) may trigger a **false positive** (e.g., *Trojan:Win32/Wacatac.B!ml* or similar flags).
-- **Why this happens**: Heuristic AI and machine learning analysis (*!ml*) frequently flags unsigned executables that perform folder and file system modifications (such as injecting or switching files in your Steam Palworld directories).
-- **Is it safe?**: Absolutely. The program is completely clean. If you download it from the official page, there is no threat. 
-- **Workaround**: If Windows Defender blocks the manager, click *"More Info"* -> *"Run Anyway"* on the SmartScreen prompt, or add *palmodmanager.exe* to your antivirus exclusions list.
+**UE4SS Load Order**
+- Drag-and-drop reordering interface in the sidebar Load tab.
+- Automatic state transitions between `enabled.txt` and `mods.txt`.
+- Cleanly removes deleted mod entries from `mods.txt`.
+- Profile-aware load order persistence.
+
+**PalSchema Load Order** *(Windows — unique feature)*
+- PalSchema has no native sorting. PMM solves this with zero-admin **NTFS Junction Points**.
+- Isolates mods in `PalSchema/Storage/` and creates zero-padded junctions (`001_ModName`, `002_ModName`) in `/mods` — **no Administrator or UAC required**.
+- Side-by-side dual panels manage UE4SS and PalSchema load orders simultaneously.
+
+---
+
+### 👤 Profile Manager
+
+- **Isolated Profiles** — Create independent mod sets for Vanilla, Singleplayer, Multiplayer, Hardcore, Testing, or Mod Development.
+- **Instant Switching** — In-place profile switching in under 50ms when dependency mode matches.
+- **Virtual Mod Folders** — Explorer-style folder cards with double-click navigation, breadcrumbs, and right-click context menus.
+- **Profile Packs** — Export and share a complete mod setup (mods + configuration + dependencies) as a `.pmmprofile` package for co-op play.
+- **Stable Mod IDs** — Uses Nexus IDs or sanitized descriptive names, never random UUIDs.
+
+---
+
+### 📚 Mod Library
+
+- Centralized archive with auto-fetched Nexus thumbnails, authors, descriptions, and update statuses.
+- Retains multiple downloaded versions per mod — 1-click rollback to any previous version.
+- Bulk selection and profile-aware deployment.
+- **Steam Workshop** — Browse, enable, and update Steam Workshop mods natively, with full `Info.json` InstallRule routing for multi-target hybrid mods.
+- Smart dependency reconciliation — Workshop mods show **✓ Managed by PMM** instead of false missing-dependency warnings.
+- Preserves the **exact original archive filename** (including Nexus mod ID, file ID, and timestamp) so rollback metadata is never lost.
+
+---
+
+### 🔍 Conflict Scanner & Diagnostics
+
+- **Pak Collision Detection** — Identifies overlapping asset nodes across `.pak` mods.
+- **1-Click Compatibility Patch Engine** — Auto-generates merged priority patches (`zzz_PMM_Patch_*.pak`).
+- **PalSchema Table Collisions** — Detects conflicting DataTable row overrides.
+- **Lua Hook Collisions** — Finds mods hooking the same engine functions.
+- **Crash Risk Detection** — Flags mods overwriting critical vanilla Blueprints (`BP_PalPlayerCharacter`, `WBP_TitleMenu`, etc.) with risk levels (*critical, high, moderate*) and 1-click disable.
+- **Lua Hotkeys Manager** — Scans `RegisterKeyBind` calls, highlights conflicts, supports inline rebinding with recursive variable resolution.
+- **Engine Schema Hook Validation** — USMAP-backed validation distinguishing native C++ classes from dynamic Blueprint hooks.
+- **1-Click Mitigation** — Disable or jump to code from any conflict card.
+
+---
+
+### 💾 Save Doctor & World Hub
+
+- **Auto-Discovery** — Instantly finds saves across Steam, PC Game Pass (WinGDK), and Linux Proton.
+- **GVAS Integrity Validator** — Validates binary save integrity and scans for orphaned mod class references from uninstalled mods.
+- **1-Click Save Rescue** — Automated backup and cleaning of crashing or orphaned saves.
+- **Snapshot History & Diff Inspector** — Side-by-side backup comparison with size deltas, in-game day progression, player level differences, and 1-click restore.
+- **WorldOption Inspector** — Difficulty multipliers, player character data (UID, level, Paldeck unlocks), and storage analytics.
+- **Base Camp Decay Alert** — Warns when structure deterioration is enabled alongside base expansion mods.
+
+---
+
+### 🖼️ GPU Texture Inspector
+
+PMM can decode and preview supported Unreal texture formats directly inside the application — no external tools needed:
+
+- GPU-accelerated texture preview with channel filtering (RGBA).
+- Dimensions, format name, and mip count display.
+- PNG export.
+
+---
+
+### ✏️ Code Editor & IntelliSense
+
+- **Monaco Editor** — Full syntax-highlighted editor for Lua, JSON, and JSONC configuration files.
+- **Pak & UAsset Explorer** — Browse `.pak` contents with live search and category filters (Blueprints, Textures, Materials, DataTables). Inspect `.uasset`/`.uexp` inline with GPU texture preview, export/import tables, name maps, and USMAP schema properties.
+- **Smart Status Bar** — Auto-switches between binary mode (asset count + size) and text mode (Ln/Col).
+- **EmmyLua IntelliSense** — 1,700+ Palworld engine class definitions with tab-stop snippet parameters and hover documentation cards.
+- **Breadcrumb Navigation** — Styled `📦 ModName › 📁 folder › 📄 file.ext` path display.
+- **Lua Diagnostics Panel** — Real-time problem detection and highlighting.
+- **JSONC Support** — Comments preserved on save, validated against stripped content.
+
+---
+
+### 🏗️ Mod Packer & Builder
+
+- **Projects Hub** — Create, rename, and manage mod packaging projects visually.
+- **Route Manifesting** — Packages mods with custom target routing and a `modinfo.pmm.json` manifest for instant heuristic-free installation.
+- **Staging Tree** — Drag and drop files to rearrange destination paths before packaging.
+- **Dual-Platform Output** — Automatically builds both `_Steam_Win64.zip` and `_Xbox_WinGDK.zip`.
+- **Vortex/Manual Root Preset** — Maps files to full game-relative paths for Vortex compatibility.
+
+---
+
+### 🗄️ USMAP & Reflection Explorer
+
+- Dynamic USMAP build detection — resolves game versions and mappings **without recompiling the binary**.
+- **Schema Explorer (DB Tab)** — Live-searchable inspector for all Palworld engine classes, structs, enums, properties, and FNames with full inheritance hierarchy breadcrumbs.
+
+---
+
+### 🌍 Localization
+
+Fully localized in **6 languages**: English · Spanish · Portuguese · Simplified Chinese · Japanese · Korean.
+
+---
+
+## 🐧 Linux Support & Troubleshooting
+
+PMM has native Linux support. If you experience crashes or a blank screen:
+
+```
+# Resolve Wayland/WebKitGTK crashes
+GDK_BACKEND=x11 ./palmodmanager
+
+# Resolve blank screen on Nvidia/Intel drivers
+WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
+
+# Combined
+GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
+```
+
+---
+
+## ⚠️ Backup Recommendation
+
+> Before experimenting with new mods or major changes, keep independent backups of your game's mod directories.
+
+PMM provides automatic backups for many operations, but these should **complement — not replace** your own backups:
+- `Pal/Content/Paks`
+- `Pal/Binaries/Win64/ue4ss` *(Steam)* or `Pal/Binaries/WinGDK/ue4ss` *(Xbox GDK)*
+
+---
+
+## 🛡️ Antivirus & False Positives
+
+PMM is open-source and completely clean. As an independent project without a commercial code-signing certificate, some antivirus engines may trigger heuristic detections (e.g. `Trojan:Win32/Wacatac.B!ml`).
+
+- **Why it happens:** ML heuristics flag unsigned executables that modify files in Steam directories.
+- **What to do:** On the Windows SmartScreen prompt, click *"More Info"* → *"Run Anyway"*, or add `palmodmanager.exe` to your AV exclusions. Always verify you downloaded from an official source first.
 
 ---
 
 ## Requirements
-- **Game**: Palworld (Steam or PC Game Pass).
-- **OS**: Windows 10 / Windows 11 (64-bit) or Linux (Ubuntu, Debian, SteamOS, etc.).
-- **Optional Dependencies**:
-  - UE4SS (PalModManager can install this for you automatically).
-  - PalSchema (PalModManager can install this for you automatically).
+
+- **Game:** Palworld (Steam or PC Game Pass)
+- **OS:** Windows 10/11 (64-bit) or Linux (Ubuntu, Debian, SteamOS, Arch)
+- **Dependencies:** UE4SS and PalSchema — PMM can install both automatically if missing
 
 ---
 
-## 🙏 Credits & Acknowledgements
-- **HalRiveria** — Community tester and dedicated bug reporter. Has consistently tracked down and reported hard-to-catch edge cases across multiple releases — including mod update regressions, Force Load Order installation bugs, batch installer failures, and more. His feedback has directly shaped the stability and polish of PalModManager. Thank you!
+## 🙏 Credits
+
+- **HalRiveria** — Community tester and dedicated bug reporter across multiple releases. Tracked down mod update regressions, load order edge cases, batch installer failures, and more. Thank you!
+- **Valdacil** — Detailed real-world bug reports that helped identify hybrid mod update and filename tracking issues.
+
+Special thanks to the entire Palworld modding community for testing, feedback, and compatibility reports.
 
 ---
 
 ## 💬 Community & Support
-Need help, want to report a bug, or suggest a new feature? Join our official Discord community:
-* **Discord Community:** [Join Discord Server (AHTDAUwm77)](https://discord.gg/AHTDAUwm77)
 
----
-
-## Github
-[PalModManager](https://github.com/olivo28/PalModManager)
+- **Discord:** [discord.gg/AHTDAUwm77](https://discord.gg/AHTDAUwm77)
+- **GitHub:** [github.com/olivo28/PalModManager](https://github.com/olivo28/PalModManager)
+- **Nexus Mods:** [nexusmods.com/palworld/mods/4549](https://www.nexusmods.com/palworld/mods/4549)

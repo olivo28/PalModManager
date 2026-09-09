@@ -37,6 +37,7 @@ import {
 } from '../ui/detailPanel';
 import {
   handleEditorSave,
+  handleEditorRevert,
   handleEditorFormat,
   handleEditorModChange,
   setupEditorKeybindings,
@@ -192,6 +193,7 @@ export function setupEventListeners(): void {
   detailDom.elMaybe('detail-open-extra-folder')?.addEventListener('click', handleDetailOpenExtraFolder);
   detailDom.elMaybe('detail-rename-btn')?.addEventListener('click', handleDetailRename);
   editorDom.elMaybe('editor-save-btn')?.addEventListener('click', handleEditorSave);
+  editorDom.elMaybe('editor-revert-btn')?.addEventListener('click', handleEditorRevert);
   editorDom.elMaybe('editor-format-btn')?.addEventListener('click', handleEditorFormat);
   editorDom.elMaybe('editor-mod-select')?.addEventListener('change', handleEditorModChange);
 
@@ -345,9 +347,8 @@ export function setupEventListeners(): void {
       const tab = (btn as HTMLElement).dataset.tab as any;
       const state = getState();
       if (state.activeTab === 'editor' && tab !== 'editor') {
-        const { confirmDiscardOrSave } = await import('../ui/editorView');
-        const proceed = await confirmDiscardOrSave();
-        if (!proceed) return;
+        const { updateUnsavedIndicator } = await import('../ui/editorView');
+        updateUnsavedIndicator();
       }
       navigateTo(tab);
 

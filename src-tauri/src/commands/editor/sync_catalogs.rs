@@ -12,10 +12,10 @@ const BLUEPRINT_MANIFEST_URLS: &[&str] = &[
     "https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/blueprints/manifest.json",
 ];
 
-const DATATABLES_INDEX_URLS: &[&str] = &[
-    "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/datatables/dt_index.json",
-    "https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/datatables/dt_index.json",
-    "https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/datatables/dt_index.json",
+const DATATABLES_MANIFEST_URLS: &[&str] = &[
+    "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/datatables/manifest.json",
+    "https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/datatables/manifest.json",
+    "https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/datatables/manifest.json",
 ];
 
 const PALSCHEMA_MANIFEST_URLS: &[&str] = &[
@@ -31,6 +31,38 @@ pub struct SyncCatalogResult {
     pub total_items: usize,
     pub filename: String,
     pub updated: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DataTableManifestEntry {
+    #[serde(default)]
+    pub game_version: String,
+    #[serde(default)]
+    pub steam_build_id: String,
+    #[serde(default)]
+    pub datatables_filename: String,
+    #[serde(default)]
+    pub datatables_url: String,
+    #[serde(default)]
+    pub sha256: String,
+    #[serde(default)]
+    pub file_size_bytes: u64,
+    #[serde(default)]
+    pub total_tables: usize,
+    #[serde(default)]
+    pub total_rows: usize,
+    #[serde(default)]
+    pub is_latest: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct DataTableManifest {
+    #[serde(default)]
+    pub datatables: Vec<DataTableManifestEntry>,
+    #[serde(default)]
+    pub latest_game_version: String,
+    #[serde(default)]
+    pub latest_steam_build_id: String,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -206,13 +238,109 @@ pub async fn sync_datatables_catalog(program_path: Option<String>) -> Result<Syn
         .build()
         .map_err(|e| format!("Failed to create HTTP client: {}", e))?;
 
-    let filename = "dt_index.json".to_string();
+    // 1. Fetch remote manifest or fall back to local bundled manifest
+    let mut manifest_opt: Option<DataTableManifest> = None;
+    let mut manifest_raw: Option<String> = None;
+
+    for url in DATATABLES_MANIFEST_URLS {
+        if let Ok(res) = client.get(*url).send().await {
+            if res.status().is_success() {
+                if let Ok(text) = res.text().await {
+                    if let Ok(m) = serde_json::from_str::<DataTableManifest>(&text) {
+                        manifest_raw = Some(text);
+                        manifest_opt = Some(m);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if manifest_opt.is_none() {
+        let bundled_manifest = crate::usmap::sync::find_bundled_resource("resources/datatables/manifest.json")
+            .or_else(|| {
+                let p = dt_dir.join("manifest.json");
+                if p.exists() { Some(p) } else { None }
+            });
+        if let Some(mp) = bundled_manifest {
+            if let Ok(text) = fs::read_to_string(&mp) {
+                if let Ok(m) = serde_json::from_str::<DataTableManifest>(&text) {
+                    manifest_opt = Some(m);
+                }
+            }
+        }
+    }
+
+    let manifest = manifest_opt.ok_or_else(|| "Failed to load DataTables manifest from GitHub or local backup.".to_string())?;
+    let entry = manifest.datatables.iter().find(|d| d.is_latest).or_else(|| manifest.datatables.first())
+        .ok_or_else(|| "DataTables manifest contains no datatable entries.".to_string())?;
+
+    let filename = if !entry.datatables_filename.is_empty() {
+        entry.datatables_filename.clone()
+    } else {
+        format!("Palworld_DataTables_{}.json", entry.steam_build_id)
+    };
+
     let target_path = dt_dir.join(&filename);
 
-    let mut downloaded_bytes: Option<Vec<u8>> = None;
+    // Save manifest if fetched
+    if let Some(ref text) = manifest_raw {
+        let _ = fs::write(dt_dir.join("manifest.json"), text);
+    }
 
-    for url in DATATABLES_INDEX_URLS {
-        if let Ok(res) = client.get(*url).send().await {
+    // 2. Check if already up-to-date in dt_dir
+    if target_path.exists() {
+        if let Some(hash) = compute_sha256(&target_path) {
+            if !entry.sha256.is_empty() && hash.eq_ignore_ascii_case(&entry.sha256) {
+                crate::usmap::datatable_index::invalidate_datatable_cache();
+                crate::logger::log(&format!("DataTables catalog is already up to date: {} ({} tables)", filename, entry.total_tables));
+                return Ok(SyncCatalogResult {
+                    success: true,
+                    message: "DataTables catalog is already up to date.".to_string(),
+                    total_items: entry.total_tables,
+                    filename,
+                    updated: false,
+                });
+            }
+        }
+    }
+
+    // 3. Check bundled local resource
+    let rel_bundled = format!("resources/datatables/{}", filename);
+    if let Some(bundled_path) = crate::usmap::sync::find_bundled_resource(&rel_bundled) {
+        if let Ok(bytes) = fs::read(&bundled_path) {
+            let hash = {
+                let mut hasher = Sha256::new();
+                hasher.update(&bytes);
+                format!("{:x}", hasher.finalize())
+            };
+            if entry.sha256.is_empty() || hash.eq_ignore_ascii_case(&entry.sha256) {
+                let _ = fs::write(&target_path, &bytes);
+                crate::usmap::datatable_index::invalidate_datatable_cache();
+                crate::logger::log(&format!("DataTables catalog loaded from verified local bundle: {} ({} tables)", filename, entry.total_tables));
+                return Ok(SyncCatalogResult {
+                    success: true,
+                    message: format!("Synced {} DataTables from verified local bundle.", entry.total_tables),
+                    total_items: entry.total_tables,
+                    filename,
+                    updated: true,
+                });
+            }
+        }
+    }
+
+    // 4. Download from remote CDN
+    let mut download_urls = Vec::new();
+    if !entry.datatables_url.is_empty() {
+        download_urls.push(entry.datatables_url.clone());
+    }
+    download_urls.push(format!("https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/datatables/{}", filename));
+    download_urls.push(format!("https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/datatables/{}", filename));
+    download_urls.push(format!("https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/datatables/{}", filename));
+
+    let mut downloaded_bytes: Option<Vec<u8>> = None;
+    for url in &download_urls {
+        if let Ok(res) = client.get(url).send().await {
             if res.status().is_success() {
                 if let Ok(bytes) = res.bytes().await {
                     downloaded_bytes = Some(bytes.to_vec());
@@ -222,26 +350,18 @@ pub async fn sync_datatables_catalog(program_path: Option<String>) -> Result<Syn
         }
     }
 
-    let bytes = downloaded_bytes.ok_or_else(|| "Failed to download DataTables index from GitHub.".to_string())?;
+    let bytes = downloaded_bytes.ok_or_else(|| "Failed to download DataTables index from GitHub or mirrors.".to_string())?;
 
-    // Parse to count tables
-    let total_tables = if let Ok(parsed) = serde_json::from_slice::<serde_json::Value>(&bytes) {
-        parsed.get("total_tables").and_then(|t| t.as_u64()).unwrap_or(423) as usize
-    } else {
-        423
-    };
+    fs::write(&target_path, &bytes).map_err(|e| format!("Failed to write DataTables catalog to disk: {}", e))?;
 
-    fs::write(&target_path, &bytes).map_err(|e| format!("Failed to write dt_index.json to disk: {}", e))?;
-
-    // Invalidate in-memory cache
     crate::usmap::datatable_index::invalidate_datatable_cache();
 
-    crate::logger::log(&format!("PalSchema DataTables catalog synced successfully ({} bytes, {} tables)", bytes.len(), total_tables));
+    crate::logger::log(&format!("PalSchema DataTables catalog synced successfully ({} bytes, {} tables)", bytes.len(), entry.total_tables));
 
     Ok(SyncCatalogResult {
         success: true,
-        message: format!("Synced {} DataTables successfully.", total_tables),
-        total_items: total_tables,
+        message: format!("Synced {} DataTables successfully ({}).", entry.total_tables, filename),
+        total_items: entry.total_tables,
         filename,
         updated: true,
     })

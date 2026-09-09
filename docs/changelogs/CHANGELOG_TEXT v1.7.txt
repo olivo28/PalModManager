@@ -1,28 +1,28 @@
-PalModManager - Changelog v1.7.1 (2026-09-02)
+PalModManager - Version 1.7.1 Changelog (2026-09-09)
 
 Added
-- Monaco Code Editor & IntelliSense: Full-featured in-app editor with Palworld C++ reflection autocomplete, live game Blueprints autocompletion (20,921 classes extracted directly from .pak), PalSchema DataTables & Row autocompletion (423 tables, 149k rows), live diagnostics dock, 1-click QuickFixes, and in-editor file/folder creation.
-- Custom Mod Notes: Save personal notes, guides, and keybindings directly on any mod card via the detail panel and context menu.
-- Dual UE4SS Activation Mode: Choose between standard folder isolation (enabled.txt) and direct mods.txt control, with clean category formatting.
-- USMAP Reflection Explorer: Browse and inspect Palworld engine structs, classes, enums, and properties directly in the Database Inspector (🗄 DB).
-- C++ SDK Manager: Manage and index Palworld SDK headers in Settings with 1-click cloud sync and local folder import.
-- Conflict Mitigation & Hotkey Tools: 1-click disable/edit actions on conflict cards and intelligent hotkey collision detection with automatic rebind to free keys.
-- Mod Packer Enhancements: Hierarchical tree-table file list view, Vortex folder preset, and 1-click dual packaging for Steam and Xbox.
-- Full 6-Language Localization: Complete translation coverage across all new tools, editor features, and menus.
+- In-Place Pak Tweaker: Directly edit cooked Unreal Engine properties and DataTable cells inside packed .pak archives with automatic .original.bak backups and 1-click rollback.
+- Live Blueprint CDO Diff Viewer: 5-column table displaying Property Name, Type, Vanilla Default, and Mod Value, with 1-click reset to vanilla and 3-way noise filters.
+- Dedicated Dev Resources Hub: Independent settings tab with Master Manifest status banner and unified access to .usmap mappings, C++ SDK headers (Pal.hpp), and dump tools.
+- Per-Profile Library Isolation: Local Library and Steam Workshop cards now strictly reflect the active profile with dedicated "Install to Profile" and "Remove from Profile" actions.
+- Safe Steam Workshop Removal: Removing workshop mods unlinks runtime junctions and detaches them from the profile without deleting subscribed files from Steam.
+- Monaco Code Editor & IntelliSense: Integrated editor with Palworld C++ reflection, Blueprint autocomplete (>20,000 classes), PalSchema DataTables (423 tables), and live diagnostics.
+- Custom Mod Notes: Save personal notes, guides, and keybindings on any mod card.
+- Dual UE4SS Activation Mode: Choose between standard folder isolation (enabled.txt) and direct mods.txt control.
+- Conflict Mitigation & Hotkey Tools: 1-click disable/edit on conflict cards and intelligent hotkey collision detection with automatic rebind suggestions.
+- Full 6-Language Localization: Complete translation coverage across all new tools and dialogs (EN, ES, PT, ZH-CN, JA, KO).
 
 Changed
-- Editor Canvas: Clean full-height editor workspace with native keyboard shortcuts (Ctrl + S, Shift + Alt + F) and zero-latency mod switching.
-- Database & USMAP Performance: Vastly faster search response times and fixed scrollable layouts.
-- Non-Destructive mods.txt Handling: Preserves custom comments, headers, and manual load orders cleanly.
-- Codebase Optimization: Thorough internal modularization for faster loading and long-term stability.
+- Clean full-height editor workspace with native shortcuts (Ctrl+S, Shift+Alt+F) and zero-latency switching.
+- Vastly faster Database and USMAP search response times with lower memory footprint.
+- Non-destructive mods.txt handling preserving custom comments and manual load orders.
 
 Fixed
-- Precise Line Navigation: Clicking "Edit" or "Preview" in diagnostics now jumps straight to the exact script line with a brief highlight.
-- Nexus Details Modal: Fixed unresponsiveness when clicking "Update Mod" on installed mods.
-- Engine Reflection & Hook Diagnostics: Improved C++ method parsing and eliminated false-positive warnings on Blueprint assets.
-- Steam Workshop & Profile Stability: Fixed 0-mod counts, toggle sync in PalModSettings.ini, Workshop PalSchema detection, and cross-profile state preservation.
-- Archive & Routing Handlers: Fixed installation errors for .7z/.rar files and corrected misrouted files for Hybrid and Altermatic mods.
-- UI & Translations: Deduplicated component folder buttons, cleaned up bulk selection labels, and fixed missing translations.
+- Precise line navigation from diagnostics jumping directly to error lines.
+- Nexus details modal unresponsiveness when clicking "Update Mod".
+- Archive installer routing for .7z and .rar packages and Altermatic mods.
+- Workshop mods re-appearing after removal due to profile scan auto-injection.
+- Steam Workshop features strictly guarded to run only on Steam installations.
 
 ------------------------------------
 

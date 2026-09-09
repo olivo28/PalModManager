@@ -24,7 +24,13 @@ pub fn get_workshop_state(state: State<'_, AppState>) -> Result<WorkshopState, S
         return Ok(WorkshopState::default());
     }
 
-    let settings = crate::workshop::read_pal_mod_settings(&game_path);
+    let mut settings = crate::workshop::read_pal_mod_settings(&game_path);
+    if settings.workshop_root.is_empty() {
+        if let Some(resolved) = crate::workshop::resolve_workshop_root(&game_path) {
+            settings.workshop_root = resolved.to_string_lossy().to_string();
+            let _ = crate::workshop::write_pal_mod_settings(&game_path, &settings);
+        }
+    }
     let scanned = crate::workshop::scan_workshop_mods(&game_path);
 
     Ok(WorkshopState {
@@ -104,8 +110,9 @@ pub fn prepare_workshop_update_zip(package_name: String, state: State<'_, AppSta
     let target = wmods.iter().find(|m| m.package_name == package_name)
         .ok_or_else(|| format!("Workshop mod {} not found", package_name))?;
 
-    let settings = crate::workshop::read_pal_mod_settings(&game_path);
-    let src_dir = std::path::Path::new(&settings.workshop_root).join(target.workshop_id.to_string());
+    let workshop_root = crate::workshop::resolve_workshop_root(&game_path)
+        .ok_or_else(|| "Steam Workshop root directory not found".to_string())?;
+    let src_dir = workshop_root.join(target.workshop_id.to_string());
     if !src_dir.exists() {
         return Err(format!("Workshop folder for ID {} does not exist", target.workshop_id));
     }

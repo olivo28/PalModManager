@@ -116,22 +116,25 @@ fn is_safe_ue5_uasset_header(bytes: &[u8]) -> bool {
         return false;
     }
 
-    // 4. FileVersionUE4 (bytes 12..16): In UE5/Palworld, UE4 version is >= 500 (typically 522 or 524)
+    // 4. FileVersionUE4 (bytes 12..16) & FileVersionUE5 (bytes 16..20)
     let ue4_ver = i32::from_le_bytes(match bytes[12..16].try_into() {
         Ok(b) => b,
         Err(_) => return false,
     });
-    if ue4_ver < 500 || ue4_ver > 1000 {
-        return false;
-    }
-
-    // 5. FileVersionUE5 (bytes 16..20): In UE5/Palworld, UE5 version is >= 1000 (typically 1008 for UE 5.1)
     let ue5_ver = i32::from_le_bytes(match bytes[16..20].try_into() {
         Ok(b) => b,
         Err(_) => return false,
     });
-    if ue5_ver < 1000 || ue5_ver > 5000 {
-        return false;
+
+    // In cooked/unversioned UE5 mods, FileVersionUE4 and FileVersionUE5 are typically 0
+    let is_unversioned = ue4_ver == 0 && ue5_ver == 0;
+    if !is_unversioned {
+        if ue4_ver < 500 || ue4_ver > 1000 {
+            return false;
+        }
+        if ue5_ver < 1000 || ue5_ver > 5000 {
+            return false;
+        }
     }
 
     // 6. Custom Versions Count (bytes 24..28)
@@ -160,6 +163,40 @@ fn is_safe_ue5_uasset_header(bytes: &[u8]) -> bool {
     }
 
     true
+}
+
+/// Strips PKG_UNVERSIONED_PROPERTIES (0x2000) from package_flags in the .uasset binary header.
+/// In third-party unreal_asset 0.1.16, UnversionedHeaderFragment uses u8 for property indexing,
+/// which panics with arithmetic overflow on structs with > 255 properties (like PalGameSetting with 680 properties).
+/// Stripping this flag forces unreal_asset to safely load all exports as RawExport without panicking,
+/// allowing our high-capacity 32-bit unversioned decoder to extract all properties seamlessly.
+pub(crate) fn strip_pkg_unversioned_flag(bytes: &[u8]) -> Option<Vec<u8>> {
+    if bytes.len() < 128 {
+        return None;
+    }
+    let custom_ver_count = i32::from_le_bytes(bytes.get(24..28)?.try_into().ok()?);
+    if custom_ver_count < 0 || custom_ver_count > 256 {
+        return None;
+    }
+    let header_size_offset = 28 + (custom_ver_count as usize) * 20;
+    let mut cur = header_size_offset + 4;
+    let folder_name_len = i32::from_le_bytes(bytes.get(cur..cur + 4)?.try_into().ok()?);
+    cur += 4;
+    if folder_name_len > 0 {
+        cur += folder_name_len as usize;
+    }
+    if cur + 4 > bytes.len() {
+        return None;
+    }
+    let flags = u32::from_le_bytes(bytes[cur..cur + 4].try_into().ok()?);
+    if (flags & 0x2000) != 0 {
+        let mut modified = bytes.to_vec();
+        let stripped = flags & !0x2000;
+        modified[cur..cur + 4].copy_from_slice(&stripped.to_le_bytes());
+        Some(modified)
+    } else {
+        None
+    }
 }
 
 /// Deep inspection of an internal .uasset (and companion .uexp) from a .pak archive or loose file
@@ -218,13 +255,34 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
             let uasset_data = uasset_bytes.clone();
             let uexp_data = uexp_bytes.clone();
 
-            let parse_result = catch_unwind(AssertUnwindSafe(|| {
-                let uasset_cursor = Cursor::new(uasset_data);
-                let uexp_cursor = uexp_data.map(Cursor::new);
+            // Suppress default panic hook during probe to prevent unreal_asset unversioned
+            // overflow bugs (e.g. u8 overflow on structs with > 255 properties) from dumping stderr noise.
+            let prev_hook = std::panic::take_hook();
+            std::panic::set_hook(Box::new(|_| {}));
+
+            let mut parse_result = catch_unwind(AssertUnwindSafe(|| {
+                let uasset_cursor = Cursor::new(uasset_data.clone());
+                let uexp_cursor = uexp_data.clone().map(Cursor::new);
                 Asset::new(uasset_cursor, uexp_cursor, ver)
             }));
 
-        if let Ok(Ok(asset)) = parse_result {
+            // If normal parsing failed or panicked (e.g. unreal_asset 0.1.16 unversioned u8 overflow panic
+            // on structs with > 255 properties like BP_PalGameSetting), retry by stripping PKG_UNVERSIONED_PROPERTIES (0x2000).
+            // This forces unreal_asset to safely load all exports as RawExport without panicking, allowing our
+            // 32-bit high-capacity unversioned decoder to extract all properties seamlessly.
+            if parse_result.is_err() || parse_result.as_ref().unwrap().is_err() {
+                if let Some(stripped_uasset) = strip_pkg_unversioned_flag(&uasset_data) {
+                    parse_result = catch_unwind(AssertUnwindSafe(|| {
+                        let uasset_cursor = Cursor::new(stripped_uasset);
+                        let uexp_cursor = uexp_data.map(Cursor::new);
+                        Asset::new(uasset_cursor, uexp_cursor, ver)
+                    }));
+                }
+            }
+
+            std::panic::set_hook(prev_hook);
+
+            if let Ok(Ok(asset)) = parse_result {
             let mut exports = Vec::new();
             for export in &asset.asset_data.exports {
                 let base = export.get_base_export();
@@ -268,7 +326,7 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
 
             let name_map = asset.get_name_map();
             let raw_names: Vec<String> = name_map.get_ref().get_name_map_index_list().to_vec();
-            let names_sample: Vec<String> = raw_names.into_iter()
+            let names_sample: Vec<String> = raw_names.iter()
                 .map(|s| s.trim().to_string())
                 .filter(|s| !s.is_empty() && s.chars().any(|c| c.is_alphanumeric()))
                 .collect();
@@ -285,6 +343,26 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
 
             let resolved_schema = resolve_usmap_schema(&asset_name, &exports, &imports, &names_sample);
 
+            let mut instantiated_properties = super::property_extractor::extract_instantiated_properties(&asset.asset_data.exports);
+            if instantiated_properties.is_empty() {
+                instantiated_properties = super::property_extractor::extract_unversioned_cdo_properties(
+                    &asset.asset_data.exports,
+                    &imports,
+                    &raw_names,
+                    &asset_name,
+                );
+            }
+            super::vanilla_extractor::enrich_with_vanilla_defaults(
+                pak_path,
+                uasset_internal_path,
+                &mut instantiated_properties,
+            );
+            let datatable_grid = super::property_extractor::extract_datatable_grid(&asset.asset_data.exports, &raw_names, &asset_name);
+            let main_class = exports.first().map(|e| e.class_name.as_str()).unwrap_or(&asset_name);
+            let class_hierarchy = super::hierarchy_resolver::resolve_class_hierarchy(main_class);
+            let vanilla_verification = super::hierarchy_resolver::verify_vanilla_references(&imports);
+            let has_original_backup = super::hierarchy_resolver::check_pak_backup_exists(pak_path);
+
             return Ok(UAssetInspectionDetails {
                 asset_name,
                 asset_path: uasset_internal_path.to_string(),
@@ -296,6 +374,11 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
                 names_sample,
                 resolved_schema,
                 texture_preview: None,
+                instantiated_properties,
+                datatable_grid,
+                class_hierarchy,
+                vanilla_verification,
+                has_original_backup,
             });
         }
     }
@@ -351,6 +434,8 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
     };
 
     let resolved_schema = resolve_usmap_schema(&asset_name, &exports, &imports, &names_sample);
+    let vanilla_verification = super::hierarchy_resolver::verify_vanilla_references(&imports);
+    let has_original_backup = super::hierarchy_resolver::check_pak_backup_exists(pak_path);
 
     Ok(UAssetInspectionDetails {
         asset_name,
@@ -363,6 +448,11 @@ pub fn inspect_uasset_deep(pak_path: &Path, uasset_internal_path: &str) -> Resul
         names_sample,
         resolved_schema,
         texture_preview: None,
+        instantiated_properties: Vec::new(),
+        datatable_grid: None,
+        class_hierarchy: Vec::new(),
+        vanilla_verification,
+        has_original_backup,
     })
 }
 

@@ -17,7 +17,7 @@ export function formatDisplayPath(fullPath: string): string {
 }
 
 export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
-  const primaryPath = (mod.enabled ? mod.gamePath : mod.disabledPath) || '';
+  const primaryPath = (mod.enabled ? mod.gamePath : mod.disabledPath) || mod.gamePath || mod.disabledPath || '';
   const components: ModComponentFolder[] = [];
   const folderMap = new Map<string, ModComponentFolder>();
 

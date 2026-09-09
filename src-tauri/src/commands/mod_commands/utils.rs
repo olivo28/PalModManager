@@ -166,9 +166,11 @@ pub fn filter_mods_for_current_profile(data: &AppData) -> Vec<ModInfo> {
         if is_native {
             return ue4ss_enabled;
         }
-        let is_workshop = m.game_path.to_lowercase().contains("nativemods") || m.game_path.to_lowercase().contains("workshop");
-        if is_workshop {
-            return ue4ss_enabled;
+        let is_workshop = m.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod"))
+            || m.game_path.to_lowercase().contains("nativemods")
+            || m.game_path.to_lowercase().contains("workshop");
+        if is_workshop && !ue4ss_enabled {
+            return false;
         }
         let is_palschema = m.mod_type == ModType::PalSchema;
         if is_palschema && !palschema_enabled && !ue4ss_enabled {

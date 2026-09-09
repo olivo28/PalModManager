@@ -506,12 +506,24 @@
   font-size: 12px !important;
 }
 
-/* Floating Save Button */
-.editor-floating-save-btn {
+/* Floating Action Buttons Container */
+.editor-floating-actions {
   position: absolute;
   bottom: 40px;
   right: 24px;
   z-index: 100;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.editor-floating-actions .editor-floating-save-btn {
+  position: static;
+  bottom: auto;
+  right: auto;
+}
+
+.editor-floating-save-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -533,6 +545,33 @@
   background: var(--accent, #0078d4);
   color: #ffffff;
   box-shadow: 0 6px 24px rgba(0, 120, 212, 0.55);
+  transform: translateY(-2px);
+}
+
+/* Floating Revert Button */
+.editor-floating-revert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: rgba(22, 27, 34, 0.92);
+  backdrop-filter: blur(10px);
+  color: var(--text-secondary, #cccccc);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  user-select: none;
+}
+
+.editor-floating-revert-btn:hover {
+  background: rgba(168, 0, 0, 0.85);
+  border-color: #f1707b;
+  color: #ffffff;
+  box-shadow: 0 6px 20px rgba(232, 17, 35, 0.45);
   transform: translateY(-2px);
 }
 

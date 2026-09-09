@@ -15,4 +15,5 @@ pub mod pipeline_install_tests;
 pub mod hybrid_disable_enable_tests;
 pub mod hybrid_update_tests;
 pub mod workshop_rule_tests;
+pub mod pak_tweaker_tests;
 

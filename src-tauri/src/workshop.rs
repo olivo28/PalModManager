@@ -80,18 +80,31 @@ pub fn write_pal_mod_settings(game_path: &str, settings: &PalModSettings) -> Res
     fs::write(&path, content).map_err(|e| format!("Failed to write PalModSettings.ini: {}", e))
 }
 
-pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
+pub fn resolve_workshop_root(game_path: &str) -> Option<std::path::PathBuf> {
+    if !crate::dependency_checker::is_steam_platform(Path::new(game_path)) {
+        return None;
+    }
     let settings = read_pal_mod_settings(game_path);
-    if settings.workshop_root.is_empty() {
-        return Vec::new();
+    if !settings.workshop_root.is_empty() {
+        let p = std::path::PathBuf::from(&settings.workshop_root);
+        if p.exists() {
+            return Some(p);
+        }
     }
-    let workshop_dir = Path::new(&settings.workshop_root);
-    if !workshop_dir.exists() {
-        return Vec::new();
-    }
+    let path = Path::new(game_path);
+    path.parent().and_then(|p| p.parent()).map(|p| p.join("workshop").join("content").join("1623730")).filter(|p| p.exists())
+        .or_else(|| path.parent().and_then(|p| p.parent()).and_then(|p| p.parent()).map(|p| p.join("workshop").join("content").join("1623730")).filter(|p| p.exists()))
+}
+
+pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
+    let workshop_dir = match resolve_workshop_root(game_path) {
+        Some(dir) => dir,
+        None => return Vec::new(),
+    };
+    let settings = read_pal_mod_settings(game_path);
 
     let mut mods = Vec::new();
-    if let Ok(entries) = fs::read_dir(workshop_dir) {
+    if let Ok(entries) = fs::read_dir(&workshop_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if !path.is_dir() {
@@ -116,7 +129,11 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                     let is_framework = WORKSHOP_FRAMEWORK_IDS.contains(&workshop_id);
                     
                     let manifest_dir = Path::new(game_path).join("Mods").join("ManagedMods").join(&package_name);
-                    let is_installed = manifest_dir.exists();
+                    let is_managed_installed = manifest_dir.exists();
+                    let standard_ue4ss = Path::new(game_path).join("Pal").join("Binaries").join("Win64").join("ue4ss").join("Mods").join(&package_name);
+                    let standard_win64 = Path::new(game_path).join("Pal").join("Binaries").join("Win64").join("Mods").join(&package_name);
+                    let nativemods_ue4ss = Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join(&package_name);
+                    let is_installed = is_managed_installed || standard_ue4ss.exists() || standard_win64.exists() || nativemods_ue4ss.exists();
                     let manifest_file = manifest_dir.join("InstallManifest.json");
                     
                     let mut last_install = None;
@@ -138,9 +155,11 @@ pub fn scan_workshop_mods(game_path: &str) -> Vec<WorkshopMod> {
                         }
                     }
                     if installed_version.is_none() {
-                        let alt_info = Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join("PalSchema").join("mods").join(&package_name).join("Info.json");
-                        let alt_info2 = Path::new(game_path).join("Mods").join("NativeMods").join("UE4SS").join("Mods").join(&package_name).join("Info.json");
-                        let target_alt = if alt_info.exists() { Some(alt_info) } else if alt_info2.exists() { Some(alt_info2) } else { None };
+                        let target_alt = [
+                            standard_ue4ss.join("Info.json"),
+                            nativemods_ue4ss.join("PalSchema").join("mods").join(&package_name).join("Info.json"),
+                            nativemods_ue4ss.join("Info.json"),
+                        ].into_iter().find(|p| p.exists());
                         if let Some(alt) = target_alt {
                             if let Ok(inst_info_str) = fs::read_to_string(&alt) {
                                 if let Ok(inst_info) = serde_json::from_str::<WorkshopInfoJson>(&inst_info_str) {
@@ -574,8 +593,10 @@ pub async fn check_workshop_online_updates(game_path: &str) -> Result<crate::mod
         return Ok(crate::models::WorkshopOnlineCheckResult::default());
     }
 
-    let settings = read_pal_mod_settings(game_path);
-    let workshop_root = Path::new(&settings.workshop_root);
+    let workshop_root = match resolve_workshop_root(game_path) {
+        Some(d) => d,
+        None => return Ok(crate::models::WorkshopOnlineCheckResult::default()),
+    };
 
     let client = reqwest::Client::new();
     let url = "https://api.steampowered.com/ISteamRemoteStorage/GetPublishedFileDetails/v1/";
@@ -672,5 +693,3 @@ pub fn trigger_steam_validation(game_path: &str) -> Result<(), String> {
     crate::logger::log(&format!("Dispatched steam://validate/1623730 for game at {}", game_path));
     Ok(())
 }
-
-

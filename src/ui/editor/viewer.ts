@@ -71,7 +71,7 @@ export function clearEditorContent(): void {
 export function updateUnsavedIndicator(): void {
   const currentText = getMonacoContent();
   const state = getState();
-  const selectedPath = state.editorSelectedFile;
+  const selectedPath = state.editorSelectedFile || getCurrentMonacoFilePath();
 
   if (selectedPath && _originalContent !== null) {
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
@@ -94,16 +94,34 @@ export function updateUnsavedIndicator(): void {
   const dirtyCount = getDirtyBufferCount();
   const saveBtn = editorDom.elMaybe('editor-save-btn');
   const saveBtnText = document.getElementById('editor-save-btn-text');
-  if (saveBtn) {
-    if (dirtyCount > 0) {
+  const revertBtn = editorDom.elMaybe('editor-revert-btn');
+  const revertBtnText = document.getElementById('editor-revert-btn-text');
+
+  if (dirtyCount > 0) {
+    if (saveBtn) {
       saveBtn.style.display = 'inline-flex';
       saveBtn.classList.add('dirty');
       if (saveBtnText) {
-        saveBtnText.textContent = dirtyCount > 1 ? `${t('editor.btn_save_all') || 'Save All'} (${dirtyCount})` : (t('editor.btn_save') || 'Save');
+        saveBtnText.textContent = dirtyCount > 1
+          ? (t('editor.btn_save_all', { count: dirtyCount }) || `Save All (${dirtyCount})`)
+          : (t('editor.btn_save') || 'Save');
       }
-    } else {
+    }
+    if (revertBtn) {
+      revertBtn.style.display = 'inline-flex';
+      if (revertBtnText) {
+        revertBtnText.textContent = dirtyCount > 1
+          ? (t('editor.btn_revert_all', { count: dirtyCount }) || `Revert All (${dirtyCount})`)
+          : (t('editor.btn_revert') || 'Revert');
+      }
+    }
+  } else {
+    if (saveBtn) {
       saveBtn.style.display = 'none';
       saveBtn.classList.remove('dirty');
+    }
+    if (revertBtn) {
+      revertBtn.style.display = 'none';
     }
   }
 }
@@ -129,6 +147,19 @@ export function renderEditorBreadcrumbs(modName: string, filePath: string): stri
 export async function loadFileContent(filePath: string, lineNumber?: number): Promise<void> {
   const state = getState();
   if (!state.editorModId) return;
+
+  // Synchronize previous active file into buffer cache before switching files
+  const prevPath = state.editorSelectedFile || getCurrentMonacoFilePath();
+  if (prevPath && prevPath !== filePath && _originalContent !== null) {
+    const currentText = getMonacoContent();
+    const normalize = (str: string) => str.replace(/\r\n/g, '\n');
+    const isDirty = normalize(currentText) !== normalize(_originalContent);
+    _fileBufferCache.set(prevPath, {
+      current: currentText,
+      original: _originalContent,
+      isDirty,
+    });
+  }
 
   const editorPath = editorDom.el('editor-file-path');
   const formatBtn = editorDom.elMaybe('editor-format-btn');
@@ -396,6 +427,67 @@ export async function handleEditorSave(): Promise<void> {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
     if (saveBtn) saveBtn.disabled = false;
+  }
+}
+
+export async function handleEditorRevert(): Promise<void> {
+  const state = getState();
+  const currentPath = state.editorSelectedFile || getCurrentMonacoFilePath();
+
+  // Flush active Monaco buffer into cache first
+  if (currentPath && _originalContent !== null) {
+    const currentText = getMonacoContent();
+    const normalize = (str: string) => str.replace(/\r\n/g, '\n');
+    const isCurDirty = normalize(currentText) !== normalize(_originalContent);
+    _fileBufferCache.set(currentPath, {
+      current: currentText,
+      original: _originalContent,
+      isDirty: isCurDirty,
+    });
+  }
+
+  const updatedDirty = Array.from(_fileBufferCache.entries()).filter(([_, b]) => b.isDirty);
+  if (updatedDirty.length === 0) return;
+
+  const { showConfirm } = await import('../confirm');
+
+  if (updatedDirty.length > 1) {
+    const title = t('editor.confirm_revert_all_title') || 'Discard All Unsaved Changes?';
+    const body = (t('editor.confirm_revert_all_body') || 'Are you sure you want to discard unsaved changes across **{count} files**? All modifications will be lost.').replace('{count}', String(updatedDirty.length));
+    const confirmed = await showConfirm(title, body);
+    if (!confirmed) return;
+
+    for (const [_, buf] of updatedDirty) {
+      buf.current = buf.original;
+      buf.isDirty = false;
+    }
+
+    if (currentPath && _fileBufferCache.has(currentPath)) {
+      const activeBuf = _fileBufferCache.get(currentPath)!;
+      _originalContent = activeBuf.original;
+      setMonacoFile(currentPath, activeBuf.original);
+    }
+
+    updateUnsavedIndicator();
+    showToast(t('editor.toast_reverted_all', { count: updatedDirty.length }) || `Reverted ${updatedDirty.length} files`, 'info');
+  } else {
+    const [path, buf] = updatedDirty[0];
+    const fileName = path.replace(/^.*[/\\]/, '');
+    const title = t('editor.confirm_revert_title') || 'Discard Unsaved Changes?';
+    const body = (t('editor.confirm_revert_body') || 'Are you sure you want to discard unsaved changes in **{file}**? All modifications will be lost.').replace('{file}', fileName);
+    const confirmed = await showConfirm(title, body);
+    if (!confirmed) return;
+
+    buf.current = buf.original;
+    buf.isDirty = false;
+
+    if (currentPath === path) {
+      _originalContent = buf.original;
+      setMonacoFile(path, buf.original);
+    }
+
+    updateUnsavedIndicator();
+    showToast(t('editor.toast_reverted') || 'Changes discarded', 'info');
   }
 }
 

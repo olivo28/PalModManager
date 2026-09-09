@@ -29,6 +29,10 @@
             <span class="tab-icon">🌐</span>
             <span data-i18n="settings.tab_network">Network & Sources</span>
           </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="resources">
+            <span class="tab-icon">🛠️</span>
+            <span data-i18n="settings.tab_resources">Dev Resources</span>
+          </button>
           <button type="button" class="settings-tab-button" data-settings-tab="safety">
             <span class="tab-icon">🛡️</span>
             <span data-i18n="settings.tab_safety">Safety & Backup</span>
@@ -282,6 +286,104 @@
               </div>
             </div>
 
+            <!-- IMAGE CACHE -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.image_cache_title">Offline Thumbnail Cache</span>
+                </div>
+                <span id="settings-image-cache-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
+              <div style="display:flex; gap:8px; margin-top:8px;">
+                <button type="button" id="btn-purge-image-cache" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
+              </div>
+            </div>
+
+            <!-- OFFICIAL SOURCES TRANSPARENCY -->
+            <div class="settings-section-card">
+              <div class="settings-card-header">
+                <span class="settings-card-title" data-i18n="settings.sources_title">Official Framework & Dependency Sources</span>
+              </div>
+              <div class="settings-hint font-size-11" style="margin-bottom:8px;" data-i18n="settings.sources_hint">Verified GitHub repositories and upstream sources used by PalModManager:</div>
+              
+              <div style="display:flex; flex-direction:column; gap:8px;">
+                <!-- UE4SS -->
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div>
+                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
+                    <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
+                  </div>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/latest" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                </div>
+
+                <!-- PalSchema -->
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:10px;">
+                    <img src="/palschema.png" alt="PalSchema" style="width:24px; height:24px; object-fit:contain;" />
+                    <div>
+                      <div style="font-size:12px; font-weight:700; color:var(--text-primary);">PalSchema Mod Loader</div>
+                      <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
+                    </div>
+                  </div>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                </div>
+
+                <!-- retoc (trumank) -->
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ retoc <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" data-i18n="settings.sources_retoc_desc">Converts legacy .pak archives into Zen IoStore containers (.utoc / .ucas) — required for mods to load on PC Game Pass (Xbox / WinGDK).</div>
+                  </div>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/retoc" style="font-size:11px; padding:4px 8px; white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                </div>
+
+                <!-- repak (trumank) -->
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                  <div style="flex:1; min-width:0;">
+                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">📦 repak <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
+                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" data-i18n="settings.sources_repak_desc_short">Packs and unpacks Unreal Engine .pak archives — used internally to inspect and validate mod contents.</div>
+                  </div>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/repak" style="font-size:11px; padding:4px 8px; white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 6: DEV RESOURCES -->
+          <div class="settings-tab-pane" id="settings-pane-resources">
+            <!-- MASTER RESOURCE MANIFEST & GAME BUILD BANNER -->
+            <div class="settings-section-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%); border-color:rgba(99,102,241,0.3);">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                <div style="display:flex; align-items:center; gap:8px;">
+                  <span style="font-size:18px;">🛠️</span>
+                  <div>
+                    <span class="settings-card-title" data-i18n="settings.resources_master_title">Palworld Engine & Dev Resources</span>
+                    <div class="settings-hint font-size-11" data-i18n="settings.resources_master_hint">Centralized registry of UE5.1.1 reflection data, AST mappings, C++ headers, and EmmyLua types for mod development and IDE intelligence.</div>
+                  </div>
+                </div>
+                <button type="button" id="btn-verify-all-resources" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                  <span id="btn-verify-all-resources-icon">🔄</span>
+                  <span data-i18n="settings.btn_verify_all_resources">Verify All Resources</span>
+                </button>
+              </div>
+
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px;">
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:8px 10px;">
+                  <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_steam_build">Detected Steam Build</div>
+                  <div id="settings-resources-steam-build" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:var(--text-primary); margin-top:2px;">Detecting...</div>
+                </div>
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:8px 10px;">
+                  <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_game_version">Target Game Version</div>
+                  <div id="settings-resources-game-ver" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#22c55e; margin-top:2px;">Detecting...</div>
+                </div>
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:8px 10px;">
+                  <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_ue4ss_commit">UE4SS Engine Commit</div>
+                  <div id="settings-resources-ue4ss-commit" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#eab308; margin-top:2px;">Detecting...</div>
+                </div>
+              </div>
+            </div>
+
             <!-- UNREAL ENGINE SCHEMA MAPPINGS (.USMAP) -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
@@ -333,6 +435,125 @@
                   <span data-i18n="settings.btn_import_sdk">Import Local CXXHeaderDump</span>
                 </button>
                 <button type="button" id="btn-purge-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_sdk">🧹 Clear SDK</button>
+              </div>
+            </div>
+
+            <!-- JSON PROPERTY MAPPINGS (.JMAP) -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.jmap_title">JSON Property Mappings (.jmap)</span>
+                </div>
+                <span id="settings-jmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.jmap_hint">Complete JSON AST specification of all Unreal properties, enums, structs, and byte offsets. Powers enum validations, diffing, and AST tooling.</div>
+              
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-jmap-file">Palworld.jmap.zip</span></div>
+                <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-jmap-local-status">Checking...</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-jmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button type="button" id="btn-sync-jmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-jmap-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_jmap">Sync .jmap from Repo</span>
+                </button>
+                <button type="button" id="btn-export-jmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span>📂</span>
+                  <span data-i18n="settings.btn_export_jmap">Export .jmap</span>
+                </button>
+                <button type="button" id="btn-purge-jmap" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_jmap">🧹 Clear Cache</button>
+              </div>
+            </div>
+
+            <!-- LUA EMMYLUA TYPES (SHARED/TYPES) -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.luatypes_title">Lua EmmyLua Types (shared/types)</span>
+                </div>
+                <span id="settings-luatypes-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.luatypes_hint">1,712 EmmyLua definition files (Pal.lua, Engine.lua) providing rich method signatures, parameter info, and autocompletions in Monaco Editor.</div>
+              
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Total Type Files:</strong> <span id="settings-luatypes-count">1,712 files</span></div>
+                <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-luatypes-file">Palworld_LuaTypes.zip</span></div>
+                <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-luatypes-local-status">Checking...</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-luatypes-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button type="button" id="btn-sync-luatypes" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-luatypes-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_luatypes">Sync Lua Types from Repo</span>
+                </button>
+                <button type="button" id="btn-export-luatypes" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span>📂</span>
+                  <span data-i18n="settings.btn_export_luatypes">Export Lua Types</span>
+                </button>
+                <button type="button" id="btn-purge-luatypes" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_luatypes">🧹 Clear Cache</button>
+              </div>
+            </div>
+
+            <!-- UNREAL HEADER TOOL (UHT) C++ HEADERS -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.uht_title">Unreal Header Tool (UHT) C++ Headers</span>
+                </div>
+                <span id="settings-uht-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.uht_hint">24,076 Unreal Header Tool C++ headers with full UCLASS/UPROPERTY/UFUNCTION annotations for building native C++ plugins and RPC inspection.</div>
+              
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Total Headers:</strong> <span id="settings-uht-count">24,076 files</span></div>
+                <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-uht-file">Palworld_UHT_SDK.zip</span></div>
+                <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-uht-local-status">Checking...</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-uht-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button type="button" id="btn-sync-uht" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-uht-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_uht">Sync UHT Headers from Repo</span>
+                </button>
+                <button type="button" id="btn-export-uht" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span>📂</span>
+                  <span data-i18n="settings.btn_export_uht">Export UHT SDK</span>
+                </button>
+                <button type="button" id="btn-purge-uht" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_uht">🧹 Clear Cache</button>
+              </div>
+            </div>
+
+            <!-- BLUEPRINT SDK DUMMY ASSETS (UE4SS_SDK) -->
+            <div class="settings-section-card">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+                <div class="settings-card-header" style="margin-bottom:0;">
+                  <span class="settings-card-title" data-i18n="settings.bpsdk_title">Blueprint SDK Dummy Assets (UE4SS_SDK)</span>
+                </div>
+                <span id="settings-bpsdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+              </div>
+              <div class="settings-hint font-size-11" data-i18n="settings.bpsdk_hint">14,090 dummy asset files replicating Palworld internal asset tree. Enables opening and creating cooked .pak mods inside Unreal Engine 5.1.1 Editor.</div>
+              
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Total Dummy Assets:</strong> <span id="settings-bpsdk-count">14,090 assets</span></div>
+                <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-bpsdk-file">Palworld_BP_SDK.zip</span></div>
+                <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-bpsdk-local-status">Checking...</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-bpsdk-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+              </div>
+
+              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
+                <button type="button" id="btn-sync-bpsdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span id="btn-sync-bpsdk-icon">🔄</span>
+                  <span data-i18n="settings.btn_sync_bpsdk">Sync BP SDK from Repo</span>
+                </button>
+                <button type="button" id="btn-export-bpsdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                  <span>📂</span>
+                  <span data-i18n="settings.btn_export_bpsdk">Export to UE Project</span>
+                </button>
+                <button type="button" id="btn-purge-bpsdk" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_bpsdk">🧹 Clear Cache</button>
               </div>
             </div>
 
@@ -423,72 +644,9 @@
                 </button>
               </div>
             </div>
-
-            <!-- IMAGE CACHE -->
-            <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <div class="settings-card-header" style="margin-bottom:0;">
-                  <span class="settings-card-title" data-i18n="settings.image_cache_title">Offline Thumbnail Cache</span>
-                </div>
-                <span id="settings-image-cache-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
-              </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button type="button" id="btn-purge-image-cache" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
-              </div>
-            </div>
-
-            <!-- OFFICIAL SOURCES TRANSPARENCY -->
-            <div class="settings-section-card">
-              <div class="settings-card-header">
-                <span class="settings-card-title" data-i18n="settings.sources_title">Official Framework & Dependency Sources</span>
-              </div>
-              <div class="settings-hint font-size-11" style="margin-bottom:8px;" data-i18n="settings.sources_hint">Verified GitHub repositories and upstream sources used by PalModManager:</div>
-              
-              <div style="display:flex; flex-direction:column; gap:8px;">
-                <!-- UE4SS -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
-                  <div>
-                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
-                    <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
-                  </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/latest" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
-                </div>
-
-                <!-- PalSchema -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
-                  <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="/palschema.png" alt="PalSchema" style="width:24px; height:24px; object-fit:contain;" />
-                    <div>
-                      <div style="font-size:12px; font-weight:700; color:var(--text-primary);">PalSchema Mod Loader</div>
-                      <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
-                    </div>
-                  </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
-                </div>
-
-                <!-- retoc (trumank) -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                  <div style="flex:1; min-width:0;">
-                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ retoc <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
-                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" data-i18n="settings.sources_retoc_desc">Converts legacy .pak archives into Zen IoStore containers (.utoc / .ucas) — required for mods to load on PC Game Pass (Xbox / WinGDK).</div>
-                  </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/retoc" style="font-size:11px; padding:4px 8px; white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
-                </div>
-
-                <!-- repak (trumank) -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
-                  <div style="flex:1; min-width:0;">
-                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">📦 repak <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
-                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" data-i18n="settings.sources_repak_desc_short">Packs and unpacks Unreal Engine .pak archives — used internally to inspect and validate mod contents.</div>
-                  </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/repak" style="font-size:11px; padding:4px 8px; white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
-                </div>
-              </div>
-            </div>
           </div>
 
-          <!-- TAB 6: SAFETY & BACKUP -->
+          <!-- TAB 7: SAFETY & BACKUP -->
           <div class="settings-tab-pane" id="settings-pane-safety">
             <div class="settings-section-card">
               <div class="settings-card-header">

@@ -119,9 +119,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     const extraText = extraCount > 0 ? `+${extraCount} ${escapeHtml(t('card.extra_files_count', { count: extraCount }))}` : escapeHtml(t('common.none'));
     const formattedDate = mod.installDate ? mod.installDate.substring(0, 10) : escapeHtml(t('common.unknown'));
 
-    const removeBtn = isWorkshop
-      ? `<span style="font-size: 10px; color: var(--text-muted); opacity: 0.6; font-weight: bold; text-transform: uppercase;">${escapeHtml(t('card.badge_workshop'))}</span>`
-      : `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
+    const removeBtn = `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
 
     const childClass = isChild ? 'folder-child-row' : '';
     const childIndent = isChild ? `<span class="tree-connector">↳</span>` : '';
@@ -193,9 +191,7 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     ? `<span class="mod-card-update-badge" title="${escapeHtml(t('card.badge_update_available', { version: updateVer }))}">&#9650; ${escapeHtml(t('context.update_mod'))} (v${escapeHtml(updateVer)})</span>`
     : '';
 
-  const removeBtn = isWorkshop
-    ? `<span style="font-size: 9px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 2px 6px; border-radius: 4px; text-transform: uppercase;">${escapeHtml(t('card.badge_workshop'))}</span>`
-    : `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
+  const removeBtn = `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
 
   const isSelected = state.selectedModIds.has(mod.id);
 

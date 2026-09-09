@@ -319,20 +319,12 @@ pub fn auto_add_scanned_mods_to_profile(data: &mut AppData) {
                 .map_or(false, |s| s.starts_with("Steam Workshop Mod"));
 
             if is_workshop {
-                if (m.mod_type == crate::models::ModType::Ue4ss || m.mod_type == crate::models::ModType::Hybrid) && !ue4ss_active {
-                    continue;
-                }
-                if m.mod_type == crate::models::ModType::PalSchema && !palschema_active {
-                    continue;
-                }
+                // Never auto-inject uninstalled Workshop mods into a profile.
+                // Workshop mods belong to a profile only if explicitly installed/added by the user.
                 let already_installed = profile.installed_mod_ids.iter().any(|id| {
                     mod_matches_profile_entry(m, id)
                 });
-                if !already_installed {
-                    profile.installed_mod_ids.push(m.id.clone());
-                    modified = true;
-                }
-                if m.enabled {
+                if already_installed && m.enabled {
                     let already_enabled = profile.enabled_mod_ids.iter().any(|id| {
                         mod_matches_profile_entry(m, id)
                     });

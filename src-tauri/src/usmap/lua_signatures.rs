@@ -63,6 +63,8 @@ type SignatureMap = HashMap<String, HashMap<String, LuaMethodInfo>>;
 
 static SIGNATURE_CACHE: Mutex<Option<Arc<SignatureMap>>> = Mutex::new(None);
 
+use std::io::Read;
+
 /// Resolves the path to Pal.lua containing primary Palworld EmmyLua definitions.
 fn resolve_pal_lua_path(game_path: &str, program_path: &str) -> Option<PathBuf> {
     // 1. Live game installation
@@ -101,6 +103,67 @@ fn resolve_pal_lua_path(game_path: &str, program_path: &str) -> Option<PathBuf> 
     None
 }
 
+/// Reads the raw text of Pal.lua, checking loose files first then falling back to bundled ZIP archives.
+fn read_pal_lua_content(game_path: &str, program_path: &str) -> Option<String> {
+    if let Some(path) = resolve_pal_lua_path(game_path, program_path) {
+        if let Ok(content) = fs::read_to_string(&path) {
+            return Some(content);
+        }
+    }
+
+    // Look for zip candidates
+    let mut zip_candidates: Vec<PathBuf> = Vec::new();
+    if !program_path.is_empty() {
+        let dir = Path::new(program_path).join("resources").join("lua_types");
+        if let Ok(entries) = fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.extension().map(|e| e == "zip").unwrap_or(false) {
+                    zip_candidates.push(p);
+                }
+            }
+        }
+    }
+
+    let local_dir = PathBuf::from("resources").join("lua_types");
+    if let Ok(entries) = fs::read_dir(&local_dir) {
+        for entry in entries.flatten() {
+            let p = entry.path();
+            if p.extension().map(|e| e == "zip").unwrap_or(false) && !zip_candidates.contains(&p) {
+                zip_candidates.push(p);
+            }
+        }
+    }
+
+    for zip_path in zip_candidates {
+        if let Ok(file) = fs::File::open(&zip_path) {
+            if let Ok(mut archive) = zip::ZipArchive::new(file) {
+                for i in 0..archive.len() {
+                    if let Ok(mut zip_file) = archive.by_index(i) {
+                        let name = zip_file.name();
+                        if name == "Pal.lua" || name.ends_with("/Pal.lua") || name.ends_with("\\Pal.lua") {
+                            let mut buf = String::new();
+                            if zip_file.read_to_string(&mut buf).is_ok() && !buf.is_empty() {
+                                // Extract unpacked Pal.lua to target dir for future instant reads
+                                let target_dest = if !program_path.is_empty() {
+                                    Path::new(program_path).join("resources").join("lua_types").join("Pal.lua")
+                                } else {
+                                    PathBuf::from("resources").join("lua_types").join("Pal.lua")
+                                };
+                                let _ = fs::write(&target_dest, &buf);
+                                crate::logger::log(&format!("Loaded Pal.lua from zip archive {:?} and cached to {:?}", zip_path, target_dest));
+                                return Some(buf);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    None
+}
+
 /// Parses Pal.lua into an indexed map of Class -> Method -> LuaMethodInfo.
 pub fn get_or_load_lua_signatures(game_path: &str, program_path: &str) -> Option<Arc<SignatureMap>> {
     let mut cache = SIGNATURE_CACHE.lock().ok()?;
@@ -108,8 +171,7 @@ pub fn get_or_load_lua_signatures(game_path: &str, program_path: &str) -> Option
         return Some(Arc::clone(map));
     }
 
-    let lua_path = resolve_pal_lua_path(game_path, program_path)?;
-    let content = fs::read_to_string(&lua_path).ok()?;
+    let content = read_pal_lua_content(game_path, program_path)?;
 
     let mut map: SignatureMap = HashMap::new();
     let mut pending_params: Vec<LuaParamInfo> = Vec::new();

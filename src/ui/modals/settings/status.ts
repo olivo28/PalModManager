@@ -359,6 +359,8 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
   }
 }
 
+export { refreshDevResourcesStatus } from './resources';
+
 
 
 

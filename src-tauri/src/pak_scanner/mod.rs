@@ -7,12 +7,16 @@ pub mod uasset;
 pub mod conflicts;
 pub mod compatibility;
 pub mod patch_risk;
+pub mod property_extractor;
+pub mod hierarchy_resolver;
+pub mod vanilla_extractor;
 
 // Re-export all types
 pub use types::{
     PakModSource, PakConflict, PakInternalItem, PakInspectionResult,
     UAssetExportItem, UAssetImportItem, UAssetSummaryInfo, UAssetSchemaProperty,
-    UAssetSchemaResolvedInfo, UAssetInspectionDetails,
+    UAssetSchemaResolvedInfo, UAssetInspectionDetails, UAssetLiveProperty,
+    UAssetDataTableGrid, UAssetDataTableRow,
     GamePassPakNotice, DeprecatedSchemaNotice, PatchRiskNotice,
 };
 

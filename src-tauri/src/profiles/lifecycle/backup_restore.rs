@@ -385,9 +385,7 @@ pub fn restore_profile_files_to_game(
             if settings_backup.exists() {
                 let _ = fs::copy(&settings_backup, &settings_ini);
             } else {
-                let default_workshop_root = Path::new(game_path)
-                    .parent().and_then(|p| p.parent()).and_then(|p| p.parent())
-                    .map(|p| p.join("workshop").join("content").join("1623730"))
+                let default_workshop_root = crate::workshop::resolve_workshop_root(game_path)
                     .unwrap_or_else(|| PathBuf::from(""));
                     
                 let ini_content = format!(
@@ -511,6 +509,22 @@ pub fn restore_profile_files_to_game(
             }
         }
         DependencyMode::None => {}
+    }
+
+    if target_mode != DependencyMode::Workshop && crate::dependency_checker::is_steam_platform(Path::new(game_path)) {
+        let workshop_root = crate::workshop::resolve_workshop_root(game_path)
+            .unwrap_or_else(|| PathBuf::from(""));
+        let ini_content = format!(
+            "[PalModSettings]\r\nbGlobalEnableMod=False\r\nWorkshopRootDir={}\r\nConfigVersion=1.0\r\nbNeedShowErrorOnNextStart=False\r\n",
+            workshop_root.to_string_lossy()
+        );
+        let _ = fs::create_dir_all(&mods_root);
+        let _ = fs::write(&settings_ini, ini_content);
+
+        let managed_backup = profile_dir.join("ManagedMods");
+        if managed_backup.exists() {
+            let _ = copy_dir_all(&managed_backup, &managed_mods);
+        }
     }
 
     let paks_backup = profile_dir.join("paks");

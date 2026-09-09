@@ -18,7 +18,7 @@ import { escapeHtml } from '../../utils/helpers';
 import { descriptionToHtml } from '../../utils/bbcode';
 import logoUrl from '../../assets/logo.png';
 import { discState, isUserPremium } from './state';
-import { handleDiscoveryImageError } from './helpers';
+import { handleDiscoveryImageError, deriveDiscoveryModTitle } from './helpers';
 import { openLightbox } from './lightbox';
 import { discoveryDom } from '../../framework';
 
@@ -97,13 +97,18 @@ export async function openModDetails(
 
     if (autoInstallFirstPrimary && details.files.length > 0) {
       if (isUserPremium()) {
-        // Switch to files tab
-        const filesTabBtn = discoveryDom.query('.discovery-modal-tab[data-tab="files"]');
-        filesTabBtn?.click();
+        const active = details.files.filter((f) => {
+          const c = (f.categoryName || '').toUpperCase();
+          return !c.includes('OLD') && !c.includes('ARCHIVE') && f.categoryId !== 4;
+        });
+        const mains = active.filter((f) => f.isPrimary || (f.categoryName || '').toUpperCase() === 'MAIN' || f.categoryId === 1);
+        const candidates = mains.length > 0 ? mains : active;
 
-        const primary = details.files.find((f) => f.isPrimary || f.categoryName === 'MAIN') || details.files[0];
-        if (primary) {
-          await executeInstallFile(details, primary);
+        if (candidates.length === 1) {
+          await executeInstallFile(details, candidates[0]);
+        } else {
+          discoveryDom.query('.discovery-modal-tab[data-tab="files"]')?.click();
+          showToast(t('discovery.select_variation_prompt'), 'info');
         }
       } else {
         openUrl(`https://www.nexusmods.com/palworld/mods/${details.modId}?tab=files`);
@@ -667,7 +672,7 @@ export async function executeInstallFile(mod: DiscoveryModDetails, file: Discove
     await enqueueDiscoveryDownload(
       mod.modId,
       file.fileId,
-      `${mod.name} - ${file.name}`,
+      deriveDiscoveryModTitle(mod.name, file),
       directUrl,
       mod.author,
       mod.pictureUrl,

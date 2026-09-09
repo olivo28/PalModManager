@@ -220,10 +220,7 @@ export async function handleTriggerSteamValidation(bypassConfirm: boolean = fals
 export function checkWorkshopDependencies(
   dependencies: string[] | undefined,
   activeModList: string[]
-): {
-  isMissing: boolean;
-  missingDeps: string[];
-} {
+): { isMissing: boolean; missingDeps: string[] } {
   if (!dependencies || dependencies.length === 0) {
     return { isMissing: false, missingDeps: [] };
   }
@@ -509,6 +506,10 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
         ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span>`
         : '';
 
+      const isInstalledInProfile = isWorkshopMode ? (m.isInstalled || wState.activeModList.includes(m.packageName)) : isInstalledNormal;
+      const profileInstalledVer = isWorkshopMode ? m.installedVersion : normalMod?.version;
+      const isActiveInCurrentMode = isWorkshopMode ? m.isActive : isEnabledNormal;
+
       let versionTextHtml = '';
       if (isManagedByPmm) {
         versionTextHtml = `
@@ -516,59 +517,48 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
             <div>${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} &bull; ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)}</div>
             <div style="color:#38ef7d; font-weight:700; font-size:10.5px;">✓ ${escapeHtml(t('library.managed_by_pmm', { version: managedVersion ? `v${managedVersion}` : '' }))}</div>
           </div>`;
-      } else if (!isWorkshopMode) {
-        if (isInstalledNormal) {
-          if (hasUpdate) {
-            versionTextHtml = `
-              <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:3px;">
-                <div>${escapeHtml(t('detail.installed_label'))}: <b style="color:var(--text-primary);">v${escapeHtml(normalMod!.version || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
-                <div style="font-size:9px; color:var(--text-muted);">${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
-              </div>`;
-          } else {
-            versionTextHtml = `
-              <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-                ${escapeHtml(t('common.version'))} ${escapeHtml(normalMod!.version || m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('common.installed'))} ✓)</span>
-              </div>`;
-          }
-        } else {
-          versionTextHtml = `
-            <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-              ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})
-            </div>`;
-        }
-      } else if (m.isInstalled) {
+      } else if (isInstalledInProfile) {
         if (hasUpdate) {
           versionTextHtml = `
             <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:3px;">
-              <div>${escapeHtml(t('detail.installed_label'))}: <b style="color:var(--text-primary);">v${escapeHtml(m.installedVersion || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
+              <div>${escapeHtml(t('detail.installed_label'))}: <b style="color:var(--text-primary);">v${escapeHtml(profileInstalledVer || '1.0.0')}</b> &bull; Workshop: <b style="color:#00bcff;">v${escapeHtml(m.version)}</b></div>
               <div style="font-size:9px; color:var(--text-muted);">${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})</div>
             </div>`;
         } else {
           versionTextHtml = `
             <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-              ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('common.installed'))} ✓)</span>
+              ${escapeHtml(t('common.version'))} ${escapeHtml(profileInstalledVer || m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('library.status_installed_in_profile'))} ✓)</span>
             </div>`;
         }
       } else {
         versionTextHtml = `
           <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-            ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId})
+            ${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} (ID: ${m.workshopId}) <span style="color:var(--text-muted); opacity:0.8; margin-left:2px;">(${escapeHtml(t('library.status_not_installed'))})</span>
           </div>`;
       }
 
-      const isActiveInCurrentMode = isWorkshopMode ? m.isActive : isEnabledNormal;
       const toggleBtnText = isManagedByPmm
         ? `✓ ${escapeHtml(t('library.managed_by_pmm_btn'))}`
-        : (isActiveInCurrentMode ? t('common.disable') : t('common.enable'));
+        : (!isInstalledInProfile
+            ? t('library.btn_install_to_profile')
+            : (isActiveInCurrentMode ? t('common.disable') : t('common.enable')));
+
       const toggleBtnClass = isManagedByPmm
         ? 'btn-secondary btn-sm'
-        : (isActiveInCurrentMode ? 'btn-action btn-action-danger' : 'btn-primary btn-sm');
+        : (!isInstalledInProfile
+            ? 'btn-primary btn-sm'
+            : (isActiveInCurrentMode ? 'btn-action btn-action-danger' : 'btn-primary btn-sm'));
+
       const frameworkBtnExtra = isManagedByPmm
         ? 'style="flex:1;padding:6px;font-size:10px;cursor:default;background:rgba(56, 239, 125, 0.12);color:#38ef7d;border:1px solid rgba(56, 239, 125, 0.3);opacity:0.95;"'
         : (m.isFramework ? 'disabled style="flex:1;padding:6px;font-size:10px;cursor:not-allowed;opacity:0.5;"' : 'style="flex:1;padding:6px;font-size:10px;cursor:pointer;"');
 
       const updateBtn = (hasUpdate && (isWorkshopMode ? m.isActive : isInstalledNormal))
         ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);" title="${escapeHtml(t('library.btn_update_to', { version: m.version }))}">▲ ${escapeHtml(t('library.btn_update_to', { version: m.version }))}</button>`
+        : '';
+
+      const removeProfileBtn = (isInstalledInProfile && !isManagedByPmm && !m.isFramework)
+        ? `<button class="workshop-item-remove-profile-btn btn-secondary btn-sm" data-package="${escapeHtml(m.packageName)}" data-id="${escapeHtml(normalMod ? normalMod.id : m.packageName)}" style="padding:6px 8px;font-size:10px;cursor:pointer;color:var(--danger);" title="${escapeHtml(t('library.btn_remove_from_profile'))}">🗑️</button>`
         : '';
 
       return `
@@ -589,9 +579,10 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
             ${depWarning}
             ${updateBtn ? `<div style="display:flex;flex-direction:column;margin-top:2px;">${updateBtn}</div>` : ''}
             <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
-              <button class="workshop-item-toggle-btn ${toggleBtnClass}" data-package="${escapeHtml(m.packageName)}" data-active="${isActiveInCurrentMode}" ${isManagedByPmm || m.isFramework ? 'disabled' : ''} ${frameworkBtnExtra}>
+              <button class="workshop-item-toggle-btn ${toggleBtnClass}" data-package="${escapeHtml(m.packageName)}" data-active="${isActiveInCurrentMode}" data-installed="${isInstalledInProfile}" ${isManagedByPmm || m.isFramework ? 'disabled' : ''} ${frameworkBtnExtra}>
                 ${toggleBtnText}
               </button>
+              ${removeProfileBtn}
               <button class="workshop-item-folder-btn btn-secondary btn-sm" data-path="${escapeHtml(wState.workshopRoot + '/' + m.workshopId)}" style="padding:6px 8px;font-size:10px;cursor:pointer;" title="${escapeHtml(t('library.workshop_open_folder_title'))}">
                 📁 ${escapeHtml(t('common.folder'))}
               </button>
@@ -600,6 +591,13 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
         </div>
       `;
     }).join('');
+
+    const reloadViews = async () => {
+      const { renderLibraryView } = await import('./render');
+      await renderLibraryView();
+      const { loadMods } = await import('../../modsView');
+      await loadMods();
+    };
 
     container.querySelectorAll('.workshop-item-update-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
@@ -615,10 +613,7 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
           showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         } finally {
           target.disabled = false;
-          const { renderLibraryView } = await import('./render');
-          await renderLibraryView();
-          const { loadMods } = await import('../../modsView');
-          await loadMods();
+          await reloadViews();
         }
       });
     });
@@ -630,8 +625,22 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
         const targetMod = mods.find((m: any) => m.packageName === pkgName);
         if (!targetMod) return;
         const isActive = target.dataset.active === 'true';
+        const isInstalled = target.dataset.installed === 'true';
 
         target.disabled = true;
+        if (!isInstalled) {
+          showToast(t('toasts.workshop_activating'), 'info');
+          try {
+            await handleWorkshopCardToggle(targetMod, false);
+          } catch (err) {
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+          } finally {
+            target.disabled = false;
+            await reloadViews();
+          }
+          return;
+        }
+
         showToast(!isActive ? t('toasts.workshop_activating') : t('toasts.workshop_deactivating'), 'info');
         try {
           await handleWorkshopCardToggle(targetMod, isActive);
@@ -639,10 +648,32 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
           showToast(t('toasts.export_failed', { error: String(err) }), 'error');
         } finally {
           target.disabled = false;
-          const { renderLibraryView } = await import('./render');
-          await renderLibraryView();
-          const { loadMods } = await import('../../modsView');
-          await loadMods();
+          await reloadViews();
+        }
+      });
+    });
+
+    container.querySelectorAll('.workshop-item-remove-profile-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const target = e.currentTarget as HTMLButtonElement;
+        const pkgName = target.dataset.package!;
+        const modId = target.dataset.id || pkgName;
+        const targetMod = mods.find((m: any) => m.packageName === pkgName);
+        const modName = targetMod ? targetMod.modName : pkgName;
+        const { showConfirm } = await import('../../confirm');
+        const confirmed = await showConfirm(t('dialogs.confirm_remove_mod', { name: modName }));
+        if (confirmed) {
+          target.disabled = true;
+          try {
+            const { removeMod } = await import('../../../api');
+            await removeMod(modId);
+            showToast(t('toasts.mod_removed'), 'success');
+          } catch (err) {
+            showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+          } finally {
+            await reloadViews();
+          }
         }
       });
     });
@@ -664,5 +695,3 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
     container.innerHTML = `<div style="color:#ff4a4a; padding:12px; text-align:center;">Failed to load Workshop state: ${escapeHtml(String(err))}</div>`;
   }
 }
-
-

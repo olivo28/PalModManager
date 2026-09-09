@@ -3,8 +3,9 @@ import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
+import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus } from './status';
+import { initDevResources, refreshDevResourcesStatus } from './resources';
 import { formatBytes } from './helpers';
-import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshUsmapStatus, refreshSdkStatus, refreshBlueprintsStatus, refreshDatatablesStatus, refreshPalSchemaSchemasStatus } from './status';
 import { settingsDom } from '../../../framework';
 
 export function openSettingsModal(): void {
@@ -197,11 +198,7 @@ export function openSettingsModal(): void {
   refreshSafetyBackupStatus();
   refreshStorageUsageStatus();
   refreshImageCacheStatus();
-  refreshUsmapStatus();
-  refreshSdkStatus();
-  refreshBlueprintsStatus();
-  refreshDatatablesStatus();
-  refreshPalSchemaSchemasStatus();
+  refreshDevResourcesStatus();
 
   // DNS Resolver Select
   const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');
@@ -209,190 +206,8 @@ export function openSettingsModal(): void {
     dnsSelect.value = state.currentSettings?.dnsResolver || 'auto';
   }
 
-  // USMAP Sync Mappings Button
-  const syncUsmapBtn = settingsDom.elMaybe('btn-sync-usmap');
-  const syncUsmapIcon = settingsDom.elMaybe('btn-sync-usmap-icon');
-  if (syncUsmapBtn) {
-    syncUsmapBtn.onclick = async () => {
-      try {
-        syncUsmapBtn.disabled = true;
-        if (syncUsmapIcon) syncUsmapIcon.classList.add('spinning');
-        showToast(t('settings.usmap_syncing') || 'Syncing USMAP schema...', 'info');
-        const { syncMappingsNow } = await import('../../../api');
-        const res = await syncMappingsNow();
-        if (res.isSynced) {
-          showToast(t('settings.usmap_sync_success') || 'USMAP schema synced successfully!', 'success');
-        } else {
-          showToast(t('settings.usmap_sync_complete') || 'USMAP schema sync completed.', 'info');
-        }
-        await refreshUsmapStatus();
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        syncUsmapBtn.disabled = false;
-        if (syncUsmapIcon) syncUsmapIcon.classList.remove('spinning');
-      }
-    };
-  }
-
-  // C++ SDK Sync Button
-  const syncSdkBtn = settingsDom.elMaybe('btn-sync-sdk');
-  const syncSdkIcon = settingsDom.elMaybe('btn-sync-sdk-icon');
-  if (syncSdkBtn) {
-    syncSdkBtn.onclick = async () => {
-      try {
-        syncSdkBtn.disabled = true;
-        if (syncSdkIcon) syncSdkIcon.classList.add('spinning');
-        showToast(t('settings.sdk_syncing') || 'Downloading SDK package from repository...', 'info');
-        const { syncSdkFromRepo } = await import('../../../api');
-        const res = await syncSdkFromRepo();
-        if (res.installed) {
-          showToast(t('settings.sdk_sync_success') || `SDK synced: ${res.totalClasses} classes, ${res.totalFunctions} functions!`, 'success');
-        } else {
-          showToast(t('settings.sdk_sync_complete') || 'SDK sync completed.', 'info');
-        }
-        await refreshSdkStatus();
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        syncSdkBtn.disabled = false;
-        if (syncSdkIcon) syncSdkIcon.classList.remove('spinning');
-      }
-    };
-  }
-
-  // C++ SDK Import Local Folder Button
-  const importSdkBtn = settingsDom.elMaybe('btn-import-sdk');
-  if (importSdkBtn) {
-    importSdkBtn.onclick = async () => {
-      try {
-        const { open } = await import('@tauri-apps/plugin-dialog');
-        const selected = await open({
-          directory: true,
-          multiple: false,
-          title: t('settings.sdk_select_folder_title') || 'Select CXXHeaderDump Folder',
-        });
-
-        if (selected && typeof selected === 'string') {
-          importSdkBtn.disabled = true;
-          showToast(t('settings.sdk_importing') || 'Importing and indexing SDK headers...', 'info');
-          const { importLocalSdk } = await import('../../../api');
-          const res = await importLocalSdk(selected);
-          showToast(t('settings.sdk_import_success') || `Imported SDK: ${res.totalClasses} classes, ${res.totalFunctions} functions!`, 'success');
-          await refreshSdkStatus();
-        }
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        importSdkBtn.disabled = false;
-      }
-    };
-  }
-
-  // C++ SDK Purge Button
-  const purgeSdkBtn = settingsDom.elMaybe('btn-purge-sdk');
-  if (purgeSdkBtn) {
-    purgeSdkBtn.onclick = async () => {
-      const confirmed = await showConfirm(
-        t('settings.sdk_purge_confirm_title') || 'Clear SDK Headers',
-        t('settings.sdk_purge_confirm_msg') || 'Are you sure you want to clear the indexed C++ SDK headers from resources/sdk/?'
-      );
-      if (!confirmed) return;
-
-      try {
-        purgeSdkBtn.disabled = true;
-        const { purgeSdkCache } = await import('../../../api');
-        await purgeSdkCache();
-        showToast(t('settings.sdk_purge_success') || 'SDK headers cleared.', 'success');
-        await refreshSdkStatus();
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        purgeSdkBtn.disabled = false;
-      }
-    };
-  }
-
-  // Live Game Blueprints Sync Button
-  const syncBlueprintsBtn = settingsDom.elMaybe('btn-sync-blueprints');
-  const syncBlueprintsIcon = settingsDom.elMaybe('btn-sync-blueprints-icon');
-  if (syncBlueprintsBtn) {
-    syncBlueprintsBtn.onclick = async () => {
-      try {
-        syncBlueprintsBtn.disabled = true;
-        if (syncBlueprintsIcon) syncBlueprintsIcon.classList.add('spinning');
-        showToast(t('settings.blueprints_syncing') || 'Syncing Blueprints catalog from GitHub...', 'info');
-        const { syncBlueprintsCatalog } = await import('../../../api');
-        const res = await syncBlueprintsCatalog();
-        if (res.updated) {
-          showToast(t('settings.blueprints_sync_success') || `Blueprints catalog synced: ${res.totalItems.toLocaleString()} assets!`, 'success');
-        } else {
-          showToast(t('settings.blueprints_sync_uptodate') || 'Blueprints catalog is already up to date.', 'info');
-        }
-        await refreshBlueprintsStatus();
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        syncBlueprintsBtn.disabled = false;
-        if (syncBlueprintsIcon) syncBlueprintsIcon.classList.remove('spinning');
-      }
-    };
-  }
-
-  // PalSchema DataTables Sync Button
-  const syncDatatablesBtn = settingsDom.elMaybe('btn-sync-datatables');
-  const syncDatatablesIcon = settingsDom.elMaybe('btn-sync-datatables-icon');
-  if (syncDatatablesBtn) {
-    syncDatatablesBtn.onclick = async () => {
-      try {
-        syncDatatablesBtn.disabled = true;
-        if (syncDatatablesIcon) syncDatatablesIcon.classList.add('spinning');
-        showToast(t('settings.datatables_syncing') || 'Syncing DataTables catalog from GitHub...', 'info');
-        const { syncDatatablesCatalog } = await import('../../../api');
-        const res = await syncDatatablesCatalog();
-        if (res.updated) {
-          showToast(t('settings.datatables_sync_success') || `DataTables catalog synced: ${res.totalItems} tables!`, 'success');
-        } else {
-          showToast(t('settings.datatables_sync_uptodate') || 'DataTables catalog is already up to date.', 'info');
-        }
-        await refreshDatatablesStatus();
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        syncDatatablesBtn.disabled = false;
-        if (syncDatatablesIcon) syncDatatablesIcon.classList.remove('spinning');
-      }
-    };
-  }
-
-  // PalSchema Schemas Sync Button
-  const syncSchemasBtn = settingsDom.elMaybe('btn-sync-schemas');
-  const syncSchemasIcon = settingsDom.elMaybe('btn-sync-schemas-icon');
-  if (syncSchemasBtn) {
-    syncSchemasBtn.onclick = async () => {
-      try {
-        syncSchemasBtn.disabled = true;
-        if (syncSchemasIcon) syncSchemasIcon.classList.add('spinning');
-        showToast(t('settings.schemas_syncing') || 'Syncing PalSchema schemas specification from GitHub...', 'info');
-        const { syncPalSchemaSchemas } = await import('../../../api');
-        const res = await syncPalSchemaSchemas();
-        if (res.updated) {
-          showToast(t('settings.schemas_sync_success') || `PalSchema schemas synced: ${res.totalItems} specifications!`, 'success');
-        } else {
-          showToast(t('settings.schemas_sync_uptodate') || 'PalSchema schemas are already up to date.', 'info');
-        }
-        await refreshPalSchemaSchemasStatus();
-        // Refresh Monaco in-memory schemas as well
-        const { refreshMonacoPalSchemas } = await import('../../editor/monaco/schemas');
-        await refreshMonacoPalSchemas();
-      } catch (err: any) {
-        showToast(String(err), 'error');
-      } finally {
-        syncSchemasBtn.disabled = false;
-        if (syncSchemasIcon) syncSchemasIcon.classList.remove('spinning');
-      }
-    };
-  }
+  // Initialize Development Resources (Dev Resources Tab)
+  initDevResources();
 
   // Purge Image Cache Buttons (in Network and Safety panes)
   const purgeCacheHandler = async (btn: HTMLButtonElement) => {
@@ -566,6 +381,8 @@ export function setupSettingsTabs(): void {
         refreshImageCacheStatus();
       } else if (targetTab === 'network') {
         refreshImageCacheStatus();
+      } else if (targetTab === 'resources') {
+        refreshDevResourcesStatus();
       }
     };
   });

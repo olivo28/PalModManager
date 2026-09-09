@@ -147,6 +147,13 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         if junction::exists(p).unwrap_or(false) {
             let _ = crate::profiles::remove_junction_or_symlink(p);
         } else if p.exists() {
+            // Guard: Never physically delete the Steam Workshop subscribed download directory!
+            let is_steam_workshop_path = path_str.replace('\\', "/").to_lowercase().contains("steamapps/workshop/content");
+            if is_steam_workshop_path {
+                crate::logger::log(&format!("remove_mod: Preserving Steam Workshop source directory on disk: {}", path_str));
+                return;
+            }
+
             if p.is_dir() {
                 let _ = fs::remove_dir_all(p);
             } else {
@@ -347,12 +354,59 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         }
     }
 
-    for profile in &mut data.profiles {
-        profile.installed_mod_ids.retain(|id| id != &mod_info.id && id.to_lowercase() != mod_info.name.to_lowercase());
-        profile.enabled_mod_ids.retain(|id| id != &mod_info.id && id.to_lowercase() != mod_info.name.to_lowercase());
-    }
+    let is_workshop = mod_info.nexus_summary.as_deref().map_or(false, |s| s.starts_with("Steam Workshop Mod"));
+    if is_workshop {
+        let pkg_from_summary = mod_info.nexus_summary.as_ref()
+            .and_then(|s| s.lines().find(|l| l.contains("Package Name: ")))
+            .and_then(|l| l.find("Package Name: ").map(|pos| l[pos + "Package Name: ".len()..].trim().to_string()));
 
-    data.mods.retain(|m| m.id != mod_info.id);
+        let clean_mod_name = mod_info.name.replace(" (Workshop)", "");
+
+        let matches_target = |id: &str| -> bool {
+            id.eq_ignore_ascii_case(&mod_info.id)
+                || id.eq_ignore_ascii_case(&mod_info.name)
+                || id.eq_ignore_ascii_case(&clean_mod_name)
+                || pkg_from_summary.as_ref().map_or(false, |pkg| id.eq_ignore_ascii_case(pkg))
+                || mod_info.name.to_lowercase().starts_with(&format!("{} (", id.to_lowercase()))
+        };
+
+        if let Some(current_prof) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+            current_prof.installed_mod_ids.retain(|id| !matches_target(id));
+            current_prof.enabled_mod_ids.retain(|id| !matches_target(id));
+        }
+        let is_used_by_other_profile = data.profiles.iter().any(|p| {
+            p.id != current_profile_id && p.installed_mod_ids.iter().any(|id| matches_target(id))
+        });
+        if !is_used_by_other_profile {
+            data.mods.retain(|m| !matches_target(&m.id) && !matches_target(&m.name));
+        }
+
+        let p_dir = crate::profiles::get_profile_dir(&program_path, &current_profile_id);
+        if let Some(current_prof) = data.profiles.iter().find(|p| p.id == current_profile_id) {
+            if let Ok(json) = serde_json::to_string_pretty(current_prof) {
+                let _ = fs::write(p_dir.join("profile.json"), json);
+            }
+        }
+
+        if let Some(current_prof) = data.profiles.iter().find(|p| p.id == current_profile_id) {
+            if current_prof.dependency_mode == crate::models::DependencyMode::Workshop {
+                let package_name = mod_info.nexus_summary.as_ref()
+                    .and_then(|s| s.lines().find(|l| l.contains("Package Name: ")))
+                    .and_then(|l| l.find("Package Name: ").map(|pos| l[pos + "Package Name: ".len()..].trim().to_string()))
+                    .unwrap_or_else(|| mod_info.id.clone());
+                let wmods = crate::workshop::scan_workshop_mods(&game_path_str);
+                if let Some(target) = wmods.iter().find(|m| m.package_name == package_name) {
+                    let _ = crate::workshop::deactivate_workshop_mod(&game_path_str, target, false);
+                }
+            }
+        }
+    } else {
+        for profile in &mut data.profiles {
+            profile.installed_mod_ids.retain(|id| id != &mod_info.id && id.to_lowercase() != mod_info.name.to_lowercase());
+            profile.enabled_mod_ids.retain(|id| id != &mod_info.id && id.to_lowercase() != mod_info.name.to_lowercase());
+        }
+        data.mods.retain(|m| m.id != mod_info.id);
+    }
 
     crate::profiles::cleanup_profile_mod_lists(&mut data);
     crate::profiles::sync_current_profile_states(&mut data);

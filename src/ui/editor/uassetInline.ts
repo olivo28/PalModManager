@@ -2,6 +2,8 @@ import { inspectUAssetDeep, decodeUAssetTexture, type UAssetInspectionDetails, t
 import { t } from '../../utils/i18n';
 import { escapeHtml, formatBytes } from '../../utils/helpers';
 import { showToast } from '../toast';
+import { renderDataTableGridHtml, setupDataTableGridEvents } from './uasset/datatableGrid';
+import { renderPropertyTweakerHtml, setupPropertyTweakerEvents } from './uasset/propertyTweaker';
 
 export interface InlineUAssetOptions {
   modId?: string | null;
@@ -79,6 +81,13 @@ export async function renderInlineUAssetInspector(
     const isTexture = details.assetType.toLowerCase().includes('texture');
     const isMaterial = details.assetType.toLowerCase().includes('material');
     const isDataTable = details.assetType.toLowerCase().includes('datatable') || details.assetType.toLowerCase().includes('table');
+    const hasDatatableGrid = Boolean(details.datatableGrid && details.datatableGrid.totalRows > 0);
+    const hasLiveProperties = Boolean(details.instantiatedProperties && details.instantiatedProperties.length > 0);
+    const hasSchema = Boolean(details.resolvedSchema && details.resolvedSchema.totalProperties > 0);
+    // On DataTables, the primary interactive editor is the dedicated DataTable grid.
+    // Show tweaker only on non-DataTables or if there are actual editable scalar properties.
+    const hasEditableScalarProps = Boolean(details.instantiatedProperties && details.instantiatedProperties.some(p => p.isEditable));
+    const showTweaker = hasDatatableGrid ? hasEditableScalarProps : (hasLiveProperties || hasSchema);
 
     contentEl.style.padding = '0';
     contentEl.style.alignItems = 'stretch';
@@ -89,6 +98,16 @@ export async function renderInlineUAssetInspector(
         <button class="uasset-tab-btn active" data-tab="tab-inline-overview" style="background:var(--bg-card);border:1px solid var(--border);border-bottom:none;color:var(--accent);font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
           📊 ${escapeHtml(t('scanner.uasset_tab_overview'))}
         </button>
+        ${hasDatatableGrid ? `
+        <button class="uasset-tab-btn" data-tab="tab-inline-datatable" style="background:none;border:1px solid transparent;color:#4af626;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
+          📊 ${escapeHtml(t('editor.tab_datatable_grid'))} (${details.datatableGrid!.totalRows})
+        </button>
+        ` : ''}
+        ${showTweaker ? `
+        <button class="uasset-tab-btn" data-tab="tab-inline-tweaker" style="background:none;border:1px solid transparent;color:#ffd166;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
+          ✏️ ${escapeHtml(t('editor.tab_live_properties'))} (${details.instantiatedProperties?.length || 0})
+        </button>
+        ` : ''}
         ${isTexture ? `
         <button class="uasset-tab-btn" data-tab="tab-inline-texture" style="background:none;border:1px solid transparent;color:#00bcff;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
           🖼️ ${escapeHtml(t('scanner.uasset_tab_texture'))}
@@ -244,6 +263,20 @@ export async function renderInlineUAssetInspector(
           </div>
         </div>
 
+        ${hasDatatableGrid ? `
+        <!-- DataTable Grid Pane -->
+        <div id="tab-inline-datatable" class="uasset-tab-pane" style="display:none;flex-direction:column;gap:10px;">
+          ${renderDataTableGridHtml(details.datatableGrid!)}
+        </div>
+        ` : ''}
+
+        ${showTweaker ? `
+        <!-- Properties & Tweaker Pane -->
+        <div id="tab-inline-tweaker" class="uasset-tab-pane" style="display:none;flex-direction:column;gap:12px;">
+          ${renderPropertyTweakerHtml(details)}
+        </div>
+        ` : ''}
+
         ${details.resolvedSchema ? `
         <!-- Schema Pane -->
         <div id="tab-inline-schema" class="uasset-tab-pane" style="display:none;flex-direction:column;gap:8px;">
@@ -273,12 +306,21 @@ export async function renderInlineUAssetInspector(
     const tabBtns = contentEl.querySelectorAll('.uasset-tab-btn');
     const tabPanes = contentEl.querySelectorAll('.uasset-tab-pane');
 
+    const getTabColor = (tabName: string | undefined): string => {
+      if (tabName === 'tab-inline-texture') return '#00bcff';
+      if (tabName === 'tab-inline-schema') return '#38bdf8';
+      if (tabName === 'tab-inline-datatable') return '#4af626';
+      if (tabName === 'tab-inline-tweaker') return '#ffd166';
+      return 'var(--accent)';
+    };
+
     const switchTab = (targetTab: string) => {
       tabBtns.forEach(b => {
         b.classList.remove('active');
         (b as HTMLElement).style.background = 'none';
         (b as HTMLElement).style.borderColor = 'transparent';
-        (b as HTMLElement).style.color = (b as HTMLElement).dataset.tab === 'tab-inline-texture' ? '#00bcff' : (b as HTMLElement).dataset.tab === 'tab-inline-schema' ? '#38bdf8' : 'var(--text-secondary)';
+        const tab = (b as HTMLElement).dataset.tab;
+        (b as HTMLElement).style.color = tab === 'tab-inline-texture' ? '#00bcff' : tab === 'tab-inline-schema' ? '#38bdf8' : tab === 'tab-inline-datatable' ? '#4af626' : tab === 'tab-inline-tweaker' ? '#ffd166' : 'var(--text-secondary)';
         (b as HTMLElement).style.fontWeight = 'normal';
       });
       tabPanes.forEach(p => {
@@ -291,7 +333,7 @@ export async function renderInlineUAssetInspector(
         activeBtn.style.background = 'var(--bg-card)';
         activeBtn.style.border = '1px solid var(--border)';
         activeBtn.style.borderBottom = 'none';
-        activeBtn.style.color = targetTab === 'tab-inline-texture' ? '#00bcff' : targetTab === 'tab-inline-schema' ? '#38bdf8' : 'var(--accent)';
+        activeBtn.style.color = getTabColor(targetTab);
         activeBtn.style.fontWeight = '700';
       }
 
@@ -402,6 +444,30 @@ export async function renderInlineUAssetInspector(
         } catch {}
       });
     });
+
+    const onRefresh = () => {
+      renderInlineUAssetInspector(container, options);
+    };
+
+    if (details.datatableGrid && details.datatableGrid.totalRows > 0) {
+      setupDataTableGridEvents(contentEl, {
+        grid: details.datatableGrid,
+        modId,
+        pakPath,
+        assetInternalPath,
+        onRefresh,
+      });
+    }
+
+    if (showTweaker) {
+      setupPropertyTweakerEvents(contentEl, {
+        details,
+        modId,
+        pakPath,
+        assetInternalPath,
+        onRefresh,
+      });
+    }
 
   } catch (err) {
     contentEl.innerHTML = `

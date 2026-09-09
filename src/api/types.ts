@@ -173,6 +173,44 @@ export interface TexturePreviewInfo {
   sizeBytes: number;
 }
 
+export interface UAssetLiveProperty {
+  exportIndex: number;
+  name: string;
+  propertyType: string;
+  value: any;
+  rawValueDisplay: string;
+  isEditable: boolean;
+  structType?: string | null;
+  enumValue?: string | null;
+  vanillaDefaultDisplay?: string | null;
+  isDelta?: boolean;
+}
+
+export interface UAssetDataTableRow {
+  rowName: string;
+  values: Record<string, any>;
+}
+
+export interface UAssetDataTableGrid {
+  rowStructName: string;
+  columns: string[];
+  rows: UAssetDataTableRow[];
+  totalRows: number;
+}
+
+export interface PakTweakResult {
+  success: boolean;
+  message: string;
+  backupCreated: boolean;
+  newFileSizeBytes: number;
+}
+
+export interface PakBackupStatus {
+  hasBackup: boolean;
+  backupSizeBytes: number;
+  backupPath?: string | null;
+}
+
 export interface UAssetInspectionDetails {
   assetName: string;
   assetPath: string;
@@ -184,6 +222,11 @@ export interface UAssetInspectionDetails {
   namesSample: string[];
   resolvedSchema?: UAssetSchemaResolvedInfo | null;
   texturePreview?: TexturePreviewInfo | null;
+  instantiatedProperties?: UAssetLiveProperty[];
+  datatableGrid?: UAssetDataTableGrid | null;
+  classHierarchy?: string[];
+  vanillaVerification?: Record<string, boolean>;
+  hasOriginalBackup?: boolean;
 }
 
 export interface PatchAssetSelection {

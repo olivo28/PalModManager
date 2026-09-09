@@ -62,6 +62,11 @@ pub fn get_shipping_exe_path(game_path: &Path) -> std::path::PathBuf {
     profile.exe_path
 }
 
+pub fn is_steam_platform(game_path: &Path) -> bool {
+    let profile = build_game_profile(game_path);
+    profile.platform == "Steam"
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
 pub enum UE4SSInstallMode {
     Standard,

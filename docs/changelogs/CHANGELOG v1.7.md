@@ -2,23 +2,35 @@
 
 All notable changes to this project will be documented in this file.
 
-## [1.7.1] - 2026-09-02
+## [1.7.1] - 2026-09-09
 
 ### Added
-- **Monaco Code Editor & IntelliSense**: Full-featured in-app editor with Palworld C++ reflection autocomplete, live game Blueprints autocompletion (20,921 classes extracted directly from .pak), PalSchema DataTables & Row autocompletion (423 tables, 149k rows), live diagnostics dock, 1-click QuickFixes, and in-editor file/folder creation.
-- **Custom Mod Notes**: Save personal notes, guides, and keybindings directly on any mod card via the detail panel and context menu.
+- **In-Place Pak Tweaker & Binary Asset Editor**: Directly inspect and modify cooked Unreal Engine properties and DataTable cells inside packed `.pak` mod archives without external tools.
+  - **Pristine Safety Backups**: Automatically creates an untouched `.original.bak` copy before the first modification, guaranteeing 1-click rollback anytime.
+  - **Interactive DataTable Grid Viewer**: Dedicated tab displaying item stats, drop rates, and pal parameters in a clean searchable table with inline cell editing (`✏️`).
+  - **Live Blueprint CDO Comparative Diff**: 5-column table displaying Property Name, Type, Vanilla Default, Mod Value, and 1-click reset to vanilla, showing exactly what a mod changes compared to the unmodded game.
+  - **3-Way Noise Filter Toolbar**: Switch instantly between `[ 🎯 Editable Tweaks ]`, `[ ⚡ All Raw Deltas ]`, and `[ 📋 All Properties ]` to focus on what matters.
+- **Dedicated Engine Development Resources Hub**: Independent `🛠️ Dev Resources` settings tab with an obsidian Master Manifest banner showing Steam Build ID, game version, and resource counts. Provides a unified 9-resource dashboard for Unreal Mappings (`.usmap`), C++ SDK headers (`Pal.hpp`), property mappings (`.jmap`), and automated dump tools.
+- **Per-Profile Mod Library Isolation**: The Local Library now strictly respects your active profile. Mods installed in other profiles cleanly display as "Not Installed" with an active "Install to Profile" button.
+- **Steam Workshop Integration Enhancements**:
+  - Workshop library cards now show genuine mod version numbers from `Info.json` instead of "unknown", eliminating spurious update warnings.
+  - Workshop cards display per-profile installation state with dedicated "Install to Profile" and "Remove from Profile" (🗑️) buttons.
+  - Safe removal guards Steam Workshop directories: removing a workshop mod detaches it from the active profile and unlinks runtime junctions without deleting the subscribed files from Steam.
+  - Steam Workshop support is strictly restricted to Steam installations (cleanly disabled on Xbox / Game Pass).
+- **Monaco Code Editor & IntelliSense**: Full-featured in-app code editor with Palworld C++ reflection autocomplete, live game Blueprints autocompletion (>20,000 classes extracted directly from game paks), PalSchema DataTables & Row autocompletion (423 tables, 149k rows), live diagnostics dock, 1-click QuickFixes, and in-editor file/folder creation.
+- **Custom Mod Notes**: Write and save personal notes, load order reminders, and custom keybindings directly on any mod card via the detail panel and context menu.
 - **Dual UE4SS Activation Mode**: Choose between standard folder isolation (`enabled.txt`) and direct `mods.txt` control, with clean category formatting.
 - **USMAP Reflection Explorer**: Browse and inspect Palworld engine structs, classes, enums, and properties directly in the Database Inspector (`🗄 DB`).
 - **C++ SDK Manager**: Manage and index Palworld SDK headers in Settings with 1-click cloud sync and local folder import.
-- **Conflict Mitigation & Hotkey Tools**: 1-click disable/edit actions on conflict cards and intelligent hotkey collision detection with automatic rebind to free keys.
+- **Conflict Mitigation & Hotkey Tools**: 1-click disable/edit actions on conflict cards and intelligent hotkey collision detection with automatic rebind recommendations.
 - **Mod Packer Enhancements**: Hierarchical tree-table file list view, Vortex folder preset, and 1-click dual packaging for Steam and Xbox.
-- **Full 6-Language Localization**: Complete translation coverage across all new tools, editor features, and menus.
+- **Full 6-Language Localization**: Complete translation coverage across all new tools, editor features, and menus (English, Spanish, Portuguese, Simplified Chinese, Japanese, Korean).
 
 ### Changed
-- **Editor Canvas**: Clean full-height editor workspace with native keyboard shortcuts (`Ctrl + S`, `Shift + Alt + F`) and zero-latency mod switching.
-- **Database & USMAP Performance**: Vastly faster search response times and fixed scrollable layouts.
-- **Non-Destructive `mods.txt` Handling**: Preserves custom comments, headers, and manual load orders cleanly.
-- **Codebase Optimization**: Thorough internal modularization for faster loading and long-term stability.
+- **Editor Canvas & Performance**: Clean full-height editor workspace with native keyboard shortcuts (`Ctrl + S`, `Shift + Alt + F`) and zero-latency mod switching.
+- **Database & USMAP Performance**: Significantly faster search response times, lower memory overhead, and smooth scrollable layouts.
+- **Non-Destructive `mods.txt` Handling**: Preserves custom comments, headers, and manual load orders cleanly during profile sync.
+- **Codebase Optimization & Architecture**: Modularized core subsystems to keep all source files lean, testable, and under strict line count limits.
 
 ### Fixed
 - **Precise Line Navigation**: Clicking "Edit" or "Preview" in diagnostics now jumps straight to the exact script line with a brief highlight.
@@ -26,7 +38,8 @@ All notable changes to this project will be documented in this file.
 - **Engine Reflection & Hook Diagnostics**: Improved C++ method parsing and eliminated false-positive warnings on Blueprint assets.
 - **Steam Workshop & Profile Stability**: Fixed 0-mod counts, toggle sync in `PalModSettings.ini`, Workshop PalSchema detection, and cross-profile state preservation.
 - **Archive & Routing Handlers**: Fixed installation errors for `.7z`/`.rar` files and corrected misrouted files for Hybrid and Altermatic mods.
-- **UI & Translations**: Deduplicated component folder buttons, cleaned up bulk selection labels, and fixed missing translations.
+- **Workshop Auto-Add Rescan**: Prevented background mod scanners from automatically re-adding detached Workshop mods back into active profiles.
+- **UI & Translations**: Cleaned up bulk selection labels, deduplicated folder buttons, and resolved missing translation keys.
 
 ---
 

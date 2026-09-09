@@ -12,14 +12,6 @@ const REMOTE_SDK_MANIFEST_URLS: &[&str] = &[
     "https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/sdk/manifest.json",
 ];
 
-const REMOTE_SDK_ZIP_URLS: &[&str] = &[
-    "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/sdk/Palworld_SDK_24575825.zip",
-    "https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/sdk/Palworld_SDK_24575825.zip",
-    "https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/sdk/Palworld_SDK_24575825.zip",
-    "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/sdk/Palworld_SDK.zip",
-    "https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/sdk/Palworld_SDK.zip",
-];
-
 const DEFAULT_EMBEDDED_SDK_MANIFEST: &str = include_str!("../../../resources/sdk/manifest.json");
 
 fn compute_sha256(bytes: &[u8]) -> String {
@@ -199,18 +191,33 @@ pub async fn sync_sdk_from_repo(state: State<'_, AppState>) -> Result<serde_json
     let manifest_val: serde_json::Value = serde_json::from_str(&manifest_content)
         .unwrap_or_else(|_| serde_json::from_str(DEFAULT_EMBEDDED_SDK_MANIFEST).unwrap());
 
-    let expected_hash = manifest_val.get("sdk")
+    let sdk_entry = manifest_val.get("sdk")
         .and_then(|s| s.as_array())
-        .and_then(|arr| arr.first())
-        .and_then(|f| f.get("sha256"))
-        .and_then(|h| h.as_str())
-        .unwrap_or("523615b2776f4d935e382a0008cc603853a7990b4dc176ecdb986705c1cf848a");
+        .and_then(|arr| {
+            arr.iter().find(|e| e.get("is_latest").and_then(|b| b.as_bool()).unwrap_or(false))
+                .or_else(|| arr.first())
+        });
+
+    let filename = sdk_entry
+        .and_then(|e| e.get("sdk_filename").and_then(|s| s.as_str()))
+        .unwrap_or("Palworld_SDK_25094871.zip");
+
+    let expected_hash = sdk_entry
+        .and_then(|e| e.get("sha256").and_then(|s| s.as_str()))
+        .unwrap_or("4c258ebbef065a9a5929cae772cad068a8fa7bf24441dd452383293f42977338");
+
+    let direct_url = sdk_entry
+        .and_then(|e| e.get("sdk_url").and_then(|s| s.as_str()))
+        .unwrap_or("");
 
     let mut download_bytes: Option<Vec<u8>> = None;
     let mut last_err = String::new();
 
     // 2. Check if bundled local resource exists
+    let rel_bundled = format!("resources/sdk/{}", filename);
     let bundled_candidates = [
+        rel_bundled.as_str(),
+        "resources/sdk/Palworld_SDK_25094871.zip",
         "resources/sdk/Palworld_SDK_24575825.zip",
         "resources/sdk/Palworld_SDK.zip",
     ];
@@ -229,9 +236,17 @@ pub async fn sync_sdk_from_repo(state: State<'_, AppState>) -> Result<serde_json
 
     // 3. If not found locally, download from remote mirrors
     if download_bytes.is_none() {
-        for url in REMOTE_SDK_ZIP_URLS {
+        let mut remote_urls = Vec::new();
+        if !direct_url.is_empty() {
+            remote_urls.push(direct_url.to_string());
+        }
+        remote_urls.push(format!("https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/sdk/{}", filename));
+        remote_urls.push(format!("https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/sdk/{}", filename));
+        remote_urls.push(format!("https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/sdk/{}", filename));
+
+        for url in &remote_urls {
             crate::logger::log(&format!("Attempting to download SDK archive from: {}", url));
-            match client.get(*url).send().await {
+            match client.get(url).send().await {
                 Ok(resp) => {
                     if resp.status().is_success() {
                         match resp.bytes().await {

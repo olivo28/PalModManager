@@ -55,22 +55,24 @@ pub fn get_palschema_schemas_dir(program_path: &str, game_path: &str) -> PathBuf
     }
 
     // Priority 2: PMM internal resources directory
-    let schemas_base = if !program_path.is_empty() {
-        Path::new(program_path).join("resources").join("schemas")
-    } else {
-        PathBuf::from("resources").join("schemas")
-    };
-    let internal = schemas_base.join("palschema");
+    let internal = get_internal_palschema_dir(program_path);
 
-    if (!internal.is_dir() || !internal.join("raw").is_dir()) && schemas_base.is_dir() {
-        // Find any versioned zip like palschema_schemas_0.6.6.zip or palschema_schemas.zip
-        if let Ok(entries) = fs::read_dir(&schemas_base) {
-            for entry in entries.filter_map(|e| e.ok()) {
-                let p = entry.path();
-                let fname = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
-                if fname.starts_with("palschema_schemas") && fname.ends_with(".zip") {
-                    let _ = crate::zip_handler::extract_zip_to_temp(&p.to_string_lossy(), &internal);
-                    break;
+    if !internal.is_dir() || !internal.join("raw").is_dir() {
+        let schemas_base = if !program_path.is_empty() {
+            Path::new(program_path).join("resources").join("schemas")
+        } else {
+            PathBuf::from("resources").join("schemas")
+        };
+        if schemas_base.is_dir() {
+            // Find any versioned zip like palschema_schemas_0.6.7.zip or palschema_schemas.zip
+            if let Ok(entries) = fs::read_dir(&schemas_base) {
+                for entry in entries.filter_map(|e| e.ok()) {
+                    let p = entry.path();
+                    let fname = p.file_name().and_then(|n| n.to_str()).unwrap_or("");
+                    if fname.starts_with("palschema_schemas") && fname.ends_with(".zip") {
+                        let _ = crate::zip_handler::extract_zip_to_temp(&p.to_string_lossy(), &internal);
+                        break;
+                    }
                 }
             }
         }
@@ -81,6 +83,16 @@ pub fn get_palschema_schemas_dir(program_path: &str, game_path: &str) -> PathBuf
     }
 
     internal
+}
+
+/// Resolves the internal PMM resources directory for PalSchema schemas.
+pub fn get_internal_palschema_dir(program_path: &str) -> PathBuf {
+    let schemas_base = if !program_path.is_empty() {
+        Path::new(program_path).join("resources").join("schemas")
+    } else {
+        PathBuf::from("resources").join("schemas")
+    };
+    schemas_base.join("palschema")
 }
 
 /// Returns the status and counts of the PalSchema JSON Schemas catalog.
@@ -106,14 +118,38 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
     }
 
     let dir = get_palschema_schemas_dir(program_path, game_path);
+    let internal = get_internal_palschema_dir(program_path);
     let mut total_raw = 0;
     let mut total_domain = 0;
     let mut has_enums = false;
     let mut is_avail = false;
 
-    if dir.is_dir() {
+    let domain_files = ["items.schema.json", "pals.schema.json", "buildings.schema.json", "skins.schema.json", "utility.schema.json"];
+
+    // Auto-supplement: if active schemas directory is live game folder and is missing domain models or raw.schema.json,
+    // copy them from PMM internal resources so the live game installation is also complete
+    if dir != internal && dir.is_dir() && internal.is_dir() {
+        for df in domain_files {
+            let target_file = dir.join(df);
+            let src_file = internal.join(df);
+            if !target_file.is_file() && src_file.is_file() {
+                let _ = fs::copy(&src_file, &target_file);
+            }
+        }
+        let target_raw_schema = dir.join("raw.schema.json");
+        let src_raw_schema = internal.join("raw.schema.json");
+        if !target_raw_schema.is_file() && src_raw_schema.is_file() {
+            let _ = fs::copy(&src_raw_schema, &target_raw_schema);
+        }
+    }
+
+    if dir.is_dir() || internal.is_dir() {
         is_avail = true;
-        let raw_dir = dir.join("raw");
+        let raw_dir = if dir.join("raw").is_dir() {
+            dir.join("raw")
+        } else {
+            internal.join("raw")
+        };
         if raw_dir.is_dir() {
             if let Ok(entries) = fs::read_dir(&raw_dir) {
                 total_raw = entries
@@ -123,14 +159,13 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
             }
         }
 
-        let domain_files = ["items.schema.json", "pals.schema.json", "buildings.schema.json", "skins.schema.json", "utility.schema.json"];
         for df in domain_files {
-            if dir.join(df).is_file() {
+            if dir.join(df).is_file() || internal.join(df).is_file() {
                 total_domain += 1;
             }
         }
 
-        has_enums = dir.join("enums.schema.json").is_file();
+        has_enums = dir.join("enums.schema.json").is_file() || internal.join("enums.schema.json").is_file();
     }
 
     let mut version = String::new();
@@ -335,14 +370,19 @@ pub fn load_palschema_definitions_for_monaco(
     }
 
     let dir = get_palschema_schemas_dir(program_path, game_path);
+    let internal = get_internal_palschema_dir(program_path);
     let mut defs = Vec::new();
 
-    if !dir.is_dir() {
+    if !dir.is_dir() && !internal.is_dir() {
         return Arc::new(defs);
     }
 
     // 1. Base Enums schema
-    let enums_path = dir.join("enums.schema.json");
+    let enums_path = if dir.join("enums.schema.json").is_file() {
+        dir.join("enums.schema.json")
+    } else {
+        internal.join("enums.schema.json")
+    };
     if let Ok(content) = fs::read_to_string(&enums_path) {
         defs.push(PalSchemaDefinition {
             uri: "palschema://schemas/enums.schema.json".to_string(),
@@ -392,7 +432,11 @@ pub fn load_palschema_definitions_for_monaco(
     ];
 
     for (fname, matches) in domain_mappings {
-        let p = dir.join(fname);
+        let p = if dir.join(fname).is_file() {
+            dir.join(fname)
+        } else {
+            internal.join(fname)
+        };
         if let Ok(content) = fs::read_to_string(&p) {
             let enriched = if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&content) {
                 if let Some(obj) = val.as_object_mut() {
@@ -421,7 +465,11 @@ pub fn load_palschema_definitions_for_monaco(
     }
 
     // 3. Raw DataTables schemas (for relative $ref resolution from raw.schema.json)
-    let raw_dir = dir.join("raw");
+    let raw_dir = if dir.join("raw").is_dir() {
+        dir.join("raw")
+    } else {
+        internal.join("raw")
+    };
     if raw_dir.is_dir() {
         if let Ok(entries) = fs::read_dir(&raw_dir) {
             for entry in entries.filter_map(|e| e.ok()) {

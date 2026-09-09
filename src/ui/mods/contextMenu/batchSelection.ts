@@ -48,6 +48,7 @@ export function showBulkContextMenu(x: number, y: number): void {
           <span>➕</span> ${escapeHtml(t('context.new_folder'))}
         </button>
       </div>
+    </div>
     ${selectedCount === 2 ? `
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="bulk-merge-hybrid">

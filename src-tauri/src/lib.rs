@@ -45,6 +45,8 @@ use commands::usmap_commands;
 use commands::sdk_commands;
 use commands::editor;
 use commands::config_archive;
+use commands::resource_commands;
+use commands::pak_tweaker;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -347,6 +349,14 @@ pub fn run() {
             editor::validation::scan_workspace_problems,
             editor::scaffolding::create_mod_file,
             editor::scaffolding::create_editor_folder,
+            resource_commands::get_master_resources_status,
+            resource_commands::sync_development_resource,
+            resource_commands::export_development_resource,
+            resource_commands::purge_development_resource,
+            pak_tweaker::tweak_pak_property,
+            pak_tweaker::tweak_datatable_cell,
+            pak_tweaker::revert_pak_to_backup,
+            pak_tweaker::get_pak_backup_status,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();

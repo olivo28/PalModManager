@@ -14,6 +14,8 @@ import type {
   UsmapStructFullDetails,
   UsmapSummaryData,
   SdkStatus,
+  PakTweakResult,
+  PakBackupStatus,
 } from './types';
 import type { UsmapStatus } from '../types';
 
@@ -297,6 +299,114 @@ export async function getPalSchemaRawSchema(tableName: string): Promise<PalSchem
 
 export async function syncPalSchemaSchemas(programPath?: string): Promise<SyncCatalogResult> {
   return invoke('sync_palschema_schemas', { programPath: programPath || null });
+}
+
+export interface ResourceItemStatus {
+  id: string;
+  name: string;
+  description: string;
+  filename: string;
+  isAvailable: boolean;
+  isSynced: boolean;
+  fileSizeBytes: number;
+  sha256: string | null;
+  localPath: string | null;
+  totalItems: number | null;
+  gameVersion: string;
+  steamBuildId: string;
+  ue4ssCommit: string | null;
+  hasLocalGameDump: boolean;
+  localGameDumpPath: string | null;
+}
+
+export interface MasterResourcesStatus {
+  detectedSteamBuildId: string | null;
+  detectedGameVersion: string;
+  latestGameVersion: string;
+  latestSteamBuildId: string;
+  isGameInstalled: boolean;
+  resources: ResourceItemStatus[];
+}
+
+export interface ResourceActionResult {
+  success: boolean;
+  message: string;
+  target: string;
+  fileSizeBytes?: number;
+  sha256?: string;
+  totalFilesExtracted?: number;
+}
+
+export async function getMasterResourcesStatus(): Promise<MasterResourcesStatus> {
+  return invoke('get_master_resources_status');
+}
+
+export async function syncDevelopmentResource(target: string): Promise<ResourceActionResult> {
+  return invoke('sync_development_resource', { target });
+}
+
+export async function exportDevelopmentResource(target: string, destinationFolder: string): Promise<ResourceActionResult> {
+  return invoke('export_development_resource', { target, destinationFolder });
+}
+
+export async function purgeDevelopmentResource(target: string): Promise<boolean> {
+  return invoke('purge_development_resource', { target });
+}
+
+export async function tweakPakProperty(params: {
+  modId?: string | null;
+  pakPath: string;
+  assetInternalPath: string;
+  exportIndex: number;
+  propertyName: string;
+  newValue: any;
+}): Promise<PakTweakResult> {
+  return invoke('tweak_pak_property', {
+    modId: params.modId || null,
+    pakPath: params.pakPath,
+    assetInternalPath: params.assetInternalPath,
+    exportIndex: params.exportIndex,
+    propertyName: params.propertyName,
+    newValue: params.newValue,
+  });
+}
+
+export async function tweakDataTableCell(params: {
+  modId?: string | null;
+  pakPath: string;
+  assetInternalPath: string;
+  rowName: string;
+  columnName: string;
+  newValue: any;
+}): Promise<PakTweakResult> {
+  return invoke('tweak_datatable_cell', {
+    modId: params.modId || null,
+    pakPath: params.pakPath,
+    assetInternalPath: params.assetInternalPath,
+    rowName: params.rowName,
+    columnName: params.columnName,
+    newValue: params.newValue,
+  });
+}
+
+export async function revertPakToBackup(params: {
+  modId?: string | null;
+  pakPath: string;
+}): Promise<PakTweakResult> {
+  return invoke('revert_pak_to_backup', {
+    modId: params.modId || null,
+    pakPath: params.pakPath,
+  });
+}
+
+export async function getPakBackupStatus(params: {
+  modId?: string | null;
+  pakPath: string;
+}): Promise<PakBackupStatus> {
+  return invoke('get_pak_backup_status', {
+    modId: params.modId || null,
+    pakPath: params.pakPath,
+  });
 }
 
 

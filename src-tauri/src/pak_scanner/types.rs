@@ -89,6 +89,41 @@ pub struct UAssetSchemaResolvedInfo {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+pub struct UAssetLiveProperty {
+    pub export_index: usize,
+    pub name: String,
+    pub property_type: String,
+    pub value: serde_json::Value,
+    pub raw_value_display: String,
+    pub is_editable: bool,
+    #[serde(default)]
+    pub struct_type: Option<String>,
+    #[serde(default)]
+    pub enum_value: Option<String>,
+    #[serde(default)]
+    pub vanilla_default_display: Option<String>,
+    #[serde(default)]
+    pub is_delta: bool,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UAssetDataTableRow {
+    pub row_name: String,
+    pub values: HashMap<String, serde_json::Value>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UAssetDataTableGrid {
+    pub row_struct_name: String,
+    pub columns: Vec<String>,
+    pub rows: Vec<UAssetDataTableRow>,
+    pub total_rows: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct UAssetInspectionDetails {
     pub asset_name: String,
     pub asset_path: String,
@@ -100,6 +135,16 @@ pub struct UAssetInspectionDetails {
     pub names_sample: Vec<String>,
     pub resolved_schema: Option<UAssetSchemaResolvedInfo>,
     pub texture_preview: Option<crate::texture_decoder::TexturePreviewInfo>,
+    #[serde(default)]
+    pub instantiated_properties: Vec<UAssetLiveProperty>,
+    #[serde(default)]
+    pub datatable_grid: Option<UAssetDataTableGrid>,
+    #[serde(default)]
+    pub class_hierarchy: Vec<String>,
+    #[serde(default)]
+    pub vanilla_verification: HashMap<String, bool>,
+    #[serde(default)]
+    pub has_original_backup: bool,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
