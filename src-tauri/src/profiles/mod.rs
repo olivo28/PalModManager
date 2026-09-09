@@ -7,8 +7,8 @@ pub mod export_import;
 
 // Re-export public functions to keep existing client interfaces unbroken
 pub use utils::{
-    create_junction_or_symlink, remove_junction_or_symlink, sanitize_profile_id,
-    get_profile_dir, copy_dir_all, move_path,
+    create_junction_or_symlink, remove_junction_or_symlink, is_junction_or_symlink,
+    sanitize_profile_id, get_profile_dir, copy_dir_all, move_path,
     save_pmm_meta,
 };
 

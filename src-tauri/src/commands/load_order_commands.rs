@@ -240,7 +240,7 @@ pub fn get_palschema_load_order(state: State<AppState>) -> Result<Vec<ModInfo>, 
         if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
             for entry in entries.flatten() {
                 let path = entry.path();
-                if path.is_dir() || junction::exists(&path).unwrap_or(false) {
+                if path.is_dir() || crate::profiles::is_junction_or_symlink(&path) {
                     let name = path.file_name().unwrap().to_string_lossy().to_string();
                     // Parse optional "001_" prefix
                     let (clean_name, weight) = if name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_') {
@@ -344,7 +344,7 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
                 continue;
             }
 
-            if junction::exists(&path).unwrap_or(false) {
+            if crate::profiles::is_junction_or_symlink(&path) {
                 let _ = crate::profiles::remove_junction_or_symlink(&path);
             } else if path.is_dir() {
                 let is_prefixed = name.len() > 4 && name.chars().take(3).all(|c| c.is_ascii_digit()) && name.chars().nth(3) == Some('_');
@@ -389,7 +389,7 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
                     // If it's enabled but doesn't exist in Storage, try migrating from mods/
                     if !target_storage.exists() {
                         let direct_mods_path = palschema_mods_dir.join(&folder_name);
-                        if direct_mods_path.exists() && !junction::exists(&direct_mods_path).unwrap_or(false) {
+                        if direct_mods_path.exists() && !crate::profiles::is_junction_or_symlink(&direct_mods_path) {
                             let _ = fs::rename(&direct_mods_path, &target_storage);
                         }
                     }

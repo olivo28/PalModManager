@@ -245,6 +245,7 @@ pub fn set_force_load_order_ue4ss(enabled: bool, state: State<AppState>) -> Resu
 pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> Result<Value, String> {
     #[cfg(not(target_os = "windows"))]
     {
+        let _ = (&enabled, &state);
         return Err("NTFS Junction Load Order for PalSchema is only supported on Windows".to_string());
     }
 
@@ -354,7 +355,7 @@ pub fn set_force_load_order_palschema(enabled: bool, state: State<AppState>) -> 
                         if is_enabled {
                             let mut physical_src = None;
                             for (path, name) in &current_mods_links {
-                                if (name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name)) && !junction::exists(path).unwrap_or(false) && path.is_dir() {
+                                if (name == &folder_name || (name.len() > 4 && &name[4..] == &folder_name)) && !crate::profiles::is_junction_or_symlink(path) && path.is_dir() {
                                     physical_src = Some(path.clone());
                                 }
                             }

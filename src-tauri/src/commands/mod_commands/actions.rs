@@ -144,7 +144,7 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         let p = Path::new(path_str);
         
         // Handle junction/symlink cleanup safely first
-        if junction::exists(p).unwrap_or(false) {
+        if crate::profiles::is_junction_or_symlink(p) {
             let _ = crate::profiles::remove_junction_or_symlink(p);
         } else if p.exists() {
             // Guard: Never physically delete the Steam Workshop subscribed download directory!

@@ -1,4 +1,4 @@
-use std::fs::{self, File};
+use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -64,8 +64,8 @@ pub async fn ensure_retoc_available(app_data_dir: &Path) -> Result<PathBuf, Stri
             let mut file = archive.by_index(i).map_err(|e| format!("Failed to read entry from retoc zip: {e}"))?;
             let name = file.name().to_string();
             if name.ends_with("retoc.exe") || name == "retoc.exe" {
-                let mut out = File::create(&bin_path).map_err(|e| format!("Failed to create retoc.exe: {e}"))?;
-                std::io::copy(&mut file, &mut out).map_err(|e| format!("Failed to extract retoc.exe: {e}"))?;
+                let mut out = fs::File::create(&bin_path).map_err(|e| format!("Failed to create retoc binary: {e}"))?;
+                std::io::copy(&mut file, &mut out).map_err(|e| format!("Failed to extract retoc binary: {e}"))?;
                 break;
             }
         }

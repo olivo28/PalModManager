@@ -39,6 +39,18 @@ pub fn remove_junction_or_symlink(link: &Path) -> Result<(), String> {
     }
 }
 
+/// Checks if a path is an NTFS junction (Windows) or a symlink (Unix / non-Windows)
+pub fn is_junction_or_symlink(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        junction::exists(path).unwrap_or(false)
+    }
+    #[cfg(not(windows))]
+    {
+        path.symlink_metadata().map(|m| m.file_type().is_symlink()).unwrap_or(false)
+    }
+}
+
 pub fn sanitize_profile_id(name: &str) -> String {
     let clean: String = name
         .chars()
