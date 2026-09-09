@@ -33,8 +33,6 @@ junction = "1.0.0"
 pathdiff = "0.2"
 notify = "6.1.1"
 sha2 = "0.10"
-url = "2"
-winreg = "0.52"
 open = "5"
 regex = "1"
 sevenz-rust = { version = "0.6.1", features = ["aes256", "bzip2", "zstd"] }
@@ -46,3 +44,7 @@ lz4_flex = "0.11"
 oozextract = "0.5.4"
 texture2ddecoder = "0.1"
 byteorder = "1.5"
+url = "2"
+
+[target.'cfg(windows)'.dependencies]
+winreg = "0.52"
