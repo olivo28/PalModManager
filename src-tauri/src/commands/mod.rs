@@ -20,3 +20,4 @@ pub mod editor;
 pub mod config_archive;
 pub mod resource_commands;
 pub mod pak_tweaker;
+pub mod fomod;

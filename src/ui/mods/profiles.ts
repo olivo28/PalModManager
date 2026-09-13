@@ -111,7 +111,8 @@ export function renderProfileList(): void {
         </div>
       </div>
       <div class="profile-actions">
-        <button class="btn-secondary btn-sm profile-export-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_export_pack_title'))}">📤 ${escapeHtml(t('profiles.btn_export_pack'))}</button>
+        <button class="btn-primary btn-sm profile-share-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_share_manifest_title'))}">🔗 ${escapeHtml(t('profiles.btn_share_manifest'))}</button>
+        <button class="btn-secondary btn-sm profile-export-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_export_pack_title'))}">💾 ${escapeHtml(t('profiles.btn_backup_pack'))}</button>
         <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clone'))}</button>
         <button class="btn-secondary btn-sm profile-clear-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clear'))}</button>
         ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_switch'))}</button>` : ''}
@@ -126,7 +127,8 @@ export function renderProfileList(): void {
         (e.target as HTMLElement).closest('.profile-item-delete') ||
         (e.target as HTMLElement).closest('.profile-clone-btn') ||
         (e.target as HTMLElement).closest('.profile-clear-btn') ||
-        (e.target as HTMLElement).closest('.profile-export-btn')
+        (e.target as HTMLElement).closest('.profile-export-btn') ||
+        (e.target as HTMLElement).closest('.profile-share-btn')
       ) return;
       const id = (item as HTMLElement).dataset.id!;
       if (id === getState().currentProfileId) return;
@@ -134,11 +136,19 @@ export function renderProfileList(): void {
     });
   });
 
+  list.querySelectorAll('.profile-share-btn').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.stopPropagation();
+      const id = (btn as HTMLElement).dataset.id!;
+      await handleExportProfileManifest(id, btn as HTMLElement);
+    });
+  });
+
   list.querySelectorAll('.profile-export-btn').forEach(btn => {
     btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       const id = (btn as HTMLElement).dataset.id!;
-      await handleExportProfilePack(id);
+      await handleExportProfilePack(id, btn as HTMLElement);
     });
   });
 
@@ -352,7 +362,7 @@ export async function handleProfileChange(profileId: string): Promise<void> {
     populateEditorModSelect();
     renderEditorModTree();
 
-    await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
+    await Promise.all([loadProfiles(), loadDependencies(true), loadLibrary()]);
     renderModsView();
     bus.emit('profile:switched', { profileId, profileName: targetName });
     showToast(t('toasts.profile_switched', { name: targetName }), 'success');
@@ -381,22 +391,73 @@ export async function handleCreateProfile(name: string): Promise<void> {
   }
 }
 
-export async function handleExportProfilePack(profileId: string): Promise<void> {
+export async function handleExportProfileManifest(profileId: string, triggerBtn?: HTMLElement | null): Promise<void> {
   try {
     const { profiles } = getState();
     const profile = profiles.find(p => p.id === profileId);
     const profileName = profile ? profile.name : profileId;
 
     const { save } = await import('@tauri-apps/plugin-dialog');
-    const defaultZipName = `PMM_Profile_${profileName.replace(/[^\w\s-]/g, '_')}_CoopPack.zip`;
+    const defaultName = `PMM_Profile_${profileName.replace(/[^\w\s-]/g, '_')}.pmmprofile`;
+
+    const destPath = await save({
+      defaultPath: defaultName,
+      filters: [{ name: 'Nexus-Safe Profile Manifest', extensions: ['pmmprofile'] }],
+      title: t('profiles.dialog_export_manifest_title', { name: profileName }),
+    });
+
+    if (!destPath) return;
+
+    if (triggerBtn) {
+      triggerBtn.setAttribute('disabled', 'true');
+      triggerBtn.style.opacity = '0.6';
+      triggerBtn.style.pointerEvents = 'none';
+    }
+
+    showToast(t('profiles.exporting_manifest_toast', { name: profileName }), 'info');
+
+    const { exportProfileManifest } = await import('../../api');
+    const resultPath = await exportProfileManifest(profileId, destPath);
+
+    showToast(t('profiles.exported_manifest_toast', { path: resultPath }), 'success');
+  } catch (err) {
+    console.error('Failed to export profile manifest:', err);
+    showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+  } finally {
+    if (triggerBtn) {
+      triggerBtn.removeAttribute('disabled');
+      triggerBtn.style.opacity = '';
+      triggerBtn.style.pointerEvents = '';
+    }
+  }
+}
+
+export async function handleExportProfilePack(profileId: string, triggerBtn?: HTMLElement | null): Promise<void> {
+  try {
+    const { profiles } = getState();
+    const profile = profiles.find(p => p.id === profileId);
+    const profileName = profile ? profile.name : profileId;
+
+    // Show disclaimer confirming this is a private personal backup
+    const confirmed = await showConfirm(t('profiles.disclaimer_private_backup_body'));
+    if (!confirmed) return;
+
+    const { save } = await import('@tauri-apps/plugin-dialog');
+    const defaultZipName = `PMM_Backup_${profileName.replace(/[^\w\s-]/g, '_')}.pmmbak`;
 
     const destPath = await save({
       defaultPath: defaultZipName,
-      filters: [{ name: 'Zip Archive / Co-op Pack', extensions: ['zip', 'pmmprofile'] }],
+      filters: [{ name: 'Private Local Backup', extensions: ['pmmbak', 'zip'] }],
       title: t('profiles.dialog_export_title', { name: profileName }),
     });
 
     if (!destPath) return;
+
+    if (triggerBtn) {
+      triggerBtn.setAttribute('disabled', 'true');
+      triggerBtn.style.opacity = '0.6';
+      triggerBtn.style.pointerEvents = 'none';
+    }
 
     showToast(t('profiles.exporting_pack_toast', { name: profileName }), 'info');
 
@@ -407,6 +468,12 @@ export async function handleExportProfilePack(profileId: string): Promise<void> 
   } catch (err) {
     console.error('Failed to export profile pack:', err);
     showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+  } finally {
+    if (triggerBtn) {
+      triggerBtn.removeAttribute('disabled');
+      triggerBtn.style.opacity = '';
+      triggerBtn.style.pointerEvents = '';
+    }
   }
 }
 
@@ -416,12 +483,54 @@ export async function handleImportProfilePack(): Promise<void> {
     const selected = await open({
       multiple: false,
       directory: false,
-      filters: [{ name: 'Zip Archive / Co-op Pack', extensions: ['zip', 'pmmprofile'] }],
+      filters: [{ name: 'Profile Manifest / Local Backup', extensions: ['pmmprofile', 'pmmbak', 'zip'] }],
       title: t('profiles.dialog_import_title'),
     });
 
     if (!selected || typeof selected !== 'string') return;
 
+    if (selected.toLowerCase().endsWith('.pmmprofile')) {
+      // Analyze manifest for missing mods and customizations
+      showToast(t('profiles.analyzing_manifest_toast'), 'info');
+      const { analyzeProfileManifest, applyProfileManifest } = await import('../../api');
+      const analysis = await analyzeProfileManifest(selected);
+
+      if (analysis.missingMods.length > 0) {
+        const { setActiveSyncSession, showMissingModsDialog } = await import('../modals/profileSync');
+        setActiveSyncSession({
+          manifestPath: selected,
+          profileName: analysis.profileName,
+          missingMods: analysis.missingMods,
+          totalMods: analysis.totalMods,
+          initialMissingCount: analysis.missingMods.length,
+        });
+        showMissingModsDialog();
+      } else {
+        const confirmed = await showConfirm(t('profiles.confirm_apply_manifest', {
+          name: analysis.profileName,
+          count: analysis.totalMods,
+        }));
+        if (!confirmed) return;
+
+        showToast(t('profiles.applying_manifest_toast'), 'info');
+        const res = await applyProfileManifest(selected);
+        if (res.success) {
+          await Promise.all([loadProfiles(), loadDependencies(), loadLibrary()]);
+          const { getMods } = await import('../../api');
+          const mods = await getMods();
+          updateState({ allMods: mods });
+          renderModsView();
+
+          showToast(t('profiles.imported_pack_toast', {
+            name: res.profileName,
+            count: res.totalMods,
+          }), 'success');
+        }
+      }
+      return;
+    }
+
+    // Otherwise handle legacy / private full archive (.zip / .pmmbak)
     const confirmed = await showConfirm(t('profiles.confirm_import_body'));
     if (!confirmed) return;
 

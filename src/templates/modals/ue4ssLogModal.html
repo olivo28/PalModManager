@@ -1,0 +1,188 @@
+<!-- UE4SS RUNTIME LOG & DIAGNOSTICS MODAL -->
+<div id="ue4ss-log-modal" class="modal-overlay" style="display: none;">
+  <div class="modal" style="max-width: 960px; width: 95vw; height: 85vh; display: flex; flex-direction: column; overflow: hidden; border-radius: 12px; background: var(--bg-primary); border: 1px solid var(--border); box-shadow: 0 16px 48px rgba(0,0,0,0.6);">
+    
+    <!-- Modal Header -->
+    <div class="modal-header ue4ss-modal-header">
+      <div class="ue4ss-header-left">
+        <div class="ue4ss-header-icon-box">
+          <svg viewBox="0 0 24 24" class="ue4ss-header-icon">
+            <path d="M4 3h16a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2zm0 2v14h16V5H4zm2 2h4v2H6V7zm0 4h12v2H6v-2zm0 4h8v2H6v-2zm10-8h2v2h-2V7z"/>
+          </svg>
+        </div>
+        <div class="ue4ss-header-title-block">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <h3 id="ue4ss-log-title" class="ue4ss-header-title" data-i18n="ue4ss_log.title">UE4SS Runtime Log &amp; Diagnostics</h3>
+            <div id="ue4ss-live-badge" class="ue4ss-live-badge active" title="Live Log Monitoring: Updates in real-time (Click to pause/resume)" data-i18n-title="ue4ss_log.live_title">
+              <span class="ue4ss-live-dot"></span>
+              <span id="ue4ss-live-label" data-i18n="ue4ss_log.live_active">LIVE</span>
+            </div>
+          </div>
+          <div class="ue4ss-meta-row" style="display: flex; align-items: center; gap: 6px;">
+            <div class="ue4ss-meta-pill" title="Double click to reveal" id="ue4ss-log-meta-wrap">
+              <svg viewBox="0 0 16 16" style="width:11px;height:11px;flex-shrink:0;fill:currentColor;opacity:0.75;"><path d="M14 4.5V14a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V2a2 2 0 0 1 2-2h5.5L14 4.5zm-3 0A1.5 1.5 0 0 1 9.5 3V1H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h8a1 1 0 0 0 1-1V4.5h-2z"/></svg>
+              <span id="ue4ss-log-meta">Pal/Binaries/Win64/ue4ss.log</span>
+            </div>
+            <button id="ue4ss-log-btn-reset-default" class="ue4ss-header-btn ue4ss-header-btn-reset" style="display: none; padding: 2px 7px; font-size: 10px;" title="Reset to active game log" data-i18n-title="ue4ss_log.btn_reset_default_title">
+              <svg viewBox="0 0 16 16" style="width:10px;height:10px;"><path fill-rule="evenodd" d="M8 3a5 5 0 1 1-4.546 2.914.5.5 0 0 0-.908-.417A6 6 0 1 0 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 0-.41-.192L5.23 2.308a.25.25 0 0 0 0 .384l2.36 1.966A.25.25 0 0 0 8 4.466z"/></svg>
+              <span data-i18n="ue4ss_log.btn_reset_default">Game Log</span>
+            </button>
+          </div>
+        </div>
+      </div>
+      
+      <div class="ue4ss-header-actions">
+        <!-- Refresh Action -->
+        <button id="ue4ss-log-btn-refresh" class="ue4ss-header-btn ue4ss-header-btn-refresh" title="Refresh Log" data-i18n-title="ue4ss_log.btn_refresh_title">
+          <svg viewBox="0 0 16 16"><path d="M8 3a5 5 0 1 0 4.546 2.914.5.5 0 0 1 .908-.417A6 6 0 1 1 8 2v1z"/><path d="M8 4.466V.534a.25.25 0 0 1 .41-.192l2.36 1.966c.12.1.12.284 0 .384L8.41 4.658A.25.25 0 0 1 8 4.466z"/></svg>
+          <span data-i18n="common.refresh">Refresh</span>
+        </button>
+
+        <div class="ue4ss-header-divider"></div>
+
+        <!-- Open External Log -->
+        <button id="ue4ss-log-btn-open-external" class="ue4ss-header-btn" title="Open external ue4ss.log file..." data-i18n-title="ue4ss_log.btn_open_external_title">
+          <svg viewBox="0 0 16 16"><path d="M.5 9.9a.5.5 0 0 1 .5.5v2.5a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-2.5a.5.5 0 0 1 1 0v2.5a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2v-2.5a.5.5 0 0 1 .5-.5z"/><path d="M7.646 1.146a.5.5 0 0 1 .708 0l3 3a.5.5 0 0 1-.708.708L8.5 2.707V10.5a.5.5 0 0 1-1 0V2.707L5.354 4.854a.5.5 0 1 1-.708-.708l3-3z"/></svg>
+          <span data-i18n="ue4ss_log.btn_open_external">Open Log...</span>
+        </button>
+        <input type="file" id="ue4ss-log-file-input" accept=".log,.txt" style="display: none;" />
+
+        <div class="ue4ss-header-divider"></div>
+
+        <!-- Export & Share Group -->
+        <button id="ue4ss-log-btn-copy-file" class="ue4ss-header-btn ue4ss-header-btn-discord" title="Copy log file to clipboard (paste into Discord, Explorer, etc.)" data-i18n-title="ue4ss_log.btn_copy_file_title">
+          <svg viewBox="0 0 16 16"><path d="M4.5 3a2.5 2.5 0 0 1 5 0v9a1.5 1.5 0 0 1-3 0V5a.5.5 0 0 1 1 0v7a.5.5 0 0 0 1 0V3a1.5 1.5 0 1 0-3 0v9a2.5 2.5 0 0 0 5 0V5a.5.5 0 0 1 1 0v7a3.5 3.5 0 1 1-7 0V3z"/></svg>
+          <span data-i18n="ue4ss_log.btn_copy_file">Copy File</span>
+        </button>
+        <button id="ue4ss-log-btn-copy-text" class="ue4ss-header-btn" title="Copy entire log text to clipboard" data-i18n-title="ue4ss_log.btn_copy_text_title">
+          <svg viewBox="0 0 16 16"><path d="M4 1.5H3a2 2 0 0 0-2 2V14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V3.5a2 2 0 0 0-2-2h-1v1h1a1 1 0 0 1 1 1V14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3.5a1 1 0 0 1 1-1h1v-1z"/><path d="M9.5 1a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5h-3a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5h3zm-3-1A1.5 1.5 0 0 0 5 1.5v1A1.5 1.5 0 0 0 6.5 4h3A1.5 1.5 0 0 0 11 2.5v-1A1.5 1.5 0 0 0 9.5 0h-3z"/></svg>
+          <span data-i18n="ue4ss_log.btn_copy_text">Copy Text</span>
+        </button>
+        <button id="ue4ss-log-btn-reveal" class="ue4ss-header-btn" title="Reveal log file in File Explorer" data-i18n-title="ue4ss_log.btn_reveal_title">
+          <svg viewBox="0 0 16 16"><path d="M.54 3.87.5 3a2 2 0 0 1 2-2h3.672a2 2 0 0 1 1.414.586l.828.828A2 2 0 0 0 9.828 3h4.672a2 2 0 0 1 2 2v1h-15V3.87zM16 7H0v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7z"/></svg>
+          <span data-i18n="ue4ss_log.btn_reveal">Folder</span>
+        </button>
+
+        <div class="ue4ss-header-divider"></div>
+
+        <!-- Danger Group -->
+        <button id="ue4ss-log-btn-clear" class="ue4ss-header-btn ue4ss-header-btn-danger" title="Clear/truncate log file" data-i18n-title="ue4ss_log.btn_clear_title">
+          <svg viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>
+          <span data-i18n="ue4ss_log.btn_clear">Clear</span>
+        </button>
+
+        <div class="ue4ss-header-divider"></div>
+
+        <!-- Close Modal -->
+        <button class="ue4ss-modal-close-btn" id="ue4ss-log-modal-close-x" title="Close (Esc)" aria-label="Close">
+          <svg viewBox="0 0 16 16" style="width:12px;height:12px;fill:currentColor;"><path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Summary Metrics Bar -->
+    <div id="ue4ss-log-stats-bar" style="display: flex; align-items: center; gap: 12px; padding: 10px 20px; background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--border); flex-shrink: 0; overflow-x: auto;">
+      <div id="ue4ss-pill-lines" class="stat-pill stat-pill-interactive" title="Show all log lines">
+        <span style="color: var(--text-muted);" data-i18n="ue4ss_log.stat_lines">Lines:</span>
+        <strong id="ue4ss-stat-lines" style="color: var(--text-primary);">0</strong>
+      </div>
+      <div id="ue4ss-pill-mods" class="stat-pill stat-pill-interactive ue4ss-pill-mods" title="Click to inspect all detected mods" data-i18n-title="ue4ss_log.click_to_view_mods">
+        <span>📦</span>
+        <span style="color: #2ecc71;" data-i18n="ue4ss_log.stat_mods">Loaded Mods:</span>
+        <strong id="ue4ss-stat-mods" style="color: #2ecc71;">0</strong>
+        <span class="ue4ss-pill-chevron">▾</span>
+      </div>
+      <div id="ue4ss-pill-warnings" class="stat-pill stat-pill-interactive ue4ss-pill-warnings" title="Click to filter warnings">
+        <span>⚠️</span>
+        <span style="color: #ffaa00;" data-i18n="ue4ss_log.stat_warnings">Warnings:</span>
+        <strong id="ue4ss-stat-warnings" style="color: #ffaa00;">0</strong>
+      </div>
+      <div id="ue4ss-pill-errors" class="stat-pill stat-pill-interactive ue4ss-pill-errors" title="Click to filter errors & crashes">
+        <span>❌</span>
+        <span style="color: #ff5f56;" data-i18n="ue4ss_log.stat_errors">Errors &amp; Crashes:</span>
+        <strong id="ue4ss-stat-errors" style="color: #ff5f56;">0</strong>
+      </div>
+    </div>
+
+    <!-- Active Mod Filter Banner -->
+    <div id="ue4ss-active-mod-banner" class="ue4ss-active-mod-banner" style="display: none;">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <span style="color: var(--accent, #00bcff); font-size: 14px;">🔍</span>
+        <span style="font-size: 12px; color: var(--text-primary);">
+          <span data-i18n="ue4ss_log.filter_active_mod">Filtering events for mod:</span>
+          <strong id="ue4ss-active-mod-name" style="color: #00bcff; margin-left: 4px;"></strong>
+        </span>
+      </div>
+      <button id="ue4ss-clear-mod-filter-btn" class="ue4ss-clear-mod-filter-btn" data-i18n="ue4ss_log.clear_mod_filter">✕ Clear Mod Filter</button>
+    </div>
+
+    <!-- Filter & Search Toolbar -->
+    <div style="display: flex; align-items: center; justify-content: space-between; padding: 10px 20px; gap: 12px; background: var(--bg-primary); border-bottom: 1px solid var(--border); flex-shrink: 0; flex-wrap: wrap;">
+      <div class="ue4ss-filter-capsule">
+        <button class="ue4ss-filter-chip active" data-filter="all" data-i18n="common.all">All</button>
+        <button class="ue4ss-filter-chip" data-filter="errors" data-i18n="ue4ss_log.filter_errors">Errors &amp; Crashes</button>
+        <button class="ue4ss-filter-chip" data-filter="warnings" data-i18n="ue4ss_log.filter_warnings">Warnings</button>
+        <button class="ue4ss-filter-chip" data-filter="mods" data-i18n="ue4ss_log.filter_mods">Mods Lifecycle</button>
+        <button class="ue4ss-filter-chip" data-filter="lua" data-i18n="ue4ss_log.filter_lua">Lua Only</button>
+      </div>
+
+      <div class="ue4ss-search-wrap">
+        <span class="ue4ss-search-icon">🔍</span>
+        <input type="text" id="ue4ss-log-search" class="ue4ss-search-input" placeholder="Search log entries..." data-i18n-placeholder="ue4ss_log.search_placeholder" />
+      </div>
+    </div>
+
+    <!-- Log Entries List / Viewport -->
+    <div id="ue4ss-log-container" style="flex: 1; min-height: 0; overflow-y: auto; font-family: var(--font-mono, monospace); font-size: 11.5px; line-height: 1.5; padding: 8px 12px; background: #0c0d10; color: #d1d5db;">
+      <!-- Populated dynamically with log rows -->
+    </div>
+
+    <!-- Modal Footer -->
+    <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 20px; border-top: 1px solid var(--border); background: var(--bg-secondary); flex-shrink: 0;">
+      <div id="ue4ss-log-count-info" style="font-size: 11px; color: var(--text-muted);">
+        Showing 0 entries
+      </div>
+      <button id="ue4ss-log-btn-close" class="ue4ss-footer-close-btn" data-i18n="common.close">Close</button>
+    </div>
+
+    <!-- Loaded Mods Inspector Drawer -->
+    <div id="ue4ss-mods-drawer" class="ue4ss-mods-drawer" style="display: none;">
+      <div class="ue4ss-drawer-header">
+        <div class="ue4ss-drawer-title-group">
+          <span style="font-size: 15px;">📦</span>
+          <h4 class="ue4ss-drawer-title" data-i18n="ue4ss_log.mods_drawer_title">Detected Mods &amp; Plugins</h4>
+          <span id="ue4ss-drawer-count" class="ue4ss-drawer-counter">0</span>
+        </div>
+        <button id="ue4ss-mods-drawer-close" class="ue4ss-drawer-close-btn" title="Close Mods Drawer (Esc)">✕</button>
+      </div>
+
+      <div class="ue4ss-drawer-toolbar">
+        <div class="ue4ss-drawer-search-wrap">
+          <span class="ue4ss-search-icon">🔍</span>
+          <input type="text" id="ue4ss-drawer-search" class="ue4ss-drawer-search-input" placeholder="Search loaded mods..." data-i18n-placeholder="ue4ss_log.search_mods_placeholder" />
+        </div>
+        <div class="ue4ss-drawer-chips">
+          <button class="ue4ss-drawer-chip active" data-mod-filter="all" data-i18n="common.all">All</button>
+          <button class="ue4ss-drawer-chip" data-mod-filter="palschema">PalSchema</button>
+          <button class="ue4ss-drawer-chip" data-mod-filter="lua">Lua</button>
+          <button class="ue4ss-drawer-chip" data-mod-filter="cpp">C++</button>
+          <button class="ue4ss-drawer-chip" data-mod-filter="disabled" data-i18n="common.disabled">Disabled</button>
+        </div>
+      </div>
+
+      <div id="ue4ss-drawer-list" class="ue4ss-drawer-list">
+        <!-- Dynamically rendered mod cards -->
+      </div>
+    </div>
+
+    <!-- Drag & Drop Overlay -->
+    <div id="ue4ss-drag-overlay" class="ue4ss-drag-overlay" style="display: none;">
+      <div class="ue4ss-drag-box">
+        <span style="font-size: 42px; margin-bottom: 8px;">📥</span>
+        <span style="font-size: 15px; font-weight: 700; color: #ffffff;" data-i18n="ue4ss_log.drop_hint">Drop UE4SS log file here to inspect</span>
+        <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Supports external .log and .txt files</span>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -106,6 +106,7 @@ pub fn scan_ue4ss_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names: &s
                 custom_notes: None,
                 original_name: None,
                 custom_name: None,
+                fomod_choices: None,
             });
         }
     }

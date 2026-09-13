@@ -12,9 +12,14 @@ export * from './monaco/mod';
 import { getState, updateState } from '../../state';
 import { switchTab } from './keybindings';
 import { renderEditorModTree, findBestConfigFile, revealAndSelectFile } from './tree';
-import { loadEditorData, _lastFilePerMod } from './viewer';
+import { loadEditorData, _lastFilePerMod, clearBufferCache } from './viewer';
+import { confirmDiscardOrSave } from './unsaved';
 
 export async function openConfigEditor(modId: string): Promise<void> {
+  const proceed = await confirmDiscardOrSave();
+  if (!proceed) return;
+  clearBufferCache();
+
   updateState({ activeTab: 'editor', editorModId: modId, editorSelectedFile: null });
   switchTab('editor');
   renderEditorModTree();

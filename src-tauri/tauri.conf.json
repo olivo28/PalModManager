@@ -1,6 +1,6 @@
 {
   "productName": "PalModManager",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "identifier": "com.pmm.palmodmanager",
   "build": {
     "beforeDevCommand": "pnpm dev",
@@ -29,7 +29,7 @@
       "csp": null,
       "assetProtocol": {
         "enable": true,
-        "scope": ["**", "C:\\**", "D:\\**", "E:\\**", "F:\\**"]
+        "scope": ["**"]
       }
     }
   },

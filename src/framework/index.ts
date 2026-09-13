@@ -45,5 +45,9 @@ export type { DbDomMap } from './scopes/db';
 export { dependencyDom } from './scopes/dependency';
 export type { DependencyDomMap } from './scopes/dependency';
 
+export { fomodDom } from './scopes/fomod';
+export type { FomodDomMap } from './scopes/fomod';
+
 export { mainDom } from './scopes/main';
 export type { MainDomMap } from './scopes/main';
+

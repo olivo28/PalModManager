@@ -5,11 +5,22 @@ use tauri::State;
 use crate::state::AppState;
 
 #[tauri::command]
-pub fn inspect_pak_file_tree(
+pub async fn inspect_pak_file_tree(
     pak_path: String,
     zip_path: Option<String>,
 ) -> Result<crate::pak_scanner::PakInspectionResult, String> {
-    let p = Path::new(&pak_path);
+    tauri::async_runtime::spawn_blocking(move || {
+        inspect_pak_file_tree_internal(&pak_path, zip_path.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+fn inspect_pak_file_tree_internal(
+    pak_path: &str,
+    zip_path: Option<&str>,
+) -> Result<crate::pak_scanner::PakInspectionResult, String> {
+    let p = Path::new(pak_path);
     if p.exists() {
         return crate::pak_scanner::list_pak_entries_detailed(p);
     }
@@ -145,106 +156,137 @@ pub fn gather_candidate_paks(
 }
 
 #[tauri::command]
-pub fn inspect_mod_pak_contents(
+pub async fn inspect_mod_pak_contents(
     state: State<'_, AppState>,
     mod_id: String,
 ) -> Result<Vec<crate::pak_scanner::PakInspectionResult>, String> {
-    let data = state.data.lock().map_err(|e| e.to_string())?;
-    let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
-    let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
-        .ok_or_else(|| "Mod not found".to_string())?;
+    let (target_mod, game_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
+            .ok_or_else(|| "Mod not found".to_string())?;
+        (target_mod, data.settings.game_path.clone())
+    };
 
-    let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
+    tauri::async_runtime::spawn_blocking(move || {
+        let candidate_paks = gather_candidate_paks(&target_mod, &game_path);
 
-    let mut results = Vec::new();
-    for pak in candidate_paks {
-        match crate::pak_scanner::list_pak_entries_detailed(&pak) {
-            Ok(info) => results.push(info),
-            Err(e) => {
-                crate::logger::log(&format!("inspect_mod_pak_contents: Error reading pak '{:?}': {}", pak, e));
+        let mut results = Vec::new();
+        for pak in candidate_paks {
+            match crate::pak_scanner::list_pak_entries_detailed(&pak) {
+                Ok(info) => results.push(info),
+                Err(e) => {
+                    crate::logger::log(&format!("inspect_mod_pak_contents: Error reading pak '{:?}': {}", pak, e));
+                }
             }
         }
-    }
 
-    if results.is_empty() {
-        return Err("No valid .pak files found for this mod on disk".to_string());
-    }
+        if results.is_empty() {
+            return Err("No valid .pak files found for this mod on disk".to_string());
+        }
 
-    Ok(results)
+        Ok(results)
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn inspect_pak_asset(
+pub async fn inspect_pak_asset(
     state: State<'_, AppState>,
     mod_id: String,
     asset_internal_path: String,
 ) -> Result<Vec<String>, String> {
-    let data = state.data.lock().map_err(|e| e.to_string())?;
-    let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
-    let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
-        .ok_or_else(|| "Mod not found".to_string())?;
+    let (target_mod, game_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        let target_mod = profile_mods.into_iter().find(|m| m.id == mod_id)
+            .ok_or_else(|| "Mod not found".to_string())?;
+        (target_mod, data.settings.game_path.clone())
+    };
 
-    let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
+    tauri::async_runtime::spawn_blocking(move || {
+        let candidate_paks = gather_candidate_paks(&target_mod, &game_path);
 
-    for pak in candidate_paks {
-        if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
-            if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
-                return crate::pak_scanner::list_pak_entries(&pak);
+        for pak in candidate_paks {
+            if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
+                if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
+                    return crate::pak_scanner::list_pak_entries(&pak);
+                }
             }
         }
-    }
 
-    Err(format!("Asset '{}' not found in mod pak archives", asset_internal_path))
+        Err(format!("Asset '{}' not found in mod pak archives", asset_internal_path))
+    })
+    .await
+    .map_err(|e| e.to_string())?
 }
 
 #[tauri::command]
-pub fn inspect_uasset_deep_cmd(
+pub async fn inspect_uasset_deep_cmd(
     state: State<'_, AppState>,
     mod_id: Option<String>,
     pak_path: Option<String>,
     asset_internal_path: String,
     zip_path: Option<String>,
 ) -> Result<crate::pak_scanner::UAssetInspectionDetails, String> {
+    let (game_path, profile_mods) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        (data.settings.game_path.clone(), profile_mods)
+    };
+
+    tauri::async_runtime::spawn_blocking(move || {
+        inspect_uasset_deep_internal(&game_path, &profile_mods, mod_id.as_deref(), pak_path.as_deref(), &asset_internal_path, zip_path.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+fn inspect_uasset_deep_internal(
+    game_path: &str,
+    profile_mods: &[crate::models::ModInfo],
+    mod_id: Option<&str>,
+    pak_path: Option<&str>,
+    asset_internal_path: &str,
+    zip_path: Option<&str>,
+) -> Result<crate::pak_scanner::UAssetInspectionDetails, String> {
     // 0. Direct loose file on disk if path exists
-    let direct_p = Path::new(&asset_internal_path);
+    let direct_p = Path::new(asset_internal_path);
     if direct_p.is_file() && direct_p.extension().map_or(false, |e| e.eq_ignore_ascii_case("uasset")) {
-        return crate::pak_scanner::inspect_uasset_deep(direct_p, &asset_internal_path);
+        return crate::pak_scanner::inspect_uasset_deep(direct_p, asset_internal_path);
     }
 
     // 1. Direct pak_path if provided
-    if let Some(pp) = pak_path.as_deref() {
+    if let Some(pp) = pak_path {
         let clean_pp = pp.strip_prefix("[Pak] ").unwrap_or(pp).trim();
         let p = Path::new(clean_pp);
         if p.exists() {
-            return crate::pak_scanner::inspect_uasset_deep(p, &asset_internal_path);
+            return crate::pak_scanner::inspect_uasset_deep(p, asset_internal_path);
         }
-        if let Ok(data) = state.data.lock() {
-            let game_dir = Path::new(&data.settings.game_path);
-            let in_mods = game_dir.join("Pal").join("Content").join("Paks").join("~mods").join(clean_pp);
-            if in_mods.exists() {
-                return crate::pak_scanner::inspect_uasset_deep(&in_mods, &asset_internal_path);
-            }
+        let game_dir = Path::new(game_path);
+        let in_mods = game_dir.join("Pal").join("Content").join("Paks").join("~mods").join(clean_pp);
+        if in_mods.exists() {
+            return crate::pak_scanner::inspect_uasset_deep(&in_mods, asset_internal_path);
         }
     }
 
     // 2. Mod ID search
-    if let Some(mid) = mod_id.as_deref() {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
-        if let Some(target_mod) = profile_mods.into_iter().find(|m| m.id == mid) {
+    if let Some(mid) = mod_id {
+        if let Some(target_mod) = profile_mods.iter().find(|m| m.id == mid) {
             // Check if asset is a loose file inside the mod structure
-            if let Ok(full_path) = crate::commands::config_commands::get_full_mod_file_path(&target_mod, &asset_internal_path) {
+            if let Ok(full_path) = crate::commands::config_commands::get_full_mod_file_path(target_mod, asset_internal_path) {
                 if full_path.is_file() && full_path.extension().map_or(false, |e| e.eq_ignore_ascii_case("uasset")) {
-                    return crate::pak_scanner::inspect_uasset_deep(&full_path, &asset_internal_path);
+                    return crate::pak_scanner::inspect_uasset_deep(&full_path, asset_internal_path);
                 }
             }
 
-            let candidate_paks = gather_candidate_paks(&target_mod, &data.settings.game_path);
+            let candidate_paks = gather_candidate_paks(target_mod, game_path);
 
             for pak in candidate_paks {
                 if let Ok(entries) = crate::pak_scanner::list_pak_entries(&pak) {
-                    if entries.iter().any(|e| e.eq_ignore_ascii_case(&asset_internal_path)) {
-                        return crate::pak_scanner::inspect_uasset_deep(&pak, &asset_internal_path);
+                    if entries.iter().any(|e| e.eq_ignore_ascii_case(asset_internal_path)) {
+                        return crate::pak_scanner::inspect_uasset_deep(&pak, asset_internal_path);
                     }
                 }
             }
@@ -253,7 +295,7 @@ pub fn inspect_uasset_deep_cmd(
 
     // 3. Zip preview path (Installer modal)
     if let Some(zp) = zip_path {
-        let zip_p = Path::new(&zp);
+        let zip_p = Path::new(zp);
         if zip_p.exists() {
             let temp_dir = std::env::temp_dir().join("pmm_uasset_inspect").join(uuid::Uuid::new_v4().to_string());
             fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
@@ -261,7 +303,7 @@ pub fn inspect_uasset_deep_cmd(
             let result = (|| {
                 let lower = zp.to_lowercase();
                 if lower.ends_with(".zip") {
-                    let file = fs::File::open(&zip_p).map_err(|e| e.to_string())?;
+                    let file = fs::File::open(zip_p).map_err(|e| e.to_string())?;
                     let mut archive = zip::read::ZipArchive::new(file).map_err(|e| e.to_string())?;
                     for i in 0..archive.len() {
                         let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
@@ -270,26 +312,26 @@ pub fn inspect_uasset_deep_cmd(
                             let temp_pak = temp_dir.join("temp.pak");
                             let mut out = fs::File::create(&temp_pak).map_err(|e| e.to_string())?;
                             std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
-                            if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(&temp_pak, &asset_internal_path) {
+                            if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(&temp_pak, asset_internal_path) {
                                 return Ok(details);
                             }
                         }
                     }
                 } else if lower.ends_with(".7z") {
-                    if sevenz_rust::decompress_file(&zip_p, &temp_dir).is_ok() {
+                    if sevenz_rust::decompress_file(zip_p, &temp_dir).is_ok() {
                         for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
                             if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
-                                if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(entry.path(), &asset_internal_path) {
+                                if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(entry.path(), asset_internal_path) {
                                     return Ok(details);
                                 }
                             }
                         }
                     }
                 } else {
-                    if crate::zip_handler::extract_zip_to_temp(&zp, &temp_dir).is_ok() {
+                    if crate::zip_handler::extract_zip_to_temp(zp, &temp_dir).is_ok() {
                         for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
                             if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
-                                if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(entry.path(), &asset_internal_path) {
+                                if let Ok(details) = crate::pak_scanner::inspect_uasset_deep(entry.path(), asset_internal_path) {
                                     return Ok(details);
                                 }
                             }
@@ -308,12 +350,33 @@ pub fn inspect_uasset_deep_cmd(
 }
 
 #[tauri::command]
-pub fn decode_uasset_texture_cmd(
+pub async fn decode_uasset_texture_cmd(
     state: State<'_, AppState>,
     mod_id: Option<String>,
     pak_path: Option<String>,
     asset_internal_path: String,
     zip_path: Option<String>,
+) -> Result<crate::texture_decoder::TexturePreviewInfo, String> {
+    let (game_path, profile_mods) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
+        (data.settings.game_path.clone(), profile_mods)
+    };
+
+    tauri::async_runtime::spawn_blocking(move || {
+        decode_uasset_texture_internal(&game_path, &profile_mods, mod_id.as_deref(), pak_path.as_deref(), &asset_internal_path, zip_path.as_deref())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+fn decode_uasset_texture_internal(
+    game_path: &str,
+    profile_mods: &[crate::models::ModInfo],
+    mod_id: Option<&str>,
+    pak_path: Option<&str>,
+    asset_internal_path: &str,
+    zip_path: Option<&str>,
 ) -> Result<crate::texture_decoder::TexturePreviewInfo, String> {
     let target_base = {
         let l = asset_internal_path.to_lowercase();
@@ -329,28 +392,24 @@ pub fn decode_uasset_texture_cmd(
     };
 
     // 1. Direct pak_path if provided
-    if let Some(pp) = pak_path.as_deref() {
+    if let Some(pp) = pak_path {
         let clean_pp = pp.strip_prefix("[Pak] ").unwrap_or(pp).trim();
         let p = Path::new(clean_pp);
         if p.exists() {
             let names = crate::pak_scanner::list_pak_entries(p).unwrap_or_default();
-            return crate::texture_decoder::extract_and_decode_texture(p, &asset_internal_path, &names);
+            return crate::texture_decoder::extract_and_decode_texture(p, asset_internal_path, &names);
         }
-        if let Ok(data) = state.data.lock() {
-            let game_dir = Path::new(&data.settings.game_path);
-            let in_mods = game_dir.join("Pal").join("Content").join("Paks").join("~mods").join(clean_pp);
-            if in_mods.exists() {
-                let names = crate::pak_scanner::list_pak_entries(&in_mods).unwrap_or_default();
-                return crate::texture_decoder::extract_and_decode_texture(&in_mods, &asset_internal_path, &names);
-            }
+        let game_dir = Path::new(game_path);
+        let in_mods = game_dir.join("Pal").join("Content").join("Paks").join("~mods").join(clean_pp);
+        if in_mods.exists() {
+            let names = crate::pak_scanner::list_pak_entries(&in_mods).unwrap_or_default();
+            return crate::texture_decoder::extract_and_decode_texture(&in_mods, asset_internal_path, &names);
         }
     }
 
     // 2. Mod ID search
-    if let Some(mid) = mod_id.as_deref() {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        let profile_mods = crate::commands::mod_commands::filter_mods_for_current_profile_pub(&data);
-        if let Some(target_mod) = profile_mods.into_iter().find(|m| m.id == mid) {
+    if let Some(mid) = mod_id {
+        if let Some(target_mod) = profile_mods.iter().find(|m| m.id == mid) {
             let mut candidate_paks = Vec::new();
             if target_mod.game_path.to_lowercase().ends_with(".pak") {
                 candidate_paks.push(PathBuf::from(&target_mod.game_path));
@@ -368,7 +427,7 @@ pub fn decode_uasset_texture_cmd(
                             let el = e.to_lowercase();
                             el == asset_internal_path.to_lowercase() || el.starts_with(&target_base)
                         }) {
-                            return crate::texture_decoder::extract_and_decode_texture(&pak, &asset_internal_path, &entries);
+                            return crate::texture_decoder::extract_and_decode_texture(&pak, asset_internal_path, &entries);
                         }
                     }
                 }
@@ -378,7 +437,7 @@ pub fn decode_uasset_texture_cmd(
 
     // 3. Zip preview path (Installer modal)
     if let Some(zp) = zip_path {
-        let zip_p = Path::new(&zp);
+        let zip_p = Path::new(zp);
         if zip_p.exists() {
             let temp_dir = std::env::temp_dir().join("pmm_tex_decode").join(uuid::Uuid::new_v4().to_string());
             fs::create_dir_all(&temp_dir).map_err(|e| e.to_string())?;
@@ -386,7 +445,7 @@ pub fn decode_uasset_texture_cmd(
             let result = (|| {
                 let lower = zp.to_lowercase();
                 if lower.ends_with(".zip") {
-                    let file = fs::File::open(&zip_p).map_err(|e| e.to_string())?;
+                    let file = fs::File::open(zip_p).map_err(|e| e.to_string())?;
                     let mut archive = zip::read::ZipArchive::new(file).map_err(|e| e.to_string())?;
                     for i in 0..archive.len() {
                         let mut entry = archive.by_index(i).map_err(|e| e.to_string())?;
@@ -397,19 +456,19 @@ pub fn decode_uasset_texture_cmd(
                             std::io::copy(&mut entry, &mut out).map_err(|e| e.to_string())?;
                             let names = crate::pak_scanner::list_pak_entries(&temp_pak).unwrap_or_default();
                             if names.iter().any(|e| e.to_lowercase().starts_with(&target_base)) {
-                                if let Ok(tex) = crate::texture_decoder::extract_and_decode_texture(&temp_pak, &asset_internal_path, &names) {
+                                if let Ok(tex) = crate::texture_decoder::extract_and_decode_texture(&temp_pak, asset_internal_path, &names) {
                                     return Ok(tex);
                                 }
                             }
                         }
                     }
                 } else if lower.ends_with(".7z") {
-                    if sevenz_rust::decompress_file(&zip_p, &temp_dir).is_ok() {
+                    if sevenz_rust::decompress_file(zip_p, &temp_dir).is_ok() {
                         for entry in walkdir::WalkDir::new(&temp_dir).into_iter().flatten() {
                             if entry.path().is_file() && entry.path().extension().map_or(false, |ext| ext.eq_ignore_ascii_case("pak")) {
                                 let names = crate::pak_scanner::list_pak_entries(entry.path()).unwrap_or_default();
                                 if names.iter().any(|e| e.to_lowercase().starts_with(&target_base)) {
-                                    if let Ok(tex) = crate::texture_decoder::extract_and_decode_texture(entry.path(), &asset_internal_path, &names) {
+                                    if let Ok(tex) = crate::texture_decoder::extract_and_decode_texture(entry.path(), asset_internal_path, &names) {
                                         return Ok(tex);
                                     }
                                 }

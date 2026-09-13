@@ -21,6 +21,7 @@ import { discState, isUserPremium } from './state';
 import { handleDiscoveryImageError, deriveDiscoveryModTitle } from './helpers';
 import { openLightbox } from './lightbox';
 import { discoveryDom } from '../../framework';
+import { isNexusModEndorsed, isNexusModTracked } from '../../features/nexusAuth/state';
 
 let _isModalListenersSetup = false;
 
@@ -562,8 +563,8 @@ export function setupModalActions(details: DiscoveryModDetails): void {
   const bugsBtn = discoveryDom.elMaybe('discovery-modal-bugs-btn');
   const nexusLinkBtn = discoveryDom.elMaybe('discovery-modal-nexus-link-btn');
 
-  let isEndorsed = details.isEndorsed || false;
-  let isTracked = details.isTracked || false;
+  let isEndorsed = details.isEndorsed || isNexusModEndorsed(details.modId, getState().currentSettings?.nexusEndorsementsCache);
+  let isTracked = details.isTracked || isNexusModTracked(details.modId, getState().currentSettings?.nexusTrackedCache);
 
   const currentAccount = getState().currentSettings?.nexusAccount;
   const currentUsername = (currentAccount?.username || '').trim().toLowerCase();

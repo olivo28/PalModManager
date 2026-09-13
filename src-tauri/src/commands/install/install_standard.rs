@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use chrono::Utc;
 use serde_json::Value;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 use crate::db;
 use crate::installer;
@@ -11,9 +11,11 @@ use crate::nexus;
 use crate::state::AppState;
 use crate::zip_handler;
 use super::utils::{check_mod_dependencies, sync_altermatic_helper};
+use super::InstallProgressPayload;
 
 #[tauri::command]
 pub async fn install_mod_command(
+    app: AppHandle,
     zip_path: String,
     custom_type: Option<String>,
     pak_destination: Option<String>,
@@ -59,16 +61,6 @@ pub async fn install_mod_command(
         None
     };
 
-    let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
-    let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
-
-    let pak_dest_ref = pak_destination.as_deref();
-
-    let zip_filename = Path::new(&zip_path)
-        .file_name()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_default();
-
     let (force_load_order_ue4ss, force_load_order_palschema) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (
@@ -77,32 +69,74 @@ pub async fn install_mod_command(
         )
     };
 
-    let mod_info = installer::install_mod(
-        &game_path,
-        &extracted,
-        &analysis,
-        &zip_filename,
-        nexus_id,
-        nexus_info.as_ref().map(|i| i.name.clone()),
-        nexus_info.as_ref().map(|i| i.author.clone()),
-        nexus_info.as_ref().map(|i| i.summary.clone()),
-        nexus_info.as_ref().map(|i| i.picture_url.clone()),
-        nexus_info.as_ref().map(|i| i.downloads),
-        nexus_info.as_ref().map(|i| i.endorsements),
-        pak_dest_ref,
-        custom_name,
-        custom_type,
-        nexus_info.as_ref().and_then(|i| if i.category.is_empty() { None } else { Some(i.category.clone()) }),
-        nexus_info.as_ref().map(|i| i.tags.clone()).unwrap_or_default(),
-        force_load_order_ue4ss,
-        force_load_order_palschema,
-    )?;
+    let zip_filename = Path::new(&zip_path)
+        .file_name()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_default();
 
-    let _ = fs::remove_dir_all(&temp_dir);
+    let app_handle = std::sync::Arc::new(app);
+    let app_emit = app_handle.clone();
+    let zip_path_clone = zip_path.clone();
+    let zip_filename_clone = zip_filename.clone();
+    let game_path_clone = game_path.clone();
+    let analysis_clone = analysis.clone();
+    let nexus_info_clone = nexus_info.clone();
+    let custom_name_clone = custom_name.clone();
+    let custom_type_clone = custom_type.clone();
+    let pak_destination_clone = pak_destination.clone();
+
+    let mod_info = tauri::async_runtime::spawn_blocking(move || -> Result<crate::models::ModInfo, String> {
+        let _ = app_emit.emit("install-progress", InstallProgressPayload {
+            stage: "extracting".to_string(),
+            percent: 10,
+        });
+
+        let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
+        let extracted = zip_handler::extract_zip_to_temp(&zip_path_clone, &temp_dir)?;
+
+        let pak_dest_ref = pak_destination_clone.as_deref();
+
+        let _ = app_emit.emit("install-progress", InstallProgressPayload {
+            stage: "installing".to_string(),
+            percent: 50,
+        });
+
+        let install_res = installer::install_mod(
+            &game_path_clone,
+            &extracted,
+            &analysis_clone,
+            &zip_filename_clone,
+            nexus_id,
+            nexus_info_clone.as_ref().map(|i| i.name.clone()),
+            nexus_info_clone.as_ref().map(|i| i.author.clone()),
+            nexus_info_clone.as_ref().map(|i| i.summary.clone()),
+            nexus_info_clone.as_ref().map(|i| i.picture_url.clone()),
+            nexus_info_clone.as_ref().map(|i| i.downloads),
+            nexus_info_clone.as_ref().map(|i| i.endorsements),
+            pak_dest_ref,
+            custom_name_clone,
+            custom_type_clone,
+            nexus_info_clone.as_ref().and_then(|i| if i.category.is_empty() { None } else { Some(i.category.clone()) }),
+            nexus_info_clone.as_ref().map(|i| i.tags.clone()).unwrap_or_default(),
+            force_load_order_ue4ss,
+            force_load_order_palschema,
+        );
+
+        let _ = fs::remove_dir_all(&temp_dir);
+        install_res
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let _ = app_handle.emit("install-progress", InstallProgressPayload {
+        stage: "saving".to_string(),
+        percent: 90,
+    });
 
     let mut final_mod = mod_info;
     if let Some(ref info) = nexus_info {
         if final_mod.version == "unknown" || final_mod.version.is_empty() {
+
             final_mod.version = info.version.clone();
         }
         final_mod.nexus_description = if info.description.is_empty() { None } else { Some(info.description.clone()) };
@@ -208,6 +242,11 @@ pub async fn install_mod_command(
     }
 
     let _ = crate::profiles::save_pmm_meta(&final_mod);
+
+    let _ = app_handle.emit("install-progress", InstallProgressPayload {
+        stage: "complete".to_string(),
+        percent: 100,
+    });
 
     Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
 }

@@ -11,6 +11,26 @@ pub fn build_manifest_from_files(
     custom_display_name: Option<String>,
     modinfo_data: Option<serde_json::Value>,
 ) -> Result<crate::models::InstallManifest, String> {
+    build_manifest_from_files_with_folder(
+        files,
+        filename,
+        game_path,
+        pak_destination,
+        custom_display_name,
+        modinfo_data,
+        None,
+    )
+}
+
+pub fn build_manifest_from_files_with_folder(
+    files: &[String],
+    filename: &str,
+    game_path: &Path,
+    pak_destination: Option<&str>,
+    custom_display_name: Option<String>,
+    modinfo_data: Option<serde_json::Value>,
+    custom_folder_name: Option<String>,
+) -> Result<crate::models::InstallManifest, String> {
     use crate::models::{InstallManifest, FileRoute, RouteType, ModType};
 
     let mut custom_routes_map = std::collections::HashMap::new();
@@ -59,10 +79,20 @@ pub fn build_manifest_from_files(
     });
     let has_both_platforms = has_steam_tags && has_xbox_tags;
 
-    let mut folder_name = detect_folder_name_from_files(files, filename);
+    let has_explicit_folder = custom_folder_name.as_ref().map(|s| !s.trim().is_empty()).unwrap_or(false);
+    let mut folder_name = if let Some(ref cf) = custom_folder_name {
+        let trimmed = cf.trim();
+        if !trimmed.is_empty() && !is_forbidden(trimmed) {
+            trimmed.to_string()
+        } else {
+            detect_folder_name_from_files(files, filename)
+        }
+    } else {
+        detect_folder_name_from_files(files, filename)
+    };
     let is_forbidden_folder = is_forbidden(&folder_name);
     let is_uuid = folder_name.len() >= 32 && folder_name.chars().all(|c| c.is_ascii_hexdigit() || c == '-');
-    if folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid || is_forbidden_folder {
+    if !has_explicit_folder && (folder_name.is_empty() || folder_name == "unknown" || folder_name.starts_with("nexus_") || is_uuid || is_forbidden_folder) {
         if let Some(ref disp) = custom_display_name {
             let cleaned = crate::installer::clean_zip_name(disp);
             if !cleaned.is_empty() && cleaned != "unknown" && !is_forbidden(&cleaned) {
@@ -405,7 +435,8 @@ pub fn build_manifest_from_files(
                         } else {
                             subpath
                         };
-                        ue4ss_mods_dest.join(&root).join(final_sub)
+                        let target_root = if has_explicit_folder { &folder_name } else { &root };
+                        ue4ss_mods_dest.join(target_root).join(final_sub)
                     } else {
                         let is_cfg = rel_lower.starts_with("config") || rel_lower.starts_with("setting") || rel_lower.contains("config");
                         let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') && !is_cfg && !has_scripts_dir {
@@ -425,6 +456,8 @@ pub fn build_manifest_from_files(
                     // Otherwise, the first segment is ALREADY the mod's specific PalSchema folder (e.g. 000_PassiveTraitExtraction/)!
                     if PALSCHEMA_FOLDERS.contains(&first_seg_lower.as_str()) {
                         palschema_mods_dest.join(&folder_name).join(&relative_path)
+                    } else if has_explicit_folder && rel_segments.len() > 1 {
+                        palschema_mods_dest.join(&folder_name).join(&rel_segments[1..].join("/"))
                     } else {
                         palschema_mods_dest.join(&relative_path)
                     }
@@ -470,12 +503,23 @@ pub fn build_manifest_from_files(
                                 }
 
                                 if let (Some(root), Some(subpath)) = (matched_root, matched_subpath) {
-                                    ue4ss_mods_dest.join(&root).join(subpath)
+                                    let target_root = if has_explicit_folder { &folder_name } else { &root };
+                                    ue4ss_mods_dest.join(target_root).join(subpath)
                                 } else {
                                     ue4ss_mods_dest.join(&folder_name).join(&relative_path)
                                 }
                             }
-                            RouteType::PalSchema => palschema_mods_dest.join(&folder_name).join(&relative_path),
+                            RouteType::PalSchema => {
+                                let rel_segments: Vec<&str> = relative_path.split('/').collect();
+                                let first_seg_lower = rel_segments.first().map(|s| s.to_lowercase()).unwrap_or_default();
+                                if PALSCHEMA_FOLDERS.contains(&first_seg_lower.as_str()) {
+                                    palschema_mods_dest.join(&folder_name).join(&relative_path)
+                                } else if has_explicit_folder && rel_segments.len() > 1 {
+                                    palschema_mods_dest.join(&folder_name).join(&rel_segments[1..].join("/"))
+                                } else {
+                                    palschema_mods_dest.join(&folder_name).join(&relative_path)
+                                }
+                            }
                             RouteType::Pak | RouteType::LogicMods | RouteType::Companion | RouteType::Passthrough => {
                                 let target_dir = if primary_route_type == RouteType::LogicMods {
                                     &logicmods_dest_dir
@@ -612,6 +656,7 @@ pub fn build_manifest_from_files(
         author: None,
         summary: None,
         picture_url: None,
+        fomod_choices: None,
     })
 }
 
@@ -620,6 +665,16 @@ pub fn build_install_manifest(
     game_path: &Path,
     pak_destination: Option<&str>,
     custom_display_name: Option<String>,
+) -> Result<crate::models::InstallManifest, String> {
+    build_install_manifest_with_folder(zip_path, game_path, pak_destination, custom_display_name, None)
+}
+
+pub fn build_install_manifest_with_folder(
+    zip_path: &str,
+    game_path: &Path,
+    pak_destination: Option<&str>,
+    custom_display_name: Option<String>,
+    custom_folder_name: Option<String>,
 ) -> Result<crate::models::InstallManifest, String> {
     let analysis = analyze_zip(zip_path)?;
     let filename = Path::new(zip_path).file_name().unwrap().to_string_lossy().to_string();
@@ -636,5 +691,13 @@ pub fn build_install_manifest(
             }
         }
     }
-    build_manifest_from_files(&analysis.files, &filename, game_path, pak_destination, custom_display_name, modinfo_data)
+    build_manifest_from_files_with_folder(
+        &analysis.files,
+        &filename,
+        game_path,
+        pak_destination,
+        custom_display_name,
+        modinfo_data,
+        custom_folder_name,
+    )
 }

@@ -3,6 +3,7 @@ import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { formatBytes } from './helpers';
+import type { DevResourceProgressPayload, SdkProgressPayload } from '../../../types';
 import {
   refreshUsmapStatus,
   refreshSdkStatus,
@@ -169,6 +170,8 @@ async function runExportAction(
   dialogTitle: string
 ): Promise<void> {
   if (!btn) return;
+  const originalHtml = btn.innerHTML;
+  let unlistenProgress: (() => void) | null = null;
   try {
     const { open } = await import('@tauri-apps/plugin-dialog');
     const selected = await open({
@@ -179,7 +182,19 @@ async function runExportAction(
 
     if (selected && typeof selected === 'string') {
       btn.disabled = true;
+      btn.textContent = `⏳ ${t('settings.resource_exporting_btn') || 'Exporting...'} 0%`;
       showToast(t('settings.resource_exporting', { target }) || `Extracting ${target} files into destination...`, 'info');
+
+      const { listen } = await import('@tauri-apps/api/event');
+      const targetLower = target.trim().toLowerCase();
+      unlistenProgress = await listen<DevResourceProgressPayload>('dev-resource-export-progress', (event) => {
+        if (btn && event.payload && event.payload.target.toLowerCase() === targetLower) {
+          const { percent, processedFiles, totalFiles } = event.payload;
+          const exportTxt = t('settings.resource_exporting_btn') || 'Exporting...';
+          btn.textContent = `⏳ ${exportTxt} ${percent}% (${processedFiles.toLocaleString()}/${totalFiles.toLocaleString()})`;
+        }
+      });
+
       const { exportDevelopmentResource } = await import('../../../api');
       const res = await exportDevelopmentResource(target, selected);
       if (res.success) {
@@ -195,7 +210,11 @@ async function runExportAction(
   } catch (err: any) {
     showToast(String(err), 'error');
   } finally {
+    if (unlistenProgress) {
+      unlistenProgress();
+    }
     btn.disabled = false;
+    btn.innerHTML = originalHtml;
   }
 }
 
@@ -282,10 +301,21 @@ export function initDevResources(): void {
   const syncSdkIcon = settingsDom.elMaybe('btn-sync-sdk-icon');
   if (syncSdkBtn) {
     syncSdkBtn.onclick = async () => {
+      let unlistenProgress: (() => void) | null = null;
+      const originalHtml = syncSdkBtn.innerHTML;
       try {
         syncSdkBtn.disabled = true;
         if (syncSdkIcon) syncSdkIcon.classList.add('spinning');
         showToast(t('settings.sdk_syncing') || 'Downloading SDK package from repository...', 'info');
+
+        const { listen } = await import('@tauri-apps/api/event');
+        unlistenProgress = await listen<SdkProgressPayload>('sdk-progress', (event) => {
+          if (syncSdkBtn && event.payload) {
+            const { percent, processedFiles, totalFiles } = event.payload;
+            syncSdkBtn.textContent = `⏳ ${percent}% (${processedFiles}/${totalFiles})`;
+          }
+        });
+
         const { syncSdkFromRepo } = await import('../../../api');
         const res = await syncSdkFromRepo();
         if (res.installed) {
@@ -297,7 +327,11 @@ export function initDevResources(): void {
       } catch (err: any) {
         showToast(String(err), 'error');
       } finally {
+        if (unlistenProgress) {
+          unlistenProgress();
+        }
         syncSdkBtn.disabled = false;
+        syncSdkBtn.innerHTML = originalHtml;
         if (syncSdkIcon) syncSdkIcon.classList.remove('spinning');
       }
     };
@@ -306,6 +340,8 @@ export function initDevResources(): void {
   const importSdkBtn = settingsDom.elMaybe('btn-import-sdk');
   if (importSdkBtn) {
     importSdkBtn.onclick = async () => {
+      let unlistenProgress: (() => void) | null = null;
+      const originalHtml = importSdkBtn.innerHTML;
       try {
         const { open } = await import('@tauri-apps/plugin-dialog');
         const selected = await open({
@@ -316,7 +352,18 @@ export function initDevResources(): void {
 
         if (selected && typeof selected === 'string') {
           importSdkBtn.disabled = true;
+          importSdkBtn.textContent = `⏳ ${t('settings.sdk_importing_btn') || 'Importing...'} 0%`;
           showToast(t('settings.sdk_importing') || 'Importing and indexing SDK headers...', 'info');
+
+          const { listen } = await import('@tauri-apps/api/event');
+          unlistenProgress = await listen<SdkProgressPayload>('sdk-progress', (event) => {
+            if (importSdkBtn && event.payload) {
+              const { percent, processedFiles, totalFiles } = event.payload;
+              const importTxt = t('settings.sdk_importing_btn') || 'Importing...';
+              importSdkBtn.textContent = `⏳ ${importTxt} ${percent}% (${processedFiles.toLocaleString()}/${totalFiles.toLocaleString()})`;
+            }
+          });
+
           const { importLocalSdk } = await import('../../../api');
           const res = await importLocalSdk(selected);
           showToast(t('settings.sdk_import_success') || `Imported SDK: ${res.totalClasses} classes, ${res.totalFunctions} functions!`, 'success');
@@ -325,7 +372,11 @@ export function initDevResources(): void {
       } catch (err: any) {
         showToast(String(err), 'error');
       } finally {
+        if (unlistenProgress) {
+          unlistenProgress();
+        }
         importSdkBtn.disabled = false;
+        importSdkBtn.innerHTML = originalHtml;
       }
     };
   }

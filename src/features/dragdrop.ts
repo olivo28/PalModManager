@@ -129,7 +129,7 @@ async function handleInstallFromPath(zipPath: string): Promise<void> {
     } catch { }
 
     updateState({ currentAnalysis: analysis });
-    renderInstallPreview(analysis, existingMod);
+    await renderInstallPreview(analysis, existingMod);
   } catch (e) {
     closeInstallModal();
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');

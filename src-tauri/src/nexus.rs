@@ -305,7 +305,65 @@ pub fn parse_mod_filename(filename: &str) -> ParsedModInfo {
             date,
         }
     } else {
-        ParsedModInfo { name: None, nexus_id: None, nexus_file_id: None, version: None, date: None }
+        // Fallback for non-Nexus or library archives without a numeric Nexus ID in filename (e.g. "{Name} - {Version}.zip", "Mod v1.2.zip")
+        if let Some((prefix, suffix)) = stem.rsplit_once(" - ") {
+            let trimmed_suffix = suffix.trim();
+            if is_version_token(trimmed_suffix) {
+                let clean_v = clean_version_token(trimmed_suffix);
+                let clean_n = prefix.trim().to_string();
+                return ParsedModInfo {
+                    name: if clean_n.is_empty() { None } else { Some(clean_n) },
+                    nexus_id: None,
+                    nexus_file_id: None,
+                    version: if clean_v.is_empty() { None } else { Some(clean_v) },
+                    date: None,
+                };
+            }
+        }
+
+        if let Some((prefix, suffix)) = stem.rsplit_once('-') {
+            let trimmed_suffix = suffix.trim();
+            if is_version_token(trimmed_suffix) {
+                let clean_v = clean_version_token(trimmed_suffix);
+                let clean_n = prefix.trim().to_string();
+                if !clean_n.is_empty() {
+                    return ParsedModInfo {
+                        name: Some(clean_n),
+                        nexus_id: None,
+                        nexus_file_id: None,
+                        version: if clean_v.is_empty() { None } else { Some(clean_v) },
+                        date: None,
+                    };
+                }
+            }
+        }
+
+        let mut found_ver_idx = None;
+        for (idx, p) in parts.iter().enumerate().rev() {
+            if is_version_token(p) {
+                found_ver_idx = Some(idx);
+                break;
+            }
+        }
+
+        if let Some(v_idx) = found_ver_idx {
+            let ver = clean_version_token(parts[v_idx]);
+            let raw_name_parts: Vec<&str> = parts[..v_idx]
+                .iter()
+                .copied()
+                .filter(|p| *p != "-" && *p != "_" && !["steam", "singleplayer", "sp"].contains(&p.to_lowercase().as_str()))
+                .collect();
+            let name_str = raw_name_parts.join(" ");
+            ParsedModInfo {
+                name: if name_str.is_empty() { None } else { Some(name_str) },
+                nexus_id: None,
+                nexus_file_id: None,
+                version: if ver.is_empty() { None } else { Some(ver) },
+                date: None,
+            }
+        } else {
+            ParsedModInfo { name: None, nexus_id: None, nexus_file_id: None, version: None, date: None }
+        }
     }
 }
 
@@ -495,3 +553,32 @@ query GetPalworldMod($modId: ID!) {
         tags: r#mod.tags.unwrap_or_default().into_iter().filter_map(|t| t.name).collect(),
     })
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_parse_library_format_filename() {
+        let parsed = parse_mod_filename("Upgradable Pal Spheres - 3.5.zip");
+        assert_eq!(parsed.name.as_deref(), Some("Upgradable Pal Spheres"));
+        assert_eq!(parsed.version.as_deref(), Some("3.5"));
+
+        let parsed_v = parse_mod_filename("Instant Auto Lockpick v2.zip");
+        assert_eq!(parsed_v.name.as_deref(), Some("Instant Auto Lockpick"));
+        assert_eq!(parsed_v.version.as_deref(), Some("2"));
+
+        let parsed_hyphen = parse_mod_filename("Integrated Storage Reworked-4.0.1.zip");
+        assert_eq!(parsed_hyphen.name.as_deref(), Some("Integrated Storage Reworked"));
+        assert_eq!(parsed_hyphen.version.as_deref(), Some("4.0.1"));
+
+        // Exact filenames from community report (Sama'el)
+        let parsed_legacy = parse_mod_filename("Upgradable Pal Spheres - Legacy Version 2208 4.0 2026-09-10T21-31Z ELRMvFOyI.zip");
+        assert_eq!(parsed_legacy.nexus_id, Some(2208));
+        assert_eq!(parsed_legacy.version.as_deref(), Some("4.0"));
+
+        let parsed_palschema_old = parse_mod_filename("Upgradable Pal Spheres (PalSchema) - Upgradable Pal Spheres - 3.5.zip");
+        assert_eq!(parsed_palschema_old.version.as_deref(), Some("3.5"));
+    }
+}
+

@@ -3,6 +3,7 @@ pub mod gvas;
 pub mod discovery;
 pub mod deep_scan;
 pub mod repair;
+pub mod validator;
 
 // Re-export all models for seamless backward compatibility
 pub use models::*;
@@ -18,7 +19,7 @@ pub use gvas::{
 pub use discovery::{
     detect_palworld_save_roots, list_save_worlds, load_world_custom_meta,
     save_world_custom_meta, open_world_folder, parse_world_options,
-    quick_check_save_health,
+    quick_check_save_health, invalidate_save_world_cache,
 };
 
 // Re-export deep scan functions
@@ -26,6 +27,7 @@ pub use deep_scan::{
     deep_scan_save, inspect_snapshot_details, list_available_backups,
     format_snapshot_timestamp, detect_external_edits_and_anomalies,
     parse_player_roster, calculate_storage_breakdown,
+    extract_fstring_asset_paths, is_mod_asset_path, extract_mod_hint,
 };
 
 // Re-export repair and backup functions
@@ -34,3 +36,6 @@ pub use repair::{
     create_manual_world_backup, prune_world_backups,
     list_pmm_world_backups, restore_pmm_world_backup, delete_pmm_world_backup,
 };
+
+// Re-export native catalog validator
+pub use validator::{validate_save_with_catalogs, NativeValidationResult};

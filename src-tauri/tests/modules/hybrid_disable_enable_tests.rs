@@ -174,3 +174,58 @@ fn test_hybrid_fallback_recovery_for_orphaned_components() {
     assert!(expected_pak.exists(), "Fallback recovery must restore orphaned LogicMods pak to game directory");
     assert!(app_data.mods[0].extra_files.iter().any(|f| f.contains("LogicMods")), "extra_files must include recovered path");
 }
+
+#[test]
+fn test_enable_mod_blocks_conflicting_active_variant() {
+    let env = TestEnv::new_steam_win64();
+
+    // Mod 1: AntiPhat SP (installed and enabled)
+    let zip_sp = "AntiPhat-SP-2.2.1-999-2-2-1-1700000000.zip";
+    let mod_sp = env.install_builder(
+        &ZipBuilder::new(zip_sp)
+            .add_text_file("AntiPhat/Scripts/main.lua", "print('SP')")
+            .add_text_file("AntiPhat/enabled.txt", ""),
+    ).expect("Installation of SP should succeed");
+
+    // Mod 2: AntiPhat MP (installed as disabled variant)
+    let zip_mp = "AntiPhat-MP-2.1.8-999-2-1-8-1700000001.zip";
+    let mut mod_mp = env.install_builder(
+        &ZipBuilder::new(zip_mp)
+            .add_text_file("AntiPhat_MP/Scripts/main.lua", "print('MP')")
+            .add_text_file("AntiPhat_MP/enabled.txt", ""),
+    ).expect("Installation of MP should succeed");
+
+    let mut app_data = AppData::default();
+    app_data.settings.game_path = env.game_root.to_string_lossy().to_string();
+    app_data.settings.program_path = env.program_data.to_string_lossy().to_string();
+    
+    // SP is active
+    let mut active_sp = mod_sp.clone();
+    active_sp.enabled = true;
+
+    // MP is disabled
+    mod_mp.enabled = false;
+    let disabled_dir = env.program_data.join("profiles").join("default").join("disabled_mods").join("ue4ss").join("AntiPhat_MP");
+    let _ = std::fs::create_dir_all(&disabled_dir);
+    mod_mp.disabled_path = disabled_dir.to_string_lossy().to_string();
+    mod_mp.game_path = String::new();
+
+    app_data.mods = vec![active_sp, mod_mp.clone()];
+    ensure_default_profile(&mut app_data);
+
+    // Attempt to enable MP while SP is active -> must fail with CONFLICT error naming active mod
+    let result = enable_mod_internal(&mut app_data, &env.program_data.to_string_lossy(), &mod_mp.id);
+    assert!(result.is_err(), "Enabling MP while SP is active must be rejected");
+    let err_msg = result.unwrap_err();
+    assert!(
+        err_msg.starts_with("CONFLICT:"),
+        "Error message must begin with CONFLICT: but was: {}",
+        err_msg
+    );
+    assert!(
+        err_msg.contains(&mod_sp.name),
+        "Error message must name the conflicting active mod: {}",
+        err_msg
+    );
+}
+

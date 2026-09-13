@@ -55,6 +55,7 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     custom_notes: None,
                     original_name: None,
                     custom_name: None,
+                    fomod_choices: None,
                 });
             }
         }
@@ -104,6 +105,7 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     custom_notes: None,
                     original_name: None,
                     custom_name: None,
+                    fomod_choices: None,
                 });
             }
         }

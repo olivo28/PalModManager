@@ -22,6 +22,10 @@ export async function initNexusAuth(): Promise<void> {
       });
     }
     renderSidebarNexusWidget();
+
+    if (account && account.userId) {
+      syncNexusInteractionsBackground(false).catch(e => console.warn('[NexusAuth] Background sync error:', e));
+    }
   } catch (err) {
     console.warn('[NexusAuth] Failed to load initial account status:', err);
   }
@@ -166,5 +170,44 @@ export function renderSidebarNexusWidget(): void {
     }
     widget.style.display = 'none';
     widget.onclick = null;
+  }
+}
+
+export async function syncNexusInteractionsBackground(force: boolean = false): Promise<void> {
+  const state = getState();
+  const acc = state.currentSettings?.nexusAccount;
+  if (!acc || !acc.userId) return;
+
+  const nowSec = Math.floor(Date.now() / 1000);
+  const lastSync = state.currentSettings?.nexusCacheTimestamp || 0;
+
+  if (!force && lastSync > 0 && (nowSec - lastSync) < 14400) {
+    return;
+  }
+
+  try {
+    const { getNexusUserEndorsements, getNexusUserTrackedMods } = await import('../../api');
+    const [endorsements, tracked] = await Promise.all([
+      getNexusUserEndorsements(force).catch(() => []),
+      getNexusUserTrackedMods(force).catch(() => []),
+    ]);
+
+    const curSettings = getState().currentSettings;
+    if (curSettings) {
+      updateState({
+        currentSettings: {
+          ...curSettings,
+          nexusEndorsementsCache: endorsements,
+          nexusTrackedCache: tracked,
+          nexusCacheTimestamp: nowSec,
+        },
+      });
+    }
+
+    const { loadMods } = await import('../../ui/modsView');
+    await loadMods();
+    console.log('[NexusAuth] Background sync of endorsements & tracked mods completed');
+  } catch (err) {
+    console.warn('[NexusAuth] Background sync of endorsements failed:', err);
   }
 }

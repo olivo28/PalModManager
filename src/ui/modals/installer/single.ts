@@ -10,11 +10,12 @@ import type { ZipAnalysis, InstallManifest } from '../../../api';
 import { getState, updateState } from '../../../state';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
-import { getCleanNameFromFilename } from './helpers';
+import { getCleanNameFromFilename, closeInstallModal, setModalStatus } from './helpers';
 import { showFileTreeModal } from './fileTree';
 import { setPendingUpdateModId } from './state';
 import { showConfigDiffModal, showArchivedConfigDiffModal } from './diffModal';
 import { installerDom } from '../../../framework';
+import { compareVersions } from '../../mods/library/helpers';
 
 let _archivedIgnoredFiles: string[] = [];
 let _archivedIgnoredKeys: string[] = [];
@@ -27,6 +28,10 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   _archivedIgnoredFiles = [];
   _archivedIgnoredKeys = [];
   updateState({ currentAnalysis: analysis });
+
+  if (analysis.hasFomod) {
+    import('../fomod').then(m => m.preloadFomodConfig(analysis.zipPath)).catch(() => {});
+  }
   const content = installerDom.el('modal-content');
   const confirmBtn = installerDom.el('modal-confirm');
   const statusEl = installerDom.el('modal-status');
@@ -51,7 +56,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         author: installed.nexusAuthor || '',
         summary: installed.nexusSummary || '',
         pictureUrl: installed.nexusPictureUrl || '',
-        version: installed.version || '',
+        version: analysis.detectedVersion || analysis.modinfo?.version || installed.version || '',
         downloads: installed.nexusDownloads || 0,
         endorsements: installed.nexusEndorsements || 0,
       };
@@ -144,10 +149,14 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         </div>
       </div>
     `;
-    confirmBtn.textContent = t('installer.btn_update');
+    confirmBtn.textContent = analysis.hasFomod
+      ? `${t('installer.btn_update')} (${t('fomod.wizard_title') || 'FOMOD'}) ➔`
+      : t('installer.btn_update');
   } else {
     setPendingUpdateModId(null);
-    confirmBtn.textContent = t('installer.btn_install');
+    confirmBtn.textContent = analysis.hasFomod
+      ? `${t('installer.btn_install')} (${t('fomod.wizard_title') || 'FOMOD'}) ➔`
+      : t('installer.btn_install');
   }
 
   let archivedConfigHtml = '';
@@ -274,6 +283,22 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     `;
   }
 
+  let fomodBannerHtml = '';
+  if (analysis.hasFomod) {
+    fomodBannerHtml = `
+      <div class="fomod-detected-banner" style="margin-bottom:6px;padding:8px 12px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.35);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span style="font-size:16px;">✨</span>
+          <div style="display:flex;flex-direction:column;">
+            <span style="font-size:11px;font-weight:700;color:#facc15;">${escapeHtml(t('fomod.detected_title'))}</span>
+            <span style="font-size:10px;color:var(--text-muted);">${escapeHtml(t('fomod.detected_desc'))}</span>
+          </div>
+        </div>
+        <span style="font-size:9px;font-weight:700;background:rgba(234,179,8,0.2);color:#fef08a;border:1px solid rgba(234,179,8,0.4);padding:2px 6px;border-radius:3px;text-transform:uppercase;">FOMOD</span>
+      </div>
+    `;
+  }
+
   content.innerHTML = `
     <div style="display:flex;gap:18px;align-items:flex-start;padding:2px 0;">
        <!-- Left Column: Card Preview (Nexus Info or Local Modinfo) -->
@@ -310,6 +335,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         <!-- Right Column: Settings Form -->
         <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;">
            ${updateHtml}
+           ${fomodBannerHtml}
            ${archivedConfigHtml}
            ${altermaticAlertHtml}
 
@@ -421,7 +447,9 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
     if (!existingMod) return;
     if (isUpdate) {
       setPendingUpdateModId(existingMod.id);
-      confirmBtn.textContent = t('installer.btn_update');
+      confirmBtn.textContent = analysis.hasFomod
+        ? `${t('installer.btn_update')} (${t('fomod.wizard_title') || 'FOMOD'}) ➔`
+        : t('installer.btn_update');
       if (updateModeBtn) {
         updateModeBtn.style.background = '#00bcff';
         updateModeBtn.style.color = '#fff';
@@ -435,9 +463,15 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         folderInput.disabled = true;
         folderInput.style.cursor = 'not-allowed';
       }
+      const nameInput = installerDom.elMaybe('mod-name-input') as HTMLInputElement | null;
+      if (nameInput && nameInput.value === `${existingMod.name} (New)`) {
+        nameInput.value = existingMod.name;
+      }
     } else {
       setPendingUpdateModId(null);
-      confirmBtn.textContent = t('installer.btn_install');
+      confirmBtn.textContent = analysis.hasFomod
+        ? `${t('installer.btn_install')} (${t('fomod.wizard_title') || 'FOMOD'}) ➔`
+        : t('installer.btn_install');
       if (updateModeBtn) {
         updateModeBtn.style.background = 'transparent';
         updateModeBtn.style.color = 'var(--text-secondary)';
@@ -452,6 +486,10 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         if (folderInput.value === manifest.folderName) {
           folderInput.value = `${manifest.folderName}_New`;
         }
+      }
+      const nameInput = installerDom.elMaybe('mod-name-input') as HTMLInputElement | null;
+      if (nameInput && nameInput.value === existingMod.name) {
+        nameInput.value = `${existingMod.name} (New)`;
       }
     }
   }
@@ -516,3 +554,39 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   confirmBtn.disabled = false;
 }
 
+export async function delegateFomodInstallIfApplicable(
+  analysis: ZipAnalysis,
+  existingModId: string | null
+): Promise<boolean> {
+  if (!analysis.hasFomod) return false;
+
+  const confirmBtn = installerDom.elMaybe('modal-confirm');
+  if (confirmBtn) {
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Opening Wizard...';
+  }
+
+  const nameInput = installerDom.elMaybe('mod-name-input') as HTMLInputElement | null;
+  const customName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : undefined;
+  
+  const existingMod = existingModId ? getState().allMods.find(m => m.id === existingModId) : null;
+  let version = analysis.detectedVersion || analysis.modinfo?.version;
+  if (analysis.nexusInfo?.version && (!existingMod || analysis.nexusInfo.version !== existingMod.version)) {
+    if (!version || compareVersions(analysis.nexusInfo.version, version) > 0) {
+      version = analysis.nexusInfo.version;
+    }
+  }
+  if (!version) {
+    version = analysis.nexusInfo?.version || undefined;
+  }
+
+  const { openFomodWizard } = await import('../fomod');
+  await openFomodWizard(
+    analysis.zipPath,
+    existingMod ? { id: existingMod.id, name: customName || existingMod.name, version: existingMod.version, fomodChoices: existingMod.fomodChoices } : null,
+    { customName, version }
+  );
+
+  closeInstallModal();
+  return true;
+}

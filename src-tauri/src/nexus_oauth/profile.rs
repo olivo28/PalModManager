@@ -479,3 +479,126 @@ query LegacyModsByDomain($ids: [CompositeDomainWithIdInput!]!) {
 
     map
 }
+
+/// Endorse a mod on Nexus Mods via REST API v1
+pub async fn api_endorse_mod(access_token: &str, domain_name: &str, mod_id: u32, version: Option<&str>) -> Result<(), String> {
+    let client = reqwest::Client::builder()
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e))?;
+
+    let url = format!("https://api.nexusmods.com/v1/games/{}/mods/{}/endorse.json", domain_name, mod_id);
+    let mut req = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", APP_VERSION);
+
+    if let Some(v) = version {
+        req = req.form(&[("version", v)]);
+    }
+
+    let resp = req.send().await.map_err(|e| format!("Failed to endorse mod: {}", e))?;
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Nexus API error (HTTP {}): {}", status, body));
+    }
+
+    Ok(())
+}
+
+/// Abstain (remove endorsement) from a mod on Nexus Mods via REST API v1
+pub async fn api_abstain_mod(access_token: &str, domain_name: &str, mod_id: u32, version: Option<&str>) -> Result<(), String> {
+    let client = reqwest::Client::builder()
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e))?;
+
+    let url = format!("https://api.nexusmods.com/v1/games/{}/mods/{}/abstain.json", domain_name, mod_id);
+    let mut req = client
+        .post(&url)
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", APP_VERSION);
+
+    if let Some(v) = version {
+        req = req.form(&[("version", v)]);
+    }
+
+    let resp = req.send().await.map_err(|e| format!("Failed to abstain mod: {}", e))?;
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Nexus API error (HTTP {}): {}", status, body));
+    }
+
+    Ok(())
+}
+
+/// Track a mod on Nexus Mods via REST API v1
+pub async fn api_track_mod(access_token: &str, domain_name: &str, mod_id: u32) -> Result<(), String> {
+    let client = reqwest::Client::builder()
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e))?;
+
+    let params = [
+        ("domain_name", domain_name),
+        ("mod_id", &mod_id.to_string()),
+    ];
+
+    let resp = client
+        .post("https://api.nexusmods.com/v1/user/tracked_mods.json")
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", APP_VERSION)
+        .form(&params)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to track mod: {}", e))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Nexus API error (HTTP {}): {}", status, body));
+    }
+
+    Ok(())
+}
+
+/// Untrack a mod on Nexus Mods via REST API v1
+pub async fn api_untrack_mod(access_token: &str, domain_name: &str, mod_id: u32) -> Result<(), String> {
+    let client = reqwest::Client::builder()
+        .user_agent(format!("PalModManager/{} (Tauri App)", APP_VERSION))
+        .timeout(Duration::from_secs(15))
+        .build()
+        .map_err(|e| format!("Failed to create client: {}", e))?;
+
+    let params = [
+        ("domain_name", domain_name),
+        ("mod_id", &mod_id.to_string()),
+    ];
+
+    let resp = client
+        .delete("https://api.nexusmods.com/v1/user/tracked_mods.json")
+        .header("Authorization", format!("Bearer {}", access_token))
+        .header("Application-Name", "PalModManager")
+        .header("Application-Version", APP_VERSION)
+        .query(&params)
+        .send()
+        .await
+        .map_err(|e| format!("Failed to untrack mod: {}", e))?;
+
+    let status = resp.status();
+    if !status.is_success() {
+        let body = resp.text().await.unwrap_or_default();
+        return Err(format!("Nexus API error (HTTP {}): {}", status, body));
+    }
+
+    Ok(())
+}
+

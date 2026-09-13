@@ -2,7 +2,10 @@ use std::fs::{self, File};
 use std::path::{Path, PathBuf};
 use walkdir::WalkDir;
 
-use super::models::SaveRepairResult;
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter};
+
+use super::models::{SaveRepairResult, SaveScanProgressPayload};
 use super::gvas::{decompress_palworld_save, compress_palworld_save};
 use super::discovery::extract_metadata_from_world;
 use super::deep_scan::list_available_backups;
@@ -148,7 +151,12 @@ pub fn restore_save_from_backup(
 }
 
 /// Sanitizes orphaned mod references in `Level.sav` and creates a safety backup zip before saving
-pub fn repair_and_sanitize_save(world_dir: &str, program_path: &str) -> Result<SaveRepairResult, String> {
+pub fn repair_and_sanitize_save(
+    world_dir: &str,
+    program_path: &str,
+    app: Option<Arc<AppHandle>>,
+    progress_callback: Option<crate::save_scanner::SaveProgressCallback>,
+) -> Result<SaveRepairResult, String> {
     let world_path = Path::new(world_dir);
     let level_sav = world_path.join("Level.sav");
 
@@ -156,7 +164,20 @@ pub fn repair_and_sanitize_save(world_dir: &str, program_path: &str) -> Result<S
         return Err("Level.sav does not exist".to_string());
     }
 
+    let emit = |stage: &str, percent: u8| {
+        if let Some(ref h) = app {
+            let _ = h.emit("save-repair-progress", SaveScanProgressPayload {
+                stage: stage.to_string(),
+                percent,
+            });
+        }
+        if let Some(ref cb) = progress_callback {
+            cb(stage, percent);
+        }
+    };
+
     // 1. Create safety backup ZIP in backups folder
+    emit("backup", 10);
     let backups_dir = PathBuf::from(program_path).join("backups").join("saves");
     fs::create_dir_all(&backups_dir).map_err(|e| e.to_string())?;
 
@@ -187,10 +208,13 @@ pub fn repair_and_sanitize_save(world_dir: &str, program_path: &str) -> Result<S
     }
 
     // 2. Read and decompress Level.sav
+    emit("reading", 30);
     let raw_bytes = fs::read(&level_sav).map_err(|e| e.to_string())?;
+    emit("decompressing", 45);
     let mut decompressed = decompress_palworld_save(&raw_bytes)?;
 
     // 3. Nullify / Clean dangling "/Game/Mods/" paths in raw GVAS bytes
+    emit("sanitizing", 65);
     let mut sanitized_count = 0;
     let target_prefix = b"/Game/Mods/";
     let replacement_prefix = b"/Game/None/";
@@ -207,12 +231,16 @@ pub fn repair_and_sanitize_save(world_dir: &str, program_path: &str) -> Result<S
     }
 
     // 4. Recompress into PLZ/ZLIB format
+    emit("recompressing", 85);
     let recompressed = compress_palworld_save(&decompressed)?;
 
     // 5. Overwrite Level.sav atomically
+    emit("writing", 95);
     let temp_sav = world_path.join("Level.sav.tmp");
     fs::write(&temp_sav, &recompressed).map_err(|e| format!("Failed to write sanitized temp save: {e}"))?;
     fs::rename(&temp_sav, &level_sav).map_err(|e| format!("Failed to apply sanitized Level.sav: {e}"))?;
+
+    emit("complete", 100);
 
     Ok(SaveRepairResult {
         success: true,

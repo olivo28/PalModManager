@@ -216,3 +216,72 @@ fn test_txt_data_files_preserved_and_readmes_skipped() {
     assert!(manifest.routes.iter().any(|r| r.zip_path == "items_list.txt"));
 }
 
+#[test]
+fn test_custom_folder_manifest_routing_and_variant_isolation() {
+    use palmodmanager_lib::zip_handler::build_install_manifest_with_folder;
+    let env = TestEnv::new_steam_win64();
+    let zip_name = "AntiPhat-SP-2.2.1-999-2-2-1-1700000000.zip";
+    let zip_path = ZipBuilder::new(zip_name)
+        .add_text_file("AntiPhat/Scripts/main.lua", "print('AntiPhat SP')")
+        .add_text_file("AntiPhat/enabled.txt", "")
+        .add_text_file("AntiPhat/config.lua", "Config = {}")
+        .build_in(&env.temp_dir);
+
+    // Build manifest with custom variant folder name: AntiPhat_SP
+    let manifest = build_install_manifest_with_folder(
+        zip_path.to_str().unwrap(),
+        &env.game_root,
+        None,
+        Some("AntiPhat (Singleplayer)".to_string()),
+        Some("AntiPhat_SP".to_string()),
+    ).expect("Should build manifest with custom folder");
+
+    assert_eq!(manifest.folder_name, "AntiPhat_SP", "Manifest folder_name must match custom folder");
+    assert_eq!(manifest.display_name, "AntiPhat (Singleplayer)", "Display name must match custom name");
+
+    // All UE4SS routes must target the custom folder AntiPhat_SP, not the original AntiPhat
+    for route in &manifest.routes {
+        if route.route_type == RouteType::Ue4ss {
+            assert!(
+                route.dest_path.contains("AntiPhat_SP"),
+                "Route destination must route to custom folder AntiPhat_SP: {}",
+                route.dest_path
+            );
+            assert!(
+                !route.dest_path.contains("Mods\\AntiPhat\\") && !route.dest_path.contains("Mods/AntiPhat/"),
+                "Route destination must not target raw un-suffixed folder: {}",
+                route.dest_path
+            );
+        }
+    }
+}
+
+#[test]
+fn test_nested_fomod_detection_with_root_wrapper() {
+    let env = TestEnv::new_steam_win64();
+    let zip_name = "Better Base Building 1.2.0-528-1-2-0-1700000000.zip";
+    let zip_path = ZipBuilder::new(zip_name)
+        .add_text_file("Better Base Building/fomod/ModuleConfig.xml", "<config><moduleName>BBB</moduleName></config>")
+        .add_text_file("Better Base Building/fomod/info.xml", "<fomod><Name>BBB</Name></fomod>")
+        .add_file("Better Base Building/00 - Main/Pal/Content/Paks/~mods/BBB.pak", b"MOCK_PAK")
+        .build_in(&env.temp_dir);
+
+    let analysis = analyze_zip(zip_path.to_str().unwrap()).expect("Should analyze zip");
+    assert!(analysis.has_fomod, "Must detect FOMOD even when nested in a root wrapper folder!");
+    assert!(analysis.has_pak, "Must detect pak inside nested archive");
+
+    // Also verify resolve_source_path can resolve both un-prefixed and direct paths
+    let extracted_dir = env.temp_dir.join("extracted_test");
+    std::fs::create_dir_all(extracted_dir.join("Better Base Building/00 - Main/Pal/Content/Paks/~mods")).unwrap();
+    let pak_file = extracted_dir.join("Better Base Building/00 - Main/Pal/Content/Paks/~mods/BBB.pak");
+    std::fs::write(&pak_file, b"MOCK_PAK").unwrap();
+
+    let resolved = palmodmanager_lib::installer::resolve_source_path(
+        &extracted_dir,
+        "00 - Main/Pal/Content/Paks/~mods/BBB.pak",
+    );
+    assert!(resolved.is_some(), "resolve_source_path must find nested file when un-prefixed");
+    assert_eq!(resolved.unwrap(), pak_file);
+}
+
+

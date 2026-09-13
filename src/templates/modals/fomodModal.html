@@ -1,0 +1,83 @@
+<!-- FOMOD GUIDED INSTALLER WIZARD MODAL -->
+<div id="fomod-modal" class="modal-overlay">
+  <div class="modal fomod-wizard-modal">
+    
+    <!-- Modal Header -->
+    <div class="fomod-header">
+      <div class="fomod-header-left">
+        <div class="fomod-icon-box">🧙</div>
+        <div class="fomod-title-group">
+          <div class="fomod-title-row">
+            <h3 id="fomod-mod-title" class="fomod-title-text">FOMOD Installer</h3>
+            <span id="fomod-mod-version" class="fomod-version-pill">--</span>
+          </div>
+          <span id="fomod-mod-author" class="fomod-author-text"></span>
+        </div>
+      </div>
+      
+      <div class="fomod-header-right">
+        <span id="fomod-step-badge" class="fomod-step-counter-pill">Step 1 of 1</span>
+        <button class="modal-close-btn" id="fomod-modal-close-x" title="Close" data-i18n-title="common.close">✕</button>
+      </div>
+    </div>
+
+    <!-- Progress Track & Fill -->
+    <div class="fomod-progress-track">
+      <div id="fomod-progress-fill" class="fomod-progress-fill"></div>
+    </div>
+
+    <!-- Optional Banner -->
+    <div id="fomod-banner-container" class="fomod-banner-container">
+      <img id="fomod-banner-img" src="" alt="Mod Banner" />
+      <div class="fomod-banner-gradient"></div>
+    </div>
+
+    <!-- 2-Column Split Container -->
+    <div class="fomod-split-container">
+      
+      <!-- Left Steps Sidebar (Direct step navigation) -->
+      <aside class="fomod-sidebar">
+        <div class="fomod-sidebar-header">
+          <span class="fomod-sidebar-title">INSTALLATION STEPS</span>
+        </div>
+        <nav id="fomod-steps-nav" class="fomod-steps-list">
+          <!-- Step items dynamically injected here -->
+        </nav>
+      </aside>
+
+      <!-- Right Main Content Panel -->
+      <main class="fomod-main-panel">
+        
+        <!-- Step Header Area -->
+        <div class="fomod-main-header">
+          <h3 id="fomod-step-heading" class="fomod-step-heading"></h3>
+          <div id="fomod-step-subtitle" class="fomod-step-subtitle" style="display: none;"></div>
+        </div>
+
+        <!-- Mod description from info.xml — sticky across all steps -->
+        <div id="fomod-mod-desc" class="fomod-mod-desc" style="display: none;"></div>
+
+        <!-- Groups Flow (Accordion or Direct List) -->
+        <div id="fomod-step-groups" class="fomod-groups-flow">
+          <!-- Groups and plugin options dynamically injected here -->
+        </div>
+
+      </main>
+    </div>
+
+    <!-- Wizard Footer Actions -->
+    <div class="fomod-footer">
+      <button id="fomod-btn-cancel" class="btn btn-secondary" style="padding: 7px 18px; font-size: 12px;" data-i18n="common.cancel">Cancel</button>
+      
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <button id="fomod-btn-prev" class="btn btn-secondary" style="display: none; padding: 7px 18px; font-size: 12px;" data-i18n="fomod.btn_back">
+          ← Back
+        </button>
+        <button id="fomod-btn-next" class="btn btn-primary" style="padding: 7px 22px; font-size: 12px; font-weight: 700; display: flex; align-items: center; gap: 6px;">
+          <span id="fomod-next-label" data-i18n="fomod.btn_next">Next →</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>

@@ -122,6 +122,11 @@ export async function refreshVaultView(depType: 'ue4ss' | 'palschema'): Promise<
     ? deps?.ue4ss_install_mode === 'Workshop'
     : (deps?.palschema_install_mode === 'Workshop' || deps?.palschema_version === 'Workshop');
 
+  const viewLogBtn = dependencyDom.elMaybe('dep-btn-view-log');
+  if (viewLogBtn) {
+    viewLogBtn.style.display = isUe4ss ? 'inline-flex' : 'none';
+  }
+
   currentVerEl.textContent = isInstalled ? (formatVersionDisplay(installedVer, depType) || t('dependencies.installed')) : t('dependencies.not_installed');
   
   if (!isInstalled) {
@@ -322,6 +327,13 @@ export function initDependencyModal(): void {
   const closeX = dependencyDom.elMaybe('dependency-modal-close-x');
   closeBtn?.addEventListener('click', hideDependencyModal);
   closeX?.addEventListener('click', hideDependencyModal);
+
+  // View Log handler
+  const viewLogBtn = dependencyDom.elMaybe('dep-btn-view-log');
+  viewLogBtn?.addEventListener('click', async () => {
+    const { showUe4ssLogModal } = await import('../scanner/ue4ssLog');
+    await showUe4ssLogModal();
+  });
 
   // Download Latest button
   const dlLatestBtn = dependencyDom.elMaybe('dep-btn-download-latest');

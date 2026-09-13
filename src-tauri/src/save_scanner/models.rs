@@ -73,6 +73,24 @@ pub struct WorldOptionSettings {
     pub is_start_location_select_by_map: Option<bool>,
     pub exist_player_after_logout: Option<bool>,
     pub supply_drop_span: Option<i32>,
+    pub pal_damage_rate_defense: Option<f32>,
+    pub player_damage_rate_defense: Option<f32>,
+    pub equipment_durability_damage_rate: Option<f32>,
+    pub monster_farm_action_speed_rate: Option<f32>,
+    pub fishing_difficulty_rate: Option<f32>,
+    pub item_corruption_multiplier: Option<f32>,
+    pub item_weight_rate: Option<f32>,
+    pub build_object_hp_rate: Option<f32>,
+    pub max_building_limit_num: Option<i32>,
+    pub max_building_limit_num_per_player: Option<i32>,
+    pub enable_predator_boss_pal: Option<bool>,
+    pub randomizer_type: Option<String>,
+    pub randomizer_seed: Option<String>,
+    pub base_camp_max_num_in_guild: Option<i32>,
+    pub coop_player_max_num: Option<i32>,
+    pub server_player_max_num: Option<i32>,
+    pub guild_rejoin_cooldown_minutes: Option<i32>,
+    pub auto_reset_guild_time_no_online_players: Option<f32>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -192,3 +210,12 @@ pub struct SaveRepairResult {
     pub sanitized_refs_count: usize,
     pub message: String,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SaveScanProgressPayload {
+    pub stage: String,
+    pub percent: u8,
+}
+
+pub type SaveProgressCallback = std::sync::Arc<dyn Fn(&str, u8) + Send + Sync>;

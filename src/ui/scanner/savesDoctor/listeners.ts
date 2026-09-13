@@ -10,6 +10,8 @@ import {
   saveWorldCustomMeta,
   type WorldCustomMeta,
 } from '../../../api';
+import { listen } from '@tauri-apps/api/event';
+import type { SaveScanProgressPayload } from '../../../types';
 import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
@@ -40,10 +42,10 @@ import {
 import { showSnapshotComparisonModal } from './snapshotModal';
 import { showPmmBackupsVaultModal } from './backupsVaultModal';
 
-async function refreshWorldsQuietly(): Promise<void> {
+async function refreshWorldsQuietly(forceRefresh?: boolean): Promise<void> {
   try {
     const curCustomPath = customSavesPath || doctorState.customSavesPath;
-    const worlds = await listSaveWorlds(curCustomPath || undefined);
+    const worlds = await listSaveWorlds(curCustomPath || undefined, forceRefresh);
     setCachedWorlds(worlds);
   } catch (err) {
     console.error('Failed to quietly refresh save worlds:', err);
@@ -70,7 +72,7 @@ export function attachSavesDoctorListeners(
   const refreshBtn = container.querySelector('#doctor-refresh-btn');
   if (refreshBtn) {
     refreshBtn.addEventListener('click', async () => {
-      await refreshWorldsQuietly();
+      await refreshWorldsQuietly(true);
       setCurrentHealthReport(null);
       await rerenderCallback(container);
       showToast(t('common.refreshed') || 'Saves list refreshed', 'info');
@@ -260,12 +262,38 @@ export function attachSavesDoctorListeners(
       setIsDeepScanning(true);
       await rerenderCallback(container);
 
+      // Yield frame so WebView paints the animated scanning spinner immediately
+      await new Promise(r => setTimeout(r, 20));
+
+      let unlistenProgress: (() => void) | null = null;
       try {
+        unlistenProgress = await listen<SaveScanProgressPayload>('save-scan-progress', (event) => {
+          const btn = container.querySelector('#btn-run-deep-scan');
+          if (btn) {
+            const textSpan = btn.querySelector('span:last-child');
+            const stageKey = `scanner.save_scanning_stage_${event.payload.stage}`;
+            const stageLabel = t(stageKey) || event.payload.stage;
+            if (textSpan) {
+              textSpan.textContent = `${stageLabel} (${event.payload.percent}%)`;
+            } else {
+              btn.textContent = `⏳ ${stageLabel} (${event.payload.percent}%)`;
+            }
+          }
+        });
+
         const rep = await deepScanSaveHealth(curWorldDir);
         setCurrentHealthReport(rep);
       } catch (err: any) {
-        showToast(`Deep scan failed: ${String(err)}`, 'error');
+        const errStr = String(err);
+        if (errStr.includes('Worker') || errStr.includes('abnormally')) {
+          showToast(t('scanner.save_worker_crashed') || errStr, 'error');
+        } else {
+          showToast(`Deep scan failed: ${errStr}`, 'error');
+        }
       } finally {
+        if (unlistenProgress) {
+          unlistenProgress();
+        }
         setIsDeepScanning(false);
         await rerenderCallback(container);
       }
@@ -289,15 +317,38 @@ export function attachSavesDoctorListeners(
       setIsRepairing(true);
       await rerenderCallback(container);
 
+      let unlistenProgress: (() => void) | null = null;
       try {
+        unlistenProgress = await listen<SaveScanProgressPayload>('save-repair-progress', (event) => {
+          const btn = container.querySelector('#btn-repair-save');
+          if (btn) {
+            const textSpan = btn.querySelector('span:last-child');
+            const stageKey = `scanner.save_repairing_stage_${event.payload.stage}`;
+            const stageLabel = t(stageKey) || event.payload.stage;
+            if (textSpan) {
+              textSpan.textContent = `${stageLabel} (${event.payload.percent}%)`;
+            } else {
+              btn.textContent = `🔧 ${stageLabel} (${event.payload.percent}%)`;
+            }
+          }
+        });
+
         const result = await repairSaveHealth(curWorldDir);
         showToast(result.message, 'success');
         const rep = await deepScanSaveHealth(curWorldDir);
         setCurrentHealthReport(rep);
         await refreshWorldsQuietly();
       } catch (err: any) {
-        showToast(`Repair failed: ${String(err)}`, 'error');
+        const errStr = String(err);
+        if (errStr.includes('Worker') || errStr.includes('abnormally')) {
+          showToast(t('scanner.save_worker_crashed') || errStr, 'error');
+        } else {
+          showToast(`Repair failed: ${errStr}`, 'error');
+        }
       } finally {
+        if (unlistenProgress) {
+          unlistenProgress();
+        }
         setIsRepairing(false);
         await rerenderCallback(container);
       }

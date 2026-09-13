@@ -33,7 +33,8 @@
   pointer-events: auto !important;
 }
 
-#install-modal {
+#install-modal,
+#fomod-modal {
   z-index: 3500 !important;
 }
 

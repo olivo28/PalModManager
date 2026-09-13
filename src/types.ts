@@ -42,6 +42,7 @@ export interface ModInfo {
   customNotes?: string | null;
   originalName?: string | null;
   customName?: string | null;
+  fomodChoices?: Record<string, string[]> | null;
 }
 
 export interface NexusAccountInfo {
@@ -88,6 +89,7 @@ export interface NexusUserAuthoredMod {
   summary?: string | null;
   version?: string | null;
   downloads?: number | null;
+  totalDownloads?: number | null;
   endorsements?: number | null;
   pictureUrl?: string | null;
   gameName?: string | null;
@@ -143,6 +145,10 @@ export interface AppSettings {
   folderExpandMode?: 'always_expanded' | 'always_collapsed' | 'remember';
   ue4ssControlMode?: 'enabled_txt' | 'mods_txt' | string | null;
   ue4ssBuildFlavor?: 'standard' | 'zdev' | string | null;
+  nexusEndorsementsCache?: NexusUserEndorsement[] | null;
+  nexusTrackedCache?: NexusUserTrackedMod[] | null;
+  nexusAuthoredCache?: NexusUserAuthoredMod[] | null;
+  nexusCacheTimestamp?: number | null;
 }
 
 export interface ModFolder {
@@ -413,4 +419,70 @@ export interface WorkshopState {
   mods: WorkshopModItem[];
 }
 
+export interface Ue4ssLogEntry {
+  line_number: number;
+  timestamp?: string | null;
+  level: 'info' | 'warning' | 'error' | 'crash' | 'mod';
+  tag?: string | null;
+  message: string;
+  mod_name?: string | null;
+  script_file?: string | null;
+  script_line?: number | null;
+}
 
+export interface Ue4ssModStatus {
+  name: string;
+  status: 'loaded' | 'failed' | 'warning' | 'disabled' | string;
+  mod_type?: 'palschema' | 'lua' | 'cpp' | 'native' | string | null;
+  details?: string | null;
+}
+
+export interface Ue4ssLogDiagnostics {
+  file_path: string;
+  exists: boolean;
+  file_size_bytes: number;
+  last_modified?: string | null;
+  total_lines: number;
+  loaded_mods: Ue4ssModStatus[];
+  error_count: number;
+  warning_count: number;
+  entries: Ue4ssLogEntry[];
+}
+
+export interface PackerProgressPayload {
+  percent: number;
+  currentFile: string;
+  processedFiles: number;
+  totalFiles: number;
+}
+
+export interface TweakerProgressPayload {
+  percent: number;
+  stage: string;
+}
+
+export interface DevResourceProgressPayload {
+  target: string;
+  percent: number;
+  currentFile: string;
+  processedFiles: number;
+  totalFiles: number;
+}
+
+export interface SdkProgressPayload {
+  stage: string;
+  percent: number;
+  currentFile: string;
+  processedFiles: number;
+  totalFiles: number;
+}
+
+export interface SaveScanProgressPayload {
+  stage: string;
+  percent: number;
+}
+
+export interface InstallProgressPayload {
+  stage: string;
+  percent: number;
+}

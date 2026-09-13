@@ -1,13 +1,6 @@
 import {
-  analyzeZip,
-  checkModExistsCommand,
-  updateModCommand,
-  installMod,
-  checkDependencies,
-  installUe4ss,
-  installPalschema,
-  buildInstallManifest,
-  installModWithManifest
+  analyzeZip, checkModExistsCommand, updateModCommand, installMod,
+  checkDependencies, installUe4ss, installPalschema, buildInstallManifest, installModWithManifest
 } from '../../../api';
 import { getState, updateState } from '../../../state';
 import { showToast } from '../../toast';
@@ -15,25 +8,14 @@ import { showConfirm } from '../../confirm';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import type { BatchItem } from './types';
+import { withInstallProgress, createProgressLogUpdater } from './progress';
 import {
-  _pendingUpdateModId,
-  _pendingBatchPaths,
-  _batchItems,
-  _isProcessingInstall,
-  setPendingBatchPaths,
-  setPendingUpdateModId,
-  setBatchItems,
-  setLastInstallSuccess,
-  setIsProcessingInstall
+  _pendingUpdateModId, _pendingBatchPaths, _batchItems, _isProcessingInstall,
+  setPendingBatchPaths, setPendingUpdateModId, setBatchItems, setLastInstallSuccess, setIsProcessingInstall
 } from './state';
-import {
-  showInstallModal,
-  closeInstallModal,
-  setModalStatus,
-  getCleanNameFromFilename
-} from './helpers';
+import { showInstallModal, closeInstallModal, setModalStatus, getCleanNameFromFilename } from './helpers';
 import { showFileTreeModal } from './fileTree';
-import { renderInstallPreview } from './single';
+import { renderInstallPreview, delegateFomodInstallIfApplicable } from './single';
 import { installerDom, discoveryDom } from '../../../framework';
 
 export async function renderBatchInstallPreview(paths: string[]): Promise<void> {
@@ -319,13 +301,14 @@ export async function handleInstallConfirm(): Promise<void> {
       resultsList.scrollTop = resultsList.scrollHeight;
 
       try {
+        const progressCb = createProgressLogUpdater(resultsList as HTMLElement, resultsHtml, 'batch-result-item', item.customName);
         if (item.existingModId) {
-          await updateModCommand(item.path, item.existingModId);
+          await withInstallProgress(() => updateModCommand(item.path, item.existingModId!), progressCb);
           updated++;
           resultsHtml.pop();
           resultsHtml.push(`<div class="batch-result-item success" style="color:#00bcff;font-weight:bold;"><span style="color:#777;">[UP]</span> Updated successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
         } else {
-          await installMod(item.path, item.customType, item.pakDestination, item.customName);
+          await withInstallProgress(() => installMod(item.path, item.customType, item.pakDestination, item.customName), progressCb);
           installed++;
           resultsHtml.pop();
           resultsHtml.push(`<div class="batch-result-item success" style="color:#4af626;font-weight:bold;"><span style="color:#777;">[OK]</span> Installed successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
@@ -357,11 +340,19 @@ export async function handleInstallConfirm(): Promise<void> {
     return;
   }
 
+  if (await delegateFomodInstallIfApplicable(state.currentAnalysis, _pendingUpdateModId)) {
+    setIsProcessingInstall(false);
+    return;
+  }
+
   const typeSelect = installerDom.elMaybe('mod-type-select');
   const customType = typeSelect ? typeSelect.value : state.currentAnalysis.detectedType;
 
   const nameInput = installerDom.elMaybe('mod-name-input');
   const customName = nameInput && nameInput.value.trim() ? nameInput.value.trim() : null;
+
+  const folderInput = installerDom.elMaybe('mod-folder-name-input') as HTMLInputElement | null;
+  const customFolder = folderInput && !folderInput.disabled && folderInput.value.trim() ? folderInput.value.trim() : null;
 
   let pakDestination: string | null = null;
   if (customType === 'pak' || customType === 'logicmods' || customType === 'hybrid') {
@@ -455,7 +446,7 @@ export async function handleInstallConfirm(): Promise<void> {
           retryBtn.style.display = 'none';
 
           setTimeout(() => {
-            executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state, pakDestination);
+            executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, customFolder, state, pakDestination);
           }, 1000);
         } catch (err) {
           logs.push(`<div style="color:#ff4a4a;font-weight:bold;">[ERR] ${escapeHtml(t('installer.status_deps_failed'))}: ${escapeHtml(String(err))}</div>`);
@@ -478,7 +469,7 @@ export async function handleInstallConfirm(): Promise<void> {
     return;
   }
 
-  await executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, state, pakDestination);
+  await executeModInstallation(logs, resultsList, statusEl, confirmBtn, cancelBtn, customType, customName, customFolder, state, pakDestination);
 }
 
 async function executeModInstallation(
@@ -489,6 +480,7 @@ async function executeModInstallation(
   cancelBtn: HTMLButtonElement,
   customType: string,
   customName: string | null,
+  customFolder: string | null,
   state: any,
   pakDestination: string | null
 ) {
@@ -504,9 +496,13 @@ async function executeModInstallation(
       state.currentAnalysis.zipPath,
       state.currentSettings?.gamePath || '',
       pakDestination,
-      customName
+      customName,
+      customFolder
     );
 
+    if (customFolder) {
+      manifest.folderName = customFolder;
+    }
     if (customName) {
       manifest.displayName = customName;
     }
@@ -534,15 +530,25 @@ async function executeModInstallation(
     }
 
     const appState = getState();
-    const existingCompanionMod = state.currentAnalysis.nexusModId
-      ? appState.allMods.find(m => m.nexusModId === state.currentAnalysis.nexusModId && m.id !== _pendingUpdateModId)
+    const existingCompanionMod = (state.currentAnalysis.nexusModId && !_pendingUpdateModId && !customFolder)
+      ? appState.allMods.find(m => {
+          if (m.nexusModId !== state.currentAnalysis.nexusModId) return false;
+          return (m.type === 'pak' && manifest.modType === 'ue4ss') ||
+                 (m.type === 'ue4ss' && (manifest.modType === 'pak' || manifest.modType === 'logicmods'));
+        })
       : null;
 
     let installedMod: any = null;
+    const progressCb = createProgressLogUpdater(resultsList, logs);
     if (_pendingUpdateModId) {
-      installedMod = await updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId);
+      installedMod = await withInstallProgress(() => updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId!), progressCb);
     } else {
-      installedMod = await installModWithManifest(manifest, state.currentAnalysis.zipPath);
+      installedMod = await withInstallProgress(() => installModWithManifest(manifest, state.currentAnalysis.zipPath), progressCb);
+    }
+
+    if (installedMod && !installedMod.enabled && !_pendingUpdateModId) {
+      logs.push(`<div style="color:#ffaa00;font-weight:bold;">${escapeHtml(t('installer.log_installed_disabled_conflict', { name: installedMod.name }))}</div>`);
+      resultsList.innerHTML = logs.join('');
     }
 
     if (existingCompanionMod) {

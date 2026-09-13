@@ -24,6 +24,8 @@ pub mod save_scanner;
 pub mod usmap;
 pub mod texture_decoder;
 pub mod dependency_manifest;
+pub mod worker;
+pub mod workshop_bridge;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -47,12 +49,18 @@ use commands::editor;
 use commands::config_archive;
 use commands::resource_commands;
 use commands::pak_tweaker;
+use commands::fomod;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
+    // Intercept headless worker execution before starting GUI runtime
+    if let Some(exit_code) = worker::try_handle_worker_cli() {
+        std::process::exit(exit_code);
+    }
+
     logger::init_logger();
     logger::log("=== APPLICATION STARTED (cargo run / .exe) ===");
     logger::log(&format!("PMM-Core Engine: Initializing desktop runtime v{}", env!("CARGO_PKG_VERSION")));
@@ -70,34 +78,56 @@ pub fn run() {
         .join("PalModManager");
     
     let default_program_path = program_path.clone();
-    let mut active_program_path = default_program_path.clone();
 
-    logger::log(&format!("Loading default database from {}", default_program_path.display()));
+    // Check if executable directory contains a portable sentinel or local data.json
+    let exe_dir = std::env::current_exe()
+        .ok()
+        .and_then(|p| p.parent().map(|parent| parent.to_path_buf()));
+
+    let is_portable_boot = exe_dir.as_ref().map(|dir| {
+        dir.join("portable.txt").is_file()
+            || dir.join(".portable").is_file()
+            || dir.join("data.json").is_file()
+    }).unwrap_or(false);
+
+    let mut active_program_path = if is_portable_boot {
+        let p_dir = exe_dir.unwrap();
+        logger::log(&format!("Portable environment detected alongside executable: {}", p_dir.display()));
+        p_dir
+    } else {
+        default_program_path.clone()
+    };
+
+    logger::log(&format!("Loading database from {}", active_program_path.display()));
     let start_db = std::time::Instant::now();
-    let mut data = db::load_db(&default_program_path.to_string_lossy());
+    let mut data = db::load_db(&active_program_path.to_string_lossy());
     
     // Auto-create initial snapshot if game path is configured
     if !data.settings.game_path.is_empty() {
-        let _ = safety_backup::create_initial_safety_backup(&data.settings.game_path, &default_program_path.to_string_lossy(), false);
+        let _ = safety_backup::create_initial_safety_backup(&data.settings.game_path, &active_program_path.to_string_lossy(), false);
     }
 
-    logger::log(&format!("Default database loaded successfully in {:?}", start_db.elapsed()));
+    logger::log(&format!("Database loaded successfully in {:?}", start_db.elapsed()));
 
-    if let Some(ref custom_path) = data.settings.custom_data_path {
-        if !custom_path.is_empty() {
-            let target_dir = if custom_path == "__portable__" {
-                std::env::current_exe()
-                    .ok()
-                    .and_then(|p| p.parent().map(|parent| parent.to_path_buf()))
-                    .unwrap_or_else(|| default_program_path.clone())
-            } else {
-                std::path::PathBuf::from(custom_path)
-            };
-            logger::log(&format!("Redirecting database location to custom path: {}", target_dir.display()));
-            active_program_path = target_dir;
-            let custom_data = db::load_db(&active_program_path.to_string_lossy());
-            data = custom_data;
+    if !is_portable_boot {
+        if let Some(ref custom_path) = data.settings.custom_data_path {
+            if !custom_path.is_empty() {
+                let target_dir = if custom_path == "__portable__" {
+                    std::env::current_exe()
+                        .ok()
+                        .and_then(|p| p.parent().map(|parent| parent.to_path_buf()))
+                        .unwrap_or_else(|| default_program_path.clone())
+                } else {
+                    std::path::PathBuf::from(custom_path)
+                };
+                logger::log(&format!("Redirecting database location to custom path: {}", target_dir.display()));
+                active_program_path = target_dir;
+                let custom_data = db::load_db(&active_program_path.to_string_lossy());
+                data = custom_data;
+            }
         }
+    } else {
+        data.settings.custom_data_path = Some("__portable__".to_string());
     }
 
     if data.settings.program_path != active_program_path.to_string_lossy().to_string() {
@@ -184,6 +214,8 @@ pub fn run() {
             install::update::update_mod_command,
             install::install_manifest::build_install_manifest,
             install::install_manifest::install_mod_with_manifest,
+            fomod::get_fomod_config,
+            fomod::build_fomod_manifest,
             install::diff::preview_config_diff,
             config_commands::read_config,
             config_commands::save_config,
@@ -265,6 +297,12 @@ pub fn run() {
             mod_commands::change_pak_destination,
             mod_commands::export_profile_pack_cmd,
             mod_commands::import_profile_pack_cmd,
+            mod_commands::export_profile_manifest_cmd,
+            mod_commands::analyze_profile_manifest_cmd,
+            mod_commands::apply_profile_manifest_cmd,
+            mod_commands::bridge_mod_to_workshop_cmd,
+            mod_commands::unbridge_mod_from_workshop_cmd,
+            mod_commands::is_mod_bridged_cmd,
 
             mod_commands::restore_backup,
             mod_commands::analyze_backup,
@@ -301,6 +339,11 @@ pub fn run() {
             scanner::patch_builder::build_compatibility_pak_cmd,
             scanner::patch_builder::list_generated_patches_cmd,
             scanner::patch_builder::delete_generated_patch_cmd,
+            scanner::ue4ss_log::get_ue4ss_log_diagnostics,
+            scanner::ue4ss_log::read_raw_ue4ss_log,
+            scanner::ue4ss_log::clear_ue4ss_log,
+            scanner::ue4ss_log::copy_ue4ss_log_file_to_clipboard,
+            scanner::ue4ss_log::reveal_ue4ss_log_in_explorer,
             db_commands::db_get_all,
             db_commands::db_write_record,
             load_order_commands::get_ue4ss_load_order,
@@ -365,36 +408,48 @@ pub fn run() {
                 data.settings.clone()
             };
             if let Some(window) = app.get_webview_window("main") {
-                if let (Some(w), Some(h)) = (settings.window_width, settings.window_height) {
-                    let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(w, h)));
-                }
-                if let (Some(x), Some(y)) = (settings.window_x, settings.window_y) {
-                    let is_on_screen = if let Ok(monitors) = window.available_monitors() {
-                        monitors.into_iter().any(|m| {
-                            let m_pos = m.position();
-                            let m_size = m.size();
-                            let sf = m.scale_factor();
-                            let m_log_x = m_pos.x as f64 / sf;
-                            let m_log_y = m_pos.y as f64 / sf;
-                            let m_log_w = m_size.width as f64 / sf;
-                            let m_log_h = m_size.height as f64 / sf;
-                            x >= m_log_x - 100.0
-                                && x < m_log_x + m_log_w - 100.0
-                                && y >= m_log_y - 50.0
-                                && y < m_log_y + m_log_h - 50.0
-                        })
-                    } else {
-                        false
-                    };
-                    if is_on_screen {
-                        let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
+                let is_max = settings.window_maximized.unwrap_or(false);
+                let current_mon = window.current_monitor().ok().flatten();
+                let (mon_w, mon_h) = current_mon.as_ref().map(|m| {
+                    let sf = m.scale_factor();
+                    (m.size().width as f64 / sf, m.size().height as f64 / sf)
+                }).unwrap_or((1920.0, 1080.0));
+
+                let (target_w, target_h) = match (settings.window_width, settings.window_height) {
+                    (Some(w), Some(h)) if w > 100.0 && h > 100.0 && w < (mon_w - 50.0) && h < (mon_h - 50.0) => (w, h),
+                    _ => (1100.0, 700.0),
+                };
+                let _ = window.set_size(tauri::Size::Logical(tauri::LogicalSize::new(target_w, target_h)));
+
+                if !is_max {
+                    if let (Some(x), Some(y)) = (settings.window_x, settings.window_y) {
+                        let is_on_screen = if let Ok(monitors) = window.available_monitors() {
+                            monitors.into_iter().any(|m| {
+                                let m_pos = m.position();
+                                let m_size = m.size();
+                                let sf = m.scale_factor();
+                                let m_log_x = m_pos.x as f64 / sf;
+                                let m_log_y = m_pos.y as f64 / sf;
+                                let m_log_w = m_size.width as f64 / sf;
+                                let m_log_h = m_size.height as f64 / sf;
+                                x >= m_log_x - 100.0
+                                    && x < m_log_x + m_log_w - 100.0
+                                    && y >= m_log_y - 50.0
+                                    && y < m_log_y + m_log_h - 50.0
+                            })
+                        } else {
+                            false
+                        };
+                        if is_on_screen {
+                            let _ = window.set_position(tauri::Position::Logical(tauri::LogicalPosition::new(x, y)));
+                        } else {
+                            let _ = window.center();
+                        }
                     } else {
                         let _ = window.center();
                     }
                 } else {
                     let _ = window.center();
-                }
-                if let Some(true) = settings.window_maximized {
                     let _ = window.maximize();
                 }
                 let _ = window.show();
@@ -556,16 +611,24 @@ pub fn run() {
             if window.label() == "main" {
                 match event {
                     tauri::WindowEvent::Resized(_) | tauri::WindowEvent::Moved(_) => {
-                        let is_maximized = window.is_maximized().unwrap_or(false);
+                        let is_max = window.is_maximized().unwrap_or(false);
+                        let is_min = window.is_minimized().unwrap_or(false);
                         let state = window.state::<AppState>();
                         let lock_res = state.data.lock();
                         if let Ok(mut data) = lock_res {
-                            data.settings.window_maximized = Some(is_maximized);
-                            if !is_maximized {
+                            data.settings.window_maximized = Some(is_max);
+                            if !is_max && !is_min {
                                 if let Ok(size) = window.inner_size() {
                                     if let Ok(scale_factor) = window.scale_factor() {
                                         let logical = size.to_logical::<f64>(scale_factor);
-                                        if logical.width > 100.0 && logical.height > 100.0 {
+                                        let is_screen_sized = window.current_monitor().ok().flatten().map(|m| {
+                                            let sf = m.scale_factor();
+                                            let mw = m.size().width as f64 / sf;
+                                            let mh = m.size().height as f64 / sf;
+                                            logical.width >= (mw - 40.0) && logical.height >= (mh - 60.0)
+                                        }).unwrap_or(false);
+
+                                        if !is_screen_sized && logical.width > 100.0 && logical.height > 100.0 {
                                             data.settings.window_width = Some(logical.width);
                                             data.settings.window_height = Some(logical.height);
                                         }
@@ -574,8 +637,10 @@ pub fn run() {
                                 if let Ok(pos) = window.outer_position() {
                                     if let Ok(scale_factor) = window.scale_factor() {
                                         let logical_pos = pos.to_logical::<f64>(scale_factor);
-                                        data.settings.window_x = Some(logical_pos.x);
-                                        data.settings.window_y = Some(logical_pos.y);
+                                        if logical_pos.x > -10000.0 && logical_pos.y > -10000.0 {
+                                            data.settings.window_x = Some(logical_pos.x);
+                                            data.settings.window_y = Some(logical_pos.y);
+                                        }
                                     }
                                 }
                             }

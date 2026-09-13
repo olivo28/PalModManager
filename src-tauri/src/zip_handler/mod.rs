@@ -17,10 +17,14 @@ pub use detection::{detect_archive_format, extract_nexus_id_from_path, find_resi
 pub use analysis::analyze_zip;
 
 // Re-export extraction and reading
-pub use extraction::{extract_7z_to_temp, extract_rar_to_temp, extract_zip_to_temp, find_pak_companions, read_7z_file, read_archive_file};
+pub use extraction::{extract_7z_to_temp, extract_rar_to_temp, extract_zip_to_temp, find_pak_companions, read_7z_file, read_archive_file, read_archive_file_bytes};
 
 // Re-export naming
 pub use naming::{detect_folder_name_from_files, is_forbidden, FORBIDDEN_MOD_NAMES, GAME_PATH_SEGMENTS, PALSCHEMA_FOLDERS};
 
 // Re-export manifest builder
-pub use manifest::{build_install_manifest, build_manifest_from_files};
+pub use manifest::{
+    build_install_manifest, build_install_manifest_with_folder,
+    build_manifest_from_files, build_manifest_from_files_with_folder,
+};
+

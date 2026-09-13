@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 use chrono::Utc;
 use serde_json::Value;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 use crate::db;
 use crate::installer;
@@ -10,6 +10,7 @@ use crate::nexus;
 use crate::state::AppState;
 use crate::zip_handler;
 use super::utils::{check_mod_dependencies, sync_altermatic_helper};
+use super::InstallProgressPayload;
 
 #[tauri::command]
 pub async fn build_install_manifest(
@@ -17,17 +18,20 @@ pub async fn build_install_manifest(
     game_path: String,
     pak_destination: Option<String>,
     custom_name: Option<String>,
+    custom_folder: Option<String>,
 ) -> Result<crate::models::InstallManifest, String> {
-    crate::zip_handler::build_install_manifest(
+    crate::zip_handler::build_install_manifest_with_folder(
         &zip_path,
         Path::new(&game_path),
         pak_destination.as_deref(),
         custom_name,
+        custom_folder,
     )
 }
 
 #[tauri::command]
 pub async fn install_mod_with_manifest(
+    app: AppHandle,
     manifest: crate::models::InstallManifest,
     zip_path: String,
     state: State<'_, AppState>,
@@ -58,9 +62,6 @@ pub async fn install_mod_with_manifest(
         None
     };
 
-    let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
-    let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
-
     let (force_load_order_ue4ss, force_load_order_palschema) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (
@@ -72,28 +73,78 @@ pub async fn install_mod_with_manifest(
     let author_val = nexus_info.as_ref().map(|i| i.author.clone()).or_else(|| manifest.author.clone());
     let summary_val = nexus_info.as_ref().map(|i| i.summary.clone()).or_else(|| manifest.summary.clone());
     let picture_val = nexus_info.as_ref().map(|i| i.picture_url.clone()).or_else(|| manifest.picture_url.clone());
+    let downloads_val = nexus_info.as_ref().map(|i| i.downloads);
+    let endorsements_val = nexus_info.as_ref().map(|i| i.endorsements);
 
     let now_str = Utc::now().to_rfc3339();
-    let mut final_mod = installer::execute_manifest(
-        &manifest,
-        &extracted,
-        Path::new(&game_path),
-        author_val.clone(),
-        summary_val.clone(),
-        picture_val.clone(),
-        nexus_info.as_ref().map(|i| i.downloads),
-        nexus_info.as_ref().map(|i| i.endorsements),
-        &now_str,
-        force_load_order_ue4ss,
-        force_load_order_palschema,
-    )?;
+
+    let app_handle = std::sync::Arc::new(app);
+    let app_emit = app_handle.clone();
+    let zip_path_clone = zip_path.clone();
+    let manifest_clone = manifest.clone();
+    let game_path_clone = game_path.clone();
+    let author_val_clone = author_val.clone();
+    let summary_val_clone = summary_val.clone();
+    let picture_val_clone = picture_val.clone();
+    let now_str_clone = now_str.clone();
+
+    let mut final_mod = tauri::async_runtime::spawn_blocking(move || -> Result<crate::models::ModInfo, String> {
+        let _ = app_emit.emit("install-progress", InstallProgressPayload {
+            stage: "extracting".to_string(),
+            percent: 10,
+        });
+
+        let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
+        let extracted = zip_handler::extract_zip_to_temp(&zip_path_clone, &temp_dir)?;
+
+        let _ = app_emit.emit("install-progress", InstallProgressPayload {
+            stage: "installing".to_string(),
+            percent: 50,
+        });
+
+        let mod_res = installer::execute_manifest(
+            &manifest_clone,
+            &extracted,
+            Path::new(&game_path_clone),
+            author_val_clone,
+            summary_val_clone,
+            picture_val_clone,
+            downloads_val,
+            endorsements_val,
+            &now_str_clone,
+            force_load_order_ue4ss,
+            force_load_order_palschema,
+        );
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+        mod_res
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let _ = app_handle.emit("install-progress", InstallProgressPayload {
+        stage: "saving".to_string(),
+        percent: 90,
+    });
 
     // Always preserve the exact original filename — rollback depends on it.
     // Temp/nexus filenames (nexus_*, disc_*, temp_*) are already handled inside copy_to_library.
     final_mod.source_zip = Path::new(&zip_path).file_name().unwrap_or_default().to_string_lossy().to_string();
+    final_mod.fomod_choices = manifest.fomod_choices.clone();
+
+    let parsed_nexus = crate::nexus::parse_mod_filename(&final_mod.source_zip);
+    if let Some(ref pv) = parsed_nexus.version {
+        if crate::commands::nexus_commands::is_version_newer(&final_mod.version, pv) {
+            final_mod.version = pv.clone();
+        }
+    }
 
     if let Some(ref info) = nexus_info {
-        if final_mod.version == "unknown" || final_mod.version.is_empty() || final_mod.version.contains('-') {
+        if final_mod.version == "unknown"
+            || final_mod.version.is_empty()
+            || final_mod.version.contains('-')
+            || crate::commands::nexus_commands::is_version_newer(&final_mod.version, &info.version)
+        {
             final_mod.version = info.version.clone();
         }
         final_mod.nexus_description = if info.description.is_empty() { None } else { Some(info.description.clone()) };
@@ -144,8 +195,6 @@ pub async fn install_mod_with_manifest(
             let _ = std::fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
         }
     }
-
-    let _ = std::fs::remove_dir_all(&temp_dir);
 
     // Copy to library using mod name instead of UUID (if not already in library)
     let lib_folder_name = final_mod.name.clone();
@@ -210,11 +259,43 @@ pub async fn install_mod_with_manifest(
                 .to_string(),
         );
         
+        // Check if an active conflicting mod or variant already exists
+        let should_auto_disable = {
+            let target_nexus_id = final_mod.nexus_mod_id;
+            let target_folder = crate::profiles::get_mod_folder_name(&final_mod);
+            let target_type = final_mod.mod_type.clone();
+            let target_phys = crate::installer::helpers::get_physical_identity(&final_mod.game_path, &final_mod.disabled_path);
+
+            data.mods.iter().any(|other| {
+                if other.id != final_mod.id && other.enabled && other.nexus_author.as_deref() != Some("UE4SS Native Mod") {
+                    let same_nexus = target_nexus_id.is_some() && other.nexus_mod_id == target_nexus_id && other.mod_type == target_type;
+                    let other_folder = crate::profiles::get_mod_folder_name(other);
+                    let same_folder = !target_folder.is_empty() && target_folder.eq_ignore_ascii_case(&other_folder) && other.mod_type == target_type;
+                    let other_phys = crate::installer::helpers::get_physical_identity(&other.game_path, &other.disabled_path);
+                    let same_phys = !target_phys.is_empty() && target_phys.eq_ignore_ascii_case(&other_phys);
+                    same_nexus || same_folder || same_phys
+                } else {
+                    false
+                }
+            })
+        };
+
         // Remove existing mod with the same ID if it is an update
         if let Some(pos) = data.mods.iter().position(|m| m.id == final_mod.id) {
             data.mods.remove(pos);
         }
         data.mods.push(final_mod.clone());
+
+        if should_auto_disable {
+            crate::logger::log(&format!(
+                "install_mod_with_manifest: Auto-disabling variant '{}' due to active conflicting mod",
+                final_mod.name
+            ));
+            let _ = crate::profiles::disable_mod_internal(&mut data, &program_path, &final_mod.id);
+            if let Some(m) = data.mods.iter().find(|m| m.id == final_mod.id) {
+                final_mod = m.clone();
+            }
+        }
 
         // Update profile
         let current_profile_id = data.current_profile_id.clone();
@@ -241,6 +322,11 @@ pub async fn install_mod_with_manifest(
     }
 
     let _ = crate::profiles::save_pmm_meta(&final_mod);
+
+    let _ = app_handle.emit("install-progress", InstallProgressPayload {
+        stage: "complete".to_string(),
+        percent: 100,
+    });
 
     Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
 }

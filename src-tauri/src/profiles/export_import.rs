@@ -510,6 +510,7 @@ pub fn import_profile_pack_internal(
                 custom_notes: None,
                 original_name: None,
                 custom_name: None,
+                fomod_choices: None,
             });
         }
     }

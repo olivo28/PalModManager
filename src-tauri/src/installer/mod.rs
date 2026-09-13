@@ -20,7 +20,7 @@ pub use helpers::{
 pub use exists::check_mod_exists;
 
 // Re-export execution
-pub use execution::execute_manifest;
+pub use execution::{execute_manifest, resolve_source_path};
 
 // Re-export install
 pub use install::install_mod;

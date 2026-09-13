@@ -3,7 +3,7 @@ import { getState, updateState } from '../../state';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { showConfirm } from '../confirm';
-import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData, clearEditorContent, _fileBufferCache, _originalContent, clearBufferCache } from './viewer';
+import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData, clearEditorContent, _fileBufferCache, _originalContent, clearBufferCache, getBufferKey } from './viewer';
 import { getMonacoContent } from './monaco/instance';
 import { editorDom } from '../../framework';
 
@@ -517,7 +517,7 @@ export function renderFileTree(files: string[]): void {
         const currentContent = getMonacoContent();
         const normalize = (str: string) => str.replace(/\r\n/g, '\n');
         const isDirty = normalize(currentContent) !== normalize(_originalContent);
-        _fileBufferCache.set(currentPath, {
+        _fileBufferCache.set(getBufferKey(currentPath, state.editorModId), {
           current: currentContent,
           original: _originalContent,
           isDirty,

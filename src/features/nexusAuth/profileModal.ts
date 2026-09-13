@@ -221,6 +221,15 @@ export function openNexusProfileModal(): void {
       if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">${t('nexus_profile.loading_endorsements')}</div>`;
       try {
         cachedEndorsements = await getNexusUserEndorsements(force);
+        const curSettings = getState().currentSettings;
+        if (curSettings) {
+          updateState({
+            currentSettings: {
+              ...curSettings,
+              nexusEndorsementsCache: cachedEndorsements,
+            },
+          });
+        }
         renderEndorsementsList(cachedEndorsements);
       } catch (err: any) {
         if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--danger); font-size: 11px;">${String(err)}</div>`;
@@ -296,6 +305,15 @@ export function openNexusProfileModal(): void {
       if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--text-muted); font-size: 11px;">${t('nexus_profile.loading_tracked')}</div>`;
       try {
         cachedTracked = await getNexusUserTrackedMods(force);
+        const curSettings = getState().currentSettings;
+        if (curSettings) {
+          updateState({
+            currentSettings: {
+              ...curSettings,
+              nexusTrackedCache: cachedTracked,
+            },
+          });
+        }
         renderTrackedList(cachedTracked);
       } catch (err: any) {
         if (listContainer) listContainer.innerHTML = `<div style="text-align: center; padding: 20px; color: var(--danger); font-size: 11px;">${String(err)}</div>`;
@@ -350,14 +368,14 @@ export function openNexusProfileModal(): void {
           <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
             <div style="display: flex; align-items: center; gap: 6px;">
               <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
-              ${isPalworld ? '<span style="font-size: 9px; font-weight: 700; background: rgba(46, 213, 115, 0.2); color: #2ed573; padding: 1px 5px; border-radius: 4px;">Palworld</span>' : `<span style="font-size: 9px; font-weight: 600; color: var(--text-muted);">${domain}</span>`}
-              ${item.version ? `<span style="font-size: 10px; color: var(--text-muted); font-family: monospace;">v${item.version}</span>` : ''}
+              ${isPalworld ? '<span style="font-size: 9px; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 1px 5px; border-radius: 4px;">Palworld</span>' : `<span style="font-size: 9px; font-weight: 600; color: var(--text-muted);">${domain}</span>`}
             </div>
             ${item.summary ? `<div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
-            <div style="font-size: 10px; color: var(--text-secondary); display: flex; gap: 10px;">
-              <span>📥 ${(item.downloads || 0).toLocaleString()}</span>
-              <span>👍 ${(item.endorsements || 0).toLocaleString()}</span>
+            <div style="font-size: 10px; color: var(--text-muted); display: flex; gap: 8px;">
               <span>ID: #${item.modId}</span>
+              ${item.version ? `<span>v${item.version}</span>` : ''}
+              <span>👍 ${item.endorsements || 0}</span>
+              <span>📥 ${(item.downloads ?? item.totalDownloads ?? 0).toLocaleString()}</span>
             </div>
           </div>
           <button type="button" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 10px; flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
@@ -385,19 +403,21 @@ export function openNexusProfileModal(): void {
     }
   };
 
-  // Search & filter event listeners
+  // Wire search & palworld-only filters
   settingsDom.elMaybe('nexus-endorsements-search')?.addEventListener('input', () => {
     if (cachedEndorsements) renderEndorsementsList(cachedEndorsements);
   });
   settingsDom.elMaybe('nexus-endorsements-palworld-only')?.addEventListener('change', () => {
     if (cachedEndorsements) renderEndorsementsList(cachedEndorsements);
   });
+
   settingsDom.elMaybe('nexus-tracked-search')?.addEventListener('input', () => {
     if (cachedTracked) renderTrackedList(cachedTracked);
   });
   settingsDom.elMaybe('nexus-tracked-palworld-only')?.addEventListener('change', () => {
     if (cachedTracked) renderTrackedList(cachedTracked);
   });
+
   settingsDom.elMaybe('nexus-my-mods-search')?.addEventListener('input', () => {
     if (cachedMyMods) renderMyModsList(cachedMyMods);
   });
@@ -412,19 +432,13 @@ export function openNexusProfileModal(): void {
     });
   };
 
-  // Auto-refresh profile if avatar or rich stats are missing
-  if (!account.avatarUrl || account.endorsementsGiven === undefined || account.endorsementsGiven === null) {
+  // Switch initial tab
+  switchTab('overview');
+
+  // If token is present, perform a lightweight check to refresh status in background
+  if (account.accessToken) {
     refreshNexusAccountProfile().then(updated => {
       if (updated) {
-        const curSettings = getState().currentSettings;
-        if (curSettings) {
-          updateState({
-            currentSettings: {
-              ...curSettings,
-              nexusAccount: updated,
-            },
-          });
-        }
         populateFields(updated);
         import('./ui').then(({ renderSidebarNexusWidget, renderNexusAccountUI }) => {
           renderSidebarNexusWidget();
@@ -447,6 +461,18 @@ export function openNexusProfileModal(): void {
       cachedEndorsements = endorsements;
       cachedTracked = tracked;
       cachedMyMods = authored;
+
+      const curSettings = getState().currentSettings;
+      if (curSettings) {
+        updateState({
+          currentSettings: {
+            ...curSettings,
+            nexusEndorsementsCache: endorsements,
+            nexusTrackedCache: tracked,
+            nexusAuthoredCache: authored,
+          },
+        });
+      }
 
       const endBadge = settingsDom.elMaybe('nexus-tab-endorsements-count');
       const trackBadge = settingsDom.elMaybe('nexus-tab-tracked-count');
@@ -481,32 +507,58 @@ export function openNexusProfileModal(): void {
       refreshBtn.setAttribute('disabled', 'true');
       showToast(t('nexus_profile.refreshing'), 'info');
       try {
-        cachedEndorsements = null;
-        cachedTracked = null;
-        cachedMyMods = null;
-        const updated = await refreshNexusAccountProfile();
-        if (updated) {
-          const curSettings = getState().currentSettings;
-          if (curSettings) {
-            updateState({
-              currentSettings: {
-                ...curSettings,
-                nexusAccount: updated,
-              },
-            });
-          }
-          populateFields(updated);
-          const { renderSidebarNexusWidget, renderNexusAccountUI } = await import('./ui');
-          renderSidebarNexusWidget();
-          renderNexusAccountUI();
-          showToast(t('nexus_profile.refreshed_success'), 'success');
-          // Reload active tab with force = true
-          const activeTab = modal.querySelector('.nexus-modal-tab.active')?.getAttribute('data-tab') || 'overview';
-          if (activeTab === 'endorsements') loadEndorsementsTab(true);
-          else if (activeTab === 'tracked') loadTrackedTab(true);
-          else if (activeTab === 'my-mods') loadMyModsTab(true);
-          else switchTab('overview');
+        const [updated, newEndorsements, newTracked, newAuthored] = await Promise.all([
+          refreshNexusAccountProfile(),
+          getNexusUserEndorsements(true).catch(() => []),
+          getNexusUserTrackedMods(true).catch(() => []),
+          getNexusUserAuthoredMods(true).catch(() => []),
+        ]);
+
+        cachedEndorsements = newEndorsements;
+        cachedTracked = newTracked;
+        cachedMyMods = newAuthored;
+
+        const curSettings = getState().currentSettings;
+        if (curSettings) {
+          updateState({
+            currentSettings: {
+              ...curSettings,
+              nexusAccount: updated || curSettings.nexusAccount,
+              nexusEndorsementsCache: newEndorsements,
+              nexusTrackedCache: newTracked,
+              nexusAuthoredCache: newAuthored,
+              nexusCacheTimestamp: Math.floor(Date.now() / 1000),
+            },
+          });
         }
+
+        if (updated) {
+          populateFields(updated);
+        }
+
+        const endBadge = settingsDom.elMaybe('nexus-tab-endorsements-count');
+        const trackBadge = settingsDom.elMaybe('nexus-tab-tracked-count');
+        const myModsBadge = settingsDom.elMaybe('nexus-tab-authored-count') || settingsDom.elMaybe('nexus-tab-my-mods-count');
+        if (endBadge) endBadge.textContent = String(newEndorsements.length);
+        if (trackBadge) trackBadge.textContent = String(newTracked.length);
+        if (myModsBadge) myModsBadge.textContent = String(newAuthored.length);
+
+        const { renderSidebarNexusWidget, renderNexusAccountUI } = await import('./ui');
+        renderSidebarNexusWidget();
+        renderNexusAccountUI();
+
+        // Refresh mod cards in main view reactively
+        const { loadMods } = await import('../../ui/modsView');
+        loadMods().catch(() => {});
+
+        showToast(t('nexus_profile.refreshed_success'), 'success');
+
+        // Reload active tab
+        const activeTab = modal.querySelector('.nexus-modal-tab.active')?.getAttribute('data-tab') || 'overview';
+        if (activeTab === 'endorsements') renderEndorsementsList(newEndorsements);
+        else if (activeTab === 'tracked') renderTrackedList(newTracked);
+        else if (activeTab === 'my-mods') renderMyModsList(newAuthored);
+        else switchTab('overview');
       } catch (err: any) {
         showToast(String(err), 'error');
       } finally {

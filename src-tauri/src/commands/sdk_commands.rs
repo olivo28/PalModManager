@@ -1,10 +1,21 @@
 use std::fs;
 use std::path::{Path, PathBuf};
+use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use tauri::State;
 use crate::AppState;
 use crate::usmap::{get_sdk_dir, invalidate_sdk_cache, get_or_load_sdk_index};
 use crate::usmap::sync::find_bundled_resource;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SdkProgressPayload {
+    pub stage: String,
+    pub percent: u8,
+    pub current_file: String,
+    pub processed_files: usize,
+    pub total_files: usize,
+}
 
 const REMOTE_SDK_MANIFEST_URLS: &[&str] = &[
     "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/sdk/manifest.json",
@@ -77,15 +88,31 @@ pub fn get_sdk_status(state: State<'_, AppState>) -> Result<serde_json::Value, S
 }
 
 #[tauri::command]
-pub fn import_local_sdk(
+pub async fn import_local_sdk(
+    app: tauri::AppHandle,
     folder_path: Option<String>,
     state: State<'_, AppState>,
 ) -> Result<serde_json::Value, String> {
-    let data = state.data.lock().map_err(|e| e.to_string())?;
-    let program_path = data.settings.program_path.clone();
-    let game_path = data.settings.game_path.clone();
-    drop(data);
+    let (program_path, game_path) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        (data.settings.program_path.clone(), data.settings.game_path.clone())
+    };
 
+    tauri::async_runtime::spawn_blocking(move || {
+        import_local_sdk_internal(Some(app), folder_path, program_path, game_path)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during import_local_sdk: {e}"))??;
+
+    get_sdk_status(state)
+}
+
+fn import_local_sdk_internal(
+    app: Option<tauri::AppHandle>,
+    folder_path: Option<String>,
+    program_path: String,
+    game_path: String,
+) -> Result<usize, String> {
     let src_dir = if let Some(p) = folder_path {
         if !p.trim().is_empty() {
             PathBuf::from(p)
@@ -103,21 +130,48 @@ pub fn import_local_sdk(
     let target_dir = get_sdk_dir(&program_path);
     let _ = fs::create_dir_all(&target_dir);
 
-    // Copy all .hpp / .h files from src_dir to target_dir
-    let mut copied_count = 0;
+    // Collect all candidate header files first to establish total count
+    let mut candidate_files: Vec<PathBuf> = Vec::new();
     if let Ok(entries) = fs::read_dir(&src_dir) {
         for entry in entries.filter_map(|e| e.ok()) {
             let p = entry.path();
             if p.is_file() {
                 if let Some(ext) = p.extension().and_then(|s| s.to_str()) {
                     if ext.eq_ignore_ascii_case("hpp") || ext.eq_ignore_ascii_case("h") {
-                        if let Some(file_name) = p.file_name() {
-                            let dest = target_dir.join(file_name);
-                            if fs::copy(&p, &dest).is_ok() {
-                                copied_count += 1;
-                            }
-                        }
+                        candidate_files.push(p);
                     }
+                }
+            }
+        }
+    }
+
+    let total_files = candidate_files.len();
+    let mut copied_count = 0;
+    let mut last_emitted_percent: u8 = 0;
+
+    for (idx, p) in candidate_files.iter().enumerate() {
+        if let Some(file_name) = p.file_name() {
+            let dest = target_dir.join(file_name);
+            if fs::copy(p, &dest).is_ok() {
+                copied_count += 1;
+            }
+
+            if let Some(ref handle) = app {
+                let percent = if total_files > 0 {
+                    (((idx + 1) as f32 / total_files as f32) * 100.0).round() as u8
+                } else {
+                    100
+                };
+                if (idx + 1) % 50 == 0 || percent > last_emitted_percent || idx + 1 == total_files {
+                    use tauri::Emitter;
+                    last_emitted_percent = percent;
+                    let _ = handle.emit("sdk-progress", SdkProgressPayload {
+                        stage: "Importing SDK headers...".to_string(),
+                        percent: percent.min(100),
+                        current_file: file_name.to_string_lossy().to_string(),
+                        processed_files: copied_count,
+                        total_files,
+                    });
                 }
             }
         }
@@ -137,10 +191,20 @@ pub fn import_local_sdk(
     });
     let _ = fs::write(target_dir.join("manifest.json"), serde_json::to_string_pretty(&local_manifest).unwrap_or_default());
 
-    crate::logger::log(&format!("Imported {} local SDK headers from {:?}", copied_count, src_dir));
+    if let Some(ref handle) = app {
+        use tauri::Emitter;
+        let _ = handle.emit("sdk-progress", SdkProgressPayload {
+            stage: "Completed".to_string(),
+            percent: 100,
+            current_file: "Completed".to_string(),
+            processed_files: copied_count,
+            total_files,
+        });
+    }
 
+    crate::logger::log(&format!("Imported {} local SDK headers from {:?}", copied_count, src_dir));
     invalidate_sdk_cache();
-    get_sdk_status(state)
+    Ok(copied_count)
 }
 
 fn find_local_game_cxx(game_path: &str) -> Option<PathBuf> {
@@ -160,7 +224,7 @@ fn find_local_game_cxx(game_path: &str) -> Option<PathBuf> {
 }
 
 #[tauri::command]
-pub async fn sync_sdk_from_repo(state: State<'_, AppState>) -> Result<serde_json::Value, String> {
+pub async fn sync_sdk_from_repo(app: tauri::AppHandle, state: State<'_, AppState>) -> Result<serde_json::Value, String> {
     let (program_path, _game_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         (data.settings.program_path.clone(), data.settings.game_path.clone())
@@ -280,54 +344,96 @@ pub async fn sync_sdk_from_repo(state: State<'_, AppState>) -> Result<serde_json
         format!("Failed to obtain verified SDK package: {}", last_err)
     })?;
 
-    // 4. Atomic Extraction via Temporary Staging Directory
-    let temp_staging_dir = target_dir.parent()
-        .unwrap_or_else(|| Path::new("."))
-        .join(format!("sdk_staging_{}", uuid::Uuid::new_v4()));
-    let _ = fs::create_dir_all(&temp_staging_dir);
+    // 4. Atomic Extraction via Temporary Staging Directory (offloaded to spawn_blocking)
+    let app_clone = app.clone();
+    let manifest_clone = manifest_content.clone();
+    let target_dir_clone = target_dir.clone();
 
-    let reader = std::io::Cursor::new(bytes);
-    let mut archive = zip::ZipArchive::new(reader)
-        .map_err(|e| format!("Invalid ZIP archive for SDK package: {}", e))?;
+    let extracted_count = tauri::async_runtime::spawn_blocking(move || {
+        let temp_staging_dir = target_dir_clone.parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join(format!("sdk_staging_{}", uuid::Uuid::new_v4()));
+        let _ = fs::create_dir_all(&temp_staging_dir);
 
-    let mut extracted_count = 0;
-    for i in 0..archive.len() {
-        let mut file = archive.by_index(i).map_err(|e| format!("Zip entry error: {}", e))?;
-        let outpath = match file.enclosed_name() {
-            Some(path) => temp_staging_dir.join(path),
-            None => continue,
-        };
+        let reader = std::io::Cursor::new(bytes);
+        let mut archive = zip::ZipArchive::new(reader)
+            .map_err(|e| format!("Invalid ZIP archive for SDK package: {}", e))?;
 
-        if (*file.name()).ends_with('/') {
-            let _ = fs::create_dir_all(&outpath);
-        } else {
-            if let Some(p) = outpath.parent() {
-                if !p.exists() {
-                    let _ = fs::create_dir_all(p);
+        let total_files = archive.len();
+        let mut extracted_count = 0;
+        let mut last_emitted_percent: u8 = 0;
+
+        for i in 0..total_files {
+            let mut file = archive.by_index(i).map_err(|e| format!("Zip entry error: {}", e))?;
+            let entry_name = file.name().to_string();
+            let outpath = match file.enclosed_name() {
+                Some(path) => temp_staging_dir.join(path),
+                None => continue,
+            };
+
+            if entry_name.ends_with('/') {
+                let _ = fs::create_dir_all(&outpath);
+            } else {
+                if let Some(p) = outpath.parent() {
+                    if !p.exists() {
+                        let _ = fs::create_dir_all(p);
+                    }
+                }
+                let mut outfile = fs::File::create(&outpath)
+                    .map_err(|e| format!("Failed to create output file {:?}: {}", outpath, e))?;
+                std::io::copy(&mut file, &mut outfile)
+                    .map_err(|e| format!("Failed to write SDK file {:?}: {}", outpath, e))?;
+                extracted_count += 1;
+
+                let percent = if total_files > 0 {
+                    (((i + 1) as f32 / total_files as f32) * 100.0).round() as u8
+                } else {
+                    100
+                };
+                if (i + 1) % 50 == 0 || percent > last_emitted_percent || i + 1 == total_files {
+                    use tauri::Emitter;
+                    last_emitted_percent = percent;
+                    let _ = app_clone.emit("sdk-progress", SdkProgressPayload {
+                        stage: "Extracting SDK package...".to_string(),
+                        percent: percent.min(100),
+                        current_file: entry_name,
+                        processed_files: extracted_count,
+                        total_files,
+                    });
                 }
             }
-            let mut outfile = fs::File::create(&outpath)
-                .map_err(|e| format!("Failed to create output file {:?}: {}", outpath, e))?;
-            std::io::copy(&mut file, &mut outfile)
-                .map_err(|e| format!("Failed to write SDK file {:?}: {}", outpath, e))?;
-            extracted_count += 1;
         }
-    }
 
-    // Write verified manifest.json into staging directory
-    let _ = fs::write(temp_staging_dir.join("manifest.json"), manifest_content);
+        // Write verified manifest.json into staging directory
+        let _ = fs::write(temp_staging_dir.join("manifest.json"), manifest_clone);
 
-    // Atomic promotion: move files from temp_staging_dir to target_dir
-    if let Ok(entries) = fs::read_dir(&temp_staging_dir) {
-        for entry in entries.flatten() {
-            let src = entry.path();
-            if let Some(file_name) = src.file_name() {
-                let dest = target_dir.join(file_name);
-                let _ = fs::rename(&src, &dest).or_else(|_| fs::copy(&src, &dest).map(|_| ()));
+        // Atomic promotion: move files from temp_staging_dir to target_dir
+        if let Ok(entries) = fs::read_dir(&temp_staging_dir) {
+            for entry in entries.flatten() {
+                let src = entry.path();
+                if let Some(file_name) = src.file_name() {
+                    let dest = target_dir_clone.join(file_name);
+                    let _ = fs::rename(&src, &dest).or_else(|_| fs::copy(&src, &dest).map(|_| ()));
+                }
             }
         }
-    }
-    let _ = fs::remove_dir_all(&temp_staging_dir);
+        let _ = fs::remove_dir_all(&temp_staging_dir);
+
+        {
+            use tauri::Emitter;
+            let _ = app_clone.emit("sdk-progress", SdkProgressPayload {
+                stage: "Completed".to_string(),
+                percent: 100,
+                current_file: "Completed".to_string(),
+                processed_files: extracted_count,
+                total_files,
+            });
+        }
+
+        Ok::<usize, String>(extracted_count)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during SDK sync extraction: {e}"))??;
 
     crate::logger::log(&format!("Successfully synced and extracted {} verified SDK headers into {:?}", extracted_count, target_dir));
 

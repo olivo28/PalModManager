@@ -52,6 +52,16 @@ pub struct ResourceActionResult {
     pub total_files_extracted: Option<usize>,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct DevResourceProgressPayload {
+    pub target: String,
+    pub percent: u8,
+    pub current_file: String,
+    pub processed_files: usize,
+    pub total_files: usize,
+}
+
 fn compute_sha256_file(path: &Path) -> Option<String> {
     let bytes = fs::read(path).ok()?;
     let mut hasher = Sha256::new();
@@ -274,29 +284,64 @@ pub async fn sync_development_resource(
     target: String,
     state: State<'_, AppState>,
 ) -> Result<ResourceActionResult, String> {
-    let program_path = {
+    let (program_path, game_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.program_path.clone()
+        (data.settings.program_path.clone(), data.settings.game_path.clone())
     };
 
     let target_clean = target.trim().to_lowercase();
     let dest_dir = resolve_resource_dir(&program_path, &target_clean);
     let _ = fs::create_dir_all(&dest_dir);
 
-    // Read manifest for expected checksum and filename
+    // 1. Resolve master manifest & version entry
+    let installed_build = detect_installed_game_build(Path::new(&game_path));
+    let detected_build_id = installed_build.build_id.clone();
+    let master = get_or_load_master_manifest(&program_path).unwrap_or_else(|| MasterResourceManifest {
+        schema_version: "1.0.0".to_string(),
+        latest_game_version: "v1.0.4".to_string(),
+        latest_steam_build_id: "25094871".to_string(),
+        updated_at: String::new(),
+        versions: Vec::new(),
+    });
+    let active_entry = find_version_entry(&master, detected_build_id.as_deref());
+    let default_build_id = active_entry
+        .and_then(|e| e.steam_build_id.clone())
+        .unwrap_or_else(|| master.latest_steam_build_id.clone());
+
+    // 2. Read subfolder manifest if present (local or bundled)
     let manifest_path = dest_dir.join("manifest.json");
-    let manifest_content = if manifest_path.is_file() {
+    let mut manifest_content = if manifest_path.is_file() {
         fs::read_to_string(&manifest_path).ok()
     } else {
         find_bundled_resource(&format!("resources/{}/manifest.json", target_clean))
             .and_then(|p| fs::read_to_string(p).ok())
     };
 
+    // If subfolder manifest is missing from disk, try fetching it from remote GitHub/CDN
+    if manifest_content.is_none() {
+        let manifest_urls = [
+            format!("https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/{}/manifest.json", target_clean),
+            format!("https://cdn.jsdelivr.net/gh/olivo28/PalModManager@main/resources/{}/manifest.json", target_clean),
+            format!("https://fastly.jsdelivr.net/gh/olivo28/PalModManager@main/resources/{}/manifest.json", target_clean),
+        ];
+        for u in &manifest_urls {
+            if let Ok(resp) = reqwest::get(u).await {
+                if resp.status().is_success() {
+                    if let Ok(text) = resp.text().await {
+                        let _ = fs::write(&manifest_path, &text);
+                        manifest_content = Some(text);
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     let manifest_val: Option<serde_json::Value> = manifest_content.as_deref().and_then(|c| serde_json::from_str(c).ok());
 
-    let (expected_filename, expected_url, expected_hash) = if let Some(ref m) = manifest_val {
+    let (mut expected_filename, mut expected_url, expected_hash) = if let Some(ref m) = manifest_val {
         let array_key = match target_clean.as_str() {
-            "mappings" => "mappings",
+            "mappings" | "usmap" => "mappings",
             "jmap" => "jmaps",
             "lua_types" => "types",
             "uht" => "uht",
@@ -334,6 +379,24 @@ pub async fn sync_development_resource(
     } else {
         (String::new(), String::new(), String::new())
     };
+
+    // Master manifest fallback if subfolder manifest didn't resolve filename
+    if expected_filename.is_empty() {
+        let rel_path = match target_clean.as_str() {
+            "mappings" | "usmap" => active_entry.and_then(|e| e.usmap.clone()).unwrap_or_else(|| format!("mappings/Palworld_{}.usmap", default_build_id)),
+            "sdk" => active_entry.and_then(|e| e.sdk.clone()).unwrap_or_else(|| format!("sdk/Palworld_SDK_{}.zip", default_build_id)),
+            "jmap" => active_entry.and_then(|e| e.jmap.clone()).unwrap_or_else(|| format!("jmap/Palworld_{}.jmap.zip", default_build_id)),
+            "lua_types" => active_entry.and_then(|e| e.lua_types.clone()).unwrap_or_else(|| format!("lua_types/Palworld_LuaTypes_{}.zip", default_build_id)),
+            "uht" => active_entry.and_then(|e| e.uht.clone()).unwrap_or_else(|| format!("uht/Palworld_UHT_SDK_{}.zip", default_build_id)),
+            "bp_sdk" => active_entry.and_then(|e| e.bp_sdk.clone()).unwrap_or_else(|| format!("bp_sdk/Palworld_BP_SDK_{}.zip", default_build_id)),
+            "schemas" => format!("schemas/palschema_schemas_{}.zip", active_entry.and_then(|e| e.palschema_version.clone()).unwrap_or_else(|| "0.6.7".to_string())),
+            _ => format!("{}/Palworld_{}.zip", target_clean, default_build_id),
+        };
+        expected_filename = Path::new(&rel_path).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or(rel_path.clone());
+        if expected_url.is_empty() {
+            expected_url = format!("https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/{}", rel_path);
+        }
+    }
 
     if expected_filename.is_empty() {
         return Err(format!("Could not resolve resource package details for target '{}'", target_clean));
@@ -426,7 +489,8 @@ pub async fn sync_development_resource(
 }
 
 #[tauri::command]
-pub fn export_development_resource(
+pub async fn export_development_resource(
+    app: tauri::AppHandle,
     target: String,
     destination_folder: String,
     state: State<'_, AppState>,
@@ -436,6 +500,19 @@ pub fn export_development_resource(
         data.settings.program_path.clone()
     };
 
+    tauri::async_runtime::spawn_blocking(move || {
+        export_development_resource_internal(Some(app), target, destination_folder, program_path)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during export_development_resource: {e}"))?
+}
+
+fn export_development_resource_internal(
+    app: Option<tauri::AppHandle>,
+    target: String,
+    destination_folder: String,
+    program_path: String,
+) -> Result<ResourceActionResult, String> {
     let target_clean = target.trim().to_lowercase();
     let dest_out = PathBuf::from(&destination_folder);
     if !dest_out.exists() {
@@ -482,9 +559,13 @@ pub fn export_development_resource(
     let mut archive = zip::ZipArchive::new(file)
         .map_err(|e| format!("Invalid ZIP archive {:?}: {}", archive_path, e))?;
 
+    let total_files = archive.len();
     let mut count = 0;
-    for i in 0..archive.len() {
+    let mut last_emitted_percent: u8 = 0;
+
+    for i in 0..total_files {
         let mut zip_entry = archive.by_index(i).map_err(|e| e.to_string())?;
+        let entry_name = zip_entry.name().to_string();
         let outpath = match zip_entry.enclosed_name() {
             Some(path) => dest_out.join(path),
             None => continue,
@@ -501,7 +582,37 @@ pub fn export_development_resource(
             let mut outfile = fs::File::create(&outpath).map_err(|e| format!("Failed to create output file: {}", e))?;
             std::io::copy(&mut zip_entry, &mut outfile).map_err(|e| format!("Failed to extract file: {}", e))?;
             count += 1;
+
+            if let Some(ref handle) = app {
+                let percent = if total_files > 0 {
+                    (((i + 1) as f32 / total_files as f32) * 100.0).round() as u8
+                } else {
+                    100
+                };
+                if (i + 1) % 50 == 0 || percent > last_emitted_percent || i + 1 == total_files {
+                    use tauri::Emitter;
+                    last_emitted_percent = percent;
+                    let _ = handle.emit("dev-resource-export-progress", DevResourceProgressPayload {
+                        target: target_clean.clone(),
+                        percent: percent.min(100),
+                        current_file: entry_name,
+                        processed_files: count,
+                        total_files,
+                    });
+                }
+            }
         }
+    }
+
+    if let Some(ref handle) = app {
+        use tauri::Emitter;
+        let _ = handle.emit("dev-resource-export-progress", DevResourceProgressPayload {
+            target: target_clean.clone(),
+            percent: 100,
+            current_file: "Completed".to_string(),
+            processed_files: count,
+            total_files,
+        });
     }
 
     crate::logger::log(&format!("Exported {} files from resource '{}' to {:?}", count, target_clean, dest_out));

@@ -27,16 +27,40 @@ export interface FileBuffer {
 
 export const _fileBufferCache: Map<string, FileBuffer> = new Map();
 
-export function getDirtyBufferCount(): number {
+/**
+ * Returns a globally unique buffer cache key scoped by mod ID and normalized file path,
+ * preventing buffer collisions across different mods sharing identical relative file paths (e.g. main.lua).
+ */
+export function getBufferKey(filePath: string, modId?: string | null): string {
+  const mId = modId || getState().editorModId || '__global__';
+  const clean = filePath.replace(/\\/g, '/');
+  return `${mId}::${clean}`;
+}
+
+export function getDirtyBufferCount(targetModId?: string | null): number {
+  const currentModId = targetModId ?? getState().editorModId;
   let count = 0;
-  for (const buf of _fileBufferCache.values()) {
-    if (buf.isDirty) count++;
+  for (const [key, buf] of _fileBufferCache.entries()) {
+    if (!buf.isDirty) continue;
+    if (currentModId) {
+      const modId = key.includes('::') ? key.split('::')[0] : null;
+      if (modId && modId !== currentModId) continue;
+    }
+    count++;
   }
   return count;
 }
 
-export function clearBufferCache(): void {
-  _fileBufferCache.clear();
+export function clearBufferCache(modId?: string | null): void {
+  if (modId) {
+    for (const key of _fileBufferCache.keys()) {
+      if (key.startsWith(`${modId}::`)) {
+        _fileBufferCache.delete(key);
+      }
+    }
+  } else {
+    _fileBufferCache.clear();
+  }
   updateUnsavedIndicator();
 }
 
@@ -49,19 +73,18 @@ export function clearOriginalContent(): void {
 }
 
 export function clearEditorContent(): void {
-  _originalContent = null;
-  clearBufferCache();
   const editorPath = editorDom.elMaybe('editor-file-path');
-  if (editorPath) editorPath.textContent = '';
   const formatBtn = editorDom.elMaybe('editor-format-btn');
-  if (formatBtn) formatBtn.style.display = 'none';
   const previewBtn = editorDom.elMaybe('editor-preview-btn');
-  if (previewBtn) previewBtn.style.display = 'none';
   const diffBtn = editorDom.elMaybe('editor-diff-btn');
-  if (diffBtn) diffBtn.style.display = 'none';
   const restoreBtn = editorDom.elMaybe('editor-restore-btn');
-  if (restoreBtn) restoreBtn.style.display = 'none';
   const preview = editorDom.elMaybe('editor-preview');
+
+  if (editorPath) editorPath.textContent = '';
+  if (formatBtn) formatBtn.style.display = 'none';
+  if (previewBtn) previewBtn.style.display = 'none';
+  if (diffBtn) diffBtn.style.display = 'none';
+  if (restoreBtn) restoreBtn.style.display = 'none';
   if (preview) preview.style.display = 'none';
 
   setMonacoFile('empty.txt', '');
@@ -76,18 +99,22 @@ export function updateUnsavedIndicator(): void {
   if (selectedPath && _originalContent !== null) {
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
     const isDirty = normalize(currentText) !== normalize(_originalContent);
-    _fileBufferCache.set(selectedPath, {
+    _fileBufferCache.set(getBufferKey(selectedPath, state.editorModId), {
       current: currentText,
       original: _originalContent,
       isDirty,
     });
   }
 
-  // Update tree dirty classes for all cached files
-  for (const [path, buf] of _fileBufferCache.entries()) {
-    const item = document.querySelector(`.editor-file-item[data-path="${CSS.escape(path)}"]`);
-    if (item) {
-      item.classList.toggle('dirty', buf.isDirty);
+  // Update tree dirty classes for current active mod's files
+  for (const [key, buf] of _fileBufferCache.entries()) {
+    const modId = key.includes('::') ? key.split('::')[0] : null;
+    const path = key.includes('::') ? key.split('::').slice(1).join('::') : key;
+    if (!modId || modId === state.editorModId) {
+      const item = document.querySelector(`.editor-file-item[data-path="${CSS.escape(path)}"]`);
+      if (item) {
+        item.classList.toggle('dirty', buf.isDirty);
+      }
     }
   }
 
@@ -154,7 +181,7 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
     const currentText = getMonacoContent();
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
     const isDirty = normalize(currentText) !== normalize(_originalContent);
-    _fileBufferCache.set(prevPath, {
+    _fileBufferCache.set(getBufferKey(prevPath, state.editorModId), {
       current: currentText,
       original: _originalContent,
       isDirty,
@@ -204,11 +231,12 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
   const modDisplayName = currentMod?.name || state.editorModId;
 
   try {
-    const cached = _fileBufferCache.get(filePath);
+    const cacheKey = getBufferKey(filePath, state.editorModId);
+    const cached = _fileBufferCache.get(cacheKey);
     if (cached) {
       editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, filePath);
       _originalContent = cached.original;
-      setMonacoFile(filePath, cached.current);
+      setMonacoFile(filePath, cached.current, state.editorModId);
       setStatusBarMode('code');
     } else {
       const result = await readModFile(state.editorModId, filePath);
@@ -303,9 +331,9 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
       } else {
         editorPath.innerHTML = renderEditorBreadcrumbs(modDisplayName, result.path || filePath);
         _originalContent = result.content;
-        setMonacoFile(filePath, result.content);
+        setMonacoFile(filePath, result.content, state.editorModId);
         setStatusBarMode('code');
-        _fileBufferCache.set(filePath, {
+        _fileBufferCache.set(cacheKey, {
           current: result.content,
           original: result.content,
           isDirty: false,
@@ -333,22 +361,32 @@ export async function handleEditorSave(): Promise<void> {
   const filePath = state.editorSelectedFile || getCurrentMonacoFilePath();
   if (!state.editorModId || !filePath) return;
 
+  const currentModId = state.editorModId;
   const saveBtn = editorDom.elMaybe('editor-save-btn');
-  const dirtyEntries = Array.from(_fileBufferCache.entries()).filter(([_, b]) => b.isDirty);
 
-  // If active file has edits in Monaco, sync it into dirtyEntries
+  // If active file has edits in Monaco, sync it into buffer cache
   const currentContent = getMonacoContent();
   if (_originalContent !== null) {
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
     const isCurDirty = normalize(currentContent) !== normalize(_originalContent);
-    _fileBufferCache.set(filePath, {
+    _fileBufferCache.set(getBufferKey(filePath, currentModId), {
       current: currentContent,
       original: _originalContent,
       isDirty: isCurDirty,
     });
   }
 
-  const updatedDirty = Array.from(_fileBufferCache.entries()).filter(([_, b]) => b.isDirty);
+  const isBufferForMod = (key: string) => {
+    if (!key.includes('::')) return true;
+    return key.split('::')[0] === currentModId;
+  };
+  const getBufferPath = (key: string) => {
+    return key.includes('::') ? key.split('::').slice(1).join('::') : key;
+  };
+
+  const updatedDirty = Array.from(_fileBufferCache.entries())
+    .filter(([k, b]) => b.isDirty && isBufferForMod(k))
+    .map(([k, b]): [string, FileBuffer] => [getBufferPath(k), b]);
 
   if (updatedDirty.length > 1) {
     // Multi-file batch save (Save All)
@@ -372,7 +410,7 @@ export async function handleEditorSave(): Promise<void> {
       }
 
       for (const [p, buf] of updatedDirty) {
-        await saveModFile(state.editorModId, p, buf.current);
+        await saveModFile(currentModId, p, buf.current);
         buf.original = buf.current;
         buf.isDirty = false;
         bus.emit('editor:saved', { filePath: p });
@@ -381,7 +419,7 @@ export async function handleEditorSave(): Promise<void> {
       _originalContent = getMonacoContent();
       updateUnsavedIndicator();
       showToast(t('editor.toast_saved_all', { count: updatedDirty.length }) || `Saved ${updatedDirty.length} files`, 'success');
-      await refreshEditorFileTree(state.editorModId);
+      await refreshEditorFileTree(currentModId);
     } catch (e) {
       showToast(t('toasts.export_failed', { error: String(e) }), 'error');
     } finally {
@@ -410,10 +448,11 @@ export async function handleEditorSave(): Promise<void> {
     const { suppressWatcherRefresh } = await import('./watcher');
     suppressWatcherRefresh(3000);
 
-    await saveModFile(state.editorModId, filePath, content);
+    await saveModFile(currentModId, filePath, content);
     _originalContent = content;
-    if (_fileBufferCache.has(filePath)) {
-      const b = _fileBufferCache.get(filePath)!;
+    const activeKey = getBufferKey(filePath, currentModId);
+    if (_fileBufferCache.has(activeKey)) {
+      const b = _fileBufferCache.get(activeKey)!;
       b.original = content;
       b.current = content;
       b.isDirty = false;
@@ -422,7 +461,7 @@ export async function handleEditorSave(): Promise<void> {
     bus.emit('editor:saved', { filePath });
     showToast(t('editor.toast_saved'), 'success');
 
-    await refreshEditorFileTree(state.editorModId);
+    await refreshEditorFileTree(currentModId);
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
   } finally {
@@ -432,6 +471,7 @@ export async function handleEditorSave(): Promise<void> {
 
 export async function handleEditorRevert(): Promise<void> {
   const state = getState();
+  const currentModId = state.editorModId;
   const currentPath = state.editorSelectedFile || getCurrentMonacoFilePath();
 
   // Flush active Monaco buffer into cache first
@@ -439,14 +479,25 @@ export async function handleEditorRevert(): Promise<void> {
     const currentText = getMonacoContent();
     const normalize = (str: string) => str.replace(/\r\n/g, '\n');
     const isCurDirty = normalize(currentText) !== normalize(_originalContent);
-    _fileBufferCache.set(currentPath, {
+    _fileBufferCache.set(getBufferKey(currentPath, currentModId), {
       current: currentText,
       original: _originalContent,
       isDirty: isCurDirty,
     });
   }
 
-  const updatedDirty = Array.from(_fileBufferCache.entries()).filter(([_, b]) => b.isDirty);
+  const isBufferForMod = (key: string) => {
+    if (!key.includes('::')) return true;
+    return key.split('::')[0] === currentModId;
+  };
+  const getBufferPath = (key: string) => {
+    return key.includes('::') ? key.split('::').slice(1).join('::') : key;
+  };
+
+  const updatedDirty = Array.from(_fileBufferCache.entries())
+    .filter(([k, b]) => b.isDirty && isBufferForMod(k))
+    .map(([k, b]): [string, FileBuffer] => [getBufferPath(k), b]);
+
   if (updatedDirty.length === 0) return;
 
   const { showConfirm } = await import('../confirm');
@@ -462,10 +513,13 @@ export async function handleEditorRevert(): Promise<void> {
       buf.isDirty = false;
     }
 
-    if (currentPath && _fileBufferCache.has(currentPath)) {
-      const activeBuf = _fileBufferCache.get(currentPath)!;
-      _originalContent = activeBuf.original;
-      setMonacoFile(currentPath, activeBuf.original);
+    if (currentPath) {
+      const activeKey = getBufferKey(currentPath, currentModId);
+      if (_fileBufferCache.has(activeKey)) {
+        const activeBuf = _fileBufferCache.get(activeKey)!;
+        _originalContent = activeBuf.original;
+        setMonacoFile(currentPath, activeBuf.original, state.editorModId);
+      }
     }
 
     updateUnsavedIndicator();
@@ -483,7 +537,7 @@ export async function handleEditorRevert(): Promise<void> {
 
     if (currentPath === path) {
       _originalContent = buf.original;
-      setMonacoFile(path, buf.original);
+      setMonacoFile(path, buf.original, state.editorModId);
     }
 
     updateUnsavedIndicator();
@@ -555,6 +609,8 @@ export async function loadEditorData(modId: string): Promise<void> {
 
   editorPath.textContent = '';
   _originalContent = null;
+  // Clear all buffers — fresh load for this mod session
+  clearBufferCache();
 
   initEditorStatusBar();
   const nameEl = editorDom.elMaybe('editor-current-mod-name');
@@ -575,5 +631,12 @@ export async function loadEditorData(modId: string): Promise<void> {
     }
   }
 }
+
+// Purge buffer cache for a mod the moment it's uninstalled — prevents ghost
+// "unsaved changes" prompts when the same mod is immediately reinstalled.
+bus.on('mod:removed', ({ id }) => {
+  clearBufferCache(id);
+  console.log(`[Editor] Buffer cache cleared for removed mod: ${id}`);
+});
 
 export { confirmDiscardOrSave };

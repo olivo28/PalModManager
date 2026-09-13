@@ -12,7 +12,7 @@ import {
   setIsLoadingWorlds,
 } from './state';
 
-export function renderHeroLandingHtml(): string {
+export function renderHeroLandingHtml(isLoading: boolean = false): string {
   return `
     <div class="scanner-view-container" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
       ${subTabHeader()}
@@ -60,11 +60,16 @@ export function renderHeroLandingHtml(): string {
 
           <!-- Action Buttons -->
           <div style="display: flex; gap: 12px; align-items: center; margin-top: 6px;">
-            <button id="btn-initial-scan-saves" class="btn-primary" style="padding: 10px 24px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(74, 246, 38, 0.25);">
-              <span>🩺</span>
-              <span>${escapeHtml(t('scanner.btn_scan_saves_now') || 'Scan Savegames Now')}</span>
+            <button id="btn-initial-scan-saves" class="btn-primary" ${isLoading ? 'disabled' : ''} style="padding: 10px 24px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(74, 246, 38, 0.25); ${isLoading ? 'opacity: 0.85; cursor: wait;' : ''}">
+              ${isLoading ? `
+                <span class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+                <span>${escapeHtml(t('scanner.saves_doctor_scanning') || 'Scanning Palworld SaveGames...')}</span>
+              ` : `
+                <span>🩺</span>
+                <span>${escapeHtml(t('scanner.btn_scan_saves_now') || 'Scan Savegames Now')}</span>
+              `}
             </button>
-            <button id="btn-initial-custom-folder" class="btn-secondary" style="padding: 10px 18px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <button id="btn-initial-custom-folder" class="btn-secondary" ${isLoading ? 'disabled' : ''} style="padding: 10px 18px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
               <span>📁</span>
               <span>${escapeHtml(t('scanner.btn_custom_folder') || 'Choose Custom Folder')}</span>
             </button>
@@ -83,8 +88,12 @@ export function attachHeroLandingListeners(
   const scanBtn = container.querySelector('#btn-initial-scan-saves');
   if (scanBtn) {
     scanBtn.addEventListener('click', async () => {
+      if (doctorState.isLoadingWorlds) return;
       setIsLoadingWorlds(true);
       await rerenderCallback(container);
+
+      // Yield frame so browser renders button loading state
+      await new Promise(r => setTimeout(r, 20));
 
       try {
         const curCustomPath = customSavesPath || doctorState.customSavesPath;

@@ -89,27 +89,47 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         .unwrap_or_default();
     let parsed_nexus = nexus::parse_mod_filename(&filename);
 
-    let detected_version = {
+    let fomod_info = if analysis.has_fomod {
+        zip_handler::read_archive_file(&zip_path, "fomod/info.xml")
+            .or_else(|| zip_handler::read_archive_file(&zip_path, "fomod/Info.xml"))
+            .or_else(|| zip_handler::read_archive_file(&zip_path, "fomod\\info.xml"))
+            .map(|xml| crate::commands::fomod::parser::parse_fomod_info(&xml))
+    } else {
+        None
+    };
+
+    let fomod_xml_ver = fomod_info.as_ref().map(|fi| fi.version.as_str());
+    let sidecar_ver = sidecar_data.as_ref().and_then(|sc| {
+        sc.get("version").or_else(|| sc.get("nexusVersion")).and_then(|v| v.as_str())
+    });
+    let zip_filename_ver = parsed_nexus.version.as_deref();
+
+    let detected_version = if analysis.has_fomod {
+        Some(crate::commands::fomod::version::resolve_fomod_version_consensus(
+            fomod_xml_ver,
+            zip_filename_ver,
+            sidecar_ver,
+        ))
+    } else {
         let from_info = modinfo_data.as_ref().and_then(|info| {
             info.get("version").and_then(|v| v.as_str()).map(|s| s.to_string())
         });
         if from_info.is_some() {
             from_info
-        } else if let Some(from_sc) = sidecar_data.as_ref().and_then(|sc| {
-            sc.get("version").or_else(|| sc.get("nexusVersion")).and_then(|v| v.as_str()).map(|s| s.to_string())
-        }) {
-            Some(from_sc)
+        } else if let Some(from_sc) = sidecar_ver {
+            Some(from_sc.to_string())
         } else {
             parsed_nexus.version.clone()
         }
     };
 
-    let nexus_info = if let Some(ref sc) = sidecar_data {
+    let mut nexus_info = if let Some(ref sc) = sidecar_data {
         let pic = sc.get("nexusPictureUrl").or_else(|| sc.get("pictureUrl")).and_then(|v| v.as_str());
         let name = sc.get("nexusName").or_else(|| sc.get("name")).and_then(|v| v.as_str());
         let author = sc.get("nexusAuthor").or_else(|| sc.get("author")).and_then(|v| v.as_str());
         let summary = sc.get("nexusSummary").or_else(|| sc.get("summary")).or_else(|| sc.get("description")).and_then(|v| v.as_str());
-        let ver = sc.get("version").or_else(|| sc.get("nexusVersion")).and_then(|v| v.as_str());
+        let ver = detected_version.as_deref()
+            .or_else(|| sc.get("version").or_else(|| sc.get("nexusVersion")).and_then(|v| v.as_str()));
         if pic.is_some() || name.is_some() || author.is_some() {
             Some(serde_json::json!({
                 "modId": nexus_id.unwrap_or(0),
@@ -128,6 +148,23 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         None
     };
 
+    if nexus_info.is_none() {
+        if let Some(ref fi) = fomod_info {
+            if !fi.name.is_empty() || !fi.author.is_empty() || !fi.description.is_empty() {
+                nexus_info = Some(serde_json::json!({
+                    "modId": nexus_id.unwrap_or(0),
+                    "name": fi.name,
+                    "author": fi.author,
+                    "summary": fi.description,
+                    "pictureUrl": "",
+                    "version": detected_version.as_deref().unwrap_or(""),
+                    "downloads": 0,
+                    "endorsements": 0,
+                }));
+            }
+        }
+    }
+
     Ok(serde_json::json!({
         "zipPath": zip_path,
         "detectedType": detected_type,
@@ -137,6 +174,7 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
         "hasPak": analysis.has_pak,
         "hasAltermatic": analysis.has_altermatic,
         "hasInfoJson": analysis.has_info_json,
+        "hasFomod": analysis.has_fomod,
         "pakDestinationHint": analysis.pak_destination_hint,
         "rootFolder": analysis.root_folder,
         "fileCount": analysis.files.len(),

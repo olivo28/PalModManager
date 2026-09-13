@@ -58,7 +58,12 @@
 
     </div>
     <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
-      <button id="dep-btn-uninstall" class="btn-danger-subtle" style="font-size:11px; padding:6px 12px; color:#ff4a4a; background:transparent; border:1px solid rgba(255,74,74,0.3); border-radius:4px; cursor:pointer;" data-i18n="common.uninstall">Uninstall</button>
+      <div style="display:flex; align-items:center; gap:8px;">
+        <button id="dep-btn-uninstall" class="btn-danger-subtle" style="font-size:11px; padding:6px 12px; color:#ff4a4a; background:transparent; border:1px solid rgba(255,74,74,0.3); border-radius:4px; cursor:pointer;" data-i18n="common.uninstall">Uninstall</button>
+        <button id="dep-btn-view-log" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:none; align-items:center; gap:5px;" title="View UE4SS Runtime Log" data-i18n-title="ue4ss_log.btn_open_tooltip">
+          <span>📜</span> <span data-i18n="ue4ss_log.btn_open">UE4SS Log</span>
+        </button>
+      </div>
       <button id="dependency-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
     </div>
   </div>

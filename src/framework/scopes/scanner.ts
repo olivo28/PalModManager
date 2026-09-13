@@ -6,6 +6,7 @@ export interface ScannerDomMap {
   'scanner-start-hotkeys-btn': HTMLButtonElement;
   'scanner-rescan-hotkeys-btn': HTMLButtonElement;
   'scanner-re-run-btn': HTMLButtonElement;
+  'scanner-btn-ue4ss-log': HTMLButtonElement;
   'scanner-inspector-root': HTMLElement;
   'btn-convert-all-gamepass': HTMLButtonElement;
   'btn-scanner-download-altermatic': HTMLButtonElement;

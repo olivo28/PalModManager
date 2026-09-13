@@ -98,36 +98,96 @@ pub fn export_mods_json(path: String, state: State<AppState>) -> Result<String, 
 }
 
 #[tauri::command]
-pub fn export_profile_pack_cmd(
+pub async fn export_profile_pack_cmd(
     profile_id: String,
     target_path: String,
-    state: State<AppState>,
+    state: State<'_, AppState>,
 ) -> Result<String, String> {
-    let data = state.data.lock().map_err(|e| e.to_string())?;
-    crate::profiles::export_profile_pack_internal(&data, &profile_id, &target_path)
+    let data = {
+        let guard = state.data.lock().map_err(|e| e.to_string())?;
+        guard.clone()
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::profiles::export_profile_pack_internal(&data, &profile_id, &target_path)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during export_profile_pack: {e}"))?
 }
 
 #[tauri::command]
-pub fn import_profile_pack_cmd(
+pub async fn export_profile_manifest_cmd(
+    profile_id: String,
+    target_path: String,
+    state: State<'_, AppState>,
+) -> Result<String, String> {
+    let data = {
+        let guard = state.data.lock().map_err(|e| e.to_string())?;
+        guard.clone()
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::profiles::export_profile_manifest_internal(&data, &profile_id, &target_path)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during export_profile_manifest: {e}"))?
+}
+
+#[tauri::command]
+pub async fn analyze_profile_manifest_cmd(
+    manifest_path: String,
+    state: State<'_, AppState>,
+) -> Result<crate::profiles::AnalyzeProfileManifestResult, String> {
+    let data = {
+        let guard = state.data.lock().map_err(|e| e.to_string())?;
+        guard.clone()
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::profiles::analyze_profile_manifest_internal(&manifest_path, &data)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during analyze_profile_manifest: {e}"))?
+}
+
+#[tauri::command]
+pub async fn apply_profile_manifest_cmd(
+    manifest_path: String,
+    custom_name: Option<String>,
+    state: State<'_, AppState>,
+) -> Result<crate::profiles::ApplyProfileManifestResult, String> {
+    let program_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.program_path.clone()
+    };
+
+    let (result, data_clone) = {
+        let mut data = state.data.lock().map_err(|e| e.to_string())?;
+        let res = crate::profiles::apply_profile_manifest_internal(&manifest_path, &mut data, custom_name)?;
+        (res, data.clone())
+    };
+
+    // Save state changes into database
+    let _ = crate::db::save_db(&program_path, &data_clone);
+
+    Ok(result)
+}
+
+#[tauri::command]
+pub async fn import_profile_pack_cmd(
     source_path: String,
     custom_name: Option<String>,
-    state: State<AppState>,
+    state: State<'_, AppState>,
 ) -> Result<crate::profiles::ImportProfileResult, String> {
     let program_path = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         data.settings.program_path.clone()
     };
 
-    let result = {
+    let (result, data_clone) = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        crate::profiles::import_profile_pack_internal(&mut data, &source_path, custom_name)?
+        let res = crate::profiles::import_profile_pack_internal(&mut data, &source_path, custom_name)?;
+        (res, data.clone())
     };
 
     // Save state changes into database
-    let data_clone = {
-        let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.clone()
-    };
     let _ = crate::db::save_db(&program_path, &data_clone);
 
     Ok(result)
@@ -450,5 +510,48 @@ pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> R
     open::that(&path).map_err(|e| format!("Failed to open folder: {}", e))
 }
 
+#[tauri::command]
+pub async fn bridge_mod_to_workshop_cmd(
+    mod_id: String,
+    state: State<'_, AppState>,
+) -> Result<u64, String> {
+    let (game_path, mod_info) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let gp = data.settings.game_path.clone();
+        let m = data.mods.iter().find(|m| m.id == mod_id).cloned().ok_or_else(|| {
+            format!("Mod with id '{}' not found", mod_id)
+        })?;
+        (gp, m)
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::workshop_bridge::bridge_mod_to_workshop(&game_path, &mod_info)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during bridge_mod_to_workshop: {e}"))?
+}
 
+#[tauri::command]
+pub async fn unbridge_mod_from_workshop_cmd(
+    mod_id: String,
+    state: State<'_, AppState>,
+) -> Result<(), String> {
+    let game_path = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        data.settings.game_path.clone()
+    };
+    tauri::async_runtime::spawn_blocking(move || {
+        crate::workshop_bridge::unbridge_mod_from_workshop(&game_path, &mod_id)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during unbridge_mod_from_workshop: {e}"))?
+}
 
+#[tauri::command]
+pub fn is_mod_bridged_cmd(
+    mod_id: String,
+    state: State<AppState>,
+) -> Result<bool, String> {
+    let data = state.data.lock().map_err(|e| e.to_string())?;
+    let game_path = data.settings.game_path.clone();
+    Ok(crate::workshop_bridge::is_mod_bridged(&game_path, &mod_id))
+}

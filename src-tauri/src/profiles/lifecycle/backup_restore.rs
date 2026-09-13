@@ -222,6 +222,10 @@ pub fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile
                     }
                 }
             }
+            let ps_version_file = std_ue4ss_mods_dir.join("PalSchema").join("palschema.version");
+            if ps_version_file.exists() {
+                let _ = fs::copy(&ps_version_file, profile_dir.join("palschema.version"));
+            }
         }
         DependencyMode::None => {}
     }
@@ -462,8 +466,6 @@ pub fn restore_profile_files_to_game(
                     if dwmapi_backup.exists() {
                         let _ = fs::copy(&dwmapi_backup, &dwmapi_game);
                     }
-                } else {
-                    let _ = sync_profile_dependencies(game_path, program_path, target_profile);
                 }
             } else if dwmapi_backup.exists() {
                 let _ = fs::copy(&dwmapi_backup, &dwmapi_game);
@@ -507,6 +509,9 @@ pub fn restore_profile_files_to_game(
                     }
                 }
             }
+
+            // Reconcile dependencies (UE4SS / PalSchema) with profile requirements
+            let _ = sync_profile_dependencies(game_path, program_path, target_profile);
         }
         DependencyMode::None => {}
     }

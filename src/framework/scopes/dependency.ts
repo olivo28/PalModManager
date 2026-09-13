@@ -14,6 +14,7 @@ export interface DependencyDomMap {
   'dep-vault-count': HTMLElement;
   'dep-vault-list': HTMLElement;
   'dep-btn-uninstall': HTMLButtonElement;
+  'dep-btn-view-log': HTMLButtonElement;
   'dependency-modal-close': HTMLButtonElement;
 }
 

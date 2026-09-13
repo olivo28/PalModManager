@@ -26,9 +26,33 @@ pub struct PakBackupStatus {
     pub backup_path: Option<String>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct TweakerProgressPayload {
+    pub percent: u8,
+    pub stage: String,
+}
+
 /// Mutates a primitive property inside a .uasset/.uexp file within a .pak archive and repacks it
 #[tauri::command]
 pub async fn tweak_pak_property(
+    app: tauri::AppHandle,
+    mod_id: Option<String>,
+    pak_path: String,
+    asset_internal_path: String,
+    export_index: usize,
+    property_name: String,
+    new_value: serde_json::Value,
+) -> Result<PakTweakResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        tweak_pak_property_internal(Some(app), mod_id, pak_path, asset_internal_path, export_index, property_name, new_value)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during tweak_pak_property: {e}"))?
+}
+
+fn tweak_pak_property_internal(
+    app: Option<tauri::AppHandle>,
     _mod_id: Option<String>,
     pak_path: String,
     asset_internal_path: String,
@@ -36,6 +60,15 @@ pub async fn tweak_pak_property(
     property_name: String,
     new_value: serde_json::Value,
 ) -> Result<PakTweakResult, String> {
+    use tauri::Emitter;
+
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 15,
+            stage: "Checking safety backup...".to_string(),
+        });
+    }
+
     let p_path = Path::new(&pak_path);
     if !p_path.exists() {
         return Err(format!("Pak file does not exist: {pak_path}"));
@@ -61,6 +94,13 @@ pub async fn tweak_pak_property(
     };
 
     let normalized_uexp = format!("{}.uexp", &normalized_uasset[..normalized_uasset.len() - 7]);
+
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 30,
+            stage: "Reading PAK container entries...".to_string(),
+        });
+    }
 
     // 3. Read pak entries into memory
     let mut file = File::open(p_path)
@@ -91,6 +131,13 @@ pub async fn tweak_pak_property(
 
     let uasset_data = target_uasset_bytes
         .ok_or_else(|| format!("Target .uasset '{normalized_uasset}' not found in pak archive"))?;
+
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 55,
+            stage: "Parsing UAsset & mutating property...".to_string(),
+        });
+    }
 
     // 4. Parse asset using unreal_asset
     let mut asset = Asset::new(
@@ -135,6 +182,13 @@ pub async fn tweak_pak_property(
     // Sort entries alphabetically for deterministic, canonical pak ordering
     all_files.sort_by(|a, b| a.0.cmp(&b.0));
 
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 80,
+            stage: "Repacking PAK archive with repak...".to_string(),
+        });
+    }
+
     // 7. Write repacked pak file
     let temp_pak_path = p_path.with_extension("pak.tmp");
     {
@@ -170,6 +224,13 @@ pub async fn tweak_pak_property(
         new_file_size
     ));
 
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 100,
+            stage: "Completed".to_string(),
+        });
+    }
+
     Ok(PakTweakResult {
         success: true,
         message: format!("Successfully patched '{property_name}' in {}", p_path.file_name().unwrap_or_default().to_string_lossy()),
@@ -181,6 +242,23 @@ pub async fn tweak_pak_property(
 /// Mutates a single cell in a DataTable within a .pak archive and repacks it
 #[tauri::command]
 pub async fn tweak_datatable_cell(
+    app: tauri::AppHandle,
+    mod_id: Option<String>,
+    pak_path: String,
+    asset_internal_path: String,
+    row_name: String,
+    column_name: String,
+    new_value: serde_json::Value,
+) -> Result<PakTweakResult, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        tweak_datatable_cell_internal(Some(app), mod_id, pak_path, asset_internal_path, row_name, column_name, new_value)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during tweak_datatable_cell: {e}"))?
+}
+
+fn tweak_datatable_cell_internal(
+    app: Option<tauri::AppHandle>,
     _mod_id: Option<String>,
     pak_path: String,
     asset_internal_path: String,
@@ -188,6 +266,15 @@ pub async fn tweak_datatable_cell(
     column_name: String,
     new_value: serde_json::Value,
 ) -> Result<PakTweakResult, String> {
+    use tauri::Emitter;
+
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 15,
+            stage: "Checking safety backup...".to_string(),
+        });
+    }
+
     let p_path = Path::new(&pak_path);
     if !p_path.exists() {
         return Err(format!("Pak file does not exist: {pak_path}"));
@@ -393,6 +480,13 @@ pub async fn tweak_datatable_cell(
         return Err(format!("Cell [Row: '{row_name}', Col: '{column_name}'] not found in DataTable"));
     }
 
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 60,
+            stage: "Serializing modified DataTable...".to_string(),
+        });
+    }
+
     let mut new_uasset_cursor = Cursor::new(Vec::new());
     let mut new_uexp_cursor = Cursor::new(Vec::new());
     asset.write_data(&mut new_uasset_cursor, Some(&mut new_uexp_cursor))
@@ -401,6 +495,13 @@ pub async fn tweak_datatable_cell(
     all_files.push((normalized_uasset, new_uasset_cursor.into_inner()));
     all_files.push((normalized_uexp, new_uexp_cursor.into_inner()));
     all_files.sort_by(|a, b| a.0.cmp(&b.0));
+
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 80,
+            stage: "Repacking PAK archive with repak...".to_string(),
+        });
+    }
 
     let temp_pak_path = p_path.with_extension("pak.tmp");
     {
@@ -416,6 +517,14 @@ pub async fn tweak_datatable_cell(
     fs::rename(&temp_pak_path, p_path).map_err(|e| format!("Rename pak err: {e}"))?;
 
     let new_size = fs::metadata(p_path).map(|m| m.len()).unwrap_or(0);
+
+    if let Some(ref handle) = app {
+        let _ = handle.emit("tweaker-progress", TweakerProgressPayload {
+            percent: 100,
+            stage: "Completed".to_string(),
+        });
+    }
+
     Ok(PakTweakResult {
         success: true,
         message: format!("Successfully updated [{row_name}.{column_name}] in DataTable!"),
@@ -430,28 +539,32 @@ pub async fn revert_pak_to_backup(
     _mod_id: Option<String>,
     pak_path: String,
 ) -> Result<PakTweakResult, String> {
-    let p_path = Path::new(&pak_path);
-    let bak_path = p_path.with_extension("pak.original.bak");
+    tauri::async_runtime::spawn_blocking(move || {
+        let p_path = Path::new(&pak_path);
+        let bak_path = p_path.with_extension("pak.original.bak");
 
-    if !bak_path.exists() {
-        return Err(format!("No safety backup found for '{}'", p_path.display()));
-    }
+        if !bak_path.exists() {
+            return Err(format!("No safety backup found for '{}'", p_path.display()));
+        }
 
-    fs::copy(&bak_path, p_path)
-        .map_err(|e| format!("Failed to restore backup over original pak: {e}"))?;
+        fs::copy(&bak_path, p_path)
+            .map_err(|e| format!("Failed to restore backup over original pak: {e}"))?;
 
-    // Optionally delete backup after successful revert
-    let _ = fs::remove_file(&bak_path);
+        // Optionally delete backup after successful revert
+        let _ = fs::remove_file(&bak_path);
 
-    let restored_size = fs::metadata(p_path).map(|m| m.len()).unwrap_or(0);
-    crate::logger::log(&format!("pak_tweaker: Reverted '{}' from backup", p_path.display()));
+        let restored_size = fs::metadata(p_path).map(|m| m.len()).unwrap_or(0);
+        crate::logger::log(&format!("pak_tweaker: Reverted '{}' from backup", p_path.display()));
 
-    Ok(PakTweakResult {
-        success: true,
-        message: format!("Restored {} from original backup.", p_path.file_name().unwrap_or_default().to_string_lossy()),
-        backup_created: false,
-        new_file_size_bytes: restored_size,
+        Ok(PakTweakResult {
+            success: true,
+            message: format!("Restored {} from original backup.", p_path.file_name().unwrap_or_default().to_string_lossy()),
+            backup_created: false,
+            new_file_size_bytes: restored_size,
+        })
     })
+    .await
+    .map_err(|e| format!("Worker thread error during revert_pak_to_backup: {e}"))?
 }
 
 /// Queries whether an authentic .original.bak file exists for a .pak archive
@@ -460,23 +573,27 @@ pub async fn get_pak_backup_status(
     _mod_id: Option<String>,
     pak_path: String,
 ) -> Result<PakBackupStatus, String> {
-    let p_path = Path::new(&pak_path);
-    let bak_path = p_path.with_extension("pak.original.bak");
+    tauri::async_runtime::spawn_blocking(move || {
+        let p_path = Path::new(&pak_path);
+        let bak_path = p_path.with_extension("pak.original.bak");
 
-    if bak_path.exists() {
-        let size = fs::metadata(&bak_path).map(|m| m.len()).unwrap_or(0);
-        Ok(PakBackupStatus {
-            has_backup: true,
-            backup_size_bytes: size,
-            backup_path: Some(bak_path.to_string_lossy().to_string()),
-        })
-    } else {
-        Ok(PakBackupStatus {
-            has_backup: false,
-            backup_size_bytes: 0,
-            backup_path: None,
-        })
-    }
+        if bak_path.exists() {
+            let size = fs::metadata(&bak_path).map(|m| m.len()).unwrap_or(0);
+            Ok(PakBackupStatus {
+                has_backup: true,
+                backup_size_bytes: size,
+                backup_path: Some(bak_path.to_string_lossy().to_string()),
+            })
+        } else {
+            Ok(PakBackupStatus {
+                has_backup: false,
+                backup_size_bytes: 0,
+                backup_path: None,
+            })
+        }
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during get_pak_backup_status: {e}"))?
 }
 
 /// Helper mutating an unreal_asset Property from a JSON Value

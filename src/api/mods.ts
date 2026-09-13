@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ModInfo, InstallManifest, ZipAnalysis, UpdateCheckResult, ConfigDiff, ArchivedConfigInfo } from './types';
+import type { ModInfo, InstallManifest, ZipAnalysis, UpdateCheckResult, ConfigDiff, ArchivedConfigInfo, FomodConfig, BuildFomodManifestPayload } from './types';
 
 export async function getMods(): Promise<ModInfo[]> {
   return invoke('get_mods');
@@ -31,9 +31,10 @@ export async function buildInstallManifest(
   zipPath: string,
   gamePath: string,
   pakDestination: string | null,
-  customName: string | null
+  customName: string | null,
+  customFolder?: string | null
 ): Promise<InstallManifest> {
-  return invoke('build_install_manifest', { zipPath, gamePath, pakDestination, customName });
+  return invoke('build_install_manifest', { zipPath, gamePath, pakDestination, customName, customFolder });
 }
 
 export async function installModWithManifest(
@@ -41,6 +42,16 @@ export async function installModWithManifest(
   zipPath: string
 ): Promise<ModInfo> {
   return invoke('install_mod_with_manifest', { manifest, zipPath });
+}
+
+export async function getFomodConfig(zipPath: string): Promise<FomodConfig> {
+  return invoke('get_fomod_config', { zipPath });
+}
+
+export async function buildFomodManifest(
+  payload: BuildFomodManifestPayload
+): Promise<InstallManifest> {
+  return invoke('build_fomod_manifest', { payload });
 }
 
 export async function removeMod(modId: string): Promise<{ success: boolean }> {

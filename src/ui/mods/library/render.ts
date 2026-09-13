@@ -18,6 +18,7 @@ import {
   renderWorkshopLibraryTab,
 } from './workshop';
 import { renderLibraryListView } from './listView';
+import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
 import { libraryDom } from '../../../framework';
 
 export async function renderLibraryView(): Promise<void> {
@@ -93,7 +94,7 @@ export async function renderLibraryView(): Promise<void> {
         ver = ver.substring(1);
       }
 
-      const groupKey = e.modId;
+      const groupKey = e.modId.toLowerCase().replace(/[^a-z0-9]/g, '');
       let group = groupsMap.get(groupKey);
       if (!group) {
         group = {
@@ -115,6 +116,7 @@ export async function renderLibraryView(): Promise<void> {
       if (!group.author && (e.author || e.nexusAuthor)) group.author = e.author || e.nexusAuthor || '';
       if (!group.description && (e.description || e.nexusSummary)) group.description = e.description || e.nexusSummary || '';
       if (!group.modType && e.modType) group.modType = e.modType.toUpperCase();
+      if (!group.nexusModId && e.nexusModId) group.nexusModId = e.nexusModId;
       if (e.isInstalled) {
         group.isInstalled = true;
         if (e.installedVersion) group.installedVersion = e.installedVersion;
@@ -312,6 +314,16 @@ export async function renderLibraryView(): Promise<void> {
         </div>
       `;
 
+      const libNexusId = group.nexusModId || state.allMods.find((m: any) => (m.nexusModId && group.nexusModId && m.nexusModId === group.nexusModId) || m.name.toLowerCase() === cleanName.toLowerCase())?.nexusModId;
+      const isEndorsed = isNexusModEndorsed(libNexusId, state.currentSettings?.nexusEndorsementsCache);
+      const isTracked = isNexusModTracked(libNexusId, state.currentSettings?.nexusTrackedCache);
+      const libEndorsedBadge = isEndorsed
+        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+        : '';
+      const libTrackedBadge = isTracked
+        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+        : '';
+
       return `
         <div class="mod-card library-card ${isSelected ? 'selected' : ''}" data-id="${group.modId}" data-is-installed="${group.isInstalled}" data-installed-version="${escapeHtml(group.installedVersion || '')}" style="cursor:pointer;position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
           <div class="library-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
@@ -319,6 +331,8 @@ export async function renderLibraryView(): Promise<void> {
               <input type="checkbox" class="library-card-checkbox" data-id="${group.modId}" ${isSelected ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;" />
             </div>
             <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+              ${libTrackedBadge}
+              ${libEndorsedBadge}
               ${statusBadgeHtml}
               ${onlineUpdateBadge}
             </div>

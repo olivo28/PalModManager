@@ -338,9 +338,9 @@ async function handleRestoreCurrentBackup(): Promise<void> {
     const res = await restoreModBackup(_currentModId, _currentBackupPath);
     if (res.success) {
       hideDiffModal();
-      const { _fileBufferCache } = await import('./viewer');
-      _fileBufferCache.delete(_currentTargetPath);
-      _fileBufferCache.delete(_currentBackupPath);
+      const { _fileBufferCache, getBufferKey } = await import('./viewer');
+      _fileBufferCache.delete(getBufferKey(_currentTargetPath, _currentModId));
+      _fileBufferCache.delete(getBufferKey(_currentBackupPath, _currentModId));
       showToast(t('editor.toast_restored') || 'Backup restored successfully', 'success');
       await refreshEditorFileTree(_currentModId);
 
@@ -369,8 +369,8 @@ async function handleMergeCurrentBackup(): Promise<void> {
     const res = await mergeModBackup(_currentModId, _currentBackupPath);
     if (res.success) {
       hideDiffModal();
-      const { _fileBufferCache } = await import('./viewer');
-      _fileBufferCache.delete(_currentTargetPath);
+      const { _fileBufferCache, getBufferKey } = await import('./viewer');
+      _fileBufferCache.delete(getBufferKey(_currentTargetPath, _currentModId));
       showToast(t('editor.toast_merged') || 'Config settings merged successfully', 'success');
       await refreshEditorFileTree(_currentModId);
 

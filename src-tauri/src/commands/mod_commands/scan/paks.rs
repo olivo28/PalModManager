@@ -120,6 +120,7 @@ pub fn scan_pak_mods(
             custom_notes: None,
             original_name: None,
             custom_name: None,
+            fomod_choices: None,
         });
     }
 }

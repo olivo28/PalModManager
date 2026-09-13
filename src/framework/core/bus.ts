@@ -22,6 +22,9 @@ export interface AppEventMap {
   'profile:changed': { profileId: string };
   'profile:switched': { profileId: string; profileName: string };
   'profile:loaded': void;
+  'profile:syncStarted': { manifestPath: string; profileName: string; remainingCount: number };
+  'profile:syncUpdated': { remainingCount: number };
+  'profile:syncCompleted': { profileId: string; profileName: string };
 
   // Eventos de Navegación y Vistas
   'app:ready': void;

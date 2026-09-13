@@ -1,6 +1,7 @@
 import * as monaco from 'monaco-editor';
 import { editorDom } from '../../../framework';
 import { t } from '../../../utils/i18n';
+import { getState } from '../../../state';
 import { registerMonacoCompletionProviders } from './completion';
 import { registerMonacoLinter } from './linter';
 import { registerMonacoQuickFixProvider } from './quickfix';
@@ -307,7 +308,7 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
   return editorInstance;
 }
 
-export function setMonacoFile(filePath: string, content: string): void {
+export function setMonacoFile(filePath: string, content: string, modId?: string | null): void {
   setCurrentMonacoFilePath(filePath);
   const editor = getMonacoEditor() || initMonacoEditor();
 
@@ -327,9 +328,11 @@ export function setMonacoFile(filePath: string, content: string): void {
   updateStatusBarLanguage(filePath);
 
   const cleanPath = filePath.replace(/\\/g, '/');
+  const mId = modId || getState().editorModId || '';
+  const modPrefix = mId ? `${encodeURIComponent(mId)}/` : '';
   const uri = cleanPath.startsWith('/') || cleanPath.includes(':/')
     ? monaco.Uri.file(cleanPath)
-    : monaco.Uri.parse(`pmm:///${encodeURI(cleanPath)}`);
+    : monaco.Uri.parse(`pmm:///${modPrefix}${encodeURI(cleanPath)}`);
 
   let model = monaco.editor.getModel(uri);
 

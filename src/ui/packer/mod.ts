@@ -1,4 +1,6 @@
 import { invoke } from '@tauri-apps/api/core';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import type { PackerProgressPayload } from '../../types';
 import { showToast } from '../toast';
 import { showConfirm, showPrompt } from '../confirm';
 import { t } from '../../utils/i18n';
@@ -281,6 +283,7 @@ function setupPackerEventListeners(): void {
       routes: computedRoutes.length > 0 ? computedRoutes : undefined
     } : null;
 
+    let unlistenProgress: UnlistenFn | null = null;
     try {
       const { save } = await import('@tauri-apps/plugin-dialog');
       const defaultName = metaName ? `${metaName}_v${metaVersion}.${format}` : `packed_mod.${format}`;
@@ -295,87 +298,98 @@ function setupPackerEventListeners(): void {
       const btn = packerDom.elMaybe('packer-build-btn') as HTMLButtonElement;
       if (btn) {
         btn.disabled = true;
-        btn.textContent = '...';
+        btn.textContent = `📦 ${t('packer.btn_packing') || 'Packing...'} (0%)`;
       }
       showToast(t('packer.toast_packing_wait'), 'info');
 
-      if (isDual) {
-        // Generate both Steam Win64 and Xbox WinGDK archives
-        const base = destPath.replace(new RegExp(`\\.${format}$`, 'i'), '');
-        const steamPath = `${base}_Steam_Win64.${format}`;
-        const xboxPath = `${base}_Xbox_WinGDK.${format}`;
-
-        // 1. Pack Steam Win64
-        const steamFiles = activeFiles.map(f => ({
-          sourcePath: f.sourcePath,
-          relativePath: f.relativePath,
-          size: f.size,
-          targetPath: getFormattedTargetPath(f.targetPath, 'win64', isVortex)
-        }));
-
-        await invoke<string>('pack_mod', {
-          files: steamFiles,
-          metadata,
-          outputPath: steamPath,
-          format
+      unlistenProgress = await listen<PackerProgressPayload>('packer-progress', (event) => {
+          if (btn && event.payload) {
+            const { percent, processedFiles, totalFiles } = event.payload;
+            const packingTxt = t('packer.btn_packing') || 'Packing...';
+            btn.textContent = `📦 ${packingTxt} ${percent}% (${processedFiles}/${totalFiles})`;
+          }
         });
 
-        // 2. Pack Xbox WinGDK
-        const xboxFiles = activeFiles.map(f => ({
-          sourcePath: f.sourcePath,
-          relativePath: f.relativePath,
-          size: f.size,
-          targetPath: getFormattedTargetPath(f.targetPath, 'wingdk', isVortex)
-        }));
+        if (isDual) {
+          // Generate both Steam Win64 and Xbox WinGDK archives
+          const base = destPath.replace(new RegExp(`\\.${format}$`, 'i'), '');
+          const steamPath = `${base}_Steam_Win64.${format}`;
+          const xboxPath = `${base}_Xbox_WinGDK.${format}`;
 
-        await invoke<string>('pack_mod', {
-          files: xboxFiles,
-          metadata,
-          outputPath: xboxPath,
-          format
-        });
+          // 1. Pack Steam Win64
+          const steamFiles = activeFiles.map(f => ({
+            sourcePath: f.sourcePath,
+            relativePath: f.relativePath,
+            size: f.size,
+            targetPath: getFormattedTargetPath(f.targetPath, 'win64', isVortex)
+          }));
 
-        bus.emit('project:packed', {
-          outputPath: steamPath,
-          format,
-          modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
-        });
+          await invoke<string>('pack_mod', {
+            files: steamFiles,
+            metadata,
+            outputPath: steamPath,
+            format
+          });
 
-        showToast(t('packer.toast_dual_pack_success') || 'Created both Steam Win64 and Xbox WinGDK mod packages!', 'success');
-      } else {
-        // Single Package build
-        const filesToPack = activeFiles.map(f => ({
-          sourcePath: f.sourcePath,
-          relativePath: f.relativePath,
-          size: f.size,
-          targetPath: getFormattedTargetPath(f.targetPath, 'win64', isVortex)
-        }));
+          // 2. Pack Xbox WinGDK
+          const xboxFiles = activeFiles.map(f => ({
+            sourcePath: f.sourcePath,
+            relativePath: f.relativePath,
+            size: f.size,
+            targetPath: getFormattedTargetPath(f.targetPath, 'wingdk', isVortex)
+          }));
 
-        await invoke<string>('pack_mod', {
-          files: filesToPack,
-          metadata,
-          outputPath: destPath,
-          format
-        });
+          await invoke<string>('pack_mod', {
+            files: xboxFiles,
+            metadata,
+            outputPath: xboxPath,
+            format
+          });
 
-        bus.emit('project:packed', {
-          outputPath: destPath,
-          format,
-          modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
-        });
+          bus.emit('project:packed', {
+            outputPath: steamPath,
+            format,
+            modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
+          });
 
-        showToast(isVortex ? (t('packer.toast_vortex_pack_success') || 'Mod packaged with Vortex compatibility!') : t('packer.toast_pack_success'), 'success');
+          showToast(t('packer.toast_dual_pack_success') || 'Created both Steam Win64 and Xbox WinGDK mod packages!', 'success');
+        } else {
+          // Single Package build
+          const filesToPack = activeFiles.map(f => ({
+            sourcePath: f.sourcePath,
+            relativePath: f.relativePath,
+            size: f.size,
+            targetPath: getFormattedTargetPath(f.targetPath, 'win64', isVortex)
+          }));
+
+          await invoke<string>('pack_mod', {
+            files: filesToPack,
+            metadata,
+            outputPath: destPath,
+            format
+          });
+
+          bus.emit('project:packed', {
+            outputPath: destPath,
+            format,
+            modName: metadata?.name || packerDom.elMaybe('packer-project-name')?.value.trim() || 'Mod'
+          });
+
+          showToast(isVortex ? (t('packer.toast_vortex_pack_success') || 'Mod packaged with Vortex compatibility!') : t('packer.toast_pack_success'), 'success');
+        }
+      } catch (err: any) {
+        console.error(err);
+        showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+      } finally {
+        if (unlistenProgress) {
+          unlistenProgress();
+        }
+        const btn = packerDom.elMaybe('packer-build-btn');
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `📦 ${escapeHtml(t('packer.btn_package_mod'))}`;
+        }
       }
-    } catch (err: any) {
-      console.error(err);
-      showToast(t('toasts.export_failed', { error: String(err) }), 'error');
-    } finally {
-      const btn = packerDom.elMaybe('packer-build-btn');
-      if (btn) {
-        btn.disabled = false;
-        btn.innerHTML = `📦 ${escapeHtml(t('packer.btn_package_mod'))}`;
-      }
-    }
   });
 
   const listTab = packerDom.elMaybe('packer-view-list-btn');

@@ -40,6 +40,23 @@ fn sanitize_filename(name: &str) -> String {
     }).collect()
 }
 
+fn infer_mod_type_from_name(name: &str) -> Option<String> {
+    let lower = name.to_lowercase();
+    if lower.contains("palschema") {
+        Some("palschema".to_string())
+    } else if lower.contains("altermatic") {
+        Some("altermatic".to_string())
+    } else if lower.contains("ue4ss") || lower.contains("lua") {
+        Some("ue4ss".to_string())
+    } else if lower.contains("logicmods") {
+        Some("logicmods".to_string())
+    } else if lower.contains("pak") {
+        Some("pak".to_string())
+    } else {
+        None
+    }
+}
+
 pub fn copy_to_library(
     source_zip: &str,
     program_path: &str,
@@ -205,32 +222,62 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
             let folder_name = folder.file_name().unwrap_or_default().to_string_lossy().to_string();
             let norm_folder = normalize(&folder_name);
 
-            // If this folder has NO .nexus.json, check if another canonical folder exists
-            if !nexus_path.exists() {
-                let target_canonical = folder_paths.iter().find(|other| {
-                    if *other == folder { return false; }
-                    let other_nexus = other.join(".nexus.json");
-                    if !other_nexus.exists() { return false; }
-                    let other_name = other.file_name().unwrap_or_default().to_string_lossy().to_string();
-                    let norm_other = normalize(&other_name);
-                    norm_other == norm_folder
-                        || norm_folder.starts_with(&norm_other)
-                        || norm_other.starts_with(&norm_folder)
-                });
+            // Check if another folder exists sharing the same Nexus ID or normalized name
+            let folder_nexus_id = if nexus_path.exists() {
+                fs::read_to_string(&nexus_path)
+                    .ok()
+                    .and_then(|c| serde_json::from_str::<serde_json::Value>(&c).ok())
+                    .and_then(|v| v.get("modId").and_then(|m| m.as_u64()))
+                    .map(|id| id as u32)
+            } else {
+                None
+            };
 
-                if let Some(target) = target_canonical {
-                    if let Ok(entries) = fs::read_dir(folder) {
-                        for e in entries.filter_map(|e| e.ok()) {
-                            let src_file = e.path();
-                            if src_file.is_file() {
-                                let dest_file = target.join(e.file_name());
-                                let _ = fs::copy(&src_file, &dest_file);
-                                let _ = fs::remove_file(&src_file);
+            let target_canonical = folder_paths.iter().find(|other| {
+                if *other == folder { return false; }
+                let other_nexus = other.join(".nexus.json");
+                if !other_nexus.exists() { return false; }
+                let other_name = other.file_name().unwrap_or_default().to_string_lossy().to_string();
+                let norm_other = normalize(&other_name);
+
+                // Only merge pure duplicates with matching normalized names (e.g. "Elemental Coatings" vs "ElementalCoatings").
+                // Never merge distinct options or variants that share the same Nexus mod page.
+                if norm_other == norm_folder {
+                    if let Some(cur_id) = folder_nexus_id {
+                        if let Ok(c) = fs::read_to_string(&other_nexus) {
+                            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&c) {
+                                if let Some(oid) = v.get("modId").and_then(|m| m.as_u64()).map(|n| n as u32) {
+                                    if oid == cur_id {
+                                        return folder_name.contains(' ') <= other_name.contains(' ');
+                                    }
+                                }
                             }
                         }
                     }
-                    let _ = fs::remove_dir_all(folder);
-                } else if let Some(m) = installed_mods.iter().find(|m| {
+                    if !nexus_path.exists() {
+                        return true;
+                    }
+                }
+
+                false
+            });
+
+            if let Some(target) = target_canonical {
+                if let Ok(entries) = fs::read_dir(folder) {
+                    for e in entries.filter_map(|e| e.ok()) {
+                        let src_file = e.path();
+                        if src_file.is_file() {
+                            let dest_file = target.join(e.file_name());
+                            if !dest_file.exists() {
+                                let _ = fs::copy(&src_file, &dest_file);
+                            }
+                            let _ = fs::remove_file(&src_file);
+                        }
+                    }
+                }
+                let _ = fs::remove_dir_all(folder);
+            } else if !nexus_path.exists() {
+                if let Some(m) = installed_mods.iter().find(|m| {
                     normalize(&m.name) == norm_folder || normalize(&m.id) == norm_folder
                 }) {
                     if m.nexus_mod_id.is_some() || m.nexus_picture_url.is_some() {
@@ -269,12 +316,12 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
         if nexus_json_path.exists() {
             if let Ok(content) = fs::read_to_string(&nexus_json_path) {
                 if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
-                    folder_nexus_picture_url = val.get("pictureUrl").and_then(|v| v.as_str()).map(|s| s.to_string());
-                    folder_nexus_name = val.get("name").and_then(|v| v.as_str()).map(|s| s.to_string());
-                    folder_nexus_author = val.get("author").and_then(|v| v.as_str()).map(|s| s.to_string());
-                    folder_nexus_summary = val.get("summary").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    folder_nexus_picture_url = val.get("pictureUrl").and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                    folder_nexus_name = val.get("name").and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                    folder_nexus_author = val.get("author").and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                    folder_nexus_summary = val.get("summary").and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
                     folder_nexus_mod_id = val.get("modId").and_then(|v| v.as_u64()).map(|v| v as u32);
-                    folder_nexus_version = val.get("version").and_then(|v| v.as_str()).map(|s| s.to_string());
+                    folder_nexus_version = val.get("version").and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
                 }
             }
         }
@@ -334,6 +381,8 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
             }
         }
 
+        // Collect raw archive files in directory
+        let mut raw_files: Vec<(PathBuf, String, u64)> = Vec::new();
         if let Ok(dir_entries) = fs::read_dir(entry.path()) {
             for zip_entry in dir_entries.filter_map(|e| e.ok()) {
                 let path = zip_entry.path();
@@ -345,119 +394,217 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
                     if zip_name == ".nexus.json" || zip_name.ends_with(".pmm.json") {
                         continue;
                     }
-
                     let zip_size = fs::metadata(&path).map(|m| m.len()).unwrap_or(0);
-                    let now = chrono::Utc::now().to_rfc3339();
-
-                    // Check for individual .pmm.json sidecar next to this zip
-                    let mut author = folder_nexus_author.clone();
-                    let mut description = folder_nexus_summary.clone();
-                    let mut version = folder_nexus_version.clone();
-                    let mut mod_type = None;
-                    let mut nexus_picture_url = folder_nexus_picture_url.clone();
-                    let mut nexus_name = folder_nexus_name.clone();
-                    let mut nexus_mod_id = folder_nexus_mod_id;
-                    let nexus_version = folder_nexus_version.clone();
-
-                    let pmm_sidecar = PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()));
-                    let pmm_sidecar_alt = path.with_extension("pmm.json");
-                    let pmm_path_to_read = if pmm_sidecar.exists() {
-                        Some(pmm_sidecar)
-                    } else if pmm_sidecar_alt.exists() {
-                        Some(pmm_sidecar_alt)
-                    } else {
-                        None
-                    };
-
-                    if let Some(ref pmm_file) = pmm_path_to_read {
-                        if let Ok(content) = fs::read_to_string(pmm_file) {
-                            if let Ok(meta) = serde_json::from_str::<crate::models::PmmMetadata>(&content) {
-                                if let Some(a) = meta.author { author = Some(a); }
-                                if let Some(d) = meta.description { description = Some(d); }
-                                if !meta.version.is_empty() { version = Some(meta.version); }
-                                if let Some(t) = meta.mod_type { mod_type = Some(t); }
-                                if let Some(p) = meta.nexus_picture_url { nexus_picture_url = Some(p); }
-                                if !meta.name.is_empty() { nexus_name = Some(meta.name); }
-                                if let Some(id) = meta.nexus_mod_id { nexus_mod_id = Some(id); }
-                            }
-                        }
-                    } else {
-                        // Extract version from filename if not in sidecar
-                        let parsed = crate::nexus::parse_mod_filename(&zip_name);
-                        if let Some(v) = parsed.version {
-                            version = Some(v);
-                        }
-
-                        // Auto-generate .pmm.json sidecar using PmmMetadata
-                        let pmm_data = crate::models::PmmMetadata {
-                            name: nexus_name.as_deref().unwrap_or(&mod_id).to_string(),
-                            version: version.clone().unwrap_or_default(),
-                            author: author.clone(),
-                            description: description.clone(),
-                            mod_type: mod_type.clone(),
-                            nexus_mod_id,
-                            nexus_file_id: None,
-                            nexus_picture_url: nexus_picture_url.clone(),
-                            nexus_url: None,
-                            custom_notes: None,
-                            category: None,
-                            routes: None,
-                            original_name: None,
-                            custom_name: None,
-                            folder_name: None,
-                            installed_folders: None,
-                            source_zip: Some(zip_name.clone()),
-                            installed_files: None,
-                            extra_files: None,
-                        };
-                        let sidecar_dest = PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()));
-                        if let Ok(json) = serde_json::to_string_pretty(&pmm_data) {
-                            let _ = fs::write(&sidecar_dest, json);
-                        }
-                    }
-
-                    // Check live installation status against active installed mods
-                    let norm_mod_id = normalize(&mod_id);
-                    let norm_nexus_name = nexus_name.as_deref().map(normalize);
-                    let matched_installed = installed_mods.iter().find(|m| {
-                        let norm_m_name = normalize(&m.name);
-                        let norm_m_id = normalize(&m.id);
-                        norm_m_name == norm_mod_id
-                            || norm_m_id == norm_mod_id
-                            || norm_nexus_name.as_ref().map(|n| n == &norm_m_name || n == &norm_m_id).unwrap_or(false)
-                            || (nexus_mod_id.is_some() && m.nexus_mod_id.is_some() && m.nexus_mod_id == nexus_mod_id)
-                    });
-
-                    let is_installed = matched_installed.is_some();
-                    let installed_version = matched_installed.map(|m| m.version.clone());
-                    if mod_type.is_none() {
-                        if let Some(m) = matched_installed {
-                            mod_type = Some(format!("{:?}", m.mod_type).to_lowercase());
-                        }
-                    }
-
-                    entries.push(LibraryEntry {
-                        mod_id: mod_id.clone(),
-                        zip_name,
-                        zip_size,
-                        installed_at: now,
-                        nexus_picture_url,
-                        nexus_name,
-                        nexus_author: author.clone(),
-                        nexus_summary: description.clone(),
-                        nexus_mod_id,
-                        nexus_version,
-                        author,
-                        description,
-                        version,
-                        mod_type,
-                        is_installed,
-                        installed_version,
-                    });
+                    raw_files.push((path, zip_name, zip_size));
                 }
             }
+        }
+
+        struct SiblingItem {
+            path: PathBuf,
+            zip_name: String,
+            zip_size: u64,
+            author: Option<String>,
+            description: Option<String>,
+            version: Option<String>,
+            mod_type: Option<String>,
+            nexus_picture_url: Option<String>,
+            nexus_name: Option<String>,
+            nexus_mod_id: Option<u32>,
+        }
+
+        let mut sibling_items: Vec<SiblingItem> = Vec::new();
+
+        for (path, zip_name, zip_size) in raw_files {
+            let mut author = folder_nexus_author.clone();
+            let mut description = folder_nexus_summary.clone();
+            let mut version = folder_nexus_version.clone();
+            let mut mod_type = None;
+            let mut nexus_picture_url = folder_nexus_picture_url.clone();
+            let mut nexus_name = folder_nexus_name.clone();
+            let mut nexus_mod_id = folder_nexus_mod_id;
+
+            let pmm_sidecar = PathBuf::from(format!("{}.pmm.json", path.to_string_lossy()));
+            let pmm_sidecar_alt = path.with_extension("pmm.json");
+            let pmm_path_to_read = if pmm_sidecar.exists() {
+                Some(pmm_sidecar)
+            } else if pmm_sidecar_alt.exists() {
+                Some(pmm_sidecar_alt)
+            } else {
+                None
+            };
+
+            if let Some(ref pmm_file) = pmm_path_to_read {
+                if let Ok(content) = fs::read_to_string(pmm_file) {
+                    // Try typed PmmMetadata first with empty string guard
+                    if let Ok(meta) = serde_json::from_str::<crate::models::PmmMetadata>(&content) {
+                        if let Some(a) = meta.author.filter(|s| !s.trim().is_empty()) { author = Some(a); }
+                        if let Some(d) = meta.description.filter(|s| !s.trim().is_empty()) { description = Some(d); }
+                        if !meta.version.trim().is_empty() { version = Some(meta.version); }
+                        if let Some(t) = meta.mod_type.filter(|s| !s.trim().is_empty()) { mod_type = Some(t.to_lowercase()); }
+                        if let Some(p) = meta.nexus_picture_url.filter(|s| !s.trim().is_empty()) { nexus_picture_url = Some(p); }
+                        if !meta.name.trim().is_empty() { nexus_name = Some(meta.name); }
+                        if let Some(id) = meta.nexus_mod_id { nexus_mod_id = Some(id); }
+                    }
+                    // Robust Value fallback for legacy ModInfo dumps or alternate key names
+                    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&content) {
+                        if author.is_none() {
+                            author = val.get("author").or_else(|| val.get("nexusAuthor")).and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                        }
+                        if description.is_none() {
+                            description = val.get("description").or_else(|| val.get("nexusSummary")).or_else(|| val.get("nexusDescription")).and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                        }
+                        if version.is_none() {
+                            version = val.get("version").and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                        }
+                        if mod_type.is_none() {
+                            mod_type = val.get("type").or_else(|| val.get("modType")).or_else(|| val.get("mod_type")).and_then(|v| v.as_str()).map(|s| s.trim().to_lowercase()).filter(|s| !s.is_empty());
+                        }
+                        if nexus_picture_url.is_none() {
+                            nexus_picture_url = val.get("nexusPictureUrl").or_else(|| val.get("pictureUrl")).and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                        }
+                        if nexus_name.is_none() {
+                            nexus_name = val.get("name").or_else(|| val.get("nexusName")).and_then(|v| v.as_str()).map(|s| s.trim()).filter(|s| !s.is_empty()).map(|s| s.to_string());
+                        }
+                        if nexus_mod_id.is_none() {
+                            nexus_mod_id = val.get("nexusModId").or_else(|| val.get("modId")).and_then(|v| v.as_u64()).map(|n| n as u32);
+                        }
+                    }
+                }
+            }
+
+            // Extract version from filename if not in sidecar
+            if version.is_none() {
+                let parsed = crate::nexus::parse_mod_filename(&zip_name);
+                if let Some(v) = parsed.version {
+                    version = Some(v);
+                }
+            }
+
+            sibling_items.push(SiblingItem {
+                path,
+                zip_name,
+                zip_size,
+                author,
+                description,
+                version,
+                mod_type,
+                nexus_picture_url,
+                nexus_name,
+                nexus_mod_id,
+            });
+        }
+
+        // Determine best shared metadata across sibling versions in the folder
+        let best_author = folder_nexus_author.clone()
+            .or_else(|| sibling_items.iter().find_map(|item| item.author.clone()));
+        let best_description = folder_nexus_summary.clone()
+            .or_else(|| sibling_items.iter().find_map(|item| item.description.clone()));
+        let best_picture_url = folder_nexus_picture_url.clone()
+            .or_else(|| sibling_items.iter().find_map(|item| item.nexus_picture_url.clone()));
+        let best_nexus_id = folder_nexus_mod_id
+            .or_else(|| sibling_items.iter().find_map(|item| item.nexus_mod_id));
+        let best_nexus_name = folder_nexus_name.clone()
+            .or_else(|| sibling_items.iter().find_map(|item| item.nexus_name.clone()));
+
+        // Sibling mod_type resolution with fallback to installed mods and name inference
+        let mut best_mod_type = sibling_items.iter().find_map(|item| item.mod_type.clone());
+        if best_mod_type.is_none() {
+            let norm_folder = normalize(&mod_id);
+            let matched = installed_mods.iter().find(|m| {
+                (best_nexus_id.is_some() && m.nexus_mod_id.is_some() && m.nexus_mod_id == best_nexus_id)
+                    || normalize(&m.name) == norm_folder
+                    || normalize(&m.id) == norm_folder
+            });
+            if let Some(m) = matched {
+                best_mod_type = Some(format!("{:?}", m.mod_type).to_lowercase());
+            }
+        }
+        if best_mod_type.is_none() {
+            let name_to_check = best_nexus_name.as_deref().unwrap_or(&mod_id);
+            best_mod_type = infer_mod_type_from_name(name_to_check);
+        }
+
+        let canonical_mod_id = best_nexus_name.as_deref().unwrap_or(&mod_id);
+        let norm_canonical = normalize(canonical_mod_id);
+        let now = chrono::Utc::now().to_rfc3339();
+
+        for mut item in sibling_items {
+            // Propagate best metadata to older / incomplete versions
+            if item.author.is_none() { item.author = best_author.clone(); }
+            if item.description.is_none() { item.description = best_description.clone(); }
+            if item.nexus_picture_url.is_none() { item.nexus_picture_url = best_picture_url.clone(); }
+            if item.nexus_mod_id.is_none() { item.nexus_mod_id = best_nexus_id; }
+            if item.nexus_name.is_none() { item.nexus_name = best_nexus_name.clone(); }
+            if item.mod_type.is_none() { item.mod_type = best_mod_type.clone(); }
+
+            // Auto-heal sidecar on disk using standard PmmMetadata
+            let pmm_data = crate::models::PmmMetadata {
+                name: item.nexus_name.as_deref().unwrap_or(&mod_id).to_string(),
+                version: item.version.clone().unwrap_or_default(),
+                author: item.author.clone(),
+                description: item.description.clone(),
+                mod_type: item.mod_type.clone(),
+                nexus_mod_id: item.nexus_mod_id,
+                nexus_file_id: None,
+                nexus_picture_url: item.nexus_picture_url.clone(),
+                nexus_url: None,
+                custom_notes: None,
+                category: None,
+                routes: None,
+                original_name: None,
+                custom_name: None,
+                folder_name: Some(mod_id.clone()),
+                installed_folders: None,
+                source_zip: Some(item.zip_name.clone()),
+                installed_files: None,
+                extra_files: None,
+                fomod_choices: None,
+            };
+            let sidecar_dest = PathBuf::from(format!("{}.pmm.json", item.path.to_string_lossy()));
+            if let Ok(json) = serde_json::to_string_pretty(&pmm_data) {
+                let _ = fs::write(&sidecar_dest, json);
+            }
+
+            // Check live installation status against active installed mods
+            let matched_installed = installed_mods.iter().find(|m| {
+                let norm_m_name = normalize(&m.name);
+                let norm_m_id = normalize(&m.id);
+                norm_m_name == norm_canonical
+                    || norm_m_id == norm_canonical
+                    || (item.nexus_mod_id.is_some() && m.nexus_mod_id.is_some() && m.nexus_mod_id == item.nexus_mod_id)
+            });
+
+            let is_installed = matched_installed.is_some();
+            let installed_version = matched_installed.map(|m| m.version.clone());
+            if item.mod_type.is_none() {
+                if let Some(m) = matched_installed {
+                    item.mod_type = Some(format!("{:?}", m.mod_type).to_lowercase());
+                }
+            }
+
+            entries.push(LibraryEntry {
+                mod_id: canonical_mod_id.to_string(),
+                zip_name: item.zip_name,
+                zip_size: item.zip_size,
+                installed_at: now.clone(),
+                nexus_picture_url: item.nexus_picture_url,
+                nexus_name: item.nexus_name,
+                nexus_author: item.author.clone(),
+                nexus_summary: item.description.clone(),
+                nexus_mod_id: item.nexus_mod_id,
+                nexus_version: folder_nexus_version.clone(),
+                author: item.author,
+                description: item.description,
+                version: item.version,
+                mod_type: item.mod_type,
+                is_installed,
+                installed_version,
+            });
         }
     }
 
     Ok(entries)
 }
+
+

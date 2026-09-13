@@ -4,6 +4,16 @@ pub mod actions;
 pub mod lifecycle;
 pub mod core;
 pub mod export_import;
+pub mod diff_engine;
+pub mod share_manifest;
+
+pub use diff_engine::{compute_json_delta, apply_json_delta};
+pub use share_manifest::{
+    ProfileShareManifest, ProfileShareMod, ProfileShareModConfig,
+    AnalyzeProfileManifestResult, MissingModInfo, ApplyProfileManifestResult,
+    export_profile_manifest_internal, analyze_profile_manifest_internal,
+    apply_profile_customizations_internal, apply_profile_manifest_internal,
+};
 
 // Re-export public functions to keep existing client interfaces unbroken
 pub use utils::{

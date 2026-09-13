@@ -23,6 +23,31 @@ pub fn enable_mod_internal(
 
     let is_native = data.mods[mod_index].nexus_author.as_deref() == Some("UE4SS Native Mod");
     let mod_type = data.mods[mod_index].mod_type.clone();
+
+    // Prevent enabling if an active conflicting variant or duplicate physical destination exists
+    if !is_native {
+        let target_nexus_id = data.mods[mod_index].nexus_mod_id;
+        let target_folder = get_mod_folder_name(&data.mods[mod_index]);
+        let target_phys = crate::installer::helpers::get_physical_identity(
+            &data.mods[mod_index].game_path,
+            &data.mods[mod_index].disabled_path,
+        );
+
+        for (i, other) in data.mods.iter().enumerate() {
+            if i != mod_index && other.enabled && other.nexus_author.as_deref() != Some("UE4SS Native Mod") {
+                let same_nexus = target_nexus_id.is_some() && other.nexus_mod_id == target_nexus_id && other.mod_type == mod_type;
+                let other_folder = get_mod_folder_name(other);
+                let same_folder = !target_folder.is_empty() && target_folder.eq_ignore_ascii_case(&other_folder) && other.mod_type == mod_type;
+                let other_phys = crate::installer::helpers::get_physical_identity(&other.game_path, &other.disabled_path);
+                let same_phys = !target_phys.is_empty() && target_phys.eq_ignore_ascii_case(&other_phys);
+
+                if same_nexus || same_folder || same_phys {
+                    return Err(format!("CONFLICT:{}", other.name));
+                }
+            }
+        }
+    }
+
     let force_ue4ss_effective = effective_force_ue4ss(data);
     let force_palschema_effective = crate::profiles::effective_force_palschema(data);
     let game_paks = PathBuf::from(&data.settings.game_path).join("Pal").join("Content").join("Paks");

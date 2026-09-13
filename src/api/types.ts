@@ -55,6 +55,7 @@ export interface ZipAnalysis {
   hasJson: boolean;
   hasPalSchemaJson: boolean;
   hasPak: boolean;
+  hasFomod?: boolean;
   hasInfoJson: boolean;
   pakDestinationHint: string | null;
   rootFolder: string | null;
@@ -330,6 +331,24 @@ export interface WorldOptionSettings {
   isStartLocationSelectByMap?: boolean | null;
   existPlayerAfterLogout?: boolean | null;
   supplyDropSpan?: number | null;
+  palDamageRateDefense?: number | null;
+  playerDamageRateDefense?: number | null;
+  equipmentDurabilityDamageRate?: number | null;
+  monsterFarmActionSpeedRate?: number | null;
+  fishingDifficultyRate?: number | null;
+  itemCorruptionMultiplier?: number | null;
+  itemWeightRate?: number | null;
+  buildObjectHpRate?: number | null;
+  maxBuildingLimitNum?: number | null;
+  maxBuildingLimitNumPerPlayer?: number | null;
+  enablePredatorBossPal?: boolean | null;
+  randomizerType?: string | null;
+  randomizerSeed?: string | null;
+  baseCampMaxNumInGuild?: number | null;
+  coopPlayerMaxNum?: number | null;
+  serverPlayerMaxNum?: number | null;
+  guildRejoinCooldownMinutes?: number | null;
+  autoResetGuildTimeNoOnlinePlayers?: number | null;
 }
 
 export interface PlayerSaveInfo {
@@ -439,6 +458,33 @@ export interface ImportProfileResult {
   profileName: string;
   modCount: number;
   dependenciesInstalled: number;
+}
+
+export interface MissingModInfo {
+  id: string;
+  name: string;
+  modType: string;
+  version: string;
+  nexusModId?: number;
+  nexusFileId?: string;
+  directDownloadUrl?: string;
+}
+
+export interface AnalyzeProfileManifestResult {
+  profileName: string;
+  totalMods: number;
+  installedModsCount: number;
+  missingMods: MissingModInfo[];
+  hasCustomizations: boolean;
+}
+
+export interface ApplyProfileManifestResult {
+  success: boolean;
+  profileId: string;
+  profileName: string;
+  totalMods: number;
+  missingCount: number;
+  customizationsApplied: number;
 }
 
 export interface ModHotkey {
@@ -559,3 +605,25 @@ export interface ArchivedConfigInfo {
   archivedAt: string;
   files: string[];
 }
+
+export interface SaveScanProgressPayload {
+  stage: string;
+  percent: number;
+}
+
+export interface InstallProgressPayload {
+  stage: string;
+  percent: number;
+}
+
+export type {
+  FomodConfig,
+  FomodStep,
+  FomodGroup,
+  FomodPlugin,
+  FomodFileEntry,
+  FomodFlag,
+  FomodVisibility,
+  FomodPattern,
+  BuildFomodManifestPayload,
+} from '../ui/modals/fomod/types';

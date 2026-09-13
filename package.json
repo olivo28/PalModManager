@@ -1,11 +1,12 @@
 {
   "name": "palmodmanager",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "description": "Palworld Mod Organizer",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "build:beta": "powershell -ExecutionPolicy Bypass -File ./scripts/build_beta.ps1",
     "check": "tsc --noEmit",
     "test": "cargo test --manifest-path src-tauri/Cargo.toml --test integration_tests",
     "test:verbose": "cargo test --manifest-path src-tauri/Cargo.toml --test integration_tests -- --nocapture --test-threads=1",

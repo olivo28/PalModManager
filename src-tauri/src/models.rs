@@ -96,6 +96,8 @@ pub struct ModInfo {
     pub original_name: Option<String>,
     #[serde(default)]
     pub custom_name: Option<String>,
+    #[serde(default)]
+    pub fomod_choices: Option<std::collections::HashMap<String, Vec<String>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
@@ -410,6 +412,8 @@ pub struct PmmMetadata {
     pub installed_files: Option<Vec<String>>,
     #[serde(default, alias = "extraFiles", alias = "extra_files")]
     pub extra_files: Option<Vec<String>>,
+    #[serde(default, alias = "fomodChoices", alias = "fomod_choices")]
+    pub fomod_choices: Option<std::collections::HashMap<String, Vec<String>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -432,6 +436,8 @@ pub struct InstallManifest {
     pub summary: Option<String>,
     #[serde(default)]
     pub picture_url: Option<String>,
+    #[serde(default)]
+    pub fomod_choices: Option<std::collections::HashMap<String, Vec<String>>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]

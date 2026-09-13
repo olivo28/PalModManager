@@ -5,6 +5,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { formatSize, compareVersions } from './helpers';
 import { _libraryOnlineUpdatesMap, type LibraryGroup } from './state';
 import { triggerInstallFromLibrary, updateLibraryBulkBar, handleLibraryDelete } from './actions';
+import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
 
 const _expandedLibraryIds = new Set<string>();
 
@@ -100,6 +101,16 @@ export function renderLibraryListView(groups: LibraryGroup[], container: HTMLEle
       ? `<img class="library-drawer-preview" src="${displayImgSrc}" onerror="this.style.display='none';" />`
       : `<div class="library-drawer-preview" style="display:flex;align-items:center;justify-content:center;font-size:28px;opacity:0.4;">📦</div>`;
 
+    const libNexusId = group.nexusModId || state.allMods.find((m: any) => (m.nexusModId && group.nexusModId && m.nexusModId === group.nexusModId) || m.name.toLowerCase() === cleanName.toLowerCase())?.nexusModId;
+    const isEndorsed = isNexusModEndorsed(libNexusId, state.currentSettings?.nexusEndorsementsCache);
+    const isTracked = isNexusModTracked(libNexusId, state.currentSettings?.nexusTrackedCache);
+    const libEndorsedBadge = isEndorsed
+      ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+      : '';
+    const libTrackedBadge = isTracked
+      ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+      : '';
+
     return `
       <div class="mod-card library-card library-list-item ${isSelected ? 'selected' : ''}" data-id="${group.modId}" data-is-installed="${group.isInstalled}" data-installed-version="${escapeHtml(group.installedVersion || '')}">
         <!-- Compact Summary Row -->
@@ -119,6 +130,8 @@ export function renderLibraryListView(groups: LibraryGroup[], container: HTMLEle
             ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             ${statusBadgeHtml}
             ${onlineUpdateBadge}
+            ${libTrackedBadge}
+            ${libEndorsedBadge}
           </div>
 
           <div class="library-row-actions">

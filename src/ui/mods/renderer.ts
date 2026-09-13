@@ -4,6 +4,7 @@ import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import type { ModInfo } from '../../types';
 import { mainDom } from '../../framework';
+import { isNexusModEndorsed, isNexusModTracked } from '../../features/nexusAuth/state';
 
 export function populateAdvancedFilters(): void {
   const state = getState();
@@ -61,6 +62,14 @@ export function renderModsView(): void {
   let filtered = state.allMods.filter((m) => {
     if (state.statusFilter === 'enabled' && !m.enabled) return false;
     if (state.statusFilter === 'disabled' && m.enabled) return false;
+    if (state.statusFilter === 'tracked') {
+      const isTracked = isNexusModTracked(m.nexusModId, state.currentSettings?.nexusTrackedCache);
+      if (!isTracked) return false;
+    }
+    if (state.statusFilter === 'endorsed') {
+      const isEndorsed = isNexusModEndorsed(m.nexusModId, state.currentSettings?.nexusEndorsementsCache);
+      if (!isEndorsed) return false;
+    }
 
     const isUe4ssMod = m.type === 'ue4ss' || m.nexusAuthor === 'UE4SS Native Mod';
     if (isUe4ssMod && currentProfile && !currentProfile.ue4ss_enabled && state.statusFilter === 'enabled') {

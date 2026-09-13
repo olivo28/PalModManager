@@ -8,8 +8,8 @@ import type {
   SaveBackupSnapshot,
 } from './types';
 
-export async function listSaveWorlds(customDir?: string): Promise<SaveWorldSummary[]> {
-  return invoke('list_save_worlds_cmd', { customDir: customDir || null });
+export async function listSaveWorlds(customDir?: string, forceRefresh?: boolean): Promise<SaveWorldSummary[]> {
+  return invoke('list_save_worlds_cmd', { customDir: customDir || null, forceRefresh: !!forceRefresh });
 }
 
 export async function deepScanSaveHealth(worldDir: string): Promise<SaveHealthReport> {

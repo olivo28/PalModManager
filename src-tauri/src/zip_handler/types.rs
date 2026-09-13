@@ -20,6 +20,7 @@ pub struct ZipAnalysis {
     #[allow(dead_code)]
     pub has_dll: bool,
     pub has_info_json: bool,
+    pub has_fomod: bool,
     pub pak_destination_hint: Option<String>,
     pub root_folder: Option<String>,
     pub files: Vec<String>,

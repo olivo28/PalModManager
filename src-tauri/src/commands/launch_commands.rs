@@ -4,15 +4,16 @@ use crate::state::AppState;
 
 #[tauri::command]
 pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
-    let (game_path, enabled_mod_ids, all_mods) = {
+    let (game_path, enabled_mod_ids, all_mods, profile_name) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
         let current_profile = data.profiles.iter().find(|p| p.id == data.current_profile_id);
+        let profile_name = current_profile.map(|p| p.name.clone()).unwrap_or_else(|| "Default".to_string());
         let enabled_ids = if let Some(p) = current_profile {
             p.enabled_mod_ids.clone()
         } else {
             data.mods.iter().filter(|m| m.enabled).map(|m| m.id.clone()).collect()
         };
-        (data.settings.game_path.clone(), enabled_ids, data.mods.clone())
+        (data.settings.game_path.clone(), enabled_ids, data.mods.clone(), profile_name)
     };
 
     if game_path.is_empty() {
@@ -24,7 +25,33 @@ pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
     let wingdk = path.join("Pal").join("Binaries").join("WinGDK");
     let is_xbox = wingdk.exists();
 
-    crate::logger::log(&format!("launch_game: Launching Palworld (Platform: {}, Enabled mods: {})...", if is_xbox { "Xbox/WinGDK" } else { "Steam/Win64" }, enabled_mod_ids.len()));
+    let enabled_mods: Vec<_> = all_mods
+        .iter()
+        .filter(|m| enabled_mod_ids.contains(&m.id))
+        .collect();
+
+    crate::logger::log(&format!(
+        "launch_game: Launching Palworld (Platform: {}, Profile: '{}', Active mods: {})...",
+        if is_xbox { "Xbox/WinGDK" } else { "Steam/Win64" },
+        profile_name,
+        enabled_mods.len()
+    ));
+
+    if enabled_mods.is_empty() {
+        crate::logger::log("launch_game: [Active Mods Launch List]: None (Vanilla launch)");
+    } else {
+        crate::logger::log("launch_game: [Active Mods Launch List]:");
+        for (idx, m) in enabled_mods.iter().enumerate() {
+            let ver = if m.version.trim().is_empty() { "1.0.0" } else { &m.version };
+            crate::logger::log(&format!(
+                "  [{:>2}] {} (v{}) [Type: {:?}]",
+                idx + 1,
+                m.name,
+                ver,
+                m.mod_type
+            ));
+        }
+    }
 
     if is_xbox {
         let exe_path = wingdk.join("Palworld-WinGDK-Shipping.exe");

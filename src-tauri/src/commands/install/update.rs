@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use chrono::Utc;
 use serde_json::Value;
-use tauri::State;
+use tauri::{AppHandle, Emitter, State};
 use uuid::Uuid;
 use crate::db;
 use crate::installer;
@@ -10,9 +10,11 @@ use crate::library;
 use crate::state::AppState;
 use crate::zip_handler;
 use super::utils::{check_mod_dependencies, sync_altermatic_helper};
+use super::InstallProgressPayload;
 
 #[tauri::command]
 pub async fn update_mod_command(
+    app: AppHandle,
     zip_path: String,
     mod_id: String,
     state: State<'_, AppState>,
@@ -62,8 +64,6 @@ pub async fn update_mod_command(
     };
 
     check_mod_dependencies(&game_path, &mod_type_str, &analysis)?;
-    let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
-    let extracted = zip_handler::extract_zip_to_temp(&zip_path, &temp_dir)?;
 
     let zip_filename = Path::new(&zip_path)
         .file_name()
@@ -72,25 +72,115 @@ pub async fn update_mod_command(
 
     let now = Utc::now().to_rfc3339();
 
-    let mut updated_mod = {
-        let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        let force_load_order_ue4ss = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data);
-        let force_load_order_palschema = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data);
+    let (mut existing_clone, force_load_order_ue4ss, force_load_order_palschema) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let force_ue = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_ue4ss(&data);
+        let force_pal = data.settings.force_load_order.unwrap_or(false) && crate::profiles::effective_force_palschema(&data);
         let existing = data
             .mods
-            .iter_mut()
+            .iter()
             .find(|m| m.id == mod_id)
             .ok_or_else(|| "Mod not found".to_string())?;
-
-        installer::update_mod(existing, &game_path, &program_path, &current_profile_id, &extracted, &analysis, &zip_filename, &now, force_load_order_ue4ss, force_load_order_palschema)?;
-        existing.clone()
+        (existing.clone(), force_ue, force_pal)
     };
+
+    let app_handle = std::sync::Arc::new(app);
+    let app_emit = app_handle.clone();
+    let zip_path_clone = zip_path.clone();
+    let game_path_clone = game_path.clone();
+    let program_path_clone = program_path.clone();
+    let current_profile_id_clone = current_profile_id.clone();
+    let analysis_clone = analysis.clone();
+    let now_clone = now.clone();
+
+    let mut updated_mod = tauri::async_runtime::spawn_blocking(move || -> Result<crate::models::ModInfo, String> {
+        let _ = app_emit.emit("install-progress", InstallProgressPayload {
+            stage: "extracting".to_string(),
+            percent: 10,
+        });
+
+        let temp_dir = std::env::temp_dir().join(format!("palmodmanager_{}", Uuid::new_v4()));
+        let extracted = zip_handler::extract_zip_to_temp(&zip_path_clone, &temp_dir)?;
+
+        let zip_filename = Path::new(&zip_path_clone)
+            .file_name()
+            .map(|s| s.to_string_lossy().to_string())
+            .unwrap_or_default();
+
+        let _ = app_emit.emit("install-progress", InstallProgressPayload {
+            stage: "installing".to_string(),
+            percent: 50,
+        });
+
+        let update_res = installer::update_mod(
+            &mut existing_clone,
+            &game_path_clone,
+            &program_path_clone,
+            &current_profile_id_clone,
+            &extracted,
+            &analysis_clone,
+            &zip_filename,
+            &now_clone,
+            force_load_order_ue4ss,
+            force_load_order_palschema,
+        );
+
+        let _ = fs::remove_dir_all(&temp_dir);
+        update_res.map(|_| existing_clone)
+    })
+    .await
+    .map_err(|e| e.to_string())??;
+
+    let _ = app_handle.emit("install-progress", InstallProgressPayload {
+        stage: "saving".to_string(),
+        percent: 90,
+    });
 
     let final_mod = {
         let mut data = state.data.lock().map_err(|e| e.to_string())?;
-        if let Some(ref info) = nexus_info {
-            updated_mod.version = info.version.clone();
-        }
+        let sidecar_version = {
+            let p1 = PathBuf::from(format!("{}.pmm.json", zip_path));
+            let p2 = Path::new(&zip_path).with_extension("pmm.json");
+            let target = if p1.exists() { Some(p1) } else if p2.exists() { Some(p2) } else { None };
+            target.and_then(|p| fs::read_to_string(p).ok())
+                .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+                .and_then(|v| {
+                    v.get("version").or_else(|| v.get("nexusVersion")).and_then(|x| x.as_str()).map(|s| s.to_string())
+                })
+                .filter(|v| !v.is_empty() && v != "unknown")
+        };
+
+        let parsed_version = crate::nexus::parse_mod_filename(&zip_filename).version
+            .filter(|v| !v.is_empty() && v != "unknown");
+
+        let detected_archive_ver = sidecar_version
+            .or(parsed_version)
+            .or_else(|| {
+                if !updated_mod.version.is_empty() && updated_mod.version != "unknown" && updated_mod.version != "1.0" {
+                    Some(updated_mod.version.clone())
+                } else {
+                    None
+                }
+            });
+
+        let final_version = if let Some(ver) = detected_archive_ver {
+            ver
+        } else if let Some(ref info) = nexus_info {
+            if !info.version.is_empty() && info.version != "unknown" {
+                info.version.clone()
+            } else if !updated_mod.version.is_empty() && updated_mod.version != "unknown" {
+                updated_mod.version.clone()
+            } else {
+                "1.0".to_string()
+            }
+        } else if !updated_mod.version.is_empty() && updated_mod.version != "unknown" {
+            updated_mod.version.clone()
+        } else {
+            "1.0".to_string()
+        };
+
+        updated_mod.version = final_version.clone();
+
         let is_already_in_lib = Path::new(&zip_path).starts_with(library::library_dir(&program_path));
         if !is_already_in_lib {
             let lib_folder_name = updated_mod.name.clone();
@@ -106,10 +196,9 @@ pub async fn update_mod_command(
         let final_m = if let Some(existing) = data.mods.iter_mut().find(|m| m.id == mod_id) {
             existing.update_date = Some(now.clone());
             existing.source_zip = zip_filename.clone();
-            existing.has_pending_update = Some(false);
+            existing.version = final_version.clone();
 
             if let Some(ref info) = nexus_info {
-                existing.version = info.version.clone();
                 existing.nexus_version_cached = Some(info.version.clone());
                 existing.nexus_cached_at = Some(now.clone());
                 existing.nexus_picture_url = Some(info.picture_url.clone());
@@ -118,6 +207,9 @@ pub async fn update_mod_command(
                 existing.nexus_description = Some(info.description.clone());
                 existing.nexus_endorsements = Some(info.endorsements);
                 existing.nexus_downloads = Some(info.downloads);
+
+                let is_newer = crate::commands::nexus_commands::is_version_newer(&existing.version, &info.version);
+                existing.has_pending_update = Some(is_newer);
 
                 let cache_dir = if existing.enabled {
                     PathBuf::from(&existing.game_path)
@@ -141,14 +233,9 @@ pub async fn update_mod_command(
                     let _ = fs::write(cache_dir.join(".nexus.json"), serde_json::to_string_pretty(&cache_json).unwrap_or_default());
                 }
             } else {
-                let parsed_fn = crate::nexus::parse_mod_filename(&zip_filename);
-                if let Some(ref ver) = parsed_fn.version {
-                    existing.version = ver.clone();
-                } else if updated_mod.version != "unknown" && !updated_mod.version.is_empty() && updated_mod.version != "1.0" {
-                    existing.version = updated_mod.version.clone();
-                }
                 existing.nexus_version_cached = Some(existing.version.clone());
                 existing.nexus_cached_at = Some(now.clone());
+                existing.has_pending_update = Some(false);
             }
             let _ = crate::profiles::save_pmm_meta(existing);
             existing.clone()
@@ -235,7 +322,10 @@ pub async fn update_mod_command(
         final_m
     };
 
-    let _ = fs::remove_dir_all(&temp_dir);
+    let _ = app_handle.emit("install-progress", InstallProgressPayload {
+        stage: "complete".to_string(),
+        percent: 100,
+    });
 
     Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
 }

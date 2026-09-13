@@ -115,7 +115,7 @@ export function attachCardEvents(container: HTMLElement): void {
         if (state.currentDetailMod?.id === id) {
           openDetailPanel(id);
         }
-      } catch (e) {
+      } catch (e: any) {
         target.checked = !isEnabled;
         if (card) {
           card.classList.toggle('disabled', isEnabled);
@@ -126,7 +126,14 @@ export function attachCardEvents(container: HTMLElement): void {
           }
         }
         console.error('Error toggling mod:', e);
-        showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+        const errStr = String(e?.message || e);
+        if (errStr.includes('CONFLICT:')) {
+          const conflictingName = errStr.split('CONFLICT:')[1].trim();
+          const currentMod = getState().allMods.find(m => m.id === id);
+          showToast(t('toasts.mod_conflict_active', { name: currentMod?.name || id, conflicting: conflictingName }), 'warning');
+        } else {
+          showToast(t('toasts.export_failed', { error: errStr }), 'error');
+        }
       }
     });
   });
@@ -383,7 +390,7 @@ export function setupAdvancedFilterHandlers(): void {
 export function setupStatusFilterHandlers(): void {
   document.querySelectorAll('.status-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const status = (btn as HTMLElement).dataset.status as 'all' | 'enabled' | 'disabled';
+      const status = (btn as HTMLElement).dataset.status as 'all' | 'enabled' | 'disabled' | 'tracked' | 'endorsed';
       document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       updateState({ statusFilter: status });

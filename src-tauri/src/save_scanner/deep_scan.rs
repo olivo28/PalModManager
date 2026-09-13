@@ -3,9 +3,12 @@ use std::path::Path;
 use std::collections::HashSet;
 use walkdir::WalkDir;
 
+use std::sync::Arc;
+use tauri::{AppHandle, Emitter};
+
 use super::models::{
     SaveBackupSnapshot, ExternalEditDiagnostic, PlayerSaveInfo,
-    SaveStorageBreakdown, OrphanedModRef, SaveHealthReport
+    SaveStorageBreakdown, OrphanedModRef, SaveHealthReport, SaveScanProgressPayload
 };
 use super::gvas::{decompress_palworld_save, gvas_read_str, gvas_read_int};
 use super::discovery::{
@@ -59,6 +62,12 @@ pub fn list_available_backups(world_dir: &Path) -> Vec<SaveBackupSnapshot> {
     snapshots
 }
 
+pub use super::validator::{
+    extract_fstring_asset_paths, is_mod_asset_path, extract_mod_hint,
+    VANILLA_SCRIPTS, VANILLA_GAME_PREFIXES,
+};
+
+
 /// On-demand deep inspection of a single snapshot's internal GVAS properties
 pub fn inspect_snapshot_details(world_dir: &Path, slot_name: &str) -> Result<SaveBackupSnapshot, String> {
     let snapshot_dir = world_dir.join("backup").join("world").join(slot_name);
@@ -83,14 +92,8 @@ pub fn inspect_snapshot_details(world_dir: &Path, slot_name: &str) -> Result<Sav
     if let Ok(raw) = fs::read(&level_file) {
         if let Ok(decompressed) = decompress_palworld_save(&raw) {
             uncompressed_size_bytes = Some(decompressed.len() as u64);
-            let text = String::from_utf8_lossy(&decompressed);
-            let mut count = 0;
-            for line in text.split(|c: char| c == '\0' || c == '\n' || c == '\r' || c == '\"' || c == '\'') {
-                let trimmed = line.trim();
-                if (trimmed.starts_with("/Game/Mods/") || trimmed.contains("/Mods/") || (trimmed.starts_with("/Game/") && !trimmed.starts_with("/Game/Pal/") && !trimmed.starts_with("/Game/Characters/") && !trimmed.starts_with("/Game/Maps/") && !trimmed.starts_with("/Game/Sound/"))) && trimmed.len() > 10 {
-                    count += 1;
-                }
-            }
+            let paths = extract_fstring_asset_paths(&decompressed);
+            let count = paths.iter().filter(|p| is_mod_asset_path(p)).count();
             mod_refs_count = Some(count);
             is_clean_vanilla = Some(count == 0);
         }
@@ -130,13 +133,14 @@ pub fn detect_external_edits_and_anomalies(world_dir: &Path, level_size: u64) ->
 
     let backups = list_available_backups(world_dir);
     let latest_backup = backups.first();
-    let latest_size = latest_backup.map(|b| b.level_size_bytes).unwrap_or(0);
+    let max_recent_size = backups.iter().take(5).map(|b| b.level_size_bytes).max().unwrap_or(0);
+    let latest_size = if max_recent_size > 0 { max_recent_size } else { latest_backup.map(|b| b.level_size_bytes).unwrap_or(0) };
     let mut size_reduction_pct = None;
     let mut has_size_drop = false;
 
     if latest_size > 0 && level_size > 0 && latest_size > level_size {
         let diff = latest_size - level_size;
-        if diff > (latest_size / 10) {
+        if diff > 20_000 || diff > (latest_size / 20) {
             has_size_drop = true;
             size_reduction_pct = Some(((diff * 100) / latest_size) as u32);
         }
@@ -302,7 +306,13 @@ pub fn calculate_storage_breakdown(world_dir: &Path, uncompressed_level_bytes: u
 }
 
 /// Deep inspection of a World Save (analyzes Level.sav for orphaned mod assets, external editor damage, and auto-backups)
-pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program_path: Option<&str>) -> Result<SaveHealthReport, String> {
+pub fn deep_scan_save(
+    world_dir: &str,
+    active_installed_mods: &[String],
+    program_path: Option<&str>,
+    app: Option<Arc<AppHandle>>,
+    progress_callback: Option<crate::save_scanner::SaveProgressCallback>,
+) -> Result<SaveHealthReport, String> {
     let world_path = Path::new(world_dir);
     let level_sav = world_path.join("Level.sav");
     let level_meta_sav = world_path.join("LevelMeta.sav");
@@ -310,6 +320,18 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
     if !level_sav.exists() {
         return Err("Level.sav not found in specified world directory".to_string());
     }
+
+    let emit = |stage: &str, percent: u8| {
+        if let Some(ref h) = app {
+            let _ = h.emit("save-scan-progress", SaveScanProgressPayload {
+                stage: stage.to_string(),
+                percent,
+            });
+        }
+        if let Some(ref cb) = progress_callback {
+            cb(stage, percent);
+        }
+    };
 
     let (
         world_name,
@@ -322,7 +344,13 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
         has_external_edits,
     ) = extract_metadata_from_world(world_path, &level_meta_sav, &level_sav);
 
+    emit("reading", 5);
     let raw_bytes = fs::read(&level_sav).map_err(|e| format!("Failed to read Level.sav: {e}"))?;
+    let world_folder_name = world_path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_else(|| "UnknownWorld".to_string());
+    let t0 = std::time::Instant::now();
+    crate::logger::log_sav_start(&world_folder_name, "Level.sav (Deep Health Scan)", raw_bytes.len() as u64, &level_sav.to_string_lossy());
+
+    emit("decompressing", 15);
     let (decompressed, compression_type) = if raw_bytes.len() > 12 && raw_bytes.get(8..11) == Some(b"PlM") {
         (
             decompress_palworld_save(&raw_bytes).map_err(|e| format!("Oodle PlM Decompress Error: {e}")),
@@ -339,6 +367,12 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
             "Raw UE5 GVAS".to_string(),
         )
     };
+
+    crate::logger::log_sav_finish(
+        "Level.sav (Deep Health Scan)",
+        t0.elapsed().as_millis(),
+        if decompressed.is_ok() { "OK" } else { "FAIL" }
+    );
 
     let available_backups = list_available_backups(world_path);
     let can_restore_backup = !available_backups.is_empty();
@@ -390,53 +424,67 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
     let is_valid_gvas = decompressed_bytes.starts_with(b"GVAS") || decompressed_bytes.windows(4).take(32).any(|w| w == b"GVAS");
     let uncompressed_size = decompressed_bytes.len() as u64;
 
-    let text = String::from_utf8_lossy(&decompressed_bytes);
+    emit("scanning_paths", 40);
+    let all_paths = extract_fstring_asset_paths(&decompressed_bytes);
     let mut raw_mod_paths: Vec<String> = Vec::new();
     let mut mod_ref_counts: std::collections::HashMap<String, usize> = std::collections::HashMap::new();
 
-    for line in text.split(|c: char| c == '\0' || c == '\n' || c == '\r' || c == '\"' || c == '\'') {
-        let trimmed = line.trim();
-        if (trimmed.starts_with("/Game/Mods/") || trimmed.contains("/Mods/") || (trimmed.starts_with("/Game/") && !trimmed.starts_with("/Game/Pal/") && !trimmed.starts_with("/Game/Characters/") && !trimmed.starts_with("/Game/Maps/") && !trimmed.starts_with("/Game/Sound/"))) && trimmed.len() > 10 {
-            raw_mod_paths.push(trimmed.to_string());
-            *mod_ref_counts.entry(trimmed.to_string()).or_insert(0) += 1;
+    for path in all_paths {
+        if is_mod_asset_path(&path) {
+            raw_mod_paths.push(path.clone());
+            *mod_ref_counts.entry(path).or_insert(0) += 1;
         }
     }
 
-    let mut orphaned_mod_refs: Vec<OrphanedModRef> = Vec::new();
     let active_mods_lower: HashSet<String> = active_installed_mods.iter().map(|m| m.to_lowercase()).collect();
+    let mut grouped_mods: std::collections::HashMap<String, (usize, String, usize)> = std::collections::HashMap::new();
 
     for (path, count) in mod_ref_counts {
-        let parts: Vec<&str> = path.split('/').collect();
-        let mod_hint = if parts.len() >= 4 && parts[1] == "Game" && parts[2] == "Mods" {
-            parts[3].to_string()
-        } else if parts.len() >= 3 && parts[1] == "Game" {
-            parts[2].to_string()
-        } else {
-            "CustomMod".to_string()
-        };
-
+        let mod_hint = extract_mod_hint(&path);
         let is_currently_installed = active_mods_lower.iter().any(|m| m.contains(&mod_hint.to_lowercase()) || mod_hint.to_lowercase().contains(m));
 
         if !is_currently_installed {
-            orphaned_mod_refs.push(OrphanedModRef {
-                mod_hint_name: mod_hint,
-                asset_path: path,
-                occurrences: count,
-            });
+            let entry = grouped_mods.entry(mod_hint).or_insert((0, path.clone(), 0));
+            entry.0 += count;
+            if count > entry.2 {
+                entry.1 = path.clone();
+                entry.2 = count;
+            }
         }
     }
 
+    let mut orphaned_mod_refs: Vec<OrphanedModRef> = grouped_mods
+        .into_iter()
+        .map(|(mod_hint, (total_occurrences, top_path, _))| OrphanedModRef {
+            mod_hint_name: mod_hint,
+            asset_path: top_path,
+            occurrences: total_occurrences,
+        })
+        .collect();
+
+    orphaned_mod_refs.sort_by(|a, b| b.occurrences.cmp(&a.occurrences));
+
+    emit("scanning_players", 60);
     let mut corrupt_player_files: Vec<String> = Vec::new();
     let players_dir = world_path.join("Players");
     if players_dir.exists() {
         if let Ok(rd) = fs::read_dir(&players_dir) {
             for entry in rd.flatten() {
                 if entry.path().extension().map_or(false, |e| e.eq_ignore_ascii_case("sav")) {
+                    let p_stem = entry.path().file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+                    let p_label = format!("Players/{}.sav (Deep Health Scan)", p_stem);
+                    let p_size = fs::metadata(entry.path()).map(|m| m.len()).unwrap_or(0);
+                    let pt0 = std::time::Instant::now();
+                    crate::logger::log_sav_start(&world_folder_name, &p_label, p_size, &entry.path().to_string_lossy());
                     if let Ok(b) = fs::read(entry.path()) {
-                        if decompress_palworld_save(&b).is_err() {
+                        if let Err(e) = decompress_palworld_save(&b) {
+                            crate::logger::log_sav_finish(&p_label, pt0.elapsed().as_millis(), &format!("FAIL: {e}"));
                             corrupt_player_files.push(entry.file_name().to_string_lossy().to_string());
+                        } else {
+                            crate::logger::log_sav_finish(&p_label, pt0.elapsed().as_millis(), "OK");
                         }
                     } else {
+                        crate::logger::log_sav_finish(&p_label, pt0.elapsed().as_millis(), "FAIL: Cannot read");
                         corrupt_player_files.push(entry.file_name().to_string_lossy().to_string());
                     }
                 }
@@ -447,14 +495,54 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
     let external_edit_details = detect_external_edits_and_anomalies(world_path, raw_bytes.len() as u64);
     let has_ext_edits = external_edit_details.is_some();
 
-    let total_refs = raw_mod_paths.len();
+    emit("validating_catalog", 80);
+    let catalog_validation = super::validator::validate_save_with_catalogs(
+        &decompressed_bytes,
+        active_installed_mods,
+        program_path,
+    );
+
+    // Merge missing Blueprints detected by native catalog into orphaned_mod_refs
+    for missing_bp in &catalog_validation.missing_blueprint_refs {
+        let hint = extract_mod_hint(missing_bp);
+        if !orphaned_mod_refs.iter().any(|o| o.asset_path == *missing_bp) {
+            orphaned_mod_refs.push(OrphanedModRef {
+                mod_hint_name: hint,
+                asset_path: missing_bp.clone(),
+                occurrences: 1,
+            });
+        }
+    }
+
+    // Merge suspicious MapObjects into orphaned_mod_refs
+    for (map_obj, occurrences) in &catalog_validation.suspicious_map_objects {
+        let hint = extract_mod_hint(map_obj);
+        if let Some(existing) = orphaned_mod_refs.iter_mut().find(|o| o.asset_path == *map_obj) {
+            existing.occurrences = (*occurrences).max(existing.occurrences);
+        } else {
+            orphaned_mod_refs.push(OrphanedModRef {
+                mod_hint_name: hint,
+                asset_path: map_obj.clone(),
+                occurrences: *occurrences,
+            });
+        }
+    }
+
+    let map_obj_total_count: usize = catalog_validation.suspicious_map_objects.iter().map(|(_, c)| *c).sum();
+    let total_refs = raw_mod_paths.len() + catalog_validation.missing_blueprint_refs.len() + map_obj_total_count;
     let has_orphans = !orphaned_mod_refs.is_empty();
     let has_corrupt_players = !corrupt_player_files.is_empty();
+    let has_critical_catalog_issues = !catalog_validation.is_clean;
 
     let (health_status, summary_message) = if !is_valid_gvas {
         ("corrupt".to_string(), "Save does not have a valid GVAS header (Truncated or unreadable container).".to_string())
     } else if has_corrupt_players {
         ("corrupt".to_string(), format!("Corrupted character save file(s) detected: {}. Game will crash when player joins.", corrupt_player_files.join(", ")))
+    } else if has_critical_catalog_issues {
+        let issue_desc = catalog_validation.critical_issues.first().cloned().unwrap_or_else(|| {
+            format!("Crash Hazard: Save references {} missing/unregistered Blueprint(s) or MapObject(s) from uninstalled mods. UE5 will crash with EXCEPTION_ACCESS_VIOLATION.", orphaned_mod_refs.len())
+        });
+        ("corrupt".to_string(), issue_desc)
     } else if has_ext_edits && has_orphans {
         ("warning".to_string(), format!("External tool modification detected AND {} orphaned mod reference(s) found.", orphaned_mod_refs.len()))
     } else if has_ext_edits {
@@ -462,7 +550,7 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
     } else if has_orphans {
         ("warning".to_string(), format!("Found {} orphaned asset reference(s) from uninstalled mods that may cause world load crashes.", orphaned_mod_refs.len()))
     } else {
-        ("healthy".to_string(), "Save file is healthy. GVAS structure is valid and no orphaned mod references detected.".to_string())
+        ("healthy".to_string(), "Save file is healthy. GVAS structure is valid and all object references match official native catalogs.".to_string())
     };
 
     let world_options = parse_world_options(world_path);
@@ -470,6 +558,12 @@ pub fn deep_scan_save(world_dir: &str, active_installed_mods: &[String], program
     let player_roster = parse_player_roster(world_path, host_player_uid.as_deref());
     let storage_breakdown = Some(calculate_storage_breakdown(world_path, uncompressed_size));
     let custom_meta = Some(load_world_custom_meta(world_path));
+    crate::logger::log(&format!(
+        "[Save Doctor] Deep Health Scan for '{}': status={}, {} orphaned mod refs, {} corrupt players",
+        world_name, health_status, orphaned_mod_refs.len(), corrupt_player_files.len()
+    ));
+
+    emit("complete", 100);
 
     Ok(SaveHealthReport {
         world_id: world_path.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default(),

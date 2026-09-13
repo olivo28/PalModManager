@@ -2,7 +2,7 @@ import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { editorDom } from '../../framework';
 import { getState } from '../../state';
-import { handleEditorSave, _originalContent, clearOriginalContent, getDirtyBufferCount, clearBufferCache, _fileBufferCache } from './viewer';
+import { handleEditorSave, _originalContent, clearOriginalContent, getDirtyBufferCount, clearBufferCache, _fileBufferCache, getBufferKey } from './viewer';
 import { getMonacoContent, getCurrentMonacoFilePath } from './monaco/instance';
 
 export function hasUnsavedChanges(): boolean {
@@ -17,19 +17,37 @@ export async function confirmDiscardOrSave(): Promise<boolean> {
   const state = getState();
   const currentPath = state.editorSelectedFile || getCurrentMonacoFilePath();
 
-  // Make sure active Monaco buffer is synced into cache
+  // Sync active Monaco buffer into cache only if it belongs to the current mod session.
+  // Without this guard, a stale _originalContent from a previous file selection can
+  // falsely mark the buffer as dirty after a mod reinstall.
   if (currentPath && _originalContent !== null) {
-    const currentText = getMonacoContent();
-    const normalize = (str: string) => str.replace(/\r\n/g, '\n');
-    const isDirty = normalize(currentText) !== normalize(_originalContent);
-    _fileBufferCache.set(currentPath, {
-      current: currentText,
-      original: _originalContent,
-      isDirty,
-    });
+    const bufKey = getBufferKey(currentPath, state.editorModId);
+    const keyModId = bufKey.includes('::') ? bufKey.split('::')[0] : null;
+    const belongsToCurrentMod = !keyModId || !state.editorModId || keyModId === state.editorModId;
+    if (belongsToCurrentMod) {
+      const currentText = getMonacoContent();
+      const normalize = (str: string) => str.replace(/\r\n/g, '\n');
+      const isDirty = normalize(currentText) !== normalize(_originalContent);
+      _fileBufferCache.set(bufKey, {
+        current: currentText,
+        original: _originalContent,
+        isDirty,
+      });
+    }
   }
 
-  const dirtyBuffers = Array.from(_fileBufferCache.entries()).filter(([_, b]) => b.isDirty);
+  const isBufferForMod = (key: string) => {
+    if (!key.includes('::')) return true;
+    return !state.editorModId || key.split('::')[0] === state.editorModId;
+  };
+  const getBufferPath = (key: string) => {
+    return key.includes('::') ? key.split('::').slice(1).join('::') : key;
+  };
+
+  const dirtyBuffers = Array.from(_fileBufferCache.entries())
+    .filter(([k, b]) => b.isDirty && isBufferForMod(k))
+    .map(([k, b]): [string, { current: string; original: string; isDirty: boolean }] => [getBufferPath(k), b]);
+
   if (dirtyBuffers.length === 0) return true;
 
   const choice = await showUnsavedChangesModal(dirtyBuffers, currentPath);
@@ -37,11 +55,11 @@ export async function confirmDiscardOrSave(): Promise<boolean> {
   if (choice === 'save') {
     await handleEditorSave();
     clearOriginalContent();
-    clearBufferCache();
+    clearBufferCache(state.editorModId);
     return true;
   } else if (choice === 'discard') {
     clearOriginalContent();
-    clearBufferCache();
+    clearBufferCache(state.editorModId);
     return true;
   }
 

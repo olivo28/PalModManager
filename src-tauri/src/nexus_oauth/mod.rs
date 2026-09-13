@@ -26,6 +26,7 @@ pub use flow::{
 pub use profile::{
     fetch_user_profile, fetch_user_endorsements, fetch_user_tracked_mods,
     fetch_user_authored_mods, batch_fetch_legacy_mods_info,
+    api_endorse_mod, api_abstain_mod, api_track_mod, api_untrack_mod,
 };
 
 // Re-export NXM parser and downloaders

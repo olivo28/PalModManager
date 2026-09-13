@@ -17,3 +17,4 @@ fn test_find_hook_start_and_extract_string_literal() {
     let (target3, _, _) = extract_string_literal(line3, start3).expect("Should extract string literal");
     assert_eq!(target3, "/Script/Pal.PalCharacter:Die");
 }
+

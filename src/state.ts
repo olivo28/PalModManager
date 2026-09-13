@@ -6,7 +6,7 @@ export interface AppState {
   activeFilters: Set<string>;
   tagFilters: Set<string>;
   categoryFilters: Set<string>;
-  statusFilter: 'all' | 'enabled' | 'disabled';
+  statusFilter: 'all' | 'enabled' | 'disabled' | 'tracked' | 'endorsed';
   currentAnalysis: ZipAnalysis | null;
   currentConfigModId: string | null;
   currentSettings: AppSettings | null;

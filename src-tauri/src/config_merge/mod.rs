@@ -114,7 +114,7 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                             let path_str_lower = path.to_string_lossy().to_lowercase();
                             let fname_lower = fname_str.to_lowercase();
 
-                            // Skip metadata, dotfiles, manifests, entry point main.lua, and DO_NOT_EDIT templates from config snapshots
+                            // Skip metadata, dotfiles, manifests, entry point main.lua, blueprints, tables, raw dumps, and DO_NOT_EDIT templates from config snapshots
                             if fname_str.starts_with('.')
                                 || fname_str.eq_ignore_ascii_case("main.lua")
                                 || fname_str.eq_ignore_ascii_case("modinfo.pmm.json")
@@ -123,6 +123,11 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                                 || fname_str.ends_with(".manifest.json")
                                 || path_str_lower.contains("do_not_edit")
                                 || path_str_lower.contains("defaultconfig")
+                                || path_str_lower.contains("blueprints")
+                                || path_str_lower.contains("tables")
+                                || path_str_lower.contains("raw")
+                                || path_str_lower.contains("schemas")
+                                || path_str_lower.contains("templates")
                                 || fname_lower.ends_with("manager.lua")
                                 || fname_lower.ends_with("handler.lua")
                                 || fname_lower.ends_with("helper.lua")
@@ -143,6 +148,26 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
 
                             if !is_lua_config {
                                 continue;
+                            }
+
+                            // Rule: .json and .jsonc files merge only if:
+                            // 1. Explicitly configured as mod config, OR
+                            // 2. Located inside a shared/ folder, OR
+                            // 3. Located inside a config/ or settings/ folder, OR
+                            // 4. Filename explicitly contains "config", "setting", or "option"
+                            if ext_lower == "json" || ext_lower == "jsonc" {
+                                let is_json_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
+                                    || path_str_lower.contains("shared")
+                                    || path_str_lower.contains("/config/")
+                                    || path_str_lower.contains("\\config\\")
+                                    || path_str_lower.contains("/settings/")
+                                    || path_str_lower.contains("\\settings\\")
+                                    || fname_lower.contains("config")
+                                    || fname_lower.contains("setting")
+                                    || fname_lower.contains("option");
+                                if !is_json_config {
+                                    continue;
+                                }
                             }
 
                             // Rule: .txt files only if config/setting/option, or inside shared, or explicitly configured

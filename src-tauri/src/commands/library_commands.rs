@@ -166,6 +166,24 @@ pub fn get_library_zip_path(mod_id: String, zip_name: Option<String>, state: Sta
             }
         }
     }
+
+    // Fallback: search across all library subfolders for specific zip or matching directory
+    let lib_root = library::library_dir(&program_path);
+    if lib_root.exists() {
+        if let Ok(dirs) = std::fs::read_dir(&lib_root) {
+            for dir in dirs.filter_map(|d| d.ok()) {
+                if dir.path().is_dir() {
+                    if let Some(ref specific_zip) = zip_name {
+                        let candidate = dir.path().join(specific_zip);
+                        if candidate.exists() {
+                            return Ok(candidate.to_string_lossy().to_string());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     Err("ZIP file not found in library".to_string())
 }
 
@@ -191,7 +209,7 @@ pub async fn copy_to_library_command(
 
     // 2. Extract version & clean stem from filename
     let parsed_info = crate::nexus::parse_mod_filename(&filename);
-    let mut detected_version = parsed_info.version;
+    let mut detected_version = parsed_info.version.clone();
     let mut detected_name = parsed_info.name;
     let mut detected_nexus_id = parsed_info.nexus_id
         .or_else(|| crate::zip_handler::extract_nexus_id_from_path(&zip_path))
@@ -200,8 +218,37 @@ pub async fn copy_to_library_command(
     let mut internal_author = None;
     let mut internal_desc = None;
     let mut internal_type = None;
+    let mut fomod_info = None;
 
     if let Some(ref ana) = analysis {
+        if ana.has_fomod {
+            fomod_info = crate::zip_handler::read_archive_file(&zip_path, "fomod/info.xml")
+                .or_else(|| crate::zip_handler::read_archive_file(&zip_path, "fomod/Info.xml"))
+                .or_else(|| crate::zip_handler::read_archive_file(&zip_path, "fomod\\info.xml"))
+                .map(|xml| crate::commands::fomod::parser::parse_fomod_info(&xml));
+
+            if let Some(ref fi) = fomod_info {
+                if !fi.name.trim().is_empty() && detected_name.is_none() {
+                    detected_name = Some(fi.name.clone());
+                }
+                if !fi.author.trim().is_empty() && internal_author.is_none() {
+                    internal_author = Some(fi.author.clone());
+                }
+                if !fi.description.trim().is_empty() && internal_desc.is_none() {
+                    internal_desc = Some(fi.description.clone());
+                }
+                let xml_ver = if !fi.version.trim().is_empty() { Some(fi.version.as_str()) } else { None };
+                let zip_ver = detected_version.as_deref();
+                let consensus = crate::commands::fomod::version::resolve_fomod_version_consensus(
+                    xml_ver,
+                    zip_ver,
+                    None,
+                );
+                if consensus != "1.0.0" {
+                    detected_version = Some(consensus);
+                }
+            }
+        }
         if ana.has_info_json {
             let info_file_path = ana.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.pmm.json"))
                 .or_else(|| ana.files.iter().find(|f| f.to_lowercase().ends_with("modinfo.json")))
@@ -294,6 +341,20 @@ pub async fn copy_to_library_command(
     if let Some(mod_id) = detected_nexus_id {
         if let Ok(info) = crate::nexus::fetch_mod_info(mod_id).await {
             matched_nexus_info = Some(info);
+        }
+    }
+
+    if let Some(ref fi) = fomod_info {
+        let xml_ver = if !fi.version.trim().is_empty() { Some(fi.version.as_str()) } else { None };
+        let zip_ver = parsed_info.version.as_deref();
+        let api_ver = matched_nexus_info.as_ref().map(|i| i.version.as_str());
+        let consensus = crate::commands::fomod::version::resolve_fomod_version_consensus(
+            xml_ver,
+            zip_ver,
+            api_ver,
+        );
+        if consensus != "1.0.0" {
+            detected_version = Some(consensus);
         }
     }
 

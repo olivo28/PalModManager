@@ -17,7 +17,7 @@ import type {
   PakTweakResult,
   PakBackupStatus,
 } from './types';
-import type { UsmapStatus } from '../types';
+import type { UsmapStatus, Ue4ssLogDiagnostics } from '../types';
 
 export async function openFolderByType(folderType: 'ue4ss' | 'palschema' | 'paks' | 'app_data' | 'profile'): Promise<void> {
   return invoke('open_folder_by_type', { folderType });
@@ -407,6 +407,26 @@ export async function getPakBackupStatus(params: {
     modId: params.modId || null,
     pakPath: params.pakPath,
   });
+}
+
+export async function getUe4ssLogDiagnostics(maxEntries?: number, customPath?: string): Promise<Ue4ssLogDiagnostics> {
+  return invoke('get_ue4ss_log_diagnostics', { maxEntries: maxEntries || null, customPath: customPath || null });
+}
+
+export async function readRawUe4ssLog(maxLines?: number, customPath?: string): Promise<string> {
+  return invoke('read_raw_ue4ss_log', { maxLines: maxLines || null, customPath: customPath || null });
+}
+
+export async function clearUe4ssLog(customPath?: string): Promise<boolean> {
+  return invoke('clear_ue4ss_log', { customPath: customPath || null });
+}
+
+export async function copyUe4ssLogFileToClipboard(customPath?: string): Promise<boolean> {
+  return invoke('copy_ue4ss_log_file_to_clipboard', { customPath: customPath || null });
+}
+
+export async function revealUe4ssLogInExplorer(customPath?: string): Promise<boolean> {
+  return invoke('reveal_ue4ss_log_in_explorer', { customPath: customPath || null });
 }
 
 

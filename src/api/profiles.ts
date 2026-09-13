@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { Profile, ModInfo, ImportProfileResult } from './types';
+import type { Profile, ModInfo, ImportProfileResult, AnalyzeProfileManifestResult, ApplyProfileManifestResult } from './types';
 
 export async function getProfiles(): Promise<Profile[]> {
   return invoke('get_profiles');
@@ -39,6 +39,30 @@ export async function exportProfilePack(profileId: string, targetPath: string): 
 
 export async function importProfilePack(sourcePath: string, customName?: string): Promise<ImportProfileResult> {
   return invoke('import_profile_pack_cmd', { sourcePath, customName });
+}
+
+export async function exportProfileManifest(profileId: string, targetPath: string): Promise<string> {
+  return invoke('export_profile_manifest_cmd', { profileId, targetPath });
+}
+
+export async function analyzeProfileManifest(manifestPath: string): Promise<AnalyzeProfileManifestResult> {
+  return invoke('analyze_profile_manifest_cmd', { manifestPath });
+}
+
+export async function applyProfileManifest(manifestPath: string, customName?: string): Promise<ApplyProfileManifestResult> {
+  return invoke('apply_profile_manifest_cmd', { manifestPath, customName });
+}
+
+export async function bridgeModToWorkshop(modId: string): Promise<number> {
+  return invoke('bridge_mod_to_workshop_cmd', { modId });
+}
+
+export async function unbridgeModFromWorkshop(modId: string): Promise<void> {
+  return invoke('unbridge_mod_from_workshop_cmd', { modId });
+}
+
+export async function isModBridged(modId: string): Promise<boolean> {
+  return invoke('is_mod_bridged_cmd', { modId });
 }
 
 export async function setModProfileState(modId: string, enabled: boolean): Promise<{ success: boolean }> {

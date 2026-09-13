@@ -31,35 +31,35 @@ pub fn decompress_palworld_save(raw_bytes: &[u8]) -> Result<Vec<u8>, String> {
             let mut extractor = oozextract::Extractor::new();
             let mut out = vec![0u8; total_uncomp];
             let comp_slice = &raw_bytes[HDR..HDR + total_comp];
-            crate::logger::log(&format!(
-                "[PMM-DBG] PlM oozextract: decompressing {} compressed bytes -> {} expected uncompressed bytes",
+            crate::logger::log_debug(&format!(
+                "  [DECOMPRESS] PlM oozextract: {} comp bytes -> {} expected uncompressed bytes",
                 comp_slice.len(), total_uncomp
             ));
             match extractor.read_from_slice(comp_slice, &mut out) {
                 Ok(decomp_len) => {
-                    crate::logger::log(&format!("[PMM-DBG] PlM oozextract SUCCESS: {} bytes", decomp_len));
+                    crate::logger::log_debug(&format!("  [DECOMPRESS] PlM oozextract SUCCESS: {} bytes", decomp_len));
                     out.truncate(decomp_len);
                     return Ok(out);
                 }
                 Err(e) => {
-                    crate::logger::log(&format!("[PMM-DBG] PlM oozextract FAIL: {:?}", e));
+                    crate::logger::log_debug(&format!("  [DECOMPRESS] PlM oozextract FAIL: {:?}", e));
                 }
             }
         }
 
         // --- Path A2: LZ4 fallback ---
         if total_comp > 0 && HDR + total_comp <= raw_bytes.len() {
-            crate::logger::log(&format!(
-                "[PMM-DBG] PlM Path A (LZ4): decompress bytes[{}..{}] ({} bytes) → expected {} bytes",
+            crate::logger::log_debug(&format!(
+                "  [DECOMPRESS] PlM Path A (LZ4): decompress bytes[{}..{}] ({} bytes) -> expected {} bytes",
                 HDR, HDR + total_comp, total_comp, total_uncomp
             ));
             match lz4_flex::decompress(&raw_bytes[HDR..HDR + total_comp], total_uncomp) {
                 Ok(dec) if !dec.is_empty() => {
-                    crate::logger::log(&format!("[PMM-DBG] PlM Path A OK: {} bytes", dec.len()));
+                    crate::logger::log_debug(&format!("  [DECOMPRESS] PlM Path A OK: {} bytes", dec.len()));
                     return Ok(dec);
                 }
-                Ok(_) => crate::logger::log("[PMM-DBG] PlM Path A returned empty"),
-                Err(e) => crate::logger::log(&format!("[PMM-DBG] PlM Path A FAIL: {}", e)),
+                Ok(_) => crate::logger::log_debug("  [DECOMPRESS] PlM Path A returned empty"),
+                Err(e) => crate::logger::log_debug(&format!("  [DECOMPRESS] PlM Path A FAIL: {}", e)),
             }
         }
 
@@ -169,12 +169,19 @@ pub fn gvas_fstring(bytes: &[u8], pos: usize) -> Option<(String, usize)> {
 
     if len > 0 {
         let byte_len = len as usize;
-        if pos + 4 + byte_len > bytes.len() { return None; }
+        if byte_len > 65536 || pos + 4 + byte_len > bytes.len() { return None; }
         let s = String::from_utf8_lossy(&bytes[pos + 4..pos + 4 + byte_len.saturating_sub(1)]).into_owned();
         Some((s, 4 + byte_len))
     } else {
-        let char_count = (-len) as usize;
-        let byte_len = char_count * 2;
+        let char_count = match len.checked_neg() {
+            Some(c) => c as usize,
+            None => return None,
+        };
+        if char_count > 65536 { return None; }
+        let byte_len = match char_count.checked_mul(2) {
+            Some(b) => b,
+            None => return None,
+        };
         if pos + 4 + byte_len > bytes.len() { return None; }
         let chars: Vec<u16> = bytes[pos + 4..pos + 4 + byte_len]
             .chunks_exact(2)
@@ -359,3 +366,8 @@ pub fn gvas_read_bool(bytes: &[u8], prop_name: &str, search_start: usize) -> Opt
         None
     }
 }
+
+
+
+
+

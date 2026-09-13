@@ -19,6 +19,8 @@ import downloadQueuePanelHtml from '../templates/modals/downloadQueuePanel.html?
 import discoveryModModalHtml from '../templates/modals/discoveryModModal.html?raw';
 import dependencyModalHtml from '../templates/modals/dependencyModal.html?raw';
 import diffModalHtml from '../templates/modals/diffModal.html?raw';
+import ue4ssLogModalHtml from '../templates/modals/ue4ssLogModal.html?raw';
+import fomodModalHtml from '../templates/modals/fomodModal.html?raw';
 import { mainDom } from '../framework';
 
 export function loadAppTemplates(): void {
@@ -51,6 +53,8 @@ export function loadAppTemplates(): void {
       discoveryModModalHtml,
       dependencyModalHtml,
       diffModalHtml,
+      ue4ssLogModalHtml,
+      fomodModalHtml,
     ].join('\n');
   }
 }

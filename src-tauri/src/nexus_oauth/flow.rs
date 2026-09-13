@@ -185,10 +185,12 @@ pub async fn handle_oauth_callback(callback_url: &str) -> Result<NexusAccountInf
             return Err("OAuth session expired (10 minutes limit). Please try again.".to_string());
         }
 
-        if let Some(ref state) = state_opt {
-            if &pending.state != state {
-                return Err("OAuth state parameter mismatch (CSRF protection).".to_string());
-            }
+        let state = state_opt.ok_or_else(|| {
+            "Missing OAuth state parameter (CSRF protection requirement). Please ensure you use the full callback URL or authorization package.".to_string()
+        })?;
+
+        if &pending.state != &state {
+            return Err("OAuth state parameter mismatch (CSRF protection).".to_string());
         }
 
         pending.code_verifier
@@ -404,4 +406,35 @@ pub fn decode_jwt_payload(token: &str) -> Option<serde_json::Value> {
         }
     }
     None
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_code_and_state_from_url() {
+        let url = "palmodmanager://oauth/callback?code=AUTH_CODE_123&state=SECURE_STATE_XYZ";
+        let (code, state) = extract_code_and_state(url).expect("extract code and state");
+        assert_eq!(code, "AUTH_CODE_123");
+        assert_eq!(state.as_deref(), Some("SECURE_STATE_XYZ"));
+    }
+
+    #[test]
+    fn test_extract_code_and_state_from_b64_json() {
+        use base64::Engine;
+        let payload = r#"{"code":"AUTH_CODE_456","state":"SECURE_STATE_ABC"}"#;
+        let b64 = base64::engine::general_purpose::STANDARD.encode(payload.as_bytes());
+        let (code, state) = extract_code_and_state(&b64).expect("extract from b64 json");
+        assert_eq!(code, "AUTH_CODE_456");
+        assert_eq!(state.as_deref(), Some("SECURE_STATE_ABC"));
+    }
+
+    #[test]
+    fn test_extract_code_without_state_returns_none() {
+        let url = "palmodmanager://oauth/callback?code=AUTH_CODE_NO_STATE";
+        let (code, state) = extract_code_and_state(url).expect("extract code");
+        assert_eq!(code, "AUTH_CODE_NO_STATE");
+        assert!(state.is_none());
+    }
 }

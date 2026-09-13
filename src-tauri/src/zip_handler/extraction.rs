@@ -13,7 +13,7 @@ pub fn extract_7z_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, String
 }
 
 pub fn read_7z_file(path: &str, target_file: &str) -> Option<String> {
-    let lower_target = target_file.to_lowercase();
+    let lower_target = target_file.replace('\\', "/").to_lowercase();
     let mut reader = sevenz_rust::SevenZReader::open(Path::new(path), sevenz_rust::Password::empty()).ok()?;
     let mut content = None;
     let _ = reader.for_each_entries(|entry, reader| {
@@ -298,7 +298,7 @@ pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
             result
         }
         _ => {
-            let lower_target = target_file.to_lowercase();
+            let lower_target = target_file.replace('\\', "/").to_lowercase();
             if let Ok(file) = fs::File::open(zip_path) {
                 if let Ok(mut archive) = ZipArchive::new(file) {
                     for i in 0..archive.len() {
@@ -333,4 +333,25 @@ pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
             None
         }
     }
+}
+
+pub fn read_archive_file_bytes(zip_path: &str, target_file: &str) -> Option<Vec<u8>> {
+    use std::io::Read;
+    let lower_target = target_file.replace('\\', "/").to_lowercase();
+    if let Ok(file) = fs::File::open(zip_path) {
+        if let Ok(mut archive) = ZipArchive::new(file) {
+            for i in 0..archive.len() {
+                if let Ok(mut entry) = archive.by_index(i) {
+                    let name = entry.name().replace('\\', "/").to_lowercase();
+                    if name == lower_target || name.ends_with(&format!("/{}", lower_target)) {
+                        let mut buf = Vec::new();
+                        if entry.read_to_end(&mut buf).is_ok() {
+                            return Some(buf);
+                        }
+                    }
+                }
+            }
+        }
+    }
+    None
 }

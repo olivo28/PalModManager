@@ -7,6 +7,26 @@ use super::helpers::{
     move_path, normalize_path_separator,
 };
 
+/// Resolves a relative source path against the extracted directory,
+/// searching subdirectories if the archive contained a root wrapper folder.
+pub fn resolve_source_path(extracted_dir: &Path, relative_path: &str) -> Option<PathBuf> {
+    let direct = extracted_dir.join(relative_path);
+    if direct.exists() {
+        return Some(direct);
+    }
+
+    let norm_target = relative_path.replace('\\', "/").trim_start_matches('/').to_lowercase();
+    for entry in walkdir::WalkDir::new(extracted_dir).min_depth(1).into_iter().filter_map(|e| e.ok()) {
+        if let Ok(rel) = entry.path().strip_prefix(extracted_dir) {
+            let norm_rel = rel.to_string_lossy().replace('\\', "/").to_lowercase();
+            if norm_rel == norm_target || norm_rel.ends_with(&format!("/{}", norm_target)) {
+                return Some(entry.path().to_path_buf());
+            }
+        }
+    }
+    None
+}
+
 pub fn execute_manifest(
     manifest: &crate::models::InstallManifest,
     extracted_dir: &Path,
@@ -30,10 +50,10 @@ pub fn execute_manifest(
 
     // 1. Copy/move files defined in the manifest routes
     for route in &manifest.routes {
-        let src = extracted_dir.join(&route.zip_path);
-        if !src.exists() {
-            continue;
-        }
+        let src = match resolve_source_path(extracted_dir, &route.zip_path) {
+            Some(p) => p,
+            None => continue,
+        };
 
         let dst = PathBuf::from(&route.dest_path);
         if let Some(parent) = dst.parent() {
@@ -258,5 +278,6 @@ pub fn execute_manifest(
         custom_notes: None,
         original_name: Some(manifest.display_name.clone()),
         custom_name: None,
+        fomod_choices: manifest.fomod_choices.clone(),
     })
 }

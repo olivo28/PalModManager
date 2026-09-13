@@ -333,6 +333,7 @@ fn save_pmm_meta_path(m: &ModInfo, path_str: &str) -> Result<(), String> {
         routes: None,
         installed_files,
         extra_files: if !m.extra_files.is_empty() { Some(m.extra_files.clone()) } else { None },
+        fomod_choices: m.fomod_choices.clone(),
     };
 
     let pmm_path = if path.is_file() {

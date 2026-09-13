@@ -79,6 +79,7 @@ pub fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names
                     custom_notes: None,
                     original_name: None,
                     custom_name: None,
+                    fomod_choices: None,
                 });
             }
         }

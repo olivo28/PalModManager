@@ -150,3 +150,36 @@ fn test_snapshot_configs_strictly_blacklists_main_lua() {
     let _ = std::fs::remove_dir_all(&temp_dir);
 }
 
+#[test]
+fn test_snapshot_configs_rejects_palschema_datatables_and_blueprints() {
+    let temp_dir = std::env::temp_dir().join(format!("pmm_test_{}", uuid::Uuid::new_v4()));
+    let tables_dir = temp_dir.join("tables");
+    let blueprints_dir = temp_dir.join("blueprints");
+    let raw_dir = temp_dir.join("raw");
+    let config_dir = temp_dir.join("config");
+    std::fs::create_dir_all(&tables_dir).unwrap();
+    std::fs::create_dir_all(&blueprints_dir).unwrap();
+    std::fs::create_dir_all(&raw_dir).unwrap();
+    std::fs::create_dir_all(&config_dir).unwrap();
+
+    // Data tables, blueprints, and raw game data
+    std::fs::write(tables_dir.join("DT_ItemData.json"), r#"{"Rows": []}"#).unwrap();
+    std::fs::write(blueprints_dir.join("BP_PalPlayer.json"), r#"{"Components": []}"#).unwrap();
+    std::fs::write(raw_dir.join("RawData.json"), r#"{"Data": 123}"#).unwrap();
+    std::fs::write(temp_dir.join("ModData.json"), r#"{"Items": []}"#).unwrap();
+
+    // Legitimate config files
+    std::fs::write(config_dir.join("settings.json"), r#"{"DropRate": 2.0}"#).unwrap();
+    std::fs::write(temp_dir.join("user_config.json"), r#"{"Multiplier": 5}"#).unwrap();
+
+    let snap = snapshot_configs(&temp_dir, None);
+    assert!(!snap.entries.iter().any(|(p, _)| p.to_string_lossy().contains("DT_ItemData.json")));
+    assert!(!snap.entries.iter().any(|(p, _)| p.to_string_lossy().contains("BP_PalPlayer.json")));
+    assert!(!snap.entries.iter().any(|(p, _)| p.to_string_lossy().contains("RawData.json")));
+    assert!(!snap.entries.iter().any(|(p, _)| p.to_string_lossy().contains("ModData.json")));
+
+    assert!(snap.entries.iter().any(|(p, _)| p.to_string_lossy().contains("settings.json")));
+    assert!(snap.entries.iter().any(|(p, _)| p.to_string_lossy().contains("user_config.json")));
+
+    let _ = std::fs::remove_dir_all(&temp_dir);
+}

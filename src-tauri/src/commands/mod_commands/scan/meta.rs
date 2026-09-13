@@ -75,6 +75,7 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                 custom_notes: meta.custom_notes,
                 original_name: meta.original_name,
                 custom_name: meta.custom_name,
+                fomod_choices: meta.fomod_choices,
             });
         }
     } else if path.is_file() {
@@ -158,6 +159,7 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         custom_notes: meta.custom_notes,
                         original_name: meta.original_name,
                         custom_name: meta.custom_name,
+                        fomod_choices: meta.fomod_choices,
                     });
                 }
             }

@@ -57,7 +57,7 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
     }
 
     // Hero Landing Screen (Zero latency tab switch)
-    container.innerHTML = renderHeroLandingHtml();
+    container.innerHTML = renderHeroLandingHtml(curLoading);
     attachHeroLandingListeners(container, renderSavesDoctorPanel);
     const { setupEventListeners } = await import('../../mod');
     setupEventListeners();
@@ -85,7 +85,7 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
   const worldOptionsHtml = selectedWorld ? renderWorldOptionsHtml(worldOptions) : '';
   const storageBreakdownHtml = selectedWorld ? renderStorageBreakdownHtml(curHealth) : '';
   const playerRosterHtml = selectedWorld ? renderPlayerRosterHtml(curHealth) : '';
-  const deepScanResultsHtml = selectedWorld ? renderDeepScanResultsHtml(curHealth, selectedWorld, curRepairing, curRestoring) : '';
+  const deepScanResultsHtml = selectedWorld ? renderDeepScanResultsHtml(curHealth, selectedWorld, curRepairing, curRestoring, curDeep) : '';
 
   container.innerHTML = `
     <div class="scanner-view-container" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">

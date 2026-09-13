@@ -287,6 +287,7 @@ export function setupEventListeners(): void {
     );
     if (!confirmed) return;
     try {
+      console.info(`[Launch] Launching Palworld with ${activeMods.length} active mods (Profile: ${state.currentProfileId}):`, activeMods.map(m => `${m.name} (v${m.version || '1.0.0'}) [${m.type}]`));
       await launchGame();
     } catch (e) {
       showToast(t('toasts.game_launch_failed', { error: String(e) }), 'error');

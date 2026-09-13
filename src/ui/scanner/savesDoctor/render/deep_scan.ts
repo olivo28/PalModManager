@@ -91,8 +91,23 @@ export function renderDeepScanResultsHtml(
   curHealth: SaveHealthReport | null,
   selectedWorld: SaveWorldSummary,
   curRepairing: boolean,
-  curRestoring: boolean
+  curRestoring: boolean,
+  curDeep: boolean = false
 ): string {
+  if (curDeep) {
+    return `
+      <div style="background: rgba(56, 189, 248, 0.04); border: 1px dashed #38bdf8; border-radius: 8px; padding: 36px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; flex: 1;">
+        <div class="spinner" style="width: 38px; height: 38px; border: 3px solid rgba(56, 189, 248, 0.2); border-top-color: #38bdf8; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+          <span style="font-size: 14px; font-weight: 700; color: #38bdf8;">${escapeHtml(t('scanner.deep_scanning_title') || 'Analyzing Save Integrity & Mod References...')}</span>
+          <span style="font-size: 11.5px; color: var(--text-secondary); max-width: 520px; line-height: 1.5;">
+            ${escapeHtml(t('scanner.deep_scanning_desc') || 'Decompressing Level.sav in a background thread and validating against Palworld native catalogs (20,921 Blueprints & DataTables)...')}
+          </span>
+        </div>
+      </div>
+    `;
+  }
+
   if (!curHealth || curHealth.worldId !== selectedWorld.worldId) {
     return `
       <div style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border); border-radius: 8px; padding: 36px 20px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; flex: 1;">

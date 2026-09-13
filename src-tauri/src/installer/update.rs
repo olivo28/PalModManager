@@ -153,6 +153,25 @@ pub fn update_mod(
         force_load_order_palschema,
     )?;
 
+    let mut manifest_installed_files = std::collections::HashSet::new();
+    for route in &manifest.routes {
+        let src = crate::installer::resolve_source_path(extracted, &route.zip_path)
+            .unwrap_or_else(|| extracted.join(&route.zip_path));
+        let dst = PathBuf::from(&route.dest_path);
+        if src.is_dir() {
+            for entry in walkdir::WalkDir::new(&src).into_iter().filter_map(|e| e.ok()) {
+                if entry.file_type().is_file() {
+                    if let Ok(rel) = entry.path().strip_prefix(&src) {
+                        let full_dst = dst.join(rel);
+                        manifest_installed_files.insert(normalize_for_compare(&full_dst));
+                    }
+                }
+            }
+        } else {
+            manifest_installed_files.insert(normalize_for_compare(&dst));
+        }
+    }
+
     // Clean up old paths that differ from newly installed paths
     if !old_game_path.is_empty() 
         && old_game_path != new_mod_info.game_path 
@@ -169,6 +188,22 @@ pub fn update_mod(
     for extra in &old_extras {
         if !new_mod_info.extra_files.contains(extra) && extra != &new_mod_info.game_path {
             delete_path_and_sidecar(extra);
+        }
+    }
+
+    // Purge stale/renamed files in directory-based mods that no longer exist in the new release
+    if new_mod_info.mod_type == ModType::Ue4ss || new_mod_info.mod_type == ModType::PalSchema {
+        if !new_mod_info.game_path.is_empty() {
+            let p = crate::config_merge::resolve_path_in_game(game, &new_mod_info.game_path);
+            if p.is_dir() {
+                purge_stale_files_in_mod_dir(&p, &manifest_installed_files, &snapshot);
+            }
+        }
+        for extra in &new_mod_info.extra_files {
+            let p = crate::config_merge::resolve_path_in_game(game, extra);
+            if p.is_dir() {
+                purge_stale_files_in_mod_dir(&p, &manifest_installed_files, &snapshot);
+            }
         }
     }
 
@@ -390,3 +425,89 @@ pub fn update_mod(
 
     Ok(())
 }
+
+fn normalize_for_compare(p: &Path) -> String {
+    let s = p.to_string_lossy().replace('\\', "/");
+    #[cfg(target_os = "windows")]
+    {
+        s.to_lowercase()
+    }
+    #[cfg(not(target_os = "windows"))]
+    {
+        s
+    }
+}
+
+fn clean_empty_subdirs(dir: &Path) {
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.is_dir() {
+                clean_empty_subdirs(&path);
+                let _ = fs::remove_dir(&path);
+            }
+        }
+    }
+}
+
+fn purge_stale_files_in_mod_dir(
+    mod_dir: &Path,
+    manifest_installed_files: &std::collections::HashSet<String>,
+    snapshot: &crate::config_merge::ConfigSnapshot,
+) {
+    if !mod_dir.exists() || !mod_dir.is_dir() {
+        return;
+    }
+
+    let dir_name = mod_dir.file_name().unwrap_or_default().to_string_lossy().to_lowercase();
+    if matches!(dir_name.as_str(), "paks" | "logicmods" | "mods" | "win64" | "binaries" | "pal" | "content") {
+        return;
+    }
+
+    let mut files_to_delete = Vec::new();
+
+    for entry in walkdir::WalkDir::new(mod_dir).into_iter().filter_map(|e| e.ok()) {
+        if !entry.file_type().is_file() {
+            continue;
+        }
+        let file_path = entry.path();
+        let fname = file_path.file_name().unwrap_or_default().to_string_lossy();
+        let fname_lower = fname.to_lowercase();
+
+        // Skip protected metadata, manifests, and configs
+        if fname_lower.ends_with(".pmm.json")
+            || fname_lower == "enabled.txt"
+            || fname.starts_with('.')
+            || fname_lower.ends_with(".bak")
+            || file_path.components().any(|c| c.as_os_str().to_string_lossy().to_lowercase() == "shared")
+        {
+            continue;
+        }
+
+        let normalized = normalize_for_compare(file_path);
+
+        // Skip if this file is part of the newly extracted manifest
+        if manifest_installed_files.contains(&normalized) {
+            continue;
+        }
+
+        // Skip if this file was preserved as a user configuration in snapshot
+        let is_snapshotted = snapshot.entries.iter().any(|(rel, _)| {
+            let snap_norm = normalize_for_compare(rel);
+            normalized.ends_with(&snap_norm)
+        });
+        if is_snapshotted {
+            continue;
+        }
+
+        files_to_delete.push(file_path.to_path_buf());
+    }
+
+    for file in files_to_delete {
+        crate::logger::log(&format!("[update_mod] Purging stale mod file from prior version: {:?}", file));
+        let _ = fs::remove_file(file);
+    }
+
+    clean_empty_subdirs(mod_dir);
+}
+

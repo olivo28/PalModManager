@@ -197,11 +197,16 @@ export function subTabHeader(): string {
           <button class="scanner-sub-tab ${activeSubTab === 'saves' ? 'active' : ''}" data-subtab="saves">${escapeHtml(t('scanner.subtab_saves') || 'Saves Doctor')}</button>
         </div>
       </div>
-      ${activeSubTab !== 'saves' ? `
-      <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px;">
-        <span>↻ ${escapeHtml(t('common.refresh'))}</span>
-      </button>
-      ` : ''}
+      <div style="display:flex;align-items:center;gap:10px;">
+        <button id="scanner-btn-ue4ss-log" class="scanner-sub-tab" style="display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,0.12);" title="${escapeHtml(t('ue4ss_log.btn_open_tooltip') || 'Open UE4SS Runtime Log & Diagnostics')}">
+          <span>📜</span> <span>${escapeHtml(t('ue4ss_log.tab_title') || 'UE4SS Log')}</span>
+        </button>
+        ${activeSubTab !== 'saves' ? `
+        <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px;">
+          <span>↻ ${escapeHtml(t('common.refresh'))}</span>
+        </button>
+        ` : ''}
+      </div>
     </div>
   `;
 }
@@ -344,6 +349,11 @@ export function setupEventListeners(): void {
       const container = scannerDom.elMaybe('scanner-view');
       if (container) await renderSavesDoctorPanel(container);
     }
+  });
+
+  scannerDom.elMaybe('scanner-btn-ue4ss-log')?.addEventListener('click', async () => {
+    const { showUe4ssLogModal } = await import('./ue4ssLog');
+    await showUe4ssLogModal();
   });
 
   document.querySelectorAll('.scanner-sub-tab[data-subtab]').forEach(btn => {

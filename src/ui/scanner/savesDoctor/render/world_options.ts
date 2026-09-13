@@ -106,6 +106,10 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
             <strong style="color: #fb923c;">${worldOptions.palDamageRate !== null && worldOptions.palDamageRate !== undefined ? `${worldOptions.palDamageRate}x` : '1.0x'}</strong>
           </div>
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_pal_defense') || 'Pal Defense')}:</span>
+            <strong style="color: #38bdf8;">${worldOptions.palDamageRateDefense !== null && worldOptions.palDamageRateDefense !== undefined ? `${worldOptions.palDamageRateDefense}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_egg_hatching') || 'Egg Hatching')}:</span>
             <strong style="color: #ffd166;">${worldOptions.palEggHatchingHours !== null && worldOptions.palEggHatchingHours !== undefined ? `${worldOptions.palEggHatchingHours}h` : 'Default'}</strong>
           </div>
@@ -129,6 +133,14 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_player_damage') || 'Player Damage')}:</span>
             <strong style="color: #4af626;">${worldOptions.playerDamageRate !== null && worldOptions.playerDamageRate !== undefined ? `${worldOptions.playerDamageRate}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_player_defense') || 'Player Defense')}:</span>
+            <strong style="color: #38bdf8;">${worldOptions.playerDamageRateDefense !== null && worldOptions.playerDamageRateDefense !== undefined ? `${worldOptions.playerDamageRateDefense}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_durability_loss') || 'Durability Loss')}:</span>
+            <strong style="color: #fb923c;">${worldOptions.equipmentDurabilityDamageRate !== null && worldOptions.equipmentDurabilityDamageRate !== undefined ? `${worldOptions.equipmentDurabilityDamageRate}x` : '1.0x'}</strong>
           </div>
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_death_penalty') || 'Death Penalty')}:</span>
@@ -164,8 +176,12 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
             <strong style="color: #a3e635;">${worldOptions.baseCampWorkerMaxNum !== null && worldOptions.baseCampWorkerMaxNum !== undefined ? `${worldOptions.baseCampWorkerMaxNum} Pals` : '15'}</strong>
           </div>
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_max_bases') || 'Max Bases')}:</span>
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_max_bases') || 'Total World Bases')}:</span>
             <strong style="color: #38bdf8;">${worldOptions.baseCampMaxNum !== null && worldOptions.baseCampMaxNum !== undefined ? `${worldOptions.baseCampMaxNum}` : '3'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_guild_bases') || 'Bases Per Guild')}:</span>
+            <strong style="color: #60a5fa;">${worldOptions.baseCampMaxNumInGuild !== null && worldOptions.baseCampMaxNumInGuild !== undefined ? `${worldOptions.baseCampMaxNumInGuild}` : 'Default'}</strong>
           </div>
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_invaders') || 'Base Raids')}:</span>
@@ -179,13 +195,21 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_guild_max_players') || 'Guild Max Players')}:</span>
             <strong style="color: var(--text-primary);">${worldOptions.guildPlayerMaxNum !== null && worldOptions.guildPlayerMaxNum !== undefined ? `${worldOptions.guildPlayerMaxNum}` : '20'}</strong>
           </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_guild_rejoin_cooldown') || 'Guild Rejoin CD')}:</span>
+            <strong style="color: var(--text-primary);">${worldOptions.guildRejoinCooldownMinutes !== null && worldOptions.guildRejoinCooldownMinutes !== undefined ? `${worldOptions.guildRejoinCooldownMinutes} min` : '0 min'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_guild_inactivity_reset') || 'Inactivity Reset')}:</span>
+            <strong style="color: var(--text-primary);">${worldOptions.autoResetGuildTimeNoOnlinePlayers !== null && worldOptions.autoResetGuildTimeNoOnlinePlayers !== undefined ? `${worldOptions.autoResetGuildTimeNoOnlinePlayers}h` : 'Off'}</strong>
+          </div>
         </div>
       </div>
 
-      <!-- 5. Loot, Drops & World -->
+      <!-- 5. Farming, Items & Drops -->
       <div style="display: flex; flex-direction: column; gap: 6px;">
         <div style="font-size: 11px; font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
-          <span>☄️</span> ${escapeHtml(t('scanner.rules_cat_drops') || 'Loot, Drops & World')}
+          <span>🌾</span> ${escapeHtml(t('scanner.rules_cat_farming') || 'Farming, Items & Activities')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px;">
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
@@ -195,6 +219,22 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_enemy_drop') || 'Enemy Drops')}:</span>
             <strong style="color: #38bdf8;">${worldOptions.enemyDropItemRate !== null && worldOptions.enemyDropItemRate !== undefined ? `${worldOptions.enemyDropItemRate}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_farm_speed') || 'Ranch Production')}:</span>
+            <strong style="color: #a3e635;">${worldOptions.monsterFarmActionSpeedRate !== null && worldOptions.monsterFarmActionSpeedRate !== undefined ? `${worldOptions.monsterFarmActionSpeedRate}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_fishing_difficulty') || 'Fishing Difficulty')}:</span>
+            <strong style="color: var(--text-primary);">${worldOptions.fishingDifficultyRate !== null && worldOptions.fishingDifficultyRate !== undefined ? `${worldOptions.fishingDifficultyRate}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_item_spoilage') || 'Item Spoilage')}:</span>
+            <strong style="color: #fb923c;">${worldOptions.itemCorruptionMultiplier !== null && worldOptions.itemCorruptionMultiplier !== undefined ? `${worldOptions.itemCorruptionMultiplier}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_item_weight') || 'Item Weight')}:</span>
+            <strong style="color: var(--text-primary);">${worldOptions.itemWeightRate !== null && worldOptions.itemWeightRate !== undefined ? `${worldOptions.itemWeightRate}x` : '1.0x'}</strong>
           </div>
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_resource_respawn') || 'Respawn Speed')}:</span>
@@ -207,6 +247,39 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
           <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
             <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_fast_travel') || 'Fast Travel')}:</span>
             <strong style="color: ${worldOptions.enableFastTravel !== false ? '#4af626' : '#ff5f56'};">${worldOptions.enableFastTravel !== false ? 'Enabled' : 'Disabled'}</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- 6. Building & World Limits -->
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <div style="font-size: 11px; font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: 5px;">
+          <span>🏗️</span> ${escapeHtml(t('scanner.rules_cat_limits') || 'Building & World Limits')}
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 6px;">
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_building_hp') || 'Building HP')}:</span>
+            <strong style="color: #a3e635;">${worldOptions.buildObjectHpRate !== null && worldOptions.buildObjectHpRate !== undefined ? `${worldOptions.buildObjectHpRate}x` : '1.0x'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_max_building_limit') || 'Max World Buildings')}:</span>
+            <strong style="color: #60a5fa;">${worldOptions.maxBuildingLimitNum !== null && worldOptions.maxBuildingLimitNum !== undefined ? `${worldOptions.maxBuildingLimitNum}` : 'Default'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_max_building_player') || 'Max Per Player')}:</span>
+            <strong style="color: #60a5fa;">${worldOptions.maxBuildingLimitNumPerPlayer !== null && worldOptions.maxBuildingLimitNumPerPlayer !== undefined ? `${worldOptions.maxBuildingLimitNumPerPlayer}` : 'Default'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_predator_boss') || 'Predator Bosses')}:</span>
+            <strong style="color: ${worldOptions.enablePredatorBossPal ? '#ff5f56' : '#a3e635'};">${worldOptions.enablePredatorBossPal ? 'Enabled' : 'Disabled'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_coop_players') || 'Co-op Players')}:</span>
+            <strong style="color: var(--text-primary);">${worldOptions.coopPlayerMaxNum !== null && worldOptions.coopPlayerMaxNum !== undefined ? `${worldOptions.coopPlayerMaxNum}` : '4'}</strong>
+          </div>
+          <div style="background: rgba(0,0,0,0.18); padding: 6px 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
+            <span style="color: var(--text-muted);">${escapeHtml(t('scanner.opt_randomizer') || 'Randomizer')}:</span>
+            <strong style="color: ${worldOptions.randomizerSeed ? '#ffd166' : 'var(--text-muted)'}; font-size: 10.5px;">${worldOptions.randomizerSeed ? escapeHtml(worldOptions.randomizerSeed) : 'Off'}</strong>
           </div>
         </div>
       </div>

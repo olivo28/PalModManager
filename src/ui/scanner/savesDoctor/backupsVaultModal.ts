@@ -61,11 +61,15 @@ export async function showPmmBackupsVaultModal(
         <!-- Body / Content -->
         <div class="modal-body" style="padding: 16px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
           
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border);">
-            <div style="font-size: 11.5px; color: var(--text-secondary);">
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); gap: 12px;">
+            <div style="font-size: 11.5px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; min-width: 0;">
               <span>💡 ${escapeHtml(t('scanner.vault_desc') || 'Manual and pre-repair ZIP archives managed by PalModManager.')}</span>
+              <div style="display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-muted); font-family: monospace;">
+                <span>📍 ${escapeHtml(t('scanner.vault_location_label') || 'Saved in:')}</span>
+                <span style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2);">AppData/Local/PalModManager/backups/worlds/</span>
+              </div>
             </div>
-            <button id="btn-open-vault-folder" class="btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px;">
+            <button id="btn-open-vault-folder" class="btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
               <span>📁</span> <span>${escapeHtml(t('scanner.btn_open_folder') || 'Open in Explorer')}</span>
             </button>
           </div>

@@ -197,6 +197,7 @@ pub async fn apply_ue4ss_zip_bytes(
                     custom_notes: None,
                     original_name: None,
                     custom_name: None,
+                    fomod_choices: None,
                 });
             }
         }

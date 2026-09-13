@@ -25,3 +25,10 @@ pub use update::update_mod_command;
 
 // Re-export diff preview & types
 pub use diff::{preview_config_diff, ConfigDiff};
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct InstallProgressPayload {
+    pub stage: String,
+    pub percent: u8,
+}

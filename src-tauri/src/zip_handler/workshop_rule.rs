@@ -262,6 +262,7 @@ pub fn try_build_workshop_manifest(
         author: None,
         summary: None,
         picture_url: None,
+        fomod_choices: None,
     })
 }
 

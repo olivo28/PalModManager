@@ -12,12 +12,26 @@ import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { getContextOverlay, hideContextMenu, positionContextMenu } from './menuDom';
 import { mainDom, detailDom } from '../../../framework';
+import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
 
 export function runContextAction(action: string, modId: string): void {
   const mod = getState().allMods.find(m => m.id === modId);
   if (!mod) return;
 
   switch (action) {
+    case 'bridge-workshop':
+      (async () => {
+        try {
+          showToast(t('toasts.bridging_workshop', { name: mod.name }), 'info');
+          const { bridgeModToWorkshop } = await import('../../../api');
+          const wid = await bridgeModToWorkshop(modId);
+          showToast(t('toasts.bridge_workshop_success', { name: mod.name, id: wid }), 'success');
+        } catch (err: any) {
+          showToast(t('toasts.export_failed', { error: String(err) }), 'error');
+        }
+      })();
+      break;
+
     case 'convert-gamepass':
       (async () => {
         try {
@@ -173,7 +187,15 @@ export function runContextAction(action: string, modId: string): void {
           try { await setModProfileState(modId, !mod.enabled); } catch { }
           showToast(mod.enabled ? t('toasts.mod_disabled') : t('toasts.mod_enabled'), mod.enabled ? 'info' : 'success');
           await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
-        } catch (e) { showToast(t('toasts.export_failed', { error: String(e) }), 'error'); }
+        } catch (e: any) {
+          const errStr = String(e?.message || e);
+          if (errStr.includes('CONFLICT:')) {
+            const conflictingName = errStr.split('CONFLICT:')[1].trim();
+            showToast(t('toasts.mod_conflict_active', { name: mod.name, conflicting: conflictingName }), 'warning');
+          } else {
+            showToast(t('toasts.export_failed', { error: errStr }), 'error');
+          }
+        }
       })();
       break;
     case 'open-folder':
@@ -196,6 +218,54 @@ export function runContextAction(action: string, modId: string): void {
       break;
     case 'detail':
       openDetailPanel(modId);
+      break;
+    case 'toggle-endorse':
+      if (mod.nexusModId) {
+        const nexusModId = mod.nexusModId;
+        (async () => {
+          try {
+            const isEndorsed = isNexusModEndorsed(nexusModId, getState().currentSettings?.nexusEndorsementsCache);
+            const { endorseNexusMod, abstainNexusMod } = await import('../../../api/nexus');
+            const { getSettings } = await import('../../../api');
+            if (isEndorsed) {
+              await abstainNexusMod(nexusModId, mod.version);
+              showToast(t('toasts.unendorsed_success'), 'info');
+            } else {
+              await endorseNexusMod(nexusModId, mod.version);
+              showToast(t('toasts.endorsed_success'), 'success');
+            }
+            const updatedSettings = await getSettings();
+            updateState({ currentSettings: updatedSettings });
+            renderModsView();
+          } catch (err: any) {
+            showToast(String(err), 'error');
+          }
+        })();
+      }
+      break;
+    case 'toggle-track':
+      if (mod.nexusModId) {
+        const nexusModId = mod.nexusModId;
+        (async () => {
+          try {
+            const isTracked = isNexusModTracked(nexusModId, getState().currentSettings?.nexusTrackedCache);
+            const { trackNexusMod, untrackNexusMod } = await import('../../../api/nexus');
+            const { getSettings } = await import('../../../api');
+            if (isTracked) {
+              await untrackNexusMod(nexusModId);
+              showToast(t('toasts.untracked_success'), 'info');
+            } else {
+              await trackNexusMod(nexusModId);
+              showToast(t('toasts.tracked_success'), 'success');
+            }
+            const updatedSettings = await getSettings();
+            updateState({ currentSettings: updatedSettings });
+            renderModsView();
+          } catch (err: any) {
+            showToast(String(err), 'error');
+          }
+        })();
+      }
       break;
     case 'visit-nexus':
       openUrl(`https://www.nexusmods.com/palworld/mods/${mod.nexusModId}`);
@@ -242,6 +312,8 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   const menu = mainDom.el('context-menu');
 
   const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
+  const platform = getState().dependencies?.game_platform?.toLowerCase();
+  const isXbox = platform === 'xbox' || platform === 'gamepass' || platform === 'wingdk';
   let html = '';
   if (!isWorkshop) {
     html += `
@@ -314,8 +386,14 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     </button>
   `;
 
-  const platform = getState().dependencies?.game_platform?.toLowerCase();
-  const isXbox = platform === 'xbox' || platform === 'gamepass' || platform === 'wingdk';
+  if (!isXbox && !isWorkshop) {
+    html += `
+    <button type="button" class="context-menu-item" data-action="bridge-workshop">
+      <span class="ctx-icon">♨️</span>
+      ${escapeHtml(t('context.bridge_to_workshop'))}
+    </button>`;
+  }
+
   const isPakMod = mod.type === 'pak' || mod.type === 'logicmods' || (mod.gamePath && mod.gamePath.toLowerCase().endsWith('.pak')) || (mod.extraFiles && mod.extraFiles.some(f => f.toLowerCase().endsWith('.pak')));
   if (isXbox && isPakMod) {
     html += `
@@ -357,6 +435,19 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   if (mod.nexusModId || mod.githubRepo) {
     html += `<div class="context-menu-sep"></div>`;
     if (mod.nexusModId) {
+      const isEndorsed = isNexusModEndorsed(mod.nexusModId, getState().currentSettings?.nexusEndorsementsCache);
+      const isTracked = isNexusModTracked(mod.nexusModId, getState().currentSettings?.nexusTrackedCache);
+
+      html += `<button type="button" class="context-menu-item" data-action="toggle-endorse">
+        <span class="ctx-icon">${isEndorsed ? '👎' : '👍'}</span>
+        ${escapeHtml(isEndorsed ? t('context.unendorse_mod') : t('context.endorse_mod'))}
+      </button>`;
+
+      html += `<button type="button" class="context-menu-item" data-action="toggle-track">
+        <span class="ctx-icon">${isTracked ? '✖️' : '📌'}</span>
+        ${escapeHtml(isTracked ? t('context.untrack_mod') : t('context.track_mod'))}
+      </button>`;
+
       html += `<button type="button" class="context-menu-item" data-action="visit-nexus">
         <span class="ctx-icon">N</span>
         ${escapeHtml(t('context.visit_nexus'))}

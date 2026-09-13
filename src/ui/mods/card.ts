@@ -2,6 +2,7 @@ import type { ModInfo } from '../../types';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
+import { isNexusModEndorsed, isNexusModTracked } from '../../features/nexusAuth/state';
 
 export async function handleCardImageError(img: HTMLImageElement, originalUrl: string): Promise<void> {
   img.onerror = null;
@@ -111,6 +112,16 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
   const isWorkshop = !!(mod.nexusSummary && mod.nexusSummary.startsWith('Steam Workshop Mod'));
   const updateVer = state.availableUpdates?.get(mod.id);
   const isMissingGp = isModMissingGamePass(mod, state);
+  const isEndorsed = isNexusModEndorsed(mod.nexusModId, state.currentSettings?.nexusEndorsementsCache);
+  const isTracked = isNexusModTracked(mod.nexusModId, state.currentSettings?.nexusTrackedCache);
+
+  const endorsedBadge = isEndorsed
+    ? `<span class="badge-nexus-endorsed" style="font-size: 8px; font-weight: bold; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 1px 4px; border-radius: 3px; cursor: default;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+    : '';
+
+  const trackedBadge = isTracked
+    ? `<span class="badge-nexus-tracked" style="font-size: 8px; font-weight: bold; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 1px 4px; border-radius: 3px; cursor: default;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+    : '';
 
   if (state.viewLayout === 'list') {
     const isSelected = state.selectedModIds.has(mod.id);
@@ -138,6 +149,8 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
         ${isMissingGp ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
         ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_update_available', { version: updateVer }))}</span>` : ''}
+        ${trackedBadge ? `<span style="margin-left: 6px;">${trackedBadge}</span>` : ''}
+        ${endorsedBadge ? `<span style="margin-left: 6px;">${endorsedBadge}</span>` : ''}
         ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="margin-left: 6px; font-size: 11px; cursor: pointer;" title="${escapeHtml(mod.customNotes)}">📝</span>` : ''}
       </div>
       <div class="cell status-cell">
@@ -212,6 +225,8 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         ${isMissingGp ? `<span class="badge-gp-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px; cursor: help;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
         ${mod.type === 'altermatic' && mod.nexusModId !== 1626 && !mod.name.toLowerCase().includes('altermatic - runtime') && !mod.name.toLowerCase().startsWith('altermatic') && !state.dependencies?.altermatic_installed && !state.allMods?.some((m: any) => m.enabled && (m.nexusModId === 1626 || m.name.toLowerCase().includes('altermatic - runtime') || (m.name.toLowerCase().startsWith('altermatic') && m.type === 'altermatic'))) ? `<span class="badge-dep-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 118, 117, 0.15); color: var(--type-altermatic); border: 1px solid rgba(255, 118, 117, 0.35); padding: 1px 4px; border-radius: 3px; cursor: help;" title="${escapeHtml(t('card.altermatic_missing_tooltip') || 'Requires Altermatic framework')}">⚠️ ${escapeHtml(t('card.badge_altermatic_missing') || 'ALTERMATIC MISSING')}</span>` : ''}
         ${updateBadge}
+        ${trackedBadge}
+        ${endorsedBadge}
         ${catHtml}
         ${isWorkshop ? `<span style="margin-left: 4px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
       </div>

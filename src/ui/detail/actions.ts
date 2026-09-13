@@ -67,8 +67,14 @@ export async function handleDetailToggle(): Promise<void> {
     await Promise.all([loadMods(), loadProfiles(), loadDependencies(true)]);
     const { openDetailPanel } = await import('./panel');
     openDetailPanel(state.currentDetailMod.id);
-  } catch (e) {
-    showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+  } catch (e: any) {
+    const errStr = String(e?.message || e);
+    if (errStr.includes('CONFLICT:')) {
+      const conflictingName = errStr.split('CONFLICT:')[1].trim();
+      showToast(t('toasts.mod_conflict_active', { name: state.currentDetailMod.name, conflicting: conflictingName }), 'warning');
+    } else {
+      showToast(t('toasts.export_failed', { error: errStr }), 'error');
+    }
   }
 }
 

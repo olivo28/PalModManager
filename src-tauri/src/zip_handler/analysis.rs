@@ -56,6 +56,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
     let mut has_pak = false;
     let mut has_dll = false;
     let mut has_info_json = false;
+    let mut has_fomod = false;
     let mut in_logicmods = false;
     let mut pak_destination_hint = None;
 
@@ -68,6 +69,10 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
             if nl.contains("info.json") || nl.contains("modinfo.pmm.json") { has_info_json = true; }
         }
         if nl.ends_with(".pak") { has_pak = true; }
+        let norm_nl = nl.replace('\\', "/");
+        if norm_nl == "fomod/moduleconfig.xml" || norm_nl.ends_with("/fomod/moduleconfig.xml") {
+            has_fomod = true;
+        }
         if nl.contains("logicmods") {
             in_logicmods = true;
             pak_destination_hint = Some("logicmods".to_string());
@@ -154,6 +159,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
         has_altermatic,
         has_dll,
         has_info_json,
+        has_fomod,
         pak_destination_hint,
         root_folder,
         files,

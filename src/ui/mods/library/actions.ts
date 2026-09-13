@@ -29,18 +29,42 @@ export async function triggerInstallFromLibrary(id: string, zipName?: string): P
         }
       }
       if (!(analysis as any).nexusInfo) {
-        const pic = libEntry?.nexusPictureUrl || modInfo?.nexusPictureUrl;
-        const name = (libEntry as any)?.nexusName || (modInfo as any)?.nexusName || libEntry?.modId || modInfo?.name;
-        const author = libEntry?.nexusAuthor || modInfo?.nexusAuthor || libEntry?.author;
-        const summary = libEntry?.nexusSummary || modInfo?.nexusSummary || libEntry?.description;
+        const effectiveNexusId = (analysis as any).nexusModId || libEntry?.nexusModId || modInfo?.nexusModId;
+        const sibling = state.libraryEntries?.find(e =>
+          (e.modId === id || (e.nexusModId && effectiveNexusId && e.nexusModId === effectiveNexusId)) &&
+          !!((e.nexusPictureUrl && e.nexusPictureUrl.trim()) || (e.nexusAuthor && e.nexusAuthor.trim()) || (e.author && e.author.trim()))
+        );
+
+        const pic = (libEntry?.nexusPictureUrl && libEntry.nexusPictureUrl.trim())
+          || (sibling?.nexusPictureUrl && sibling.nexusPictureUrl.trim())
+          || (modInfo?.nexusPictureUrl && modInfo.nexusPictureUrl.trim())
+          || '';
+
+        const name = (libEntry as any)?.nexusName || sibling?.nexusName || (modInfo as any)?.nexusName || libEntry?.modId || modInfo?.name || '';
+        const author = (libEntry?.nexusAuthor && libEntry.nexusAuthor.trim())
+          || (libEntry?.author && libEntry.author.trim())
+          || (sibling?.nexusAuthor && sibling.nexusAuthor.trim())
+          || (sibling?.author && sibling.author.trim())
+          || modInfo?.nexusAuthor
+          || '';
+
+        const summary = (libEntry?.nexusSummary && libEntry.nexusSummary.trim())
+          || (libEntry?.description && libEntry.description.trim())
+          || (sibling?.nexusSummary && sibling.nexusSummary.trim())
+          || (sibling?.description && sibling.description.trim())
+          || modInfo?.nexusSummary
+          || '';
+
+        const nexusId = effectiveNexusId || sibling?.nexusModId || 0;
+
         if (pic || name || author) {
           (analysis as any).nexusInfo = {
-            modId: (analysis as any).nexusModId || 0,
-            name: name || '',
-            author: author || '',
-            summary: summary || '',
-            pictureUrl: pic || '',
-            version: libEntry?.version || libEntry?.nexusVersion || modInfo?.version || '',
+            modId: nexusId,
+            name: name,
+            author: author,
+            summary: summary,
+            pictureUrl: pic,
+            version: analysis.detectedVersion || libEntry?.version || libEntry?.nexusVersion || modInfo?.version || '',
             downloads: 0,
             endorsements: 0,
           };

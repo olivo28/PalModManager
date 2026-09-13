@@ -519,10 +519,23 @@ pub fn set_custom_data_path(path: Option<String>, state: State<AppState>) -> Res
 
     let _ = std::fs::create_dir_all(&target_path);
 
+    let is_switching_to_portable = path.as_deref() == Some("__portable__");
+    if is_switching_to_portable {
+        let _ = std::fs::write(target_path.join("portable.txt"), "PalModManager Portable Mode Active\n");
+    } else {
+        // If switching away from portable, clean up portable sentinels next to exe
+        if let Ok(exe_path) = std::env::current_exe() {
+            if let Some(exe_dir) = exe_path.parent() {
+                let _ = std::fs::remove_file(exe_dir.join("portable.txt"));
+                let _ = std::fs::remove_file(exe_dir.join(".portable"));
+            }
+        }
+    }
+
     let mut data = state.data.lock().map_err(|e| e.to_string())?;
     data.settings.custom_data_path = path.clone();
     
-    let items_to_migrate = &["profiles", "mods-library"];
+    let items_to_migrate = &["profiles", "mods-library", "backups", "resources", "tools", "logs"];
     for item in items_to_migrate {
         let src = PathBuf::from(&current_path).join(item);
         let dst = target_path.join(item);

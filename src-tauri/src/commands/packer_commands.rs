@@ -16,58 +16,71 @@ pub struct StagedFile {
     pub target_path: String,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct PackerProgressPayload {
+    pub percent: u8,
+    pub current_file: String,
+    pub processed_files: usize,
+    pub total_files: usize,
+}
+
 use crate::models::PmmMetadata as ModMetadata;
 
 #[tauri::command]
 pub async fn scan_paths_for_packing(paths: Vec<String>) -> Result<Vec<StagedFile>, String> {
-    let mut staged_files = Vec::new();
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut staged_files = Vec::new();
 
-    for path_str in paths {
-        let path = Path::new(&path_str);
-        if !path.exists() {
-            continue;
-        }
+        for path_str in paths {
+            let path = Path::new(&path_str);
+            if !path.exists() {
+                continue;
+            }
 
-        if path.is_file() {
-            let filename = path.file_name()
-                .map(|n| n.to_string_lossy().into_owned())
-                .unwrap_or_default();
-            let size = fs::metadata(path)
-                .map(|m| m.len())
-                .unwrap_or(0);
-            staged_files.push(StagedFile {
-                source_path: path_str.clone(),
-                relative_path: filename.clone(),
-                size,
-                target_path: filename,
-            });
-        } else if path.is_dir() {
-            // Walk the directory recursively
-            let walker = walkdir::WalkDir::new(path);
-            for entry in walker.into_iter().filter_map(|e| e.ok()) {
-                if entry.file_type().is_file() {
-                    let file_path = entry.path();
-                    let relative = file_path.strip_prefix(path.parent().unwrap_or(path))
-                        .map(|p| p.to_string_lossy().into_owned())
-                        .unwrap_or_else(|_| file_path.file_name().unwrap().to_string_lossy().into_owned());
-                    
-                    let size = entry.metadata()
-                        .map(|m| m.len())
-                        .unwrap_or(0);
+            if path.is_file() {
+                let filename = path.file_name()
+                    .map(|n| n.to_string_lossy().into_owned())
+                    .unwrap_or_default();
+                let size = fs::metadata(path)
+                    .map(|m| m.len())
+                    .unwrap_or(0);
+                staged_files.push(StagedFile {
+                    source_path: path_str.clone(),
+                    relative_path: filename.clone(),
+                    size,
+                    target_path: filename,
+                });
+            } else if path.is_dir() {
+                // Walk the directory recursively
+                let walker = walkdir::WalkDir::new(path);
+                for entry in walker.into_iter().filter_map(|e| e.ok()) {
+                    if entry.file_type().is_file() {
+                        let file_path = entry.path();
+                        let relative = file_path.strip_prefix(path.parent().unwrap_or(path))
+                            .map(|p| p.to_string_lossy().into_owned())
+                            .unwrap_or_else(|_| file_path.file_name().unwrap().to_string_lossy().into_owned());
+                        
+                        let size = entry.metadata()
+                            .map(|m| m.len())
+                            .unwrap_or(0);
 
-                    // For target path, default to relative to the parent folder so the folder name is preserved
-                    staged_files.push(StagedFile {
-                        source_path: file_path.to_string_lossy().into_owned(),
-                        relative_path: relative.clone(),
-                        size,
-                        target_path: relative.replace('\\', "/"),
-                    });
+                        // For target path, default to relative to the parent folder so the folder name is preserved
+                        staged_files.push(StagedFile {
+                            source_path: file_path.to_string_lossy().into_owned(),
+                            relative_path: relative.clone(),
+                            size,
+                            target_path: relative.replace('\\', "/"),
+                        });
+                    }
                 }
             }
         }
-    }
 
-    Ok(staged_files)
+        Ok(staged_files)
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during scan_paths_for_packing: {e}"))?
 }
 
 fn find_executable(name: &str, alternative_paths: &[&str]) -> Option<PathBuf> {
@@ -90,153 +103,199 @@ fn find_executable(name: &str, alternative_paths: &[&str]) -> Option<PathBuf> {
     None
 }
 
-
 #[tauri::command]
 pub async fn pack_mod(
+    app: tauri::AppHandle,
     files: Vec<StagedFile>,
     metadata: Option<ModMetadata>,
     output_path: String,
     format: String,
 ) -> Result<String, String> {
-    let output_file = Path::new(&output_path);
-    
-    // Ensure parent directory exists
-    if let Some(parent) = output_file.parent() {
-        fs::create_dir_all(parent).map_err(|e| format!("Failed to create output directory: {}", e))?;
-    }
-
-    // Determine format
-    let format_lower = format.to_lowercase();
-    if format_lower == "zip" {
-        // Native ZIP packaging
-        let file = fs::File::create(output_file)
-            .map_err(|e| format!("Failed to create output file: {}", e))?;
-        let mut zip = zip::ZipWriter::new(file);
-        let options = SimpleFileOptions::default()
-            .compression_method(zip::CompressionMethod::Deflated)
-            .unix_permissions(0o755);
-
-        // Write modinfo.pmm.json if metadata is present
-        if let Some(ref meta) = metadata {
-            let json_str = serde_json::to_string_pretty(meta)
-                .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
-            zip.start_file("modinfo.pmm.json", options)
-                .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-            use std::io::Write;
-            zip.write_all(json_str.as_bytes())
-                .map_err(|e| format!("Failed to write metadata to zip: {}", e))?;
+    tauri::async_runtime::spawn_blocking(move || {
+        use tauri::Emitter;
+        let output_file = Path::new(&output_path);
+        
+        // Ensure parent directory exists
+        if let Some(parent) = output_file.parent() {
+            fs::create_dir_all(parent).map_err(|e| format!("Failed to create output directory: {}", e))?;
         }
 
-        // Add files
-        for f in files {
-            let data = fs::read(&f.source_path)
-                .map_err(|e| format!("Failed to read file {}: {}", f.source_path, e))?;
-            
-            // Clean path separators to always be forward slashes in ZIP
-            let clean_target = f.target_path.replace('\\', "/");
-            zip.start_file(clean_target, options)
-                .map_err(|e| format!("Failed to start file in zip: {}", e))?;
-            use std::io::Write;
-            zip.write_all(&data)
-                .map_err(|e| format!("Failed to write file to zip: {}", e))?;
-        }
+        let total_files = files.len();
 
-        zip.finish().map_err(|e| format!("Failed to finish zip archive: {}", e))?;
-        Ok(format!("Successfully packaged mod as ZIP: {}", output_path))
-    } else if format_lower == "7z" || format_lower == "rar" {
-        // External packer (7z or rar)
-        // 1. Create a temp staging folder inside the temp dir
-        let temp_dir = std::env::temp_dir().join(format!("pmm_packer_{}", uuid::Uuid::new_v4()));
-        fs::create_dir_all(&temp_dir)
-            .map_err(|e| format!("Failed to create temp staging dir: {}", e))?;
+        // Determine format
+        let format_lower = format.to_lowercase();
+        if format_lower == "zip" {
+            // Native ZIP packaging
+            let file = fs::File::create(output_file)
+                .map_err(|e| format!("Failed to create output file: {}", e))?;
+            let mut zip = zip::ZipWriter::new(file);
+            let options = SimpleFileOptions::default()
+                .compression_method(zip::CompressionMethod::Deflated)
+                .unix_permissions(0o755);
 
-        // 2. Write metadata if present
-        if let Some(ref meta) = metadata {
-            let json_str = serde_json::to_string_pretty(meta)
-                .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
-            let meta_path = temp_dir.join("modinfo.pmm.json");
-            fs::write(meta_path, json_str)
-                .map_err(|e| format!("Failed to write temp metadata: {}", e))?;
-        }
-
-        // 3. Copy files to target locations under temp_dir
-        for f in &files {
-            let dest_path = temp_dir.join(&f.target_path);
-            if let Some(parent) = dest_path.parent() {
-                fs::create_dir_all(parent)
-                    .map_err(|e| format!("Failed to create subdirectories: {}", e))?;
+            // Write modinfo.pmm.json if metadata is present
+            if let Some(ref meta) = metadata {
+                let json_str = serde_json::to_string_pretty(meta)
+                    .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
+                zip.start_file("modinfo.pmm.json", options)
+                    .map_err(|e| format!("Failed to start file in zip: {}", e))?;
+                use std::io::Write;
+                zip.write_all(json_str.as_bytes())
+                    .map_err(|e| format!("Failed to write metadata to zip: {}", e))?;
             }
-            fs::copy(&f.source_path, &dest_path)
-                .map_err(|e| format!("Failed to copy file {} to staging: {}", f.source_path, e))?;
-        }
 
-        // Remove output file if it already exists to avoid issues
-        if output_file.exists() {
-            let _ = fs::remove_file(output_file);
-        }
+            // Add files with progress reporting
+            for (idx, f) in files.iter().enumerate() {
+                let data = fs::read(&f.source_path)
+                    .map_err(|e| format!("Failed to read file {}: {}", f.source_path, e))?;
+                
+                // Clean path separators to always be forward slashes in ZIP
+                let clean_target = f.target_path.replace('\\', "/");
+                zip.start_file(clean_target, options)
+                    .map_err(|e| format!("Failed to start file in zip: {}", e))?;
+                use std::io::Write;
+                zip.write_all(&data)
+                    .map_err(|e| format!("Failed to write file to zip: {}", e))?;
 
-        // 4. Run command
-        let res = if format_lower == "7z" {
-            let exe = find_executable(
-                "7z",
-                &[
-                    "C:\\Program Files\\7-Zip\\7z.exe",
-                    "C:\\Program Files (x86)\\7-Zip\\7z.exe",
-                ],
-            ).ok_or_else(|| "7-Zip (7z.exe) not found on your system. Please install 7-Zip to use 7z format.".to_string())?;
+                let percent = if total_files > 0 {
+                    (((idx + 1) as f32 / total_files as f32) * 100.0).round() as u8
+                } else {
+                    100
+                };
+                let _ = app.emit("packer-progress", PackerProgressPayload {
+                    percent: percent.min(100),
+                    current_file: f.relative_path.clone(),
+                    processed_files: idx + 1,
+                    total_files,
+                });
+            }
 
-            // Command: 7z a "output_path" "temp_dir/*"
-            let output = Command::new(exe)
-                .arg("a")
-                .arg("-y")
-                .arg(&output_path)
-                .arg(format!("{}\\*", temp_dir.to_string_lossy()))
-                .output()
-                .map_err(|e| format!("Failed to run 7z: {}", e))?;
+            zip.finish().map_err(|e| format!("Failed to finish zip archive: {}", e))?;
+            Ok(format!("Successfully packaged mod as ZIP: {}", output_path))
+        } else if format_lower == "7z" || format_lower == "rar" {
+            let _ = app.emit("packer-progress", PackerProgressPayload {
+                percent: 15,
+                current_file: "Staging files...".to_string(),
+                processed_files: 0,
+                total_files,
+            });
 
-            if !output.status.success() {
-                let err_msg = String::from_utf8_lossy(&output.stderr);
-                let out_msg = String::from_utf8_lossy(&output.stdout);
-                Err(format!("7z compression failed. Output: {}\nError: {}", out_msg, err_msg))
+            // External packer (7z or rar)
+            let temp_dir = std::env::temp_dir().join(format!("pmm_packer_{}", uuid::Uuid::new_v4()));
+            fs::create_dir_all(&temp_dir)
+                .map_err(|e| format!("Failed to create temp staging dir: {}", e))?;
+
+            // Write metadata if present
+            if let Some(ref meta) = metadata {
+                let json_str = serde_json::to_string_pretty(meta)
+                    .map_err(|e| format!("Failed to serialize metadata: {}", e))?;
+                let meta_path = temp_dir.join("modinfo.pmm.json");
+                fs::write(meta_path, json_str)
+                    .map_err(|e| format!("Failed to write temp metadata: {}", e))?;
+            }
+
+            // Copy files to target locations under temp_dir
+            for (idx, f) in files.iter().enumerate() {
+                let dest_path = temp_dir.join(&f.target_path);
+                if let Some(parent) = dest_path.parent() {
+                    fs::create_dir_all(parent)
+                        .map_err(|e| format!("Failed to create subdirectories: {}", e))?;
+                }
+                fs::copy(&f.source_path, &dest_path)
+                    .map_err(|e| format!("Failed to copy file {} to staging: {}", f.source_path, e))?;
+
+                let percent = 15 + (((idx + 1) as f32 / total_files as f32) * 35.0).round() as u8;
+                let _ = app.emit("packer-progress", PackerProgressPayload {
+                    percent: percent.min(50),
+                    current_file: f.relative_path.clone(),
+                    processed_files: idx + 1,
+                    total_files,
+                });
+            }
+
+            // Remove output file if it already exists to avoid issues
+            if output_file.exists() {
+                let _ = fs::remove_file(output_file);
+            }
+
+            let _ = app.emit("packer-progress", PackerProgressPayload {
+                percent: 55,
+                current_file: format!("Compressing with {}...", format_lower.to_uppercase()),
+                processed_files: total_files,
+                total_files,
+            });
+
+            // Run command
+            let res = if format_lower == "7z" {
+                let exe = find_executable(
+                    "7z",
+                    &[
+                        "C:\\Program Files\\7-Zip\\7z.exe",
+                        "C:\\Program Files (x86)\\7-Zip\\7z.exe",
+                    ],
+                ).ok_or_else(|| "7-Zip (7z.exe) not found on your system. Please install 7-Zip to use 7z format.".to_string())?;
+
+                let output = Command::new(exe)
+                    .arg("a")
+                    .arg("-y")
+                    .arg(&output_path)
+                    .arg(format!("{}\\*", temp_dir.to_string_lossy()))
+                    .output()
+                    .map_err(|e| format!("Failed to run 7z: {}", e))?;
+
+                if !output.status.success() {
+                    let err_msg = String::from_utf8_lossy(&output.stderr);
+                    let out_msg = String::from_utf8_lossy(&output.stdout);
+                    Err(format!("7z compression failed. Output: {}\nError: {}", out_msg, err_msg))
+                } else {
+                    Ok(format!("Successfully packaged mod as 7z: {}", output_path))
+                }
             } else {
-                Ok(format!("Successfully packaged mod as 7z: {}", output_path))
-            }
+                // RAR
+                let exe = find_executable(
+                    "rar",
+                    &[
+                        "C:\\Program Files\\WinRAR\\Rar.exe",
+                        "C:\\Program Files (x86)\\WinRAR\\Rar.exe",
+                        "C:\\Program Files\\WinRAR\\WinRAR.exe",
+                    ],
+                ).ok_or_else(|| "WinRAR (Rar.exe) not found on your system. Please install WinRAR to use RAR format.".to_string())?;
+
+                let output = Command::new(exe)
+                    .arg("a")
+                    .arg("-ep1")
+                    .arg("-r")
+                    .arg(&output_path)
+                    .arg(format!("{}\\*", temp_dir.to_string_lossy()))
+                    .output()
+                    .map_err(|e| format!("Failed to run rar: {}", e))?;
+
+                if !output.status.success() {
+                    let err_msg = String::from_utf8_lossy(&output.stderr);
+                    let out_msg = String::from_utf8_lossy(&output.stdout);
+                    Err(format!("RAR compression failed. Output: {}\nError: {}", out_msg, err_msg))
+                } else {
+                    Ok(format!("Successfully packaged mod as RAR: {}", output_path))
+                }
+            };
+
+            // Cleanup staging
+            let _ = fs::remove_dir_all(&temp_dir);
+
+            let _ = app.emit("packer-progress", PackerProgressPayload {
+                percent: 100,
+                current_file: "Completed".to_string(),
+                processed_files: total_files,
+                total_files,
+            });
+
+            res
         } else {
-            // RAR
-            let exe = find_executable(
-                "rar",
-                &[
-                    "C:\\Program Files\\WinRAR\\Rar.exe",
-                    "C:\\Program Files (x86)\\WinRAR\\Rar.exe",
-                    "C:\\Program Files\\WinRAR\\WinRAR.exe",
-                ],
-            ).ok_or_else(|| "WinRAR (Rar.exe) not found on your system. Please install WinRAR to use RAR format.".to_string())?;
-
-            // Command: rar a -r "output_path" "temp_dir/*"
-            let output = Command::new(exe)
-                .arg("a")
-                .arg("-ep1") // exclude base path
-                .arg("-r")
-                .arg(&output_path)
-                .arg(format!("{}\\*", temp_dir.to_string_lossy()))
-                .output()
-                .map_err(|e| format!("Failed to run rar: {}", e))?;
-
-            if !output.status.success() {
-                let err_msg = String::from_utf8_lossy(&output.stderr);
-                let out_msg = String::from_utf8_lossy(&output.stdout);
-                Err(format!("RAR compression failed. Output: {}\nError: {}", out_msg, err_msg))
-            } else {
-                Ok(format!("Successfully packaged mod as RAR: {}", output_path))
-            }
-        };
-
-        // Cleanup staging
-        let _ = fs::remove_dir_all(&temp_dir);
-        res
-    } else {
-        Err(format!("Unsupported format: {}", format))
-    }
+            Err(format!("Unsupported format: {}", format))
+        }
+    })
+    .await
+    .map_err(|e| format!("Worker thread error during pack_mod: {e}"))?
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
