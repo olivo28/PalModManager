@@ -168,22 +168,21 @@ export function openSettingsModal(): void {
     }
   }
 
-  const scaleInput = settingsDom.elMaybe('settings-ui-scale') || settingsDom.elMaybe('settings-toolbar-scale');
-  const scaleValue = settingsDom.elMaybe('settings-ui-scale-value') || settingsDom.elMaybe('settings-toolbar-scale-value');
-  const initialScale = state.currentSettings?.uiScale || state.currentSettings?.toolbarScale || 1.0;
-  if (scaleInput) {
-    scaleInput.value = initialScale.toString();
-    if (scaleValue) {
-      scaleValue.textContent = `${Math.round(initialScale * 100)}%`;
+  const toolbarScaleInput = settingsDom.elMaybe('settings-toolbar-scale');
+  const toolbarScaleVal = settingsDom.elMaybe('settings-toolbar-scale-val');
+  const initialScale = state.currentSettings?.toolbarScale || 1.0;
+  if (toolbarScaleInput) {
+    toolbarScaleInput.value = initialScale.toString();
+    if (toolbarScaleVal) {
+      toolbarScaleVal.textContent = `${Math.round(initialScale * 100)}%`;
     }
 
-    scaleInput.addEventListener('input', async () => {
-      const scale = parseFloat(scaleInput.value);
-      if (scaleValue) {
-        scaleValue.textContent = `${Math.round(scale * 100)}%`;
+    toolbarScaleInput.addEventListener('input', () => {
+      const scale = parseFloat(toolbarScaleInput.value);
+      if (toolbarScaleVal) {
+        toolbarScaleVal.textContent = `${Math.round(scale * 100)}%`;
       }
-      const { applyUiScale } = await import('../../../utils/zoom');
-      applyUiScale(scale, false);
+      document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
     });
   }
 
@@ -411,8 +410,8 @@ export function closeSettingsModal(): void {
       }
     });
   }
-  const savedScale = getState().currentSettings?.uiScale || getState().currentSettings?.toolbarScale || 1.0;
-  import('../../../utils/zoom').then(({ applyUiScale }) => applyUiScale(savedScale));
+  const savedScale = getState().currentSettings?.toolbarScale || 1.0;
+  document.documentElement.style.setProperty('--toolbar-scale', savedScale.toString());
 }
 
 export function openSettingsToTab(tabName: string): void {

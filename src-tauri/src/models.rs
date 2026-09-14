@@ -201,8 +201,6 @@ pub struct AppSettings {
     #[serde(default)]
     pub toolbar_scale: Option<f64>,
     #[serde(default)]
-    pub ui_scale: Option<f64>,
-    #[serde(default)]
     pub language: Option<String>,
     #[serde(default)]
     pub nexus_account: Option<NexusAccountInfo>,
@@ -329,7 +327,6 @@ impl Default for AppData {
                 window_y: None,
                 window_maximized: None,
                 toolbar_scale: Some(1.0),
-                ui_scale: Some(1.0),
                 language: None,
                 nexus_account: None,
                 nexus_endorsements_cache: None,

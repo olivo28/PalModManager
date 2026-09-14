@@ -1291,8 +1291,6 @@
     "folder_profile": "📂 Pasta do Perfil Ativo",
     "toolbar_scale_label": "Tamanho da Barra de Ferramentas",
     "toolbar_scale_hint": "Ajusta o tamanho visual dos botões e ferramentas superiores",
-    "ui_scale_label": "Escala da Interface (Zoom)",
-    "ui_scale_hint": "Ajusta o tamanho global da interface e dos textos (Ctrl + / Ctrl -)",
     "theme_label": "Tema da Interface",
     "theme_hint": "Alterna entre o modo escuro e o modo claro",
     "btn_theme_light": "Mudar para Tema Claro",
@@ -1588,7 +1586,6 @@
     "banner_dismiss_title": "Ocultar este aviso durante esta sessão"
   },
   "toasts": {
-    "zoom_level": "🔍 Zoom da Interface: {percent}%",
     "downloading_dep": "Baixando {dep} do GitHub...",
     "installing_dep": "Instalando {dep}...",
     "updating_dep": "Atualizando {dep}...",

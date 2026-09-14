@@ -4,7 +4,6 @@ import {
   setDebugConsole,
   setCustomDataPath,
   setToolbarScale,
-  setUiScale,
 } from '../../../api';
 import { getState, updateState } from '../../../state';
 import { showToast } from '../../toast';
@@ -142,14 +141,13 @@ export async function handleSaveSettings(): Promise<void> {
       updateState({ currentSettings: settings });
     }
 
-    const scaleInput = settingsDom.elMaybe('settings-ui-scale') || settingsDom.elMaybe('settings-toolbar-scale');
-    if (scaleInput) {
-      const scale = parseFloat(scaleInput.value);
-      if (scale !== (state.currentSettings?.uiScale || state.currentSettings?.toolbarScale || 1.0)) {
-        const settings = await setUiScale(scale);
+    const toolbarScaleInput = settingsDom.elMaybe('settings-toolbar-scale');
+    if (toolbarScaleInput) {
+      const scale = parseFloat(toolbarScaleInput.value);
+      if (scale !== (state.currentSettings?.toolbarScale || 1.0)) {
+        const settings = await setToolbarScale(scale);
         updateState({ currentSettings: settings });
-        const { applyUiScale } = await import('../../../utils/zoom');
-        applyUiScale(scale);
+        document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
       }
     }
 

@@ -86,9 +86,7 @@ export interface SettingsDomMap {
   'settings-folder-expand-mode-select': HTMLSelectElement;
   'theme-toggle-btn': HTMLButtonElement;
   'settings-toolbar-scale': HTMLInputElement;
-  'settings-toolbar-scale-value': HTMLElement;
-  'settings-ui-scale': HTMLInputElement;
-  'settings-ui-scale-value': HTMLElement;
+  'settings-toolbar-scale-val': HTMLElement;
   'settings-pane-network': HTMLElement;
   'settings-dns-resolver-select': HTMLSelectElement;
   'settings-usmap-badge': HTMLElement;

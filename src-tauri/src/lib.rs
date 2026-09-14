@@ -175,7 +175,6 @@ pub fn run() {
             settings_commands::set_force_load_order_palschema,
             settings_commands::set_custom_data_path,
             settings_commands::set_toolbar_scale,
-            settings_commands::set_ui_scale,
             settings_commands::set_language,
             settings_commands::set_dns_resolver,
             settings_commands::set_cache_remote_images,
