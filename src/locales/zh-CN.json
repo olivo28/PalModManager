@@ -1291,6 +1291,8 @@
     "folder_profile": "📂 当前方案文件夹",
     "toolbar_scale_label": "工具栏缩放比例",
     "toolbar_scale_hint": "调整顶部工具栏图标与按钮的显示大小",
+    "ui_scale_label": "界面缩放 (缩放比例)",
+    "ui_scale_hint": "调整全局界面大小与文本比例 (Ctrl + / Ctrl -)",
     "theme_label": "界面主题",
     "theme_hint": "在深色与浅色模式之间切换",
     "btn_theme_light": "切换为浅色主题",
@@ -1586,6 +1588,7 @@
     "banner_dismiss_title": "在本次会话中隐藏此提醒"
   },
   "toasts": {
+    "zoom_level": "🔍 界面缩放: {percent}%",
     "downloading_dep": "正在从 GitHub 下载 {dep}...",
     "installing_dep": "正在安装 {dep}...",
     "updating_dep": "正在更新 {dep}...",

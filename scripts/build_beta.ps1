@@ -43,6 +43,9 @@ Write-Host "   Beta Tag       : Beta $BetaNumClean" -ForegroundColor Yellow
 Write-Host "==================================================" -ForegroundColor Cyan
 Write-Host ""
 
+# Close any running instances of PalModManager so binaries are not locked
+Get-Process -Name "*palmodmanager*" -ErrorAction SilentlyContinue | Stop-Process -Force -ErrorAction SilentlyContinue
+
 # Run standard Tauri release build
 Write-Host "Compiling Release binary and installer via 'pnpm tauri build'..." -ForegroundColor Cyan
 pnpm tauri build
@@ -113,13 +116,34 @@ if (Test-Path $BundleMsi) {
 }
 
 # 4. Generate Clean ZIP Archives (compressed from within dist-beta so files are at root of zip)
+function Compress-ArchiveWithRetry {
+    param (
+        [string[]]$Path,
+        [string]$DestinationPath,
+        [int]$MaxRetries = 5,
+        [int]$DelaySeconds = 2
+    )
+    for ($i = 1; $i -le $MaxRetries; $i++) {
+        try {
+            Compress-Archive -Path $Path -DestinationPath $DestinationPath -Force -ErrorAction Stop
+            return
+        } catch {
+            if ($i -eq $MaxRetries) {
+                throw $_
+            }
+            Write-Host "  [Notice] File temporarily locked (antivirus/indexer). Retrying in $DelaySeconds s ($i/$MaxRetries)..." -ForegroundColor Yellow
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+}
+
 Push-Location $DistBeta
 try {
     # 4a. ZIP for Setup Installer
     if ($BetaSetupName -and (Test-Path $BetaSetupName)) {
         $ZipSetupName = "PalModManager_${BaseVersion}_beta${BetaNumClean}_x64-setup.zip"
         Write-Host "Compressing Setup Installer into $ZipSetupName..." -ForegroundColor Gray
-        Compress-Archive -Path $BetaSetupName -DestinationPath $ZipSetupName -Force
+        Compress-ArchiveWithRetry -Path $BetaSetupName -DestinationPath $ZipSetupName
         $CreatedArtifacts += (Join-Path $DistBeta $ZipSetupName)
     }
 
@@ -127,7 +151,7 @@ try {
     if ($BetaExeName -and (Test-Path $BetaExeName)) {
         $ZipPortableName = "PalModManager_${BaseVersion}_beta${BetaNumClean}_Portable.zip"
         Write-Host "Compressing Standalone Exe into $ZipPortableName..." -ForegroundColor Gray
-        Compress-Archive -Path $BetaExeName -DestinationPath $ZipPortableName -Force
+        Compress-ArchiveWithRetry -Path $BetaExeName -DestinationPath $ZipPortableName
         $CreatedArtifacts += (Join-Path $DistBeta $ZipPortableName)
     }
 
@@ -135,7 +159,7 @@ try {
     if ($BetaMsiName -and (Test-Path $BetaMsiName)) {
         $ZipMsiName = "PalModManager_${BaseVersion}_beta${BetaNumClean}_x64_msi.zip"
         Write-Host "Compressing MSI Installer into $ZipMsiName..." -ForegroundColor Gray
-        Compress-Archive -Path $BetaMsiName -DestinationPath $ZipMsiName -Force
+        Compress-ArchiveWithRetry -Path $BetaMsiName -DestinationPath $ZipMsiName
         $CreatedArtifacts += (Join-Path $DistBeta $ZipMsiName)
     }
 
@@ -143,7 +167,7 @@ try {
     if ($BetaSetupName -and $BetaExeName -and (Test-Path $BetaSetupName) -and (Test-Path $BetaExeName)) {
         $ZipAllName = "PalModManager_${BaseVersion}_beta${BetaNumClean}_All.zip"
         Write-Host "Compressing Full Bundle (Setup + Portable) into $ZipAllName..." -ForegroundColor Gray
-        Compress-Archive -Path @($BetaSetupName, $BetaExeName) -DestinationPath $ZipAllName -Force
+        Compress-ArchiveWithRetry -Path @($BetaSetupName, $BetaExeName) -DestinationPath $ZipAllName
         $CreatedArtifacts += (Join-Path $DistBeta $ZipAllName)
     }
 } finally {

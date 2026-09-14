@@ -163,6 +163,7 @@ fn test_pmm_metadata_sidecar_persistence() {
         custom_notes: None,
         original_name: None,
         custom_name: None,
+        fomod_choices: None,
     };
 
     // Save metadata

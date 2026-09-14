@@ -2,6 +2,7 @@ pub mod types;
 pub mod parser;
 pub mod manifest_builder;
 pub mod version;
+pub mod deducer;
 
 use base64::Engine;
 use std::path::Path;
@@ -160,4 +161,30 @@ pub async fn build_fomod_manifest(
         summary,
         payload.fomod_choices,
     )
+}
+
+#[tauri::command]
+pub async fn deduce_fomod_choices(
+    mod_id: String,
+    zip_path: String,
+    state: State<'_, AppState>,
+) -> Result<std::collections::HashMap<String, Vec<String>>, String> {
+    let (game_path_str, mod_info) = {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        let m = data.mods.iter().find(|m| m.id == mod_id).cloned();
+        (data.settings.game_path.clone(), m)
+    };
+
+    let Some(mod_info) = mod_info else {
+        return Ok(std::collections::HashMap::new());
+    };
+
+    if game_path_str.is_empty() {
+        return Ok(std::collections::HashMap::new());
+    }
+
+    let config = get_fomod_config(zip_path.clone()).await?;
+    let game_path = Path::new(&game_path_str);
+    let choices = deducer::deduce_fomod_choices_from_disk(game_path, &mod_info, &config, Path::new(&zip_path));
+    Ok(choices)
 }

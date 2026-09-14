@@ -3,9 +3,9 @@
 #nxm-download-tray {
   position: fixed;
   bottom: 24px;
-  right: 24px;
+  left: calc(var(--sidebar-w, 62px) + 16px);
   width: 360px;
-  max-width: calc(100vw - 48px);
+  max-width: calc(100vw - var(--sidebar-w, 62px) - 32px);
   background: var(--bg-secondary, #1a1d24);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
   border-radius: 12px;

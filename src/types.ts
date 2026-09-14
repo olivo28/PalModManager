@@ -138,6 +138,7 @@ export interface AppSettings {
   forceLoadOrderPalschema?: boolean;
   customDataPath?: string | null;
   toolbarScale?: number;
+  uiScale?: number;
   language?: string;
   nexusAccount?: NexusAccountInfo | null;
   dnsResolver?: string;

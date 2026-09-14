@@ -37,15 +37,34 @@ pub async fn install_mod_with_manifest(
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
     crate::logger::log(&format!("install_mod_with_manifest: Installing '{}' (type: {:?}) from '{}'", manifest.display_name, manifest.mod_type, zip_path));
-    let (game_path, program_path) = {
+    let (game_path, program_path, existing_mod_info) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        (data.settings.game_path.clone(), data.settings.program_path.clone())
+        let target_nexus = manifest.nexus_mod_id;
+        let target_name = &manifest.display_name;
+        let target_folder = &manifest.folder_name;
+
+        let existing = data.mods.iter().find(|m| {
+            (target_nexus.is_some() && m.nexus_mod_id == target_nexus)
+                || m.name.eq_ignore_ascii_case(target_name)
+                || (!target_folder.is_empty() && crate::profiles::get_mod_folder_name(m).eq_ignore_ascii_case(target_folder))
+        }).cloned();
+
+        (data.settings.game_path.clone(), data.settings.program_path.clone(), existing)
     };
 
     if game_path.is_empty() {
         crate::logger::log("install_mod_with_manifest: Error - Game path not configured");
         return Err("No game path configured. Set it first.".to_string());
     }
+
+    // Clean-slate update: snapshot text configs and wipe old mod directory before installing new files
+    let old_snapshot = if let Some(ref existing) = existing_mod_info {
+        let snap = super::clean_slate::snapshot_mod_text_files(Path::new(&game_path), existing);
+        super::clean_slate::purge_existing_mod_files(Path::new(&game_path), existing);
+        snap
+    } else {
+        std::collections::HashMap::new()
+    };
 
     let mod_type_str = match manifest.mod_type {
         crate::models::ModType::Ue4ss => "ue4ss",
@@ -131,6 +150,21 @@ pub async fn install_mod_with_manifest(
     // Temp/nexus filenames (nexus_*, disc_*, temp_*) are already handled inside copy_to_library.
     final_mod.source_zip = Path::new(&zip_path).file_name().unwrap_or_default().to_string_lossy().to_string();
     final_mod.fomod_choices = manifest.fomod_choices.clone();
+
+    if let Some(ref existing) = existing_mod_info {
+        if final_mod.custom_name.is_none() && existing.custom_name.is_some() {
+            final_mod.custom_name = existing.custom_name.clone();
+        }
+        if final_mod.custom_notes.is_none() && existing.custom_notes.is_some() {
+            final_mod.custom_notes = existing.custom_notes.clone();
+        }
+    }
+
+    let config_diffs = if !old_snapshot.is_empty() {
+        super::clean_slate::diff_exact_match_configs(&old_snapshot, Path::new(&game_path), &final_mod)
+    } else {
+        Vec::new()
+    };
 
     let parsed_nexus = crate::nexus::parse_mod_filename(&final_mod.source_zip);
     if let Some(ref pv) = parsed_nexus.version {
@@ -280,7 +314,12 @@ pub async fn install_mod_with_manifest(
             })
         };
 
-        // Remove existing mod with the same ID if it is an update
+        // Remove existing mod with the same ID or existing match if it is an update
+        if let Some(ref ex) = existing_mod_info {
+            if let Some(pos) = data.mods.iter().position(|m| m.id == ex.id) {
+                data.mods.remove(pos);
+            }
+        }
         if let Some(pos) = data.mods.iter().position(|m| m.id == final_mod.id) {
             data.mods.remove(pos);
         }
@@ -328,5 +367,12 @@ pub async fn install_mod_with_manifest(
         percent: 100,
     });
 
-    Ok(serde_json::to_value(&final_mod).map_err(|e| e.to_string())?)
+    let mut result_value = serde_json::to_value(&final_mod).map_err(|e| e.to_string())?;
+    if !config_diffs.is_empty() {
+        if let Some(obj) = result_value.as_object_mut() {
+            obj.insert("configDiffs".to_string(), serde_json::to_value(&config_diffs).unwrap_or_default());
+        }
+    }
+
+    Ok(result_value)
 }

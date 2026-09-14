@@ -4,6 +4,25 @@ import { mainDom, detailDom, discoveryDom, settingsDom, scannerDom, installerDom
 
 export function setupGlobalShortcuts(): void {
   document.addEventListener('keydown', (e) => {
+    // Global UI Zoom Shortcuts (Ctrl +, Ctrl -, Ctrl 0)
+    if (e.ctrlKey || e.metaKey) {
+      if (e.key === '+' || e.key === '=' || e.code === 'NumpadAdd') {
+        e.preventDefault();
+        import('../utils/zoom').then(({ adjustUiScale }) => adjustUiScale(0.05));
+        return;
+      }
+      if (e.key === '-' || e.key === '_' || e.code === 'NumpadSubtract') {
+        e.preventDefault();
+        import('../utils/zoom').then(({ adjustUiScale }) => adjustUiScale(-0.05));
+        return;
+      }
+      if (e.key === '0' || e.code === 'Numpad0') {
+        e.preventDefault();
+        import('../utils/zoom').then(({ resetUiScale }) => resetUiScale());
+        return;
+      }
+    }
+
     if (e.key === 'Escape') {
       // 1. Confirm / Prompt custom overlays (highest z-index, handled by their own listeners)
       const confirmOverlay = document.querySelector('.confirm-overlay');

@@ -53,12 +53,22 @@ pub fn resolve_path_in_game(game_path: &Path, raw_path: &str) -> PathBuf {
         return candidate1;
     }
 
+    // Fallback check for Game Pass outer folder encapsulation (game_path/Content/...)
+    let candidate_content = game_path.join("Content").join(&clean);
+    if candidate_content.exists() {
+        return candidate_content;
+    }
+
     // If game_path ends with "Pal" and clean starts with "Pal/" or "Pal\"
     let clean_norm = clean.replace('\\', "/");
     if let Some(stripped) = clean_norm.strip_prefix("Pal/").or_else(|| clean_norm.strip_prefix("pal/")) {
         let candidate2 = game_path.join(stripped);
         if candidate2.exists() {
             return candidate2;
+        }
+        let candidate_content_pal = game_path.join("Content").join(stripped);
+        if candidate_content_pal.exists() {
+            return candidate_content_pal;
         }
         if let Some(parent) = game_path.parent() {
             let candidate3 = parent.join(&clean);

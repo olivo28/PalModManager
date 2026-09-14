@@ -276,6 +276,17 @@ async function performFomodInstall(): Promise<void> {
     });
 
     bus.emit('mods:refresh', undefined);
+
+    // If config diffs were detected from a previous installation of the exact same file, show config recovery modal
+    const diffs = (installedMod as any).configDiffs;
+    if (diffs && Array.isArray(diffs) && diffs.length > 0) {
+      try {
+        const { showConfigDiffModal } = await import('../installer/diffModal');
+        showConfigDiffModal(diffs, installedMod.id);
+      } catch (diffErr) {
+        console.warn('[FOMOD] Could not open config diff modal:', diffErr);
+      }
+    }
   } catch (err: any) {
     console.error('[FOMOD] Installation failed:', err);
     bus.emit('toast:show', {

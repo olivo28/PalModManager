@@ -7,6 +7,7 @@ pub mod install_standard;
 pub mod install_manifest;
 pub mod update;
 pub mod diff;
+pub mod clean_slate;
 
 // Re-export utils
 pub use utils::{check_mod_dependencies, sync_altermatic_helper};

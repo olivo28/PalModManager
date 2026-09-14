@@ -1291,6 +1291,8 @@
     "folder_profile": "📂 アクティブプロファイルフォルダー",
     "toolbar_scale_label": "ツールバーのサイズ",
     "toolbar_scale_hint": "上部ツールバーのアイコンやボタンの大きさを調整します",
+    "ui_scale_label": "UIスケール (拡大縮小)",
+    "ui_scale_hint": "インターフェース全体とテキストの表示倍率を調整します (Ctrl + / Ctrl -)",
     "theme_label": "テーマ",
     "theme_hint": "ダークモードとライトモードを切り替えます",
     "btn_theme_light": "ライトテーマに切り替え",
@@ -1586,6 +1588,7 @@
     "banner_dismiss_title": "このセッション中は警告を非表示"
   },
   "toasts": {
+    "zoom_level": "🔍 画面倍率: {percent}%",
     "downloading_dep": "GitHub から {dep} をダウンロード中...",
     "installing_dep": "{dep} をインストール中...",
     "updating_dep": "{dep} を更新中...",

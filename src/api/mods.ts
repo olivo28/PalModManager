@@ -54,6 +54,13 @@ export async function buildFomodManifest(
   return invoke('build_fomod_manifest', { payload });
 }
 
+export async function deduceFomodChoices(
+  modId: string,
+  zipPath: string
+): Promise<Record<string, string[]>> {
+  return invoke('deduce_fomod_choices', { modId, zipPath });
+}
+
 export async function removeMod(modId: string): Promise<{ success: boolean }> {
   return invoke('remove_mod', { modId });
 }

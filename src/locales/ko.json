@@ -1291,6 +1291,8 @@
     "folder_profile": "📂 활성 프로필 폴더",
     "toolbar_scale_label": "도구 모음 크기",
     "toolbar_scale_hint": "상단 도구 모음 아이콘 및 버튼의 크기를 조절합니다",
+    "ui_scale_label": "UI 배율 (화면 확대/축소)",
+    "ui_scale_hint": "전체 인터페이스 크기 및 텍스트 배율을 조절합니다 (Ctrl + / Ctrl -)",
     "theme_label": "인터페이스 테마",
     "theme_hint": "다크 모드와 라이트 모드 간 전환",
     "btn_theme_light": "라이트 테마로 전환",
@@ -1586,6 +1588,7 @@
     "banner_dismiss_title": "이번 세션 동안 이 알림 숨기기"
   },
   "toasts": {
+    "zoom_level": "🔍 인터페이스 배율: {percent}%",
     "downloading_dep": "GitHub에서 {dep} 다운로드 중...",
     "installing_dep": "{dep} 설치 중...",
     "updating_dep": "{dep} 업데이트 중...",

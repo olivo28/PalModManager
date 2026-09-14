@@ -168,21 +168,22 @@ export function openSettingsModal(): void {
     }
   }
 
-  const scaleInput = settingsDom.elMaybe('settings-toolbar-scale');
-  const scaleValue = settingsDom.elMaybe('settings-toolbar-scale-value');
-  const initialScale = state.currentSettings?.toolbarScale || 1.0;
+  const scaleInput = settingsDom.elMaybe('settings-ui-scale') || settingsDom.elMaybe('settings-toolbar-scale');
+  const scaleValue = settingsDom.elMaybe('settings-ui-scale-value') || settingsDom.elMaybe('settings-toolbar-scale-value');
+  const initialScale = state.currentSettings?.uiScale || state.currentSettings?.toolbarScale || 1.0;
   if (scaleInput) {
     scaleInput.value = initialScale.toString();
     if (scaleValue) {
       scaleValue.textContent = `${Math.round(initialScale * 100)}%`;
     }
 
-    scaleInput.addEventListener('input', () => {
+    scaleInput.addEventListener('input', async () => {
       const scale = parseFloat(scaleInput.value);
       if (scaleValue) {
         scaleValue.textContent = `${Math.round(scale * 100)}%`;
       }
-      document.documentElement.style.setProperty('--toolbar-scale', scale.toString());
+      const { applyUiScale } = await import('../../../utils/zoom');
+      applyUiScale(scale, false);
     });
   }
 
@@ -410,8 +411,8 @@ export function closeSettingsModal(): void {
       }
     });
   }
-  const savedScale = getState().currentSettings?.toolbarScale || 1.0;
-  document.documentElement.style.setProperty('--toolbar-scale', savedScale.toString());
+  const savedScale = getState().currentSettings?.uiScale || getState().currentSettings?.toolbarScale || 1.0;
+  import('../../../utils/zoom').then(({ applyUiScale }) => applyUiScale(savedScale));
 }
 
 export function openSettingsToTab(tabName: string): void {

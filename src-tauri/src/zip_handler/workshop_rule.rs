@@ -45,6 +45,9 @@ pub fn try_resolve_workshop_routing(
     archive_files: &[String],
     game_path: &Path,
 ) -> Option<WorkshopResolvedRouting> {
+    let canonical_root = crate::dependency_checker::detect_game_root(game_path).unwrap_or_else(|| game_path.to_path_buf());
+    let game_path = &canonical_root;
+
     let info: WorkshopInfoJson = serde_json::from_value(info_json_val.clone()).ok()?;
     let install_rules = info.install_rule.as_ref()?;
     if install_rules.is_empty() {

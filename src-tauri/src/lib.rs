@@ -175,6 +175,7 @@ pub fn run() {
             settings_commands::set_force_load_order_palschema,
             settings_commands::set_custom_data_path,
             settings_commands::set_toolbar_scale,
+            settings_commands::set_ui_scale,
             settings_commands::set_language,
             settings_commands::set_dns_resolver,
             settings_commands::set_cache_remote_images,
@@ -216,6 +217,7 @@ pub fn run() {
             install::install_manifest::install_mod_with_manifest,
             fomod::get_fomod_config,
             fomod::build_fomod_manifest,
+            fomod::deduce_fomod_choices,
             install::diff::preview_config_diff,
             config_commands::read_config,
             config_commands::save_config,
@@ -404,7 +406,19 @@ pub fn run() {
         .setup(move |app| {
             let state = app.state::<AppState>();
             let settings = {
-                let data = state.data.lock().unwrap();
+                let mut data = state.data.lock().unwrap();
+                if !data.settings.game_path.is_empty() {
+                    let gp = std::path::Path::new(&data.settings.game_path);
+                    if let Some(canonical) = crate::dependency_checker::detect_game_root(gp) {
+                        let canon_str = canonical.to_string_lossy().to_string();
+                        if canon_str != data.settings.game_path {
+                            crate::logger::log(&format!("setup: Normalized Game Pass game root: {} -> {}", data.settings.game_path, canon_str));
+                            data.settings.game_path = canon_str;
+                            let data_clone = data.clone();
+                            let _ = db::save_db(&data_clone.settings.program_path, &data_clone);
+                        }
+                    }
+                }
                 data.settings.clone()
             };
             if let Some(window) = app.get_webview_window("main") {

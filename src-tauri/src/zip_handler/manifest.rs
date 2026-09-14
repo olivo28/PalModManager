@@ -33,6 +33,9 @@ pub fn build_manifest_from_files_with_folder(
 ) -> Result<crate::models::InstallManifest, String> {
     use crate::models::{InstallManifest, FileRoute, RouteType, ModType};
 
+    let canonical_game_root = crate::dependency_checker::detect_game_root(game_path).unwrap_or_else(|| game_path.to_path_buf());
+    let game_path = &canonical_game_root;
+
     let mut custom_routes_map = std::collections::HashMap::new();
     if let Some(ref modinfo) = modinfo_data {
         if let Some(ws_manifest) = super::workshop_rule::try_build_workshop_manifest(modinfo, files, filename, game_path, custom_display_name.as_deref()) {

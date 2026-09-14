@@ -45,6 +45,10 @@ export async function setToolbarScale(scale: number): Promise<AppSettings> {
   return invoke('set_toolbar_scale', { scale });
 }
 
+export async function setUiScale(scale: number): Promise<AppSettings> {
+  return invoke('set_ui_scale', { scale });
+}
+
 export async function setUe4ssControlMode(mode: string): Promise<AppSettings> {
   return invoke('set_ue4ss_control_mode', { mode });
 }

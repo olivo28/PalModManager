@@ -1,6 +1,6 @@
 use palmodmanager_lib::commands::dependency::status::{is_remote_newer, compare_versions, parse_dmy};
 use palmodmanager_lib::commands::dependency::vault::{extract_version_from_vault_filename, sanitize_version_tag};
-use palmodmanager_lib::dependency_checker::check_ue4ss_latest;
+use palmodmanager_lib::dependency_checker::{check_ue4ss_latest, detect_game_root, get_binaries_dir};
 
 #[test]
 fn test_directional_semver_comparisons() {
@@ -177,3 +177,4 @@ fn test_dependency_manifest_pmm_recording_and_legacy_migration() {
     assert!(ps_pmm_file.exists(), "palschema.pmm.json must exist after migration");
     assert!(!legacy_ps.exists(), "legacy palschema.manifest.json must be removed");
 }
+

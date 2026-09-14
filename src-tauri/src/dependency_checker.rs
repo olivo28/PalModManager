@@ -44,11 +44,12 @@ pub fn get_file_date(path: &str) -> Option<String> {
 }
 
 pub fn get_binaries_dir(game_path: &Path) -> std::path::PathBuf {
-    let wingdk = game_path.join("Pal").join("Binaries").join("WinGDK");
+    let root = detect_game_root(game_path).unwrap_or_else(|| game_path.to_path_buf());
+    let wingdk = root.join("Pal").join("Binaries").join("WinGDK");
     if wingdk.exists() {
         wingdk
     } else {
-        game_path.join("Pal").join("Binaries").join("Win64")
+        root.join("Pal").join("Binaries").join("Win64")
     }
 }
 
@@ -101,9 +102,21 @@ pub fn detect_game_root(path: &Path) -> Option<std::path::PathBuf> {
             return Some(current);
         }
         
-        // Also fallback validation for simple game structure (just folder matching)
+        // Fallback validation for simple game structure (just folder matching)
         if has_paks && (current.join("Pal/Binaries/Win64").exists() || current.join("Pal/Binaries/WinGDK").exists()) {
             return Some(current);
+        }
+
+        // Xbox Game Pass encapsulation check: outer folder wrapping Content\Pal\...
+        let content_dir = current.join("Content");
+        let content_paks = content_dir.join("Pal/Content/Paks").exists();
+        let content_wingdk_exe = content_dir.join("Pal/Binaries/WinGDK/Palworld-WinGDK-Shipping.exe").exists();
+        let content_win64_exe = content_dir.join("Pal/Binaries/Win64/Palworld-Win64-Shipping.exe").exists();
+        if content_paks && (content_wingdk_exe || content_win64_exe) {
+            return Some(content_dir);
+        }
+        if content_paks && (content_dir.join("Pal/Binaries/WinGDK").exists() || content_dir.join("Pal/Binaries/Win64").exists()) {
+            return Some(content_dir);
         }
 
         if let Some(parent) = current.parent() {
@@ -610,3 +623,39 @@ pub async fn check_palschema_latest() -> Result<String, String> {
         .ok_or_else(|| "No tag_name in response".to_string())?;
     Ok(tag.to_string())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_detect_game_root_gamepass_content_wrapper() {
+        let temp_dir = std::env::temp_dir().join(format!("pmm_test_gp_{}", uuid::Uuid::new_v4()));
+        let palworld = temp_dir.join("Palworld");
+        let content = palworld.join("Content");
+        let paks = content.join("Pal").join("Content").join("Paks");
+        let wingdk = content.join("Pal").join("Binaries").join("WinGDK");
+        std::fs::create_dir_all(&paks).unwrap();
+        std::fs::create_dir_all(&wingdk).unwrap();
+        std::fs::write(wingdk.join("Palworld-WinGDK-Shipping.exe"), b"MZ").unwrap();
+        std::fs::write(palworld.join("B0E91CD1-8929-451B-A14D-8CE236A4964F"), b"MSSTORE").unwrap();
+
+        // 1. Detection from outer \Palworld folder
+        let detected_from_outer = detect_game_root(&palworld);
+        assert_eq!(detected_from_outer, Some(content.clone()));
+
+        // 2. Detection from canonical \Palworld\Content folder
+        let detected_from_content = detect_game_root(&content);
+        assert_eq!(detected_from_content, Some(content.clone()));
+
+        // 3. Detection from deep subfolder (e.g. WinGDK)
+        let detected_from_sub = detect_game_root(&wingdk);
+        assert_eq!(detected_from_sub, Some(content.clone()));
+
+        // 4. get_binaries_dir resolution
+        assert_eq!(get_binaries_dir(&palworld), wingdk);
+
+        let _ = std::fs::remove_dir_all(&temp_dir);
+    }
+}
+
