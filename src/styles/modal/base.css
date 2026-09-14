@@ -21,9 +21,9 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  width: 500px;
+  width: min(calc(500px * var(--ui-scale, 1)), 90vw);
   max-width: 90vw;
-  max-height: 85vh;
+  max-height: 88vh;
   display: flex;
   flex-direction: column;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
@@ -39,7 +39,7 @@
 }
 
 #install-modal .modal {
-  width: 820px !important;
+  width: min(calc(820px * var(--ui-scale, 1)), 95vw) !important;
   max-width: 95vw;
   min-height: 240px;
   transition: width 0.3s ease;

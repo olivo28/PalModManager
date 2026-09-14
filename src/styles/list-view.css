@@ -20,7 +20,7 @@
 
 /* Header Row styling */
 .list-header-row {
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   font-weight: 700 !important;
   color: var(--text-muted) !important;
   text-transform: uppercase !important;
@@ -80,7 +80,7 @@
 
 .list-row-card .name-cell {
   font-weight: 600 !important;
-  font-size: 13px !important;
+  font-size: var(--text-base, 13px) !important;
   color: var(--text-primary) !important;
   gap: 8px !important;
 }
@@ -97,7 +97,7 @@
 
 .list-row-card .type-cell .mod-card-type {
   padding: 2px 6px !important;
-  font-size: 9px !important;
+  font-size: var(--text-xs, 9.5px) !important;
   font-weight: 700 !important;
   border-radius: 4px !important;
   text-transform: uppercase !important;
@@ -105,24 +105,24 @@
 
 .list-row-card .version-cell {
   color: var(--text-secondary) !important;
-  font-size: 12px !important;
+  font-size: var(--text-sm, 11px) !important;
   font-weight: 600 !important;
 }
 
 .list-row-card .path-cell {
   color: var(--text-muted) !important;
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   font-family: monospace !important;
 }
 
 .list-row-card .extra-cell {
   color: var(--text-muted) !important;
-  font-size: 12px !important;
+  font-size: var(--text-sm, 11px) !important;
 }
 
 .list-row-card .date-cell {
   color: var(--text-muted) !important;
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
 }
 
 .list-row-card .action-cell {
@@ -138,7 +138,7 @@
   border: none !important;
   color: var(--text-primary) !important;
   cursor: pointer !important;
-  font-size: 12px !important;
+  font-size: var(--text-sm, 11px) !important;
   padding: 4px !important;
 }
 
@@ -168,7 +168,7 @@
   justify-content: center !important;
   width: 16px !important;
   height: 16px !important;
-  font-size: 10px !important;
+  font-size: var(--text-xs, 9.5px) !important;
   color: var(--text-muted) !important;
   transition: transform 0.15s ease, color 0.15s ease !important;
   user-select: none !important;
@@ -196,7 +196,7 @@
   color: var(--accent) !important;
   opacity: 0.65 !important;
   font-family: monospace !important;
-  font-size: 13px !important;
+  font-size: var(--text-base, 13px) !important;
   user-select: none !important;
   margin-right: 2px !important;
 }
@@ -272,7 +272,7 @@
   justify-content: center !important;
   flex-shrink: 0 !important;
   line-height: 1 !important;
-  font-size: 10px !important;
+  font-size: var(--text-xs, 9.5px) !important;
   transition: all 0.15s ease !important;
 }
 
@@ -314,7 +314,7 @@
   height: 28px !important;
   padding: 0 14px !important;
   min-width: 84px !important;
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   font-weight: 600 !important;
   white-space: nowrap !important;
   border-radius: 4px !important;
@@ -331,7 +331,7 @@
   min-width: 28px !important;
   max-width: 28px !important;
   padding: 0 !important;
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   border-radius: 4px !important;
   line-height: 1 !important;
   box-sizing: border-box !important;
@@ -340,7 +340,7 @@
 .library-list-row .library-version-select {
   height: 28px !important;
   padding: 0 8px !important;
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   border-radius: 4px !important;
   box-sizing: border-box !important;
 }
@@ -361,7 +361,7 @@
   right: auto !important;
   box-shadow: none !important;
   vertical-align: middle !important;
-  font-size: 8.5px !important;
+  font-size: var(--text-xs, 9.5px) !important;
   padding: 1px 5px !important;
   line-height: 1.3 !important;
 }
@@ -410,12 +410,12 @@
   display: flex !important;
   gap: 16px !important;
   flex-wrap: wrap !important;
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   color: var(--text-muted) !important;
 }
 
 .library-drawer-desc {
-  font-size: 11px !important;
+  font-size: var(--text-sm, 11px) !important;
   color: var(--text-secondary) !important;
   line-height: 1.5 !important;
   word-break: break-word !important;

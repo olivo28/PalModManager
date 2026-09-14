@@ -25,17 +25,19 @@
 #status-filter-bar {
   display: flex;
   gap: 1px;
+  flex-shrink: 0;
 }
 
 .status-filter-btn {
-  padding: 2px 6px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   border: 1px solid transparent;
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 8px;
+  font-size: var(--text-2xs, 8px);
   font-weight: 700;
   transition: all 0.15s;
+  white-space: nowrap;
 }
 
 .status-filter-btn:hover {
@@ -123,11 +125,13 @@
 
 #search-input {
   width: 100%;
-  padding: 3px 6px;
+  padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
+  height: calc(26px * var(--ui-scale, 1));
+  box-sizing: border-box;
 }
 
 #search-input:focus {
@@ -146,17 +150,18 @@
 }
 
 .sort-select {
-  padding: 3px 8px;
+  padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   border-radius: var(--radius-sm, 3px);
   cursor: pointer;
   outline: none;
   transition: all 0.15s ease;
-  height: 24px;
+  height: calc(26px * var(--ui-scale, 1));
+  box-sizing: border-box;
 }
 
 .sort-select:hover {
@@ -170,8 +175,8 @@
 }
 
 .layout-btn {
-  width: 24px;
-  height: 24px;
+  width: calc(26px * var(--ui-scale, 1));
+  height: calc(26px * var(--ui-scale, 1));
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -204,14 +209,16 @@
 }
 
 .toolbar-btn {
-  padding: 3px 6px;
+  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   background: var(--bg-primary);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   line-height: 1;
   transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .toolbar-btn:hover {
@@ -233,15 +240,16 @@
 }
 
 .toolbar-btn-sm {
-  padding: 2px 5px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   background: transparent;
   color: var(--text-muted);
   border: 1px solid var(--border);
   cursor: pointer;
-  font-size: 8px;
+  font-size: var(--text-2xs, 8px);
   font-weight: 600;
   transition: all 0.15s;
   white-space: nowrap;
+  flex-shrink: 0;
 }
 
 .toolbar-btn-sm:hover {
@@ -254,10 +262,10 @@
   flex: 1;
   overflow-y: auto;
   overflow-x: hidden;
-  padding: 8px;
+  padding: calc(8px * var(--ui-scale, 1));
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(calc(210px * var(--ui-scale, 1)), 1fr));
+  gap: calc(8px * var(--ui-scale, 1));
   align-content: start;
 }
 

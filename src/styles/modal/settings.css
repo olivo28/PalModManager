@@ -1,8 +1,8 @@
 
 #settings-modal .modal {
-  width: 980px;
+  width: calc(980px * var(--ui-scale, 1));
   max-width: 96vw;
-  height: 740px;
+  height: calc(740px * var(--ui-scale, 1));
   max-height: 92vh;
   display: flex;
   flex-direction: column;
@@ -25,7 +25,7 @@
 }
 
 .settings-sidebar-nav {
-  width: 220px;
+  width: calc(220px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border-right: 1px solid var(--border);
   display: flex;
@@ -44,7 +44,7 @@
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-secondary);
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   cursor: pointer;
   text-align: left;
@@ -65,7 +65,7 @@
 }
 
 .settings-tab-button .tab-icon {
-  font-size: 15px;
+  font-size: var(--text-md, 14.5px);
   line-height: 1;
   display: flex;
   align-items: center;
@@ -111,7 +111,7 @@
 }
 
 .settings-card-title {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -123,13 +123,13 @@
 }
 
 .settings-group label {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .settings-hint {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-secondary);
 }
 
@@ -165,7 +165,7 @@
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -176,7 +176,7 @@
 }
 
 .settings-path-status {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   margin-top: 2px;
 }
 
@@ -204,7 +204,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 14px;
+  font-size: var(--text-md, 14.5px);
   transition: all 0.2s;
 }
 

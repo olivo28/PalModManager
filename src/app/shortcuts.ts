@@ -1,9 +1,49 @@
 import { closeInstallModal, closeSettingsModal, closeAboutModal } from '../ui/modal';
 import { closeDetailPanel } from '../ui/detailPanel';
 import { mainDom, detailDom, discoveryDom, settingsDom, scannerDom, installerDom } from '../framework';
+import { showToast } from '../ui/toast';
+import { t } from '../utils/i18n';
+import { updateState } from '../state';
+
+let _scaleSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function setupGlobalShortcuts(): void {
   document.addEventListener('keydown', (e) => {
+    // UI Scaling shortcuts (Ctrl + / Ctrl - / Ctrl 0)
+    if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '_' || e.key === '0')) {
+      e.preventDefault();
+      const current = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--ui-scale')) || 1.0;
+      let next = current;
+      if (e.key === '+' || e.key === '=') {
+        next = Math.min(1.4, Math.round((current + 0.05) * 100) / 100);
+      } else if (e.key === '-' || e.key === '_') {
+        next = Math.max(0.85, Math.round((current - 0.05) * 100) / 100);
+      } else if (e.key === '0') {
+        next = 1.0;
+      }
+      if (next !== current) {
+        document.documentElement.style.setProperty('--ui-scale', next.toString());
+        const slider = settingsDom.elMaybe('settings-ui-scale');
+        const badge = settingsDom.elMaybe('settings-ui-scale-val');
+        if (slider) slider.value = next.toString();
+        if (badge) badge.textContent = `${Math.round(next * 100)}%`;
+
+        const percent = Math.round(next * 100);
+        showToast(t('toasts.scale_level', { percent }) || `🔍 UI Scale: ${percent}%`, 'info');
+
+        if (_scaleSaveTimer) clearTimeout(_scaleSaveTimer);
+        _scaleSaveTimer = setTimeout(async () => {
+          try {
+            const { setUiScale } = await import('../api');
+            const updated = await setUiScale(next);
+            updateState({ currentSettings: updated });
+          } catch (err) {
+            console.error('Failed to persist uiScale shortcut:', err);
+          }
+        }, 400);
+      }
+      return;
+    }
     if (e.key === 'Escape') {
       // 1. Confirm / Prompt custom overlays (highest z-index, handled by their own listeners)
       const confirmOverlay = document.querySelector('.confirm-overlay');

@@ -1291,6 +1291,8 @@
     "folder_profile": "📂 Active Profile Folder",
     "toolbar_scale_label": "Toolbar Scale",
     "toolbar_scale_hint": "Adjust the size of the top toolbar icons and buttons",
+    "ui_scale_label": "UI Scale",
+    "ui_scale_hint": "Adjust the global scale of text, buttons, and cards for high-resolution screens (Ctrl + / Ctrl -)",
     "theme_label": "Theme",
     "theme_hint": "Switch between dark and light appearance",
     "btn_theme_light": "Switch to Light Theme",
@@ -1586,6 +1588,7 @@
     "banner_dismiss_title": "Dismiss this warning for this session"
   },
   "toasts": {
+    "scale_level": "🔍 UI Scale: {percent}%",
     "downloading_dep": "Downloading {dep} from GitHub...",
     "installing_dep": "Installing {dep}...",
     "updating_dep": "Updating {dep}...",

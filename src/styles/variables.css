@@ -1,7 +1,17 @@
 :root {
-  --sidebar-w: 62px;
+  --ui-scale: 1;
+  --sidebar-w: calc(62px * var(--ui-scale, 1));
   --radius: 2px;
   --card-radius: 6px;
+
+  /* Dynamically Scaled Typography (Zero zoom) */
+  --text-2xs: calc(8px * var(--ui-scale, 1));
+  --text-xs: calc(9.5px * var(--ui-scale, 1));
+  --text-sm: calc(11px * var(--ui-scale, 1));
+  --text-base: calc(13px * var(--ui-scale, 1));
+  --text-md: calc(14.5px * var(--ui-scale, 1));
+  --text-lg: calc(16.5px * var(--ui-scale, 1));
+  --text-xl: calc(20px * var(--ui-scale, 1));
 }
 
 /* ===== DARK THEME (VS Code-like) ===== */

@@ -17,7 +17,7 @@
 }
 
 .mod-folder-caret {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   transition: transform 0.2s ease;
   color: var(--text-muted);
   display: inline-block;
@@ -29,7 +29,7 @@
 
 .mod-folder-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-md, 14.5px);
   color: var(--text-primary);
 }
 
@@ -46,7 +46,7 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -78,7 +78,7 @@
 /* Root list header style */
 .mod-root-header {
   grid-column: 1 / -1;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -144,15 +144,6 @@
   background: var(--bg-hover) !important;
 }
 
-/* ===== TOOLBAR SCALING ===== */
-#toolbar,
-#library-toolbar,
-#editor-toolbar,
-.packer-toolbar,
-.db-toolbar,
-.db-inspector-toolbar {
-  zoom: var(--toolbar-scale, 1);
-}
 
 /* ===== LOAD ORDER TAB ===== */
 .load-order-item {
@@ -212,7 +203,7 @@
 }
 
 .mod-folder-caret {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   transition: transform 0.2s ease;
   color: var(--text-muted);
   display: inline-block;
@@ -224,7 +215,7 @@
 
 .mod-folder-name {
   font-weight: 700;
-  font-size: 14px;
+  font-size: var(--text-md, 14.5px);
   color: var(--text-primary);
 }
 
@@ -241,7 +232,7 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -273,7 +264,7 @@
 /* Root list header style */
 .mod-root-header {
   grid-column: 1 / -1;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;

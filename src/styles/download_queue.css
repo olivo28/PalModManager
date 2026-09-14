@@ -4,7 +4,7 @@
   position: fixed;
   bottom: 24px;
   left: calc(var(--sidebar-w, 62px) + 16px);
-  width: 360px;
+  width: calc(360px * var(--ui-scale, 1));
   max-width: calc(100vw - var(--sidebar-w, 62px) - 32px);
   background: var(--bg-secondary, #1a1d24);
   border: 1px solid var(--border, rgba(255, 255, 255, 0.12));
@@ -41,7 +41,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text-primary, #ffffff);
 }
@@ -49,7 +49,7 @@
 .nxm-tray-badge {
   background: var(--accent, #0078d4);
   color: #ffffff;
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   padding: 1px 6px;
   border-radius: 10px;
@@ -70,7 +70,7 @@
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   transition: all 0.15s ease;
 }
 
@@ -111,8 +111,8 @@
 }
 
 .nxm-queue-thumb {
-  width: 36px;
-  height: 36px;
+  width: calc(36px * var(--ui-scale, 1));
+  height: calc(36px * var(--ui-scale, 1));
   border-radius: 6px;
   object-fit: cover;
   background: var(--bg-tertiary, #222630);
@@ -129,7 +129,7 @@
 }
 
 .nxm-queue-name {
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   color: var(--text-primary, #ffffff);
   overflow: hidden;
@@ -138,7 +138,7 @@
 }
 
 .nxm-queue-sub {
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   color: var(--text-muted, #707888);
   display: flex;
   align-items: center;
@@ -149,7 +149,7 @@
 }
 
 .nxm-queue-status-tag {
-  font-size: 9px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   padding: 1px 5px;
   border-radius: 4px;

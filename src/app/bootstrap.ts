@@ -40,9 +40,8 @@ export async function bootstrapApp(): Promise<void> {
     }
     const { updateLoadTabVisibility } = await import('../ui/loadView');
     updateLoadTabVisibility();
-    if (settings.toolbarScale) {
-      document.documentElement.style.setProperty('--toolbar-scale', settings.toolbarScale.toString());
-    }
+    const activeScale = settings.uiScale || settings.toolbarScale || 1.0;
+    document.documentElement.style.setProperty('--ui-scale', activeScale.toString());
 
     if (settings.gamePath) {
       console.time('startupSequence');

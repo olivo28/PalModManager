@@ -32,7 +32,7 @@
 }
 
 .db-toolbar-title {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 700;
   color: var(--text-primary);
   letter-spacing: 0.2px;
@@ -52,7 +52,7 @@
   border-radius: var(--radius);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   padding: 4px 12px;
   transition: background 0.15s, color 0.15s;
@@ -75,7 +75,7 @@
   border-radius: var(--radius);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   padding: 4px 10px;
   transition: border-color 0.15s, color 0.15s;
 }
@@ -176,7 +176,7 @@
   justify-content: space-between;
   align-items: center;
   background: var(--bg-card);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .db-grid-panel::-webkit-scrollbar {
@@ -199,7 +199,7 @@
 .db-grid-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
 }
 
 .db-grid-table thead th {
@@ -208,7 +208,7 @@
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   letter-spacing: 0.5px;
   padding: 8px 12px;
@@ -262,19 +262,19 @@
 
 .db-cell-mono {
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
 }
 
 .db-cell-date {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   white-space: nowrap;
 }
 
 .db-cell-key {
   color: var(--accent);
   font-family: monospace;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   white-space: nowrap;
 }
 
@@ -286,7 +286,7 @@
 }
 
 .db-type-badge {
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   text-transform: uppercase;
 }
@@ -311,7 +311,7 @@
   background: var(--success-dim);
   border-radius: 10px;
   color: var(--success);
-  font-size: 9px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   margin-left: 6px;
   padding: 1px 6px;
@@ -322,20 +322,20 @@
   align-items: center;
   color: var(--text-muted);
   display: flex;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   justify-content: center;
   padding: 40px;
 }
 
 .db-error {
   color: var(--danger);
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   padding: 20px;
 }
 
 .db-empty {
   color: var(--text-muted);
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   padding: 20px;
   text-align: center;
 }
@@ -362,14 +362,14 @@
 
 .db-inspector-label {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   letter-spacing: 0.5px;
   text-transform: uppercase;
 }
 
 .db-json-status {
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   flex: 1;
 }
@@ -388,7 +388,7 @@
   border-radius: var(--radius);
   color: #fff;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   padding: 4px 12px;
   transition: background 0.15s, opacity 0.15s;

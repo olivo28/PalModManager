@@ -18,7 +18,7 @@
   right: 0;
   top: 0;
   bottom: 0;
-  width: min(560px, 90vw);
+  width: min(calc(560px * var(--ui-scale, 1)), 90vw);
   background: var(--bg-secondary);
   border-left: 2px solid var(--accent);
   display: flex;
@@ -43,7 +43,7 @@
 }
 
 #detail-name-header {
-  font-size: 15px;
+  font-size: var(--text-lg, 16px);
   font-weight: 700;
   white-space: nowrap;
   overflow: hidden;
@@ -54,7 +54,7 @@
 
 #detail-name-header .rename-input {
   width: 100%;
-  font-size: 15px;
+  font-size: var(--text-md, 14.5px);
   font-weight: 700;
   padding: 2px 6px;
   border: 1px solid var(--accent);
@@ -68,7 +68,7 @@
   border: 1px solid var(--border);
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   padding: 2px 6px;
   font-weight: 600;
   flex-shrink: 0;
@@ -84,7 +84,7 @@
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 16px;
+  font-size: var(--text-lg, 16.5px);
   cursor: pointer;
   padding: 2px 6px;
   transition: all 0.15s;
@@ -111,12 +111,12 @@
 }
 
 .detail-tab {
-  padding: 8px 16px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
   background: transparent;
   color: var(--text-muted);
   border: none;
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   position: relative;
   transition: color 0.15s;
@@ -173,7 +173,7 @@
 }
 
 .detail-row {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -183,7 +183,7 @@
 
 .detail-label {
   color: var(--text-muted);
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   min-width: 60px;
   flex-shrink: 0;
@@ -192,7 +192,7 @@
 }
 
 .mod-type-badge {
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 700;
   padding: 2px 8px;
   border: 1px solid;
@@ -208,7 +208,7 @@
 .mod-type-badge.altermatic { color: var(--type-altermatic); border-color: var(--type-altermatic-dim); }
 
 .detail-status {
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   padding: 2px 8px;
   border: 1px solid;
   font-weight: 700;
@@ -234,7 +234,7 @@
 }
 
 .detail-section .detail-row {
-  font-size: 12px;
+  font-size: var(--text-sm, 12px);
 }
 
 .nexus-link {
@@ -262,7 +262,7 @@
   color: var(--text-primary);
   border: 1px solid var(--border);
   padding: 3px 6px;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   outline: none;
 }
 
@@ -280,7 +280,7 @@
 }
 
 .detail-tag-chip {
-  font-size: 9px;
+  font-size: var(--text-xs, 9.5px);
   padding: 2px 6px;
   border: 1px solid var(--border);
   color: var(--text-muted);
@@ -289,7 +289,7 @@
 }
 
 .detail-description {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   line-height: 1.7;
   color: var(--text-primary);
   padding: 12px;
@@ -305,12 +305,12 @@
   font-weight: 700;
   color: var(--accent);
 }
-.detail-description h1 { font-size: 18px; }
-.detail-description h2 { font-size: 16px; }
-.detail-description h3 { font-size: 14px; }
-.detail-description h4 { font-size: 13px; }
-.detail-description h5 { font-size: 12px; }
-.detail-description h6 { font-size: 11px; }
+.detail-description h1 { font-size: calc(18px * var(--ui-scale, 1)); }
+.detail-description h2 { font-size: calc(16px * var(--ui-scale, 1)); }
+.detail-description h3 { font-size: calc(14px * var(--ui-scale, 1)); }
+.detail-description h4 { font-size: calc(13px * var(--ui-scale, 1)); }
+.detail-description h5 { font-size: calc(12px * var(--ui-scale, 1)); }
+.detail-description h6 { font-size: calc(11px * var(--ui-scale, 1)); }
 
 .detail-description blockquote {
   border-left: 3px solid var(--accent);
@@ -431,7 +431,7 @@
   background: transparent;
   color: var(--text-muted);
   cursor: pointer;
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 600;
   transition: all 0.15s;
 }
@@ -460,7 +460,7 @@
   background: var(--bg-primary);
   color: var(--text-secondary);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   transition: all 0.15s;
   text-align: center;
