@@ -117,7 +117,7 @@ struct PalSchemaManifestEntry {
     pub is_latest: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 struct PalSchemaManifest {
     #[serde(default)]
     pub latest_palschema_version: String,
@@ -430,38 +430,41 @@ pub async fn sync_palschema_schemas(program_path: Option<String>, state: State<'
     }
 
     let manifest: PalSchemaManifest = if let Some(ref mb) = manifest_bytes {
-        serde_json::from_slice(mb).unwrap_or(PalSchemaManifest {
-            latest_palschema_version: "0.6.6".to_string(),
-            latest_game_version: "v1.0.3".to_string(),
-            latest_steam_build_id: "24575825".to_string(),
-            schemas: vec![],
-        })
+        serde_json::from_slice(mb).unwrap_or_default()
     } else {
         let local_manifest = schemas_base.join("manifest.json");
         if local_manifest.exists() {
             let data = fs::read(&local_manifest).map_err(|e| format!("Failed to read local manifest: {}", e))?;
-            serde_json::from_slice(&data).unwrap_or(PalSchemaManifest {
-                latest_palschema_version: "0.6.6".to_string(),
-                latest_game_version: "v1.0.3".to_string(),
-                latest_steam_build_id: "24575825".to_string(),
-                schemas: vec![],
-            })
+            serde_json::from_slice(&data).unwrap_or_default()
         } else {
-            PalSchemaManifest {
-                latest_palschema_version: "0.6.6".to_string(),
-                latest_game_version: "v1.0.3".to_string(),
-                latest_steam_build_id: "24575825".to_string(),
-                schemas: vec![],
-            }
+            PalSchemaManifest::default()
         }
     };
 
     // 2. Select target entry (latest or first)
     let target_entry = manifest.schemas.iter().find(|s| s.is_latest).or_else(|| manifest.schemas.first());
-    let filename = target_entry
+    let mut filename = target_entry
         .map(|e| e.schemas_filename.clone())
-        .unwrap_or_else(|| "palschema_schemas_0.6.6.zip".to_string());
+        .unwrap_or_default();
     let expected_sha256 = target_entry.map(|e| e.sha256.clone()).unwrap_or_default();
+
+    // If filename is empty, scan schemas_base for any palschema_schemas_*.zip or *.zip
+    if filename.is_empty() {
+        if let Ok(entries) = fs::read_dir(&schemas_base) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.is_file() && p.extension().map(|e| e == "zip").unwrap_or(false) {
+                    if let Some(fname) = p.file_name().and_then(|n| n.to_str()) {
+                        filename = fname.to_string();
+                        break;
+                    }
+                }
+            }
+        }
+    }
+    if filename.is_empty() {
+        filename = "palschema_schemas.zip".to_string();
+    }
     let target_path = schemas_base.join(&filename);
 
     // 3. Check if local file is already present and matches sha256

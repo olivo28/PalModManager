@@ -1,9 +1,22 @@
 {
   "schema_version": "1.0.0",
-  "latest_game_version": "v1.0.4",
-  "latest_steam_build_id": "25094871",
-  "updated_at": "2026-09-07T16:19:48.814Z",
+  "latest_game_version": "v1.0.5",
+  "latest_steam_build_id": "25246127",
+  "updated_at": "2026-09-15T20:54:38.985Z",
   "uht": [
+    {
+      "game_version": "v1.0.5",
+      "steam_build_id": "25246127",
+      "app_id": 1623730,
+      "uht_filename": "Palworld_UHT_SDK_25246127.zip",
+      "uht_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/uht/Palworld_UHT_SDK_25246127.zip",
+      "sha256": "6cbef95cb8d6d36d8b07c583d1a2c121273142ba52e1f2b4666e1c1c4bb36134",
+      "file_size_bytes": 11753719,
+      "engine_version": "UE5.1.1",
+      "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-2281fa31",
+      "is_latest": true,
+      "total_files": 24076
+    },
     {
       "game_version": "v1.0.4",
       "steam_build_id": "25094871",
@@ -14,7 +27,7 @@
       "file_size_bytes": 11753719,
       "engine_version": "UE5.1.1",
       "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-2281fa31",
-      "is_latest": true,
+      "is_latest": false,
       "total_files": 24076
     }
   ]

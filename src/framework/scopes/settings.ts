@@ -103,10 +103,12 @@ export interface SettingsDomMap {
   'btn-sync-usmap-icon': HTMLElement;
   'settings-sdk-badge': HTMLElement;
   'settings-sdk-details': HTMLElement;
+  'settings-sdk-game-ver'?: HTMLElement;
   'settings-sdk-source': HTMLElement;
   'settings-sdk-classes-count': HTMLElement;
   'settings-sdk-funcs-count': HTMLElement;
   'settings-sdk-path': HTMLElement;
+  'settings-sdk-hash'?: HTMLElement;
   'btn-sync-sdk': HTMLButtonElement;
   'btn-sync-sdk-icon': HTMLElement;
   'btn-import-sdk': HTMLButtonElement;
@@ -121,18 +123,22 @@ export interface SettingsDomMap {
   'btn-sync-blueprints-icon': HTMLElement;
   'settings-datatables-badge': HTMLElement;
   'settings-datatables-details': HTMLElement;
+  'settings-datatables-game-ver'?: HTMLElement;
   'settings-datatables-count': HTMLElement;
   'settings-datatables-rows-count': HTMLElement;
   'settings-datatables-active-file': HTMLElement;
+  'settings-datatables-hash'?: HTMLElement;
   'btn-sync-datatables': HTMLButtonElement;
   'btn-sync-datatables-icon': HTMLElement;
   'settings-schemas-badge': HTMLElement;
   'settings-schemas-details': HTMLElement;
   'settings-schemas-version': HTMLElement;
+  'settings-schemas-game-ver'?: HTMLElement;
   'settings-schemas-raw-count': HTMLElement;
   'settings-schemas-domain-count': HTMLElement;
   'settings-schemas-enums': HTMLElement;
   'settings-schemas-source': HTMLElement;
+  'settings-schemas-hash'?: HTMLElement;
   'btn-sync-schemas': HTMLButtonElement;
   'btn-sync-schemas-icon': HTMLElement;
   'settings-image-cache-badge': HTMLElement;
@@ -144,6 +150,7 @@ export interface SettingsDomMap {
   'btn-verify-all-resources': HTMLButtonElement;
   'btn-verify-all-resources-icon': HTMLElement;
   'settings-jmap-badge': HTMLElement;
+  'settings-jmap-game-ver'?: HTMLElement;
   'settings-jmap-file': HTMLElement;
   'settings-jmap-hash': HTMLElement;
   'settings-jmap-local-status': HTMLElement;
@@ -152,6 +159,7 @@ export interface SettingsDomMap {
   'btn-export-jmap': HTMLButtonElement;
   'btn-purge-jmap': HTMLButtonElement;
   'settings-luatypes-badge': HTMLElement;
+  'settings-luatypes-game-ver'?: HTMLElement;
   'settings-luatypes-file': HTMLElement;
   'settings-luatypes-count': HTMLElement;
   'settings-luatypes-hash': HTMLElement;
@@ -161,6 +169,7 @@ export interface SettingsDomMap {
   'btn-export-luatypes': HTMLButtonElement;
   'btn-purge-luatypes': HTMLButtonElement;
   'settings-uht-badge': HTMLElement;
+  'settings-uht-game-ver'?: HTMLElement;
   'settings-uht-file': HTMLElement;
   'settings-uht-count': HTMLElement;
   'settings-uht-hash': HTMLElement;
@@ -170,6 +179,7 @@ export interface SettingsDomMap {
   'btn-export-uht': HTMLButtonElement;
   'btn-purge-uht': HTMLButtonElement;
   'settings-bpsdk-badge': HTMLElement;
+  'settings-bpsdk-game-ver'?: HTMLElement;
   'settings-bpsdk-file': HTMLElement;
   'settings-bpsdk-count': HTMLElement;
   'settings-bpsdk-hash': HTMLElement;

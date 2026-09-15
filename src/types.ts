@@ -379,6 +379,7 @@ export interface UsmapStatus {
   installedBuild: InstalledBuildInfo;
   activeMapping?: MappingEntry | null;
   isSynced: boolean;
+  isBuildMatched?: boolean;
   localUsmapExists: boolean;
   localFileSize: number;
   localSha256?: string | null;

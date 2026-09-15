@@ -41,14 +41,57 @@ export async function refreshDevResourcesStatus(): Promise<void> {
 
     // Update the 4 newly exposed targets: jmap, lua_types, uht, bp_sdk
     for (const res of master.resources) {
+      const isMatched = res.isBuildMatched ?? (master.detectedSteamBuildId ? master.detectedSteamBuildId === res.steamBuildId : true);
       if (res.id === 'jmap') {
-        updateCardUi('jmap', res.isAvailable, res.filename, res.fileSizeBytes, res.sha256, null, res.hasLocalGameDump);
+        updateCardUi('jmap', res.isAvailable, res.isSynced, isMatched, res.filename, res.fileSizeBytes, res.sha256, null, res.hasLocalGameDump, res.steamBuildId, res.gameVersion);
       } else if (res.id === 'lua_types') {
-        updateCardUi('luatypes', res.isAvailable, res.filename, res.fileSizeBytes, res.sha256, res.totalItems, res.hasLocalGameDump);
+        updateCardUi('luatypes', res.isAvailable, res.isSynced, isMatched, res.filename, res.fileSizeBytes, res.sha256, res.totalItems, res.hasLocalGameDump, res.steamBuildId, res.gameVersion);
       } else if (res.id === 'uht') {
-        updateCardUi('uht', res.isAvailable, res.filename, res.fileSizeBytes, res.sha256, res.totalItems, res.hasLocalGameDump);
+        updateCardUi('uht', res.isAvailable, res.isSynced, isMatched, res.filename, res.fileSizeBytes, res.sha256, res.totalItems, res.hasLocalGameDump, res.steamBuildId, res.gameVersion);
       } else if (res.id === 'bp_sdk') {
-        updateCardUi('bpsdk', res.isAvailable, res.filename, res.fileSizeBytes, res.sha256, res.totalItems, res.hasLocalGameDump);
+        updateCardUi('bpsdk', res.isAvailable, res.isSynced, isMatched, res.filename, res.fileSizeBytes, res.sha256, res.totalItems, res.hasLocalGameDump, res.steamBuildId, res.gameVersion);
+      } else if (res.id === 'sdk') {
+        const sdkVerElem = settingsDom.elMaybe('settings-sdk-game-ver');
+        const sdkHashElem = settingsDom.elMaybe('settings-sdk-hash');
+        if (sdkVerElem) {
+          sdkVerElem.textContent = res.steamBuildId ? `${res.gameVersion} (Build: ${res.steamBuildId})` : res.gameVersion;
+        }
+        if (sdkHashElem) {
+          if (res.sha256) {
+            sdkHashElem.textContent = res.sha256.substring(0, 16) + '...' + res.sha256.substring(res.sha256.length - 8);
+            sdkHashElem.title = res.sha256;
+          } else {
+            sdkHashElem.textContent = '---';
+          }
+        }
+        const sdkBadge = settingsDom.elMaybe('settings-sdk-badge');
+        if (sdkBadge && res.isAvailable && res.fileSizeBytes > 0 && !isMatched) {
+          sdkBadge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          sdkBadge.style.background = 'rgba(245,158,11,0.15)';
+          sdkBadge.style.color = '#f59e0b';
+          sdkBadge.style.borderColor = 'rgba(245,158,11,0.3)';
+        }
+      } else if (res.id === 'schemas') {
+        const schVerElem = settingsDom.elMaybe('settings-schemas-game-ver');
+        const schHashElem = settingsDom.elMaybe('settings-schemas-hash');
+        if (schVerElem) {
+          schVerElem.textContent = res.steamBuildId ? `${res.gameVersion} (Build: ${res.steamBuildId})` : res.gameVersion;
+        }
+        if (schHashElem) {
+          if (res.sha256) {
+            schHashElem.textContent = res.sha256.substring(0, 16) + '...' + res.sha256.substring(res.sha256.length - 8);
+            schHashElem.title = res.sha256;
+          } else {
+            schHashElem.textContent = '---';
+          }
+        }
+        const schBadge = settingsDom.elMaybe('settings-schemas-badge');
+        if (schBadge && res.isAvailable && res.fileSizeBytes > 0 && !isMatched) {
+          schBadge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          schBadge.style.background = 'rgba(245,158,11,0.15)';
+          schBadge.style.color = '#f59e0b';
+          schBadge.style.borderColor = 'rgba(245,158,11,0.3)';
+        }
       }
     }
   } catch (err) {
@@ -68,24 +111,36 @@ export async function refreshDevResourcesStatus(): Promise<void> {
 function updateCardUi(
   prefix: 'jmap' | 'luatypes' | 'uht' | 'bpsdk',
   isAvailable: boolean,
+  isSynced: boolean,
+  isBuildMatched: boolean,
   filename: string,
   fileSize: number,
   sha256: string | null,
   totalItems: number | null,
-  hasLocalDump: boolean
+  hasLocalDump: boolean,
+  steamBuildId: string,
+  gameVersion: string
 ): void {
   const badge = settingsDom.elMaybe(`settings-${prefix}-badge` as any);
   const fileElem = settingsDom.elMaybe(`settings-${prefix}-file` as any);
   const hashElem = settingsDom.elMaybe(`settings-${prefix}-hash` as any);
   const countElem = settingsDom.elMaybe(`settings-${prefix}-count` as any);
   const localStatusElem = settingsDom.elMaybe(`settings-${prefix}-local-status` as any);
+  const buildVerElem = settingsDom.elMaybe(`settings-${prefix}-game-ver` as any);
 
   if (badge) {
     if (isAvailable && fileSize > 0) {
-      badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-      badge.style.background = 'rgba(34,197,94,0.15)';
-      badge.style.color = '#22c55e';
-      badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      if (isBuildMatched) {
+        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+        badge.style.background = 'rgba(34,197,94,0.15)';
+        badge.style.color = '#22c55e';
+        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else {
+        badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+        badge.style.background = 'rgba(245,158,11,0.15)';
+        badge.style.color = '#f59e0b';
+        badge.style.borderColor = 'rgba(245,158,11,0.3)';
+      }
     } else if (hasLocalDump) {
       badge.textContent = `📂 ${t('settings.sdk_status_local_found') || 'Local Dump Found'}`;
       badge.style.background = 'rgba(0,188,255,0.15)';
@@ -97,6 +152,10 @@ function updateCardUi(
       badge.style.color = '#ef4444';
       badge.style.borderColor = 'rgba(239,68,68,0.3)';
     }
+  }
+
+  if (buildVerElem) {
+    buildVerElem.textContent = steamBuildId ? `${gameVersion || 'Palworld'} (Build: ${steamBuildId})` : (gameVersion || '---');
   }
 
   if (fileElem) {

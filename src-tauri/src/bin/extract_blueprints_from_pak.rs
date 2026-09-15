@@ -120,8 +120,61 @@ fn main() {
         let _ = fs::create_dir_all(&out_dir);
     }
 
-    let canonical_filename = "Palworld_Blueprints_24575825.json";
-    let out_file = out_dir.join(canonical_filename);
+    let mut build_id = String::new();
+    let mut game_ver = String::new();
+
+    let candidate_acfs = [
+        pak_path.parent()
+            .and_then(|p| p.parent())
+            .and_then(|p| p.parent())
+            .and_then(|p| p.parent())
+            .map(|p| p.join("appmanifest_1623730.acf")),
+        Some(PathBuf::from(r"C:\Program Files (x86)\Steam\steamapps\appmanifest_1623730.acf")),
+    ];
+    for acf_opt in candidate_acfs.into_iter().flatten() {
+        if acf_opt.is_file() {
+            if let Ok(content) = fs::read_to_string(&acf_opt) {
+                for line in content.lines() {
+                    if line.contains("\"buildid\"") {
+                        let parts: Vec<&str> = line.split('"').collect();
+                        if parts.len() >= 4 {
+                            build_id = parts[3].trim().to_string();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        if !build_id.is_empty() {
+            break;
+        }
+    }
+
+    let master_manifest_path = out_dir.join("../manifest.json");
+    if let Ok(content) = fs::read_to_string(&master_manifest_path) {
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) {
+            if build_id.is_empty() {
+                if let Some(b) = v.get("latest_steam_build_id").and_then(|s| s.as_str()) {
+                    build_id = b.to_string();
+                }
+            }
+            if game_ver.is_empty() {
+                if let Some(gv) = v.get("latest_game_version").and_then(|s| s.as_str()) {
+                    game_ver = gv.to_string();
+                }
+            }
+        }
+    }
+
+    if build_id.is_empty() {
+        build_id = "unknown".to_string();
+    }
+    if game_ver.is_empty() {
+        game_ver = format!("v{}", build_id);
+    }
+
+    let canonical_filename = format!("Palworld_Blueprints_{}.json", build_id);
+    let out_file = out_dir.join(&canonical_filename);
 
     let index_payload = BlueprintIndex {
         total_blueprints: blueprints.len(),
@@ -151,13 +204,13 @@ fn main() {
 
     let manifest_content = serde_json::json!({
         "schema_version": "1.0.0",
-        "latest_game_version": "v1.0.3",
-        "latest_steam_build_id": "24575825",
+        "latest_game_version": game_ver,
+        "latest_steam_build_id": build_id,
         "updated_at": chrono::Utc::now().to_rfc3339(),
         "blueprints": [
             {
-                "game_version": "v1.0.3",
-                "steam_build_id": "24575825",
+                "game_version": game_ver,
+                "steam_build_id": build_id,
                 "app_id": 1623730,
                 "blueprints_filename": canonical_filename,
                 "blueprints_url": format!("https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/blueprints/{}", canonical_filename),

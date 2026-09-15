@@ -1,6 +1,6 @@
 use palmodmanager_lib::commands::dependency::status::{is_remote_newer, compare_versions, parse_dmy};
 use palmodmanager_lib::commands::dependency::vault::{extract_version_from_vault_filename, sanitize_version_tag};
-use palmodmanager_lib::dependency_checker::{check_ue4ss_latest, detect_game_root, get_binaries_dir};
+use palmodmanager_lib::dependency_checker::check_ue4ss_latest;
 
 #[test]
 fn test_directional_semver_comparisons() {

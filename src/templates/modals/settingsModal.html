@@ -427,10 +427,12 @@
               <div class="settings-hint font-size-11" data-i18n="settings.sdk_hint">C++ header definitions (Pal.hpp, Engine.hpp, BP_*.hpp) used by the Hook Diagnostic Engine to validate exact UE4SS functions, RPCs, and delegates with zero false positives.</div>
               
               <div id="settings-sdk-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-sdk-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Source:</strong> <span id="settings-sdk-source">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed Classes:</strong> <span id="settings-sdk-classes-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed Functions & Delegates:</strong> <span id="settings-sdk-funcs-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Location:</strong> <span id="settings-sdk-path" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-sdk-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
               <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
@@ -457,6 +459,7 @@
               <div class="settings-hint font-size-11" data-i18n="settings.jmap_hint">Complete JSON AST specification of all Unreal properties, enums, structs, and byte offsets. Powers enum validations, diffing, and AST tooling.</div>
               
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-jmap-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-jmap-file">Palworld.jmap.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-jmap-local-status">Checking...</span></div>
                 <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-jmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
@@ -486,6 +489,7 @@
               <div class="settings-hint font-size-11" data-i18n="settings.luatypes_hint">1,712 EmmyLua definition files (Pal.lua, Engine.lua) providing rich method signatures, parameter info, and autocompletions in Monaco Editor.</div>
               
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-luatypes-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Total Type Files:</strong> <span id="settings-luatypes-count">1,712 files</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-luatypes-file">Palworld_LuaTypes.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-luatypes-local-status">Checking...</span></div>
@@ -516,6 +520,7 @@
               <div class="settings-hint font-size-11" data-i18n="settings.uht_hint">24,076 Unreal Header Tool C++ headers with full UCLASS/UPROPERTY/UFUNCTION annotations for building native C++ plugins and RPC inspection.</div>
               
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-uht-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Total Headers:</strong> <span id="settings-uht-count">24,076 files</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-uht-file">Palworld_UHT_SDK.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-uht-local-status">Checking...</span></div>
@@ -546,6 +551,7 @@
               <div class="settings-hint font-size-11" data-i18n="settings.bpsdk_hint">14,090 dummy asset files replicating Palworld internal asset tree. Enables opening and creating cooked .pak mods inside Unreal Engine 5.1.1 Editor.</div>
               
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-bpsdk-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Total Dummy Assets:</strong> <span id="settings-bpsdk-count">14,090 assets</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-bpsdk-file">Palworld_BP_SDK.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-bpsdk-local-status">Checking...</span></div>
@@ -578,7 +584,7 @@
               <div id="settings-blueprints-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-blueprints-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed Blueprints:</strong> <span id="settings-blueprints-count">0</span></div>
-                <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-blueprints-active-file">Palworld_Blueprints_24575825.json</span></div>
+                <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-blueprints-active-file">---</span></div>
                 <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-blueprints-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
@@ -601,9 +607,11 @@
               <div class="settings-hint font-size-11" data-i18n="settings.datatables_hint">Decoded game row definitions (ItemData, PalData, CharacterData...) and schema templates used for DataTable autocompletion and conflict detection. Synced from official GitHub repository.</div>
               
               <div id="settings-datatables-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+                <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-datatables-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed DataTables:</strong> <span id="settings-datatables-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Total Game Rows:</strong> <span id="settings-datatables-rows-count">0</span></div>
-                <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-datatables-active-file">dt_index.json</span></div>
+                <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-datatables-active-file">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-datatables-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
               <div style="display:flex; gap:8px; margin-top:8px;">
@@ -626,10 +634,12 @@
               
               <div id="settings-schemas-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Specification Version:</strong> <span id="settings-schemas-version">v0.6.6</span></div>
+                <div><strong style="color:var(--text-primary);">Target Game Build:</strong> <span id="settings-schemas-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">DataTable Schemas:</strong> <span id="settings-schemas-raw-count">474</span></div>
                 <div><strong style="color:var(--text-primary);">Domain Models:</strong> <span id="settings-schemas-domain-count">5 models (Items, Pals, Buildings, Skins, Utility)</span></div>
                 <div><strong style="color:var(--text-primary);">Engine Enums:</strong> <span id="settings-schemas-enums">Included (enums.schema.json)</span></div>
                 <div><strong style="color:var(--text-primary);">Active Source:</strong> <span id="settings-schemas-source">Detecting...</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-schemas-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
               </div>
 
               <!-- Special Thanks to Okaetsu Acknowledgment Box -->

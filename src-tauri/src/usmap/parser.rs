@@ -242,8 +242,20 @@ pub fn parse_usmap_file(path: &Path) -> Result<UsmapSchema, String> {
     let total_names = names.len();
     names.sort();
 
+    let mut game_version = String::new();
+    if let Some(parent) = path.parent() {
+        let manifest_path = parent.join("manifest.json");
+        if let Ok(content) = fs::read_to_string(&manifest_path) {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Some(gv) = v.get("latest_game_version").and_then(|s| s.as_str()) {
+                    game_version = gv.to_string();
+                }
+            }
+        }
+    }
+
     Ok(UsmapSchema {
-        game_version: "v1.0.3".to_string(),
+        game_version,
         names,
         enums,
         structs,

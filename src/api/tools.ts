@@ -244,12 +244,18 @@ export interface ReflectionCatalogsStatus {
   totalDatatables: number;
   totalDatatableRows: number;
   datatablesActiveFile: string;
+  datatablesGameVer?: string;
+  datatablesBuildId?: string;
+  datatablesSha256?: string;
+  datatablesSize?: number;
+  datatablesIsBuildMatched?: boolean;
   totalBlueprints: number;
   blueprintsBuildId: string;
   blueprintsGameVer: string;
   blueprintsFilename: string;
   blueprintsSha256: string;
   blueprintsSize: number;
+  blueprintsIsBuildMatched?: boolean;
 }
 
 export interface SyncCatalogResult {
@@ -312,6 +318,7 @@ export interface ResourceItemStatus {
   filename: string;
   isAvailable: boolean;
   isSynced: boolean;
+  isBuildMatched?: boolean;
   fileSizeBytes: number;
   sha256: string | null;
   localPath: string | null;

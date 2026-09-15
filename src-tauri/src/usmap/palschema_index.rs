@@ -105,7 +105,7 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
                 total_raw_schemas: 0,
                 total_domain_schemas: 0,
                 has_enums: false,
-                version: "0.6.7".to_string(),
+                version: "0.6.71".to_string(),
                 author: "Okaetsu".to_string(),
                 source_location: "None".to_string(),
                 schemas_dir: String::new(),
@@ -238,7 +238,7 @@ pub fn get_or_load_palschema_catalog(program_path: &str, game_path: &str) -> Pal
     }
 
     if version.is_empty() {
-        version = "0.6.7".to_string();
+        version = "0.6.71".to_string();
     }
 
     let source = if dir.to_string_lossy().contains("Palworld") {

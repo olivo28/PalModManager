@@ -1408,6 +1408,7 @@
     "schemas_sync_success": "¡Esquemas de PalSchema sincronizados exitosamente!",
     "schemas_sync_uptodate": "Los esquemas de PalSchema ya están actualizados.",
     "status_synced_ready": "Sincronizado y Listo",
+    "status_build_mismatch": "Versión Distinta",
     "status_missing": "Faltante / No Sincronizado",
     "status_error": "Error",
     "sources_title": "Fuentes Oficiales de Frameworks y Dependencias",

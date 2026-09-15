@@ -210,15 +210,22 @@ pub fn get_mappings_status(program_path: &str, game_path: &str) -> UsmapStatus {
         find_best_mapping(m, build_info.build_id.as_deref(), build_info.game_version.as_deref()).cloned()
     });
 
+    let build_matches = match (build_info.build_id.as_deref(), active_mapping.as_ref().and_then(|a| a.steam_build_id.as_deref())) {
+        (Some(detected), Some(mapping_build)) => detected == mapping_build,
+        (Some(_), None) => false,
+        _ => true,
+    };
+
     let is_synced = match (&active_mapping, &local_hash) {
-        (Some(entry), Some(hash)) => hash.to_lowercase() == entry.sha256.to_lowercase(),
-        _ => local_exists && local_size > 1000,
+        (Some(entry), Some(hash)) => hash.to_lowercase() == entry.sha256.to_lowercase() && build_matches,
+        _ => local_exists && local_size > 1000 && build_matches,
     };
 
     UsmapStatus {
         installed_build: build_info,
         active_mapping,
         is_synced,
+        is_build_matched: build_matches,
         local_usmap_exists: local_exists,
         local_file_size: local_size,
         local_sha256: local_hash,

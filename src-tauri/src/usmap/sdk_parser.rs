@@ -388,7 +388,7 @@ pub fn parse_sdk_directory(dir: &Path, source_label: &str) -> Result<SdkIndex, S
         return Err(format!("No C++ header (.hpp) files found in {:?}", dir));
     }
 
-    let mut game_version = "v1.0.3".to_string();
+    let mut game_version = String::new();
     let mut build_id = None;
     let mut sha256 = None;
     let mut generated_at = None;

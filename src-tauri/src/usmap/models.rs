@@ -56,6 +56,8 @@ pub struct UsmapStatus {
     pub installed_build: InstalledBuildInfo,
     pub active_mapping: Option<MappingEntry>,
     pub is_synced: bool,
+    #[serde(default)]
+    pub is_build_matched: bool,
     pub local_usmap_exists: bool,
     pub local_file_size: u64,
     pub local_sha256: Option<String>,
@@ -93,7 +95,7 @@ pub struct MasterVersionEntry {
     pub palschema_version: Option<String>,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct MasterResourceManifest {
     #[serde(alias = "schema_version")]

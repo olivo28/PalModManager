@@ -24,6 +24,7 @@ const RESOURCES_ROOT = path.join(REPO_ROOT, 'resources');
 // Default Steam and UE4SS paths
 const DEFAULT_STEAMAPPS = 'C:\\Program Files (x86)\\Steam\\steamapps';
 const DEFAULT_UE4SS_DIR = path.join(DEFAULT_STEAMAPPS, 'common\\Palworld\\Pal\\Binaries\\Win64\\ue4ss');
+const DEFAULT_GAME_PAK = path.join(DEFAULT_STEAMAPPS, 'common\\Palworld\\Pal\\Content\\Paks\\Pal-Windows.pak');
 
 const isSyncMode = process.argv.includes('--sync');
 const targetArg = process.argv.find(a => a.startsWith('--target='))?.split('=')[1] || null;
@@ -98,8 +99,37 @@ function createZipArchive(sourceDirOrFile, destZipPath, cwdDir) {
   }
 }
 
+function resolveGameVersion(buildId) {
+  const cliVer = process.argv.find(a => a.startsWith('--game-ver='))?.split('=')[1];
+  if (cliVer) return cliVer;
+
+  const masterManifestPath = path.join(RESOURCES_ROOT, 'manifest.json');
+  if (fs.existsSync(masterManifestPath)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(masterManifestPath, 'utf8'));
+      if (manifest.versions && Array.isArray(manifest.versions)) {
+        const found = manifest.versions.find(v => v.steamBuildId === buildId || v.steam_build_id === buildId);
+        if (found && (found.gameVersion || found.game_version)) {
+          return found.gameVersion || found.game_version;
+        }
+      }
+      if (manifest.latestSteamBuildId === buildId || manifest.latest_steam_build_id === buildId) {
+        if (manifest.latestGameVersion || manifest.latest_game_version) {
+          return manifest.latestGameVersion || manifest.latest_game_version;
+        }
+      }
+    } catch {
+      // Fallback
+    }
+  }
+  return `v${buildId}`;
+}
+
 // 1. Detect Steam build ID
 function detectSteamBuildId() {
+  const cliBuild = process.argv.find(a => a.startsWith('--build-id='))?.split('=')[1];
+  if (cliBuild) return cliBuild;
+
   const acfPath = path.join(DEFAULT_STEAMAPPS, 'appmanifest_1623730.acf');
   if (fs.existsSync(acfPath)) {
     try {
@@ -112,7 +142,20 @@ function detectSteamBuildId() {
       // Fallback
     }
   }
-  return '25094871'; // Default detected build for Palworld v1.0.4
+
+  const masterManifestPath = path.join(RESOURCES_ROOT, 'manifest.json');
+  if (fs.existsSync(masterManifestPath)) {
+    try {
+      const manifest = JSON.parse(fs.readFileSync(masterManifestPath, 'utf8'));
+      if (manifest.latestSteamBuildId || manifest.latest_steam_build_id) {
+        return manifest.latestSteamBuildId || manifest.latest_steam_build_id;
+      }
+    } catch {
+      // Fallback
+    }
+  }
+
+  return 'unknown';
 }
 
 // 2. Discover UE4SS Build Commit from filenames
@@ -255,6 +298,32 @@ function getTargets(ue4ssDir, buildId, ue4ssCommit, palschemaVersion) {
       isPalSchema: true,
       version: palschemaVersion,
     },
+    {
+      id: 'blueprints',
+      name: 'Live Blueprints Catalog (.pak)',
+      desc: '20,000+ blueprint asset classes from Pal-Windows.pak',
+      sourcePath: DEFAULT_GAME_PAK,
+      isDirectory: false,
+      isPakTarget: true,
+      resourceDir: path.join(RESOURCES_ROOT, 'blueprints'),
+      targetFileName: `Palworld_Blueprints_${buildId}.json`,
+      manifestKey: 'blueprints',
+      itemKey: 'blueprints_filename',
+      urlKey: 'blueprints_url',
+    },
+    {
+      id: 'datatables',
+      name: 'PalSchema DataTables Catalog (.pak)',
+      desc: 'Cooked DataTables and row definitions from Pal-Windows.pak',
+      sourcePath: DEFAULT_GAME_PAK,
+      isDirectory: false,
+      isPakTarget: true,
+      resourceDir: path.join(RESOURCES_ROOT, 'datatables'),
+      targetFileName: `Palworld_DataTables_${buildId}.json`,
+      manifestKey: 'datatables',
+      itemKey: 'datatables_filename',
+      urlKey: 'datatables_url',
+    },
   ];
 }
 
@@ -318,6 +387,15 @@ function syncTarget(target, status, buildId, ue4ssCommit) {
   console.log(`\n${colors.cyan}>> Processing [${target.id}]: ${target.name}...${colors.reset}`);
   fs.mkdirSync(target.resourceDir, { recursive: true });
 
+  const gameVersion = resolveGameVersion(buildId);
+
+  if (target.isPakTarget) {
+    console.log(`   Extracting ${target.id} directly from Pal-Windows.pak via extract_pak_symbols...`);
+    const cargoCmd = `cargo run --bin extract_pak_symbols -- --pak "${target.sourcePath}" --build-id ${buildId} --game-ver ${gameVersion} --target ${target.id}`;
+    execSync(cargoCmd, { cwd: path.join(REPO_ROOT, 'src-tauri'), stdio: 'inherit' });
+    return;
+  }
+
   const targetFilePath = status.targetFilePath || path.join(target.resourceDir, target.targetFileName);
   const now = new Date().toISOString();
   let fileSize = 0;
@@ -350,7 +428,7 @@ function syncTarget(target, status, buildId, ue4ssCommit) {
   // Update or create manifest
   let manifest = {
     schema_version: '1.0.0',
-    latest_game_version: 'v1.0.4',
+    latest_game_version: gameVersion,
     latest_steam_build_id: buildId,
     updated_at: now,
     [target.manifestKey]: [],
@@ -359,7 +437,7 @@ function syncTarget(target, status, buildId, ue4ssCommit) {
   if (fs.existsSync(status.manifestPath)) {
     try {
       manifest = JSON.parse(fs.readFileSync(status.manifestPath, 'utf8'));
-      manifest.latest_game_version = 'v1.0.4';
+      manifest.latest_game_version = gameVersion;
       manifest.latest_steam_build_id = buildId;
       manifest.updated_at = now;
       if (target.isPalSchema) {
@@ -381,7 +459,7 @@ function syncTarget(target, status, buildId, ue4ssCommit) {
 
   // Build new entry
   const newEntry = {
-    game_version: 'v1.0.4',
+    game_version: gameVersion,
     steam_build_id: buildId,
     app_id: 1623730,
     [target.itemKey]: target.targetFileName,
@@ -399,7 +477,7 @@ function syncTarget(target, status, buildId, ue4ssCommit) {
       newEntry.source = 'CXXHeaderDump';
     } else if (target.isPalSchema) {
       newEntry.palschema_version = target.version;
-      newEntry.total_raw_schemas = 475;
+      newEntry.total_raw_schemas = totalFiles || 477;
       newEntry.total_domain_schemas = 5;
       newEntry.has_enums = true;
     } else {
@@ -425,9 +503,10 @@ function syncTarget(target, status, buildId, ue4ssCommit) {
 function updateMasterManifest(buildId, ue4ssCommit, palschemaVersion) {
   const masterPath = path.join(RESOURCES_ROOT, 'manifest.json');
   const now = new Date().toISOString();
+  const gameVersion = resolveGameVersion(buildId);
   let master = {
     schema_version: '1.0.0',
-    latest_game_version: 'v1.0.4',
+    latest_game_version: gameVersion,
     latest_steam_build_id: buildId,
     updated_at: now,
     versions: [],
@@ -436,7 +515,7 @@ function updateMasterManifest(buildId, ue4ssCommit, palschemaVersion) {
   if (fs.existsSync(masterPath)) {
     try {
       master = JSON.parse(fs.readFileSync(masterPath, 'utf8'));
-      master.latest_game_version = 'v1.0.4';
+      master.latest_game_version = gameVersion;
       master.latest_steam_build_id = buildId;
       master.updated_at = now;
     } catch {}
@@ -451,7 +530,7 @@ function updateMasterManifest(buildId, ue4ssCommit, palschemaVersion) {
   }
 
   const masterEntry = {
-    game_version: 'v1.0.4',
+    game_version: gameVersion,
     steam_build_id: buildId,
     ue4ss_commit: ue4ssCommit,
     engine_version: 'UE5.1.1',
@@ -463,6 +542,8 @@ function updateMasterManifest(buildId, ue4ssCommit, palschemaVersion) {
     uht: `uht/Palworld_UHT_SDK_${buildId}.zip`,
     bp_sdk: `bp_sdk/Palworld_BP_SDK_${buildId}.zip`,
     palschema_version: palschemaVersion,
+    blueprints: `blueprints/Palworld_Blueprints_${buildId}.json`,
+    datatables: `datatables/Palworld_DataTables_${buildId}.json`,
   };
 
   master.versions = master.versions.filter(v => v.steam_build_id !== buildId);
@@ -480,7 +561,7 @@ const ue4ssCommit = detectUe4ssCommit(ue4ssDir);
 const palschemaVersion = detectPalSchemaVersion(ue4ssDir);
 
 console.log(`UE4SS Base Directory:  ${colors.cyan}${ue4ssDir}${colors.reset}`);
-console.log(`Detected Steam Build:  ${colors.green}${buildId}${colors.reset} (Palworld v1.0.4)`);
+console.log(`Detected Steam Build:  ${colors.green}${buildId}${colors.reset} (Palworld ${resolveGameVersion(buildId)})`);
 console.log(`Detected UE4SS Commit: ${colors.yellow}${ue4ssCommit}${colors.reset}`);
 console.log(`Detected PalSchema:    ${colors.cyan}v${palschemaVersion}${colors.reset}\n`);
 

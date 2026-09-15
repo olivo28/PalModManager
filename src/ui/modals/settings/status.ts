@@ -124,6 +124,11 @@ export async function refreshUsmapStatus(): Promise<void> {
         badge.style.background = 'rgba(34,197,94,0.15)';
         badge.style.color = '#22c55e';
         badge.style.borderColor = 'rgba(34,197,94,0.3)';
+      } else if (status.localUsmapExists && status.isBuildMatched === false) {
+        badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+        badge.style.background = 'rgba(245,158,11,0.15)';
+        badge.style.color = '#f59e0b';
+        badge.style.borderColor = 'rgba(245,158,11,0.3)';
       } else if (status.localUsmapExists) {
         badge.textContent = `📦 ${t('settings.usmap_status_available') || 'Available (Bundled)'}`;
         badge.style.background = 'rgba(0,188,255,0.15)';
@@ -138,9 +143,16 @@ export async function refreshUsmapStatus(): Promise<void> {
     }
 
     if (gameVer) {
-      const verText = status.installedBuild.gameVersion || 'Unknown';
-      const buildText = status.installedBuild.buildId ? ` (Steam Build: ${status.installedBuild.buildId})` : '';
-      gameVer.textContent = `${verText}${buildText}`;
+      const mappingVer = status.activeMapping?.gameVersion || status.installedBuild.gameVersion || 'Unknown';
+      const mappingBuild = status.activeMapping?.steamBuildId || '';
+      const gameBuild = status.installedBuild.buildId || '';
+      if (mappingBuild && gameBuild && mappingBuild !== gameBuild) {
+        gameVer.textContent = `${mappingVer} (Mapping: ${mappingBuild} | Game: ${gameBuild})`;
+      } else if (mappingBuild) {
+        gameVer.textContent = `${mappingVer} (Steam Build: ${mappingBuild})`;
+      } else {
+        gameVer.textContent = mappingVer;
+      }
     }
 
     if (activeFile) {
@@ -240,10 +252,17 @@ export async function refreshBlueprintsStatus(): Promise<void> {
 
     if (badge) {
       if (status.totalBlueprints > 0) {
-        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-        badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        if (status.blueprintsIsBuildMatched === false) {
+          badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          badge.style.background = 'rgba(234,179,8,0.15)';
+          badge.style.color = '#eab308';
+          badge.style.borderColor = 'rgba(234,179,8,0.3)';
+        } else {
+          badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+          badge.style.background = 'rgba(34,197,94,0.15)';
+          badge.style.color = '#22c55e';
+          badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        }
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
@@ -289,9 +308,11 @@ export async function refreshBlueprintsStatus(): Promise<void> {
 
 export async function refreshDatatablesStatus(): Promise<void> {
   const badge = settingsDom.elMaybe('settings-datatables-badge');
+  const gameVer = settingsDom.elMaybe('settings-datatables-game-ver');
   const countElem = settingsDom.elMaybe('settings-datatables-count');
   const rowsElem = settingsDom.elMaybe('settings-datatables-rows-count');
   const activeFile = settingsDom.elMaybe('settings-datatables-active-file');
+  const hashElem = settingsDom.elMaybe('settings-datatables-hash');
 
   if (!badge && !countElem) return;
 
@@ -301,16 +322,29 @@ export async function refreshDatatablesStatus(): Promise<void> {
 
     if (badge) {
       if (status.totalDatatables > 0) {
-        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-        badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        if (status.datatablesIsBuildMatched === false) {
+          badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          badge.style.background = 'rgba(234,179,8,0.15)';
+          badge.style.color = '#eab308';
+          badge.style.borderColor = 'rgba(234,179,8,0.3)';
+        } else {
+          badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+          badge.style.background = 'rgba(34,197,94,0.15)';
+          badge.style.color = '#22c55e';
+          badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        }
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
         badge.style.background = 'rgba(239,68,68,0.15)';
         badge.style.color = '#ef4444';
         badge.style.borderColor = 'rgba(239,68,68,0.3)';
       }
+    }
+
+    if (gameVer) {
+      const verText = status.datatablesGameVer || 'Unknown';
+      const buildText = status.datatablesBuildId ? ` (Steam Build: ${status.datatablesBuildId})` : '';
+      gameVer.textContent = `${verText}${buildText}`;
     }
 
     if (countElem) {
@@ -322,7 +356,21 @@ export async function refreshDatatablesStatus(): Promise<void> {
     }
 
     if (activeFile) {
-      activeFile.textContent = status.datatablesActiveFile || 'dt_index.json';
+      if (status.totalDatatables > 0) {
+        const sizeFormatted = status.datatablesSize ? ` (${formatBytes(status.datatablesSize)})` : '';
+        activeFile.textContent = `${status.datatablesActiveFile}${sizeFormatted}`;
+      } else {
+        activeFile.textContent = status.datatablesActiveFile || 'dt_index.json';
+      }
+    }
+
+    if (hashElem) {
+      if (status.datatablesSha256) {
+        hashElem.textContent = status.datatablesSha256.substring(0, 16) + '...' + status.datatablesSha256.substring(status.datatablesSha256.length - 8);
+        hashElem.title = status.datatablesSha256;
+      } else {
+        hashElem.textContent = '---';
+      }
     }
   } catch (e) {
     console.error('Failed to get DataTables catalog status:', e);

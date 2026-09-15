@@ -262,13 +262,14 @@ pub async fn sync_sdk_from_repo(app: tauri::AppHandle, state: State<'_, AppState
                 .or_else(|| arr.first())
         });
 
-    let filename = sdk_entry
+    let mut filename = sdk_entry
         .and_then(|e| e.get("sdk_filename").and_then(|s| s.as_str()))
-        .unwrap_or("Palworld_SDK_25094871.zip");
+        .unwrap_or("")
+        .to_string();
 
     let expected_hash = sdk_entry
         .and_then(|e| e.get("sha256").and_then(|s| s.as_str()))
-        .unwrap_or("4c258ebbef065a9a5929cae772cad068a8fa7bf24441dd452383293f42977338");
+        .unwrap_or("");
 
     let direct_url = sdk_entry
         .and_then(|e| e.get("sdk_url").and_then(|s| s.as_str()))
@@ -278,24 +279,49 @@ pub async fn sync_sdk_from_repo(app: tauri::AppHandle, state: State<'_, AppState
     let mut last_err = String::new();
 
     // 2. Check if bundled local resource exists
-    let rel_bundled = format!("resources/sdk/{}", filename);
-    let bundled_candidates = [
-        rel_bundled.as_str(),
-        "resources/sdk/Palworld_SDK_25094871.zip",
-        "resources/sdk/Palworld_SDK_24575825.zip",
-        "resources/sdk/Palworld_SDK.zip",
-    ];
-    for b_path in &bundled_candidates {
-        if let Some(bundled_zip) = find_bundled_resource(b_path) {
+    if !filename.is_empty() {
+        let rel_bundled = format!("resources/sdk/{}", filename);
+        if let Some(bundled_zip) = find_bundled_resource(&rel_bundled) {
             if let Ok(bytes) = fs::read(&bundled_zip) {
                 let actual_hash = compute_sha256(&bytes);
-                if actual_hash.eq_ignore_ascii_case(expected_hash) {
+                if expected_hash.is_empty() || actual_hash.eq_ignore_ascii_case(expected_hash) {
                     crate::logger::log(&format!("Loaded verified bundled SDK archive from {:?}", bundled_zip));
                     download_bytes = Some(bytes);
-                    break;
                 }
             }
         }
+    }
+
+    // Dynamic directory scan fallback if not yet resolved
+    if download_bytes.is_none() {
+        if let Some(bundled_sdk_dir) = find_bundled_resource("resources/sdk") {
+            if bundled_sdk_dir.is_dir() {
+                if let Ok(entries) = fs::read_dir(&bundled_sdk_dir) {
+                    for entry in entries.flatten() {
+                        let p = entry.path();
+                        if p.is_file() && p.extension().map(|e| e == "zip").unwrap_or(false) {
+                            if let Ok(bytes) = fs::read(&p) {
+                                let actual_hash = compute_sha256(&bytes);
+                                if expected_hash.is_empty() || actual_hash.eq_ignore_ascii_case(expected_hash) {
+                                    crate::logger::log(&format!("Loaded bundled SDK archive from {:?}", p));
+                                    if filename.is_empty() {
+                                        if let Some(fname) = p.file_name().and_then(|n| n.to_str()) {
+                                            filename = fname.to_string();
+                                        }
+                                    }
+                                    download_bytes = Some(bytes);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    if filename.is_empty() {
+        filename = "Palworld_SDK.zip".to_string();
     }
 
     // 3. If not found locally, download from remote mirrors

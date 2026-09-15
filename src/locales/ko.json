@@ -1408,6 +1408,7 @@
     "schemas_sync_success": "PalSchema 스키마 동기화 완료!",
     "schemas_sync_uptodate": "PalSchema 스키마가 이미 최신 상태입니다.",
     "status_synced_ready": "동기화 완료 및 준비됨",
+    "status_build_mismatch": "빌드 불일치",
     "status_missing": "누락됨 / 동기화되지 않음",
     "status_error": "오류",
     "sources_title": "공식 프레임워크 및 종속성 소스",

@@ -1,66 +1,15 @@
 use std::fs;
 use std::path::{Path, PathBuf};
-use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use tauri::State;
 use crate::state::AppState;
 use crate::usmap::{
     detect_installed_game_build, get_or_load_master_manifest,
-    find_version_entry, MasterResourceManifest,
+    find_version_entry,
 };
 use crate::usmap::sync::find_bundled_resource;
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ResourceItemStatus {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub filename: String,
-    pub is_available: bool,
-    pub is_synced: bool,
-    pub file_size_bytes: u64,
-    pub sha256: Option<String>,
-    pub local_path: Option<String>,
-    pub total_items: Option<usize>,
-    pub game_version: String,
-    pub steam_build_id: String,
-    pub ue4ss_commit: Option<String>,
-    pub has_local_game_dump: bool,
-    pub local_game_dump_path: Option<String>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct MasterResourcesStatus {
-    pub detected_steam_build_id: Option<String>,
-    pub detected_game_version: String,
-    pub latest_game_version: String,
-    pub latest_steam_build_id: String,
-    pub is_game_installed: bool,
-    pub resources: Vec<ResourceItemStatus>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct ResourceActionResult {
-    pub success: bool,
-    pub message: String,
-    pub target: String,
-    pub file_size_bytes: Option<u64>,
-    pub sha256: Option<String>,
-    pub total_files_extracted: Option<usize>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct DevResourceProgressPayload {
-    pub target: String,
-    pub percent: u8,
-    pub current_file: String,
-    pub processed_files: usize,
-    pub total_files: usize,
-}
+pub use super::resource_models::*;
 
 fn compute_sha256_file(path: &Path) -> Option<String> {
     let bytes = fs::read(path).ok()?;
@@ -88,29 +37,43 @@ fn resolve_resource_dir(program_path: &str, subfolder: &str) -> PathBuf {
 
 /// Discovers an existing file on disk across program storage and bundled roots
 fn find_resource_file(program_path: &str, subfolder: &str, filename: &str) -> Option<PathBuf> {
-    if filename.is_empty() {
-        return None;
-    }
-
-    // 1. Program path storage
-    if !program_path.is_empty() {
-        let p = Path::new(program_path).join("resources").join(subfolder).join(filename);
-        if p.is_file() {
-            return Some(p);
+    // 1. Exact match across program path, local, and bundled
+    if !filename.is_empty() {
+        if !program_path.is_empty() {
+            let p = Path::new(program_path).join("resources").join(subfolder).join(filename);
+            if p.is_file() {
+                return Some(p);
+            }
+        }
+        let local = PathBuf::from("resources").join(subfolder).join(filename);
+        if local.is_file() {
+            return Some(local);
+        }
+        let rel_str = format!("resources/{}/{}", subfolder, filename);
+        if let Some(bundled) = find_bundled_resource(&rel_str) {
+            if bundled.is_file() {
+                return Some(bundled);
+            }
         }
     }
 
-    // 2. Relative working directory
-    let local = PathBuf::from("resources").join(subfolder).join(filename);
-    if local.is_file() {
-        return Some(local);
-    }
-
-    // 3. Bundled resource lookup
-    let rel_str = format!("resources/{}/{}", subfolder, filename);
-    if let Some(bundled) = find_bundled_resource(&rel_str) {
-        if bundled.is_file() {
-            return Some(bundled);
+    // 2. Dynamic directory scan fallback (find any .zip or .usmap)
+    let search_ext = if subfolder == "mappings" { "usmap" } else { "zip" };
+    let scan_dirs = [
+        if !program_path.is_empty() { Some(Path::new(program_path).join("resources").join(subfolder)) } else { None },
+        Some(PathBuf::from("resources").join(subfolder)),
+        find_bundled_resource(&format!("resources/{}", subfolder)),
+    ];
+    for dir_opt in scan_dirs.into_iter().flatten() {
+        if dir_opt.is_dir() {
+            if let Ok(entries) = fs::read_dir(&dir_opt) {
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    if p.is_file() && p.extension().map(|e| e == search_ext).unwrap_or(false) {
+                        return Some(p);
+                    }
+                }
+            }
         }
     }
 
@@ -129,13 +92,7 @@ pub fn get_master_resources_status(state: State<'_, AppState>) -> Result<MasterR
     let is_game_installed = !game_path.is_empty() && Path::new(&game_path).exists();
 
     let manifest = get_or_load_master_manifest(&program_path)
-        .unwrap_or_else(|| MasterResourceManifest {
-            schema_version: "1.0.0".to_string(),
-            latest_game_version: "v1.0.4".to_string(),
-            latest_steam_build_id: "25094871".to_string(),
-            updated_at: String::new(),
-            versions: Vec::new(),
-        });
+        .unwrap_or_default();
 
     let active_entry = find_version_entry(&manifest, detected_build_id.as_deref());
     let default_build_id = active_entry
@@ -161,7 +118,9 @@ pub fn get_master_resources_status(state: State<'_, AppState>) -> Result<MasterR
         ("bp_sdk", "Blueprint SDK Dummy Assets", "UE4SS dummy assets enabling Palworld modding in Unreal Engine 5.1.1",
          active_entry.and_then(|e| e.bp_sdk.clone()).unwrap_or_else(|| format!("bp_sdk/Palworld_BP_SDK_{}.zip", default_build_id))),
         ("schemas", "PalSchema Specifications", "Formal JSON Schema (Draft-07) specifications for JSON modding",
-         format!("schemas/palschema_schemas_{}.zip", active_entry.and_then(|e| e.palschema_version.clone()).unwrap_or_else(|| "0.6.7".to_string()))),
+         active_entry.and_then(|e| e.palschema_version.clone())
+             .map(|pv| format!("schemas/palschema_schemas_{}.zip", pv))
+             .unwrap_or_else(|| "schemas/palschema_schemas.zip".to_string())),
     ];
 
     let mut resources: Vec<ResourceItemStatus> = Vec::new();
@@ -173,6 +132,11 @@ pub fn get_master_resources_status(state: State<'_, AppState>) -> Result<MasterR
             .unwrap_or_else(|| rel_path.clone());
 
         let local_file = find_resource_file(&program_path, id, &filename);
+        let effective_filename = local_file.as_ref()
+            .and_then(|p| p.file_name())
+            .and_then(|n| n.to_str())
+            .map(|s| s.to_string())
+            .unwrap_or(filename);
         let exists = local_file.is_some();
         let file_size = local_file.as_ref().and_then(|p| fs::metadata(p).ok()).map(|m| m.len()).unwrap_or(0);
         let sha256 = local_file.as_ref().and_then(|p| compute_sha256_file(p));
@@ -250,13 +214,19 @@ pub fn get_master_resources_status(state: State<'_, AppState>) -> Result<MasterR
             _ => None,
         };
 
+        let build_matched = match detected_build_id.as_deref() {
+            Some(detected) => detected == default_build_id,
+            None => true,
+        };
+
         resources.push(ResourceItemStatus {
             id: id.to_string(),
             name: name.to_string(),
             description: desc.to_string(),
-            filename: filename.clone(),
+            filename: effective_filename,
             is_available: exists,
-            is_synced: exists,
+            is_synced: exists && build_matched,
+            is_build_matched: build_matched,
             file_size_bytes: file_size,
             sha256,
             local_path: local_file.map(|p| p.to_string_lossy().to_string()),
@@ -296,13 +266,8 @@ pub async fn sync_development_resource(
     // 1. Resolve master manifest & version entry
     let installed_build = detect_installed_game_build(Path::new(&game_path));
     let detected_build_id = installed_build.build_id.clone();
-    let master = get_or_load_master_manifest(&program_path).unwrap_or_else(|| MasterResourceManifest {
-        schema_version: "1.0.0".to_string(),
-        latest_game_version: "v1.0.4".to_string(),
-        latest_steam_build_id: "25094871".to_string(),
-        updated_at: String::new(),
-        versions: Vec::new(),
-    });
+    let master = get_or_load_master_manifest(&program_path)
+        .unwrap_or_default();
     let active_entry = find_version_entry(&master, detected_build_id.as_deref());
     let default_build_id = active_entry
         .and_then(|e| e.steam_build_id.clone())
@@ -383,13 +348,31 @@ pub async fn sync_development_resource(
     // Master manifest fallback if subfolder manifest didn't resolve filename
     if expected_filename.is_empty() {
         let rel_path = match target_clean.as_str() {
-            "mappings" | "usmap" => active_entry.and_then(|e| e.usmap.clone()).unwrap_or_else(|| format!("mappings/Palworld_{}.usmap", default_build_id)),
-            "sdk" => active_entry.and_then(|e| e.sdk.clone()).unwrap_or_else(|| format!("sdk/Palworld_SDK_{}.zip", default_build_id)),
-            "jmap" => active_entry.and_then(|e| e.jmap.clone()).unwrap_or_else(|| format!("jmap/Palworld_{}.jmap.zip", default_build_id)),
-            "lua_types" => active_entry.and_then(|e| e.lua_types.clone()).unwrap_or_else(|| format!("lua_types/Palworld_LuaTypes_{}.zip", default_build_id)),
-            "uht" => active_entry.and_then(|e| e.uht.clone()).unwrap_or_else(|| format!("uht/Palworld_UHT_SDK_{}.zip", default_build_id)),
-            "bp_sdk" => active_entry.and_then(|e| e.bp_sdk.clone()).unwrap_or_else(|| format!("bp_sdk/Palworld_BP_SDK_{}.zip", default_build_id)),
-            "schemas" => format!("schemas/palschema_schemas_{}.zip", active_entry.and_then(|e| e.palschema_version.clone()).unwrap_or_else(|| "0.6.7".to_string())),
+            "mappings" | "usmap" => active_entry.and_then(|e| e.usmap.clone()).unwrap_or_else(|| {
+                if !default_build_id.is_empty() { format!("mappings/Palworld_{}.usmap", default_build_id) } else { "mappings/Palworld.usmap".to_string() }
+            }),
+            "sdk" => active_entry.and_then(|e| e.sdk.clone()).unwrap_or_else(|| {
+                if !default_build_id.is_empty() { format!("sdk/Palworld_SDK_{}.zip", default_build_id) } else { "sdk/Palworld_SDK.zip".to_string() }
+            }),
+            "jmap" => active_entry.and_then(|e| e.jmap.clone()).unwrap_or_else(|| {
+                if !default_build_id.is_empty() { format!("jmap/Palworld_{}.jmap.zip", default_build_id) } else { "jmap/Palworld.jmap.zip".to_string() }
+            }),
+            "lua_types" => active_entry.and_then(|e| e.lua_types.clone()).unwrap_or_else(|| {
+                if !default_build_id.is_empty() { format!("lua_types/Palworld_LuaTypes_{}.zip", default_build_id) } else { "lua_types/Palworld_LuaTypes.zip".to_string() }
+            }),
+            "uht" => active_entry.and_then(|e| e.uht.clone()).unwrap_or_else(|| {
+                if !default_build_id.is_empty() { format!("uht/Palworld_UHT_SDK_{}.zip", default_build_id) } else { "uht/Palworld_UHT_SDK.zip".to_string() }
+            }),
+            "bp_sdk" => active_entry.and_then(|e| e.bp_sdk.clone()).unwrap_or_else(|| {
+                if !default_build_id.is_empty() { format!("bp_sdk/Palworld_BP_SDK_{}.zip", default_build_id) } else { "bp_sdk/Palworld_BP_SDK.zip".to_string() }
+            }),
+            "schemas" => {
+                if let Some(pv) = active_entry.and_then(|e| e.palschema_version.clone()) {
+                    format!("schemas/palschema_schemas_{}.zip", pv)
+                } else {
+                    "schemas/palschema_schemas.zip".to_string()
+                }
+            },
             _ => format!("{}/Palworld_{}.zip", target_clean, default_build_id),
         };
         expected_filename = Path::new(&rel_path).file_name().map(|f| f.to_string_lossy().to_string()).unwrap_or(rel_path.clone());
@@ -536,17 +519,19 @@ fn export_development_resource_internal(
     }
 
     if zip_path.is_none() {
-        // Try bundled fallback
-        let pattern = match target_clean.as_str() {
-            "bp_sdk" => "Palworld_BP_SDK_25094871.zip",
-            "uht" => "Palworld_UHT_SDK_25094871.zip",
-            "jmap" => "Palworld_25094871.jmap.zip",
-            "lua_types" => "Palworld_LuaTypes_25094871.zip",
-            "sdk" => "Palworld_SDK_25094871.zip",
-            _ => "",
-        };
-        if !pattern.is_empty() {
-            zip_path = find_bundled_resource(&format!("resources/{}/{}", target_clean, pattern));
+        // Try bundled fallback: dynamically find any .zip in bundled target dir
+        if let Some(bundled_target_dir) = find_bundled_resource(&format!("resources/{}", target_clean)) {
+            if bundled_target_dir.is_dir() {
+                if let Ok(entries) = fs::read_dir(&bundled_target_dir) {
+                    for entry in entries.flatten() {
+                        let p = entry.path();
+                        if p.extension().map(|e| e == "zip").unwrap_or(false) {
+                            zip_path = Some(p);
+                            break;
+                        }
+                    }
+                }
+            }
         }
     }
 

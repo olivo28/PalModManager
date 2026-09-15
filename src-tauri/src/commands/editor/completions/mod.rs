@@ -104,57 +104,77 @@ pub struct ReflectionCatalogsStatus {
     pub total_datatables: usize,
     pub total_datatable_rows: usize,
     pub datatables_active_file: String,
+    pub datatables_game_ver: String,
+    pub datatables_build_id: String,
+    pub datatables_sha256: String,
+    pub datatables_size: u64,
+    pub datatables_is_build_matched: bool,
     pub total_blueprints: usize,
     pub blueprints_build_id: String,
     pub blueprints_game_ver: String,
     pub blueprints_filename: String,
     pub blueprints_sha256: String,
     pub blueprints_size: u64,
+    pub blueprints_is_build_matched: bool,
 }
 
 #[tauri::command]
 pub async fn get_reflection_catalogs_status(
     state: State<'_, AppState>,
 ) -> Result<ReflectionCatalogsStatus, String> {
-    let program_path = {
+    let (program_path, game_path) = {
         let data = state.data.lock().map_err(|e| e.to_string())?;
-        data.settings.program_path.clone()
+        (data.settings.program_path.clone(), data.settings.game_path.clone())
     };
+
+    let installed_build = crate::usmap::detect_installed_game_build(std::path::Path::new(&game_path));
+    let detected_build = installed_build.build_id;
 
     let dt = crate::usmap::get_or_load_datatable_index(&program_path);
     let bp = crate::usmap::get_or_load_blueprint_index(&program_path);
 
+    // 1. Blueprints manifest & disk inspection (100% dynamic)
     let bp_dir = crate::usmap::get_blueprints_dir(&program_path);
-    let mut bp_ver = "v1.0.3".to_string();
-    let mut bp_build = "24575825".to_string();
-    let mut bp_file = "Palworld_Blueprints_24575825.json".to_string();
-    let mut bp_hash = "c8ec30d2888b12251dc8087622f9ea502011539d2aad9f5a4c4617ec1de97528".to_string();
-    let mut bp_size: u64 = 7549048;
+    let mut bp_ver = String::new();
+    let mut bp_build = String::new();
+    let mut bp_file = String::new();
+    let mut bp_hash = String::new();
+    let mut bp_size: u64 = 0;
 
-    let manifest_path = crate::usmap::sync::find_bundled_resource("resources/blueprints/manifest.json")
+    let bp_manifest_path = crate::usmap::sync::find_bundled_resource("resources/blueprints/manifest.json")
         .or_else(|| {
             let p = bp_dir.join("manifest.json");
             if p.exists() { Some(p) } else { None }
         });
 
-    if let Some(mp) = manifest_path {
+    if let Some(mp) = bp_manifest_path {
         if let Ok(m_str) = std::fs::read_to_string(&mp) {
             if let Ok(v) = serde_json::from_str::<serde_json::Value>(&m_str) {
                 if let Some(list) = v.get("blueprints").and_then(|a| a.as_array()) {
-                    if let Some(first) = list.first() {
-                        if let Some(fname) = first.get("blueprints_filename").and_then(|s| s.as_str()) {
+                    let matched_entry = list.iter().find(|e| {
+                        if let Some(b) = detected_build.as_deref() {
+                            e.get("steam_build_id").and_then(|s| s.as_str()) == Some(b)
+                        } else {
+                            false
+                        }
+                    })
+                    .or_else(|| list.iter().find(|e| e.get("is_latest").and_then(|b| b.as_bool()).unwrap_or(false)))
+                    .or_else(|| list.first());
+
+                    if let Some(entry) = matched_entry {
+                        if let Some(fname) = entry.get("blueprints_filename").and_then(|s| s.as_str()) {
                             bp_file = fname.to_string();
                         }
-                        if let Some(ver) = first.get("game_version").and_then(|s| s.as_str()) {
+                        if let Some(ver) = entry.get("game_version").and_then(|s| s.as_str()) {
                             bp_ver = ver.to_string();
                         }
-                        if let Some(b) = first.get("steam_build_id").and_then(|s| s.as_str()) {
+                        if let Some(b) = entry.get("steam_build_id").and_then(|s| s.as_str()) {
                             bp_build = b.to_string();
                         }
-                        if let Some(h) = first.get("sha256").and_then(|s| s.as_str()) {
+                        if let Some(h) = entry.get("sha256").and_then(|s| s.as_str()) {
                             bp_hash = h.to_string();
                         }
-                        if let Some(sz) = first.get("file_size_bytes").and_then(|s| s.as_u64()) {
+                        if let Some(sz) = entry.get("file_size_bytes").and_then(|s| s.as_u64()) {
                             bp_size = sz;
                         }
                     }
@@ -163,15 +183,143 @@ pub async fn get_reflection_catalogs_status(
         }
     }
 
+    // Disk fallback if manifest gave no file
+    if bp_file.is_empty() {
+        let scan_dirs = [
+            Some(bp_dir.clone()),
+            crate::usmap::sync::find_bundled_resource("resources/blueprints"),
+        ];
+        for d_opt in scan_dirs.into_iter().flatten() {
+            if let Ok(entries) = std::fs::read_dir(&d_opt) {
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    if p.is_file() {
+                        if let Some(fname) = p.file_name().and_then(|n| n.to_str()) {
+                            if fname.starts_with("Palworld_Blueprints_") && fname.ends_with(".json") {
+                                bp_file = fname.to_string();
+                                bp_build = fname
+                                    .trim_start_matches("Palworld_Blueprints_")
+                                    .trim_end_matches(".json")
+                                    .to_string();
+                                bp_size = p.metadata().map(|m| m.len()).unwrap_or(0);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if !bp_file.is_empty() {
+                break;
+            }
+        }
+    }
+
+    // 2. DataTables manifest & disk inspection (100% dynamic)
+    let dt_dir = crate::usmap::get_datatables_dir(&program_path);
+    let mut dt_ver = String::new();
+    let mut dt_build = String::new();
+    let mut dt_file = String::new();
+    let mut dt_hash = String::new();
+    let mut dt_size: u64 = 0;
+
+    let dt_manifest_path = crate::usmap::sync::find_bundled_resource("resources/datatables/manifest.json")
+        .or_else(|| {
+            let p = dt_dir.join("manifest.json");
+            if p.exists() { Some(p) } else { None }
+        });
+
+    if let Some(mp) = dt_manifest_path {
+        if let Ok(m_str) = std::fs::read_to_string(&mp) {
+            if let Ok(v) = serde_json::from_str::<serde_json::Value>(&m_str) {
+                if let Some(list) = v.get("datatables").and_then(|a| a.as_array()) {
+                    let matched_entry = list.iter().find(|e| {
+                        if let Some(b) = detected_build.as_deref() {
+                            e.get("steam_build_id").and_then(|s| s.as_str()) == Some(b)
+                        } else {
+                            false
+                        }
+                    })
+                    .or_else(|| list.iter().find(|e| e.get("is_latest").and_then(|b| b.as_bool()).unwrap_or(false)))
+                    .or_else(|| list.first());
+
+                    if let Some(entry) = matched_entry {
+                        if let Some(fname) = entry.get("datatables_filename").and_then(|s| s.as_str()) {
+                            dt_file = fname.to_string();
+                        }
+                        if let Some(ver) = entry.get("game_version").and_then(|s| s.as_str()) {
+                            dt_ver = ver.to_string();
+                        }
+                        if let Some(b) = entry.get("steam_build_id").and_then(|s| s.as_str()) {
+                            dt_build = b.to_string();
+                        }
+                        if let Some(h) = entry.get("sha256").and_then(|s| s.as_str()) {
+                            dt_hash = h.to_string();
+                        }
+                        if let Some(sz) = entry.get("file_size_bytes").and_then(|s| s.as_u64()) {
+                            dt_size = sz;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    // Disk fallback if manifest gave no file
+    if dt_file.is_empty() {
+        let scan_dirs = [
+            Some(dt_dir.clone()),
+            crate::usmap::sync::find_bundled_resource("resources/datatables"),
+        ];
+        for d_opt in scan_dirs.into_iter().flatten() {
+            if let Ok(entries) = std::fs::read_dir(&d_opt) {
+                for entry in entries.flatten() {
+                    let p = entry.path();
+                    if p.is_file() {
+                        if let Some(fname) = p.file_name().and_then(|n| n.to_str()) {
+                            if fname.starts_with("Palworld_DataTables_") && fname.ends_with(".json") {
+                                dt_file = fname.to_string();
+                                dt_build = fname
+                                    .trim_start_matches("Palworld_DataTables_")
+                                    .trim_end_matches(".json")
+                                    .to_string();
+                                dt_size = p.metadata().map(|m| m.len()).unwrap_or(0);
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+            if !dt_file.is_empty() {
+                break;
+            }
+        }
+    }
+
+    let blueprints_is_build_matched = match (&detected_build, &bp_build) {
+        (Some(det), b) if !det.is_empty() && !b.is_empty() => det == b,
+        _ => true,
+    };
+
+    let datatables_is_build_matched = match (&detected_build, &dt_build) {
+        (Some(det), b) if !det.is_empty() && !b.is_empty() => det == b,
+        _ => true,
+    };
+
     Ok(ReflectionCatalogsStatus {
         total_datatables: dt.as_ref().map(|d| d.total_tables).unwrap_or(0),
         total_datatable_rows: dt.as_ref().map(|d| d.total_rows).unwrap_or(0),
-        datatables_active_file: "dt_index.json".to_string(),
+        datatables_active_file: dt_file,
+        datatables_game_ver: dt_ver,
+        datatables_build_id: dt_build,
+        datatables_sha256: dt_hash,
+        datatables_size: dt_size,
+        datatables_is_build_matched,
         total_blueprints: bp.as_ref().map(|b| b.total_blueprints).unwrap_or(0),
         blueprints_build_id: bp_build,
         blueprints_game_ver: bp_ver,
         blueprints_filename: bp_file,
         blueprints_sha256: bp_hash,
         blueprints_size: bp_size,
+        blueprints_is_build_matched,
     })
 }

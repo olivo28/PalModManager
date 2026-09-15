@@ -76,7 +76,7 @@ pub fn get_or_load_blueprint_index(program_path: &str) -> Option<Arc<BlueprintIn
     }
 
     let dir = get_blueprints_dir(program_path);
-    let mut candidate_filename = "Palworld_Blueprints_24575825.json".to_string();
+    let mut candidate_filename = String::new();
 
     let manifest_path = super::sync::find_bundled_resource("resources/blueprints/manifest.json")
         .or_else(|| {
@@ -88,8 +88,10 @@ pub fn get_or_load_blueprint_index(program_path: &str) -> Option<Arc<BlueprintIn
         if let Ok(m_str) = fs::read_to_string(&mp) {
             if let Ok(v) = serde_json::from_str::<serde_json::Value>(&m_str) {
                 if let Some(list) = v.get("blueprints").and_then(|a| a.as_array()) {
-                    if let Some(first) = list.first() {
-                        if let Some(fname) = first.get("blueprints_filename").and_then(|s| s.as_str()) {
+                    let entry = list.iter().find(|e| e.get("is_latest").and_then(|b| b.as_bool()).unwrap_or(false))
+                        .or_else(|| list.first());
+                    if let Some(e) = entry {
+                        if let Some(fname) = e.get("blueprints_filename").and_then(|s| s.as_str()) {
                             candidate_filename = fname.to_string();
                         }
                     }
@@ -98,14 +100,23 @@ pub fn get_or_load_blueprint_index(program_path: &str) -> Option<Arc<BlueprintIn
         }
     }
 
-    let rel_candidate = format!("resources/blueprints/{}", candidate_filename);
-    let index_file_candidate = super::sync::find_bundled_resource(&rel_candidate)
-        .or_else(|| {
-            let p = dir.join(&candidate_filename);
-            if p.exists() { Some(p) } else { None }
-        })
-        .or_else(|| {
-            if let Ok(entries) = fs::read_dir(&dir) {
+    let index_file_candidate = if !candidate_filename.is_empty() {
+        let rel_candidate = format!("resources/blueprints/{}", candidate_filename);
+        super::sync::find_bundled_resource(&rel_candidate)
+            .or_else(|| {
+                let p = dir.join(&candidate_filename);
+                if p.exists() { Some(p) } else { None }
+            })
+    } else {
+        None
+    }
+    .or_else(|| {
+        let scan_dirs = [
+            Some(dir.clone()),
+            super::sync::find_bundled_resource("resources/blueprints"),
+        ];
+        for d_opt in scan_dirs.into_iter().flatten() {
+            if let Ok(entries) = fs::read_dir(&d_opt) {
                 for entry in entries.filter_map(|e| e.ok()) {
                     let p = entry.path();
                     if p.is_file() {
@@ -117,8 +128,9 @@ pub fn get_or_load_blueprint_index(program_path: &str) -> Option<Arc<BlueprintIn
                     }
                 }
             }
-            None
-        });
+        }
+        None
+    });
 
     if let Some(index_path) = index_file_candidate {
         match fs::read_to_string(&index_path) {

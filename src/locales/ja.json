@@ -1408,6 +1408,7 @@
     "schemas_sync_success": "PalSchemaスキーマの同期が完了しました！",
     "schemas_sync_uptodate": "PalSchemaスキーマは既に最新です。",
     "status_synced_ready": "同期済み・準備完了",
+    "status_build_mismatch": "ビルド不一致",
     "status_missing": "未検出 / 未同期",
     "status_error": "エラー",
     "sources_title": "公式フレームワーク＆依存関係ソース",

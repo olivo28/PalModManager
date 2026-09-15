@@ -1,9 +1,22 @@
 {
   "schema_version": "1.0.0",
-  "latest_game_version": "v1.0.4",
-  "latest_steam_build_id": "25094871",
-  "updated_at": "2026-09-07T16:19:25.806Z",
+  "latest_game_version": "v1.0.5",
+  "latest_steam_build_id": "25246127",
+  "updated_at": "2026-09-15T20:54:25.764Z",
   "jmaps": [
+    {
+      "game_version": "v1.0.5",
+      "steam_build_id": "25246127",
+      "app_id": 1623730,
+      "jmap_filename": "Palworld_25246127.jmap.zip",
+      "jmap_url": "https://raw.githubusercontent.com/olivo28/PalModManager/main/resources/jmap/Palworld_25246127.jmap.zip",
+      "sha256": "f37fa41e5c52ce1a432070e9c44337130230590410443b8b7caa69fd08ae657b",
+      "file_size_bytes": 9483051,
+      "engine_version": "UE5.1.1",
+      "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-2281fa31",
+      "is_latest": true,
+      "uncompressed_size_bytes": 152088046
+    },
     {
       "game_version": "v1.0.4",
       "steam_build_id": "25094871",
@@ -14,7 +27,7 @@
       "file_size_bytes": 9477262,
       "engine_version": "UE5.1.1",
       "build_id": "Pal-5.1.1-0+++UE5+Release-5.1-2281fa31",
-      "is_latest": true,
+      "is_latest": false,
       "uncompressed_size_bytes": 152088163
     }
   ]
