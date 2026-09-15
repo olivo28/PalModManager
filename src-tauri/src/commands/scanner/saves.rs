@@ -193,7 +193,7 @@ pub fn open_pmm_world_backups_folder_cmd(
     if !backups_dir.exists() {
         let _ = std::fs::create_dir_all(&backups_dir);
     }
-    open::that(&backups_dir).map_err(|e| e.to_string())
+    crate::system_open::open_path_in_system(&backups_dir)
 }
 
 #[tauri::command]

@@ -7,6 +7,9 @@ export interface SettingsDomMap {
   'settings-game-path': HTMLInputElement;
   'settings-browse-btn': HTMLButtonElement;
   'settings-path-status': HTMLElement;
+  'settings-steam-protocol-row': HTMLElement;
+  'settings-steam-proto-handler': HTMLElement;
+  'settings-steam-proto-badge': HTMLElement;
   'settings-data-path-select': HTMLSelectElement;
   'settings-custom-data-path-display': HTMLElement;
   'open-folder-paks': HTMLButtonElement;

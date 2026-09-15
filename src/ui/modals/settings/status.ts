@@ -1,8 +1,37 @@
-import { getImageCacheSize, getStorageUsage, getSafetyBackupInfo } from '../../../api';
+import { getImageCacheSize, getStorageUsage, getSafetyBackupInfo, checkSteamProtocol } from '../../../api';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { settingsDom } from '../../../framework';
 import { formatBytes } from './helpers';
+
+export async function refreshSteamProtocolStatus(): Promise<void> {
+  const handlerEl = settingsDom.elMaybe('settings-steam-proto-handler');
+  const badgeEl = settingsDom.elMaybe('settings-steam-proto-badge');
+  if (!badgeEl) return;
+
+  try {
+    const status = await checkSteamProtocol();
+    if (status.registered) {
+      badgeEl.className = 'badge badge-success';
+      badgeEl.textContent = t('settings.steam_proto_active') || 'Active';
+      if (handlerEl) {
+        handlerEl.textContent = status.handler || 'steam://';
+        handlerEl.title = status.handler || 'steam://';
+      }
+    } else {
+      badgeEl.className = 'badge badge-warning';
+      badgeEl.textContent = t('settings.steam_proto_inactive') || 'Not Detected';
+      if (handlerEl) {
+        handlerEl.textContent = t('settings.steam_proto_not_found') || 'No handler found';
+        handlerEl.title = '';
+      }
+    }
+  } catch (e) {
+    console.error('Failed to check steam protocol status:', e);
+    badgeEl.className = 'badge badge-danger';
+    badgeEl.textContent = 'Error';
+  }
+}
 
 export async function refreshImageCacheStatus(): Promise<void> {
   const badgeNet = settingsDom.elMaybe('settings-image-cache-badge');

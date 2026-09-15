@@ -246,6 +246,6 @@ pub fn open_dependency_vault_folder(dep_type: String, state: State<'_, AppState>
     };
     let vault_dir = get_vault_dir(&program_path, &dep_type);
     let _ = fs::create_dir_all(&vault_dir);
-    open::that(&vault_dir).map_err(|e| format!("Failed to open directory: {}", e))?;
+    crate::system_open::open_path_in_system(&vault_dir)?;
     Ok(())
 }

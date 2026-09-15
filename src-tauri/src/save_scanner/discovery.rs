@@ -252,7 +252,7 @@ pub fn open_world_folder(world_dir: &str) -> Result<(), String> {
     if !path.exists() {
         return Err("Directory does not exist".to_string());
     }
-    open::that(path).map_err(|e| e.to_string())
+    crate::system_open::open_path_in_system(path)
 }
 
 /// Extracts rich metadata from a Palworld save directory

@@ -451,30 +451,7 @@ pub fn log_from_js(msg: String) {
 
 #[tauri::command]
 pub fn open_url(url: String) -> Result<(), String> {
-    #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        std::process::Command::new("cmd")
-            .args(&["/C", "start", "", &url])
-            .creation_flags(0x08000000) // CREATE_NO_WINDOW
-            .spawn()
-            .map_err(|e| e.to_string())?;
-    }
-    #[cfg(target_os = "macos")]
-    {
-        std::process::Command::new("open")
-            .arg(&url)
-            .spawn()
-            .map_err(|e| e.to_string())?;
-    }
-    #[cfg(target_os = "linux")]
-    {
-        std::process::Command::new("xdg-open")
-            .arg(&url)
-            .spawn()
-            .map_err(|e| e.to_string())?;
-    }
-    Ok(())
+    crate::system_open::open_url_in_system(&url)
 }
 
 fn get_default_program_path() -> PathBuf {

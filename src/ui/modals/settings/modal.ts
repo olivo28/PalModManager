@@ -3,7 +3,7 @@ import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { _tempCustomDataPath, setTempCustomDataPath } from './state';
-import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus } from './status';
+import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCacheStatus, refreshSteamProtocolStatus } from './status';
 import { initDevResources, refreshDevResourcesStatus } from './resources';
 import { formatBytes } from './helpers';
 import { settingsDom } from '../../../framework';
@@ -199,6 +199,7 @@ export function openSettingsModal(): void {
   refreshStorageUsageStatus();
   refreshImageCacheStatus();
   refreshDevResourcesStatus();
+  refreshSteamProtocolStatus();
 
   // DNS Resolver Select
   const dnsSelect = settingsDom.elMaybe('settings-dns-resolver-select');

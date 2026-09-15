@@ -53,7 +53,7 @@ pub fn open_folder(mod_id: String, state: State<AppState>) -> Result<(), String>
         return Err(format!("Directory does not exist: {}", dir.display()));
     }
 
-    open::that(&dir).map_err(|e| format!("Failed to open folder: {}", e))
+    crate::system_open::open_path_in_system(&dir)
 }
 
 #[tauri::command]
@@ -75,7 +75,7 @@ pub fn open_path(path: String) -> Result<(), String> {
         return Err(format!("Directory does not exist: {}", dir.display()));
     }
 
-    open::that(&dir).map_err(|e| format!("Failed to open path: {}", e))
+    crate::system_open::open_path_in_system(&dir)
 }
 
 #[allow(unused_imports)]
@@ -219,7 +219,7 @@ pub fn open_extra_folder(mod_id: String, state: State<AppState>) -> Result<(), S
         return Err(format!("Directory does not exist: {}", dir.display()));
     }
 
-    open::that(&dir).map_err(|e| format!("Failed to open folder: {}", e))
+    crate::system_open::open_path_in_system(&dir)
 }
 
 fn determine_category_for_path(path: &Path) -> &'static str {
@@ -507,7 +507,7 @@ pub fn open_folder_by_type(folder_type: String, state: State<'_, AppState>) -> R
         }
     }
 
-    open::that(&path).map_err(|e| format!("Failed to open folder: {}", e))
+    crate::system_open::open_path_in_system(&path)
 }
 
 #[tauri::command]

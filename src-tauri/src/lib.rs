@@ -26,6 +26,7 @@ pub mod texture_decoder;
 pub mod dependency_manifest;
 pub mod worker;
 pub mod workshop_bridge;
+pub mod system_open;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -361,6 +362,7 @@ pub fn run() {
             workshop_commands::check_workshop_updates_online_cmd,
             workshop_commands::trigger_steam_validation_cmd,
             launch_commands::launch_game,
+            launch_commands::check_steam_protocol,
             discovery::categories::get_discovery_categories,
             discovery::mods::get_discovery_mods,
             discovery::details::get_discovery_mod_details,

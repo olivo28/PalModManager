@@ -616,6 +616,12 @@ export interface InstallProgressPayload {
   percent: number;
 }
 
+export interface SteamProtocolStatus {
+  registered: boolean;
+  handler?: string | null;
+  platform: string;
+}
+
 export type {
   FomodConfig,
   FomodStep,

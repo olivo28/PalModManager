@@ -236,6 +236,10 @@ export async function openUrl(url: string): Promise<void> {
   return invoke('open_url', { url });
 }
 
+export async function checkSteamProtocol(): Promise<import('./types').SteamProtocolStatus> {
+  return invoke('check_steam_protocol');
+}
+
 export interface ReflectionCatalogsStatus {
   totalDatatables: number;
   totalDatatableRows: number;

@@ -636,7 +636,7 @@ pub async fn reveal_ue4ss_log_in_explorer(
         #[cfg(not(windows))]
         {
             if let Some(parent) = abs_path.parent() {
-                open::that(parent).map_err(|e| e.to_string())?;
+                crate::system_open::open_path_in_system(parent)?;
                 Ok(true)
             } else {
                 Err("Failed to resolve parent directory".to_string())

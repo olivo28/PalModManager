@@ -53,6 +53,14 @@
                 <button type="button" id="settings-browse-btn" class="btn-secondary" data-i18n="common.browse">Browse</button>
               </div>
               <div id="settings-path-status" class="settings-path-status"></div>
+              <div id="settings-steam-protocol-row" style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 11px;">
+                <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                  <span>🎮</span>
+                  <span data-i18n="settings.steam_proto_title" style="font-weight: 600; color: var(--text-primary);">Steam Launcher Protocol:</span>
+                  <span id="settings-steam-proto-handler" style="color: var(--text-muted); font-family: monospace; font-size: 10px;">checking...</span>
+                </div>
+                <span id="settings-steam-proto-badge" class="badge badge-secondary" style="font-size: 10px; flex-shrink: 0;">Checking...</span>
+              </div>
             </div>
 
             <div class="settings-section-card">

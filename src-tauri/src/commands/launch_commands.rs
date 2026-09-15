@@ -75,18 +75,103 @@ pub async fn launch_game(state: State<'_, AppState>) -> Result<(), String> {
         }
         #[cfg(not(target_os = "windows"))]
         {
-            let win64_exe = path.join("Pal").join("Binaries").join("Win64").join("Palworld-Win64-Shipping.exe");
-            if win64_exe.exists() {
-                std::process::Command::new(&win64_exe)
-                    .current_dir(win64_exe.parent().unwrap())
-                    .spawn()
-                    .map_err(|e| format!("Failed to launch game: {}", e))?;
-            } else {
-                return Err("Palworld-Win64-Shipping.exe not found".to_string());
+            let launched = crate::system_open::open_url_in_system("steam://run/1623730");
+            if let Err(e) = launched {
+                crate::logger::log(&format!("launch_game: xdg-open steam protocol failed ({}), trying direct steam binary...", e));
+                let mut cmd = std::process::Command::new("steam");
+                cmd.arg("steam://run/1623730");
+                cmd.env_remove("LD_LIBRARY_PATH");
+                cmd.spawn().map_err(|e2| format!("Failed to launch game via Steam: {} (fallback: {})", e, e2))?;
             }
         }
     }
 
     crate::logger::log("launch_game: Game process spawned successfully");
     Ok(())
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SteamProtocolStatus {
+    pub registered: bool,
+    pub handler: Option<String>,
+    pub platform: String,
+}
+
+pub fn check_steam_protocol_status() -> SteamProtocolStatus {
+    #[cfg(target_os = "windows")]
+    {
+        use winreg::enums::*;
+        use winreg::RegKey;
+
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        let hkcr = RegKey::predef(HKEY_CLASSES_ROOT);
+
+        let command_path = "Software\\Classes\\steam\\shell\\open\\command";
+        let fallback_path = "steam\\shell\\open\\command";
+
+        let handler = hkcu
+            .open_subkey(command_path)
+            .and_then(|k| k.get_value::<String, _>(""))
+            .or_else(|_| {
+                hkcr.open_subkey(fallback_path)
+                    .and_then(|k| k.get_value::<String, _>(""))
+            })
+            .ok();
+
+        SteamProtocolStatus {
+            registered: handler.is_some(),
+            handler,
+            platform: "windows".to_string(),
+        }
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        let output = std::process::Command::new("xdg-mime")
+            .args(["query", "default", "x-scheme-handler/steam"])
+            .output()
+            .ok();
+
+        let handler_str = output
+            .filter(|o| o.status.success())
+            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+            .filter(|s| !s.is_empty());
+
+        if let Some(h) = handler_str {
+            return SteamProtocolStatus {
+                registered: h.contains("steam"),
+                handler: Some(h),
+                platform: "linux".to_string(),
+            };
+        }
+
+        let local_desktop = std::env::var_os("HOME").map(|h| {
+            std::path::PathBuf::from(h).join(".local/share/applications/steam.desktop")
+        });
+        let sys_desktop = std::path::Path::new("/usr/share/applications/steam.desktop");
+
+        let exists = local_desktop.map(|p| p.exists()).unwrap_or(false) || sys_desktop.exists();
+        SteamProtocolStatus {
+            registered: exists,
+            handler: if exists { Some("steam.desktop".to_string()) } else { None },
+            platform: "linux".to_string(),
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        let steam_app = std::path::Path::new("/Applications/Steam.app");
+        let exists = steam_app.exists();
+        SteamProtocolStatus {
+            registered: exists,
+            handler: if exists { Some("Steam.app".to_string()) } else { None },
+            platform: "macos".to_string(),
+        }
+    }
+}
+
+#[tauri::command]
+pub fn check_steam_protocol() -> SteamProtocolStatus {
+    check_steam_protocol_status()
 }
