@@ -599,6 +599,8 @@
     "problems_jump_title": "Clique para ir para a linha {line}",
     "problems_fix_btn": "Corrigir",
     "problems_fix_btn_title": "Aplicar correção rápida: {suggestion}",
+    "problems_category_conflict": "Conflito",
+    "problems_collision_with": "Em conflito com \"{mod}\"",
     "status_problems_title": "Alternar Painel de Problemas",
     "status_problems_tooltip": "{fileCount} problema(s) no arquivo atual, {workspaceCount} no workspace do mod",
     "status_usmap_title": "Esquema de Reflexão Unreal Engine de Palworld",
@@ -776,6 +778,7 @@
     "toast_vortex_pack_success": "Mod empacotado com compatibilidade raiz para Vortex / Manual!"
   },
   "scanner": {
+    "conflict_resolved_badge": "Corrigido no Editor",
     "title_conflicts": "Scanner de Conflitos",
     "title_hotkeys": "Gerenciador de Atalhos Lua",
     "title_saves_doctor": "Doutor de Saves",

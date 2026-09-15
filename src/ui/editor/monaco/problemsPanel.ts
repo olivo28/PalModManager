@@ -257,7 +257,9 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
     }
 
     let categoryBadge = '';
-    if (diag.category === 'ue4ss') {
+    if (diag.category === 'conflict') {
+      categoryBadge = `<span class="diag-category-badge conflict" style="background:rgba(239,68,68,0.18);color:#f87171;border:1px solid rgba(239,68,68,0.35);">⚔️ ${escapeHtml(t('editor.problems_category_conflict') || 'Conflict')}</span>`;
+    } else if (diag.category === 'ue4ss') {
       categoryBadge = '<span class="diag-category-badge ue4ss">UE4SS</span>';
     } else if (diag.category === 'palschema') {
       categoryBadge = '<span class="diag-category-badge palschema">PalSchema</span>';
@@ -357,6 +359,120 @@ export function clearWorkspaceProblemsCache(): void {
   _workspaceDiagnostics = {};
   _workspaceDiagnosticsByMod = {};
   updateWorkspaceBadge();
+}
+
+/**
+ * Injects global code diagnostics from the Conflict Scanner into Monaco workspace diagnostics,
+ * deduplicating entries by line and target symbol to prevent duplicate alerts.
+ */
+export function injectScannerDiagnostics(diagnosticsByMod: Record<string, Record<string, EditorDiagnostic[]>>): void {
+  for (const [modId, files] of Object.entries(diagnosticsByMod)) {
+    if (!_workspaceDiagnosticsByMod[modId]) {
+      _workspaceDiagnosticsByMod[modId] = {};
+    }
+    for (const [filePath, diags] of Object.entries(files)) {
+      const normalizedPath = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+      const existing = _workspaceDiagnosticsByMod[modId][normalizedPath] || [];
+
+      // Deduplicate by line + normalized target
+      const diagMap = new Map<string, EditorDiagnostic>();
+      for (const d of existing) {
+        const key = `${d.line}::${(d.target || '').trim().toLowerCase()}`;
+        diagMap.set(key, d);
+      }
+      for (const d of diags) {
+        const key = `${d.line}::${(d.target || '').trim().toLowerCase()}`;
+        if (!diagMap.has(key)) {
+          diagMap.set(key, d);
+        } else {
+          // Enrich existing diagnostic if incoming has collision context or fix
+          const current = diagMap.get(key)!;
+          if (d.category === 'conflict') {
+            current.category = 'conflict';
+            if (!current.message.includes(d.message)) {
+              current.message = `${current.message} (${d.message})`;
+            }
+          }
+          if (d.suggestion && !current.suggestion) {
+            current.suggestion = d.suggestion;
+          }
+        }
+      }
+      _workspaceDiagnosticsByMod[modId][normalizedPath] = Array.from(diagMap.values());
+    }
+  }
+
+  const currentModId = getState().editorModId;
+  if (currentModId && _workspaceDiagnosticsByMod[currentModId]) {
+    _workspaceDiagnostics = _workspaceDiagnosticsByMod[currentModId];
+    updateWorkspaceBadge();
+    if (_activeTab === 'workspace') {
+      renderWorkspaceProblemsView();
+    }
+    // Update live markers if open file was diagnosed
+    const currentFilePath = getCurrentMonacoFilePath();
+    if (currentFilePath && _workspaceDiagnostics[currentFilePath]) {
+      const editor = getMonacoEditor();
+      const model = editor?.getModel();
+      if (editor && model) {
+        const markers: monaco.editor.IMarkerData[] = _workspaceDiagnostics[currentFilePath].map(diag => {
+          let severity = monaco.MarkerSeverity.Error;
+          if (diag.severity === 'warning') severity = monaco.MarkerSeverity.Warning;
+          else if (diag.severity === 'info') severity = monaco.MarkerSeverity.Info;
+          return {
+            severity,
+            startLineNumber: Math.max(1, diag.line),
+            startColumn: Math.max(1, diag.column),
+            endLineNumber: diag.endLine ? Math.max(diag.line, diag.endLine) : diag.line,
+            endColumn: diag.endColumn || (diag.column + Math.max(1, (diag.target || '').length)),
+            message: diag.message + (diag.suggestion ? `\n💡 Quick Fix: ${diag.suggestion}` : ''),
+            source: 'PalModManager',
+          };
+        });
+        monaco.editor.setModelMarkers(model, 'palworld', markers);
+        renderProblemsList(_workspaceDiagnostics[currentFilePath]);
+      }
+    }
+  } else {
+    updateWorkspaceBadge();
+  }
+}
+
+/**
+ * Removes a resolved diagnostic from the workspace cache and updates views reactively.
+ */
+export function markDiagnosticResolved(modId: string, filePath: string, line: number, target?: string): boolean {
+  const normalizedPath = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
+  const modDiags = _workspaceDiagnosticsByMod[modId];
+  if (!modDiags || !modDiags[normalizedPath]) return false;
+
+  const initialLen = modDiags[normalizedPath].length;
+  modDiags[normalizedPath] = modDiags[normalizedPath].filter(d => {
+    if (d.line === line) {
+      if (!target || !d.target) return false;
+      return d.target.trim().toLowerCase() !== target.trim().toLowerCase();
+    }
+    return true;
+  });
+
+  const removed = modDiags[normalizedPath].length < initialLen;
+  if (modDiags[normalizedPath].length === 0) {
+    delete modDiags[normalizedPath];
+  }
+
+  const currentModId = getState().editorModId;
+  if (currentModId === modId) {
+    _workspaceDiagnostics = _workspaceDiagnosticsByMod[modId] || {};
+    updateWorkspaceBadge();
+    if (_activeTab === 'workspace') {
+      renderWorkspaceProblemsView();
+    }
+    const currentFilePath = getCurrentMonacoFilePath();
+    if (currentFilePath === normalizedPath) {
+      renderProblemsList(_workspaceDiagnostics[currentFilePath] || []);
+    }
+  }
+  return removed;
 }
 
 export async function triggerWorkspaceScan(force = false): Promise<void> {
@@ -464,7 +580,9 @@ function renderWorkspaceProblemsView(): void {
       }
 
       let categoryBadge = '';
-      if (diag.category === 'ue4ss') {
+      if (diag.category === 'conflict') {
+        categoryBadge = `<span class="diag-category-badge conflict" style="background:rgba(239,68,68,0.18);color:#f87171;border:1px solid rgba(239,68,68,0.35);">⚔️ ${escapeHtml(t('editor.problems_category_conflict') || 'Conflict')}</span>`;
+      } else if (diag.category === 'ue4ss') {
         categoryBadge = '<span class="diag-category-badge ue4ss">UE4SS</span>';
       } else if (diag.category === 'palschema') {
         categoryBadge = '<span class="diag-category-badge palschema">PalSchema</span>';

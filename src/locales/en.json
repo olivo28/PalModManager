@@ -599,6 +599,8 @@
     "problems_jump_title": "Click to jump to line {line}",
     "problems_fix_btn": "Fix",
     "problems_fix_btn_title": "Apply Quick Fix: {suggestion}",
+    "problems_category_conflict": "Conflict",
+    "problems_collision_with": "Collides with \"{mod}\"",
     "status_problems_title": "Toggle Problems Panel",
     "status_problems_tooltip": "{fileCount} problem(s) in current file, {workspaceCount} in mod workspace",
     "status_usmap_title": "Palworld Unreal Engine Reflection Schema",
@@ -776,6 +778,7 @@
     "toast_vortex_pack_success": "Mod packaged with Vortex / Manual root compatibility!"
   },
   "scanner": {
+    "conflict_resolved_badge": "Fixed in Editor",
     "title_conflicts": "Conflict Scanner",
     "title_hotkeys": "Hotkeys Manager",
     "title_saves_doctor": "Save Health Doctor",

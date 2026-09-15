@@ -3,6 +3,7 @@ import { t } from '../../../../utils/i18n';
 import type { ScanResult, UsmapHookDiagnostic } from '../../mod';
 
 export function isItemBroken(diag: UsmapHookDiagnostic): boolean {
+  if (diag.resolved) return false;
   return diag.status === 'broken_class' ||
     diag.status === 'broken_function' ||
     diag.status === 'broken_table' ||
@@ -43,7 +44,14 @@ export function renderHookItem(diag: UsmapHookDiagnostic): string {
     `;
   }
 
-  if (diag.status === 'broken_class') {
+  if (diag.resolved) {
+    statusBadge = `
+      <span style="font-size: 10px; font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: 2px 6px;">
+        ✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}
+      </span>
+    `;
+    borderCol = 'var(--success)';
+  } else if (diag.status === 'broken_class') {
     statusBadge = `
       <span style="font-size: 10px; font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: 2px 6px;">
         ❌ ${escapeHtml(t('scanner.usmap_status_broken_class') || 'Missing Class')}

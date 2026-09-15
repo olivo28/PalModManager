@@ -2,6 +2,8 @@ import * as monaco from 'monaco-editor';
 import { validateEditorCode, EditorDiagnostic } from '../../../api';
 import { getCurrentMonacoFilePath } from './state';
 import { renderProblemsList } from './problemsPanel';
+import { bus } from '../../../framework';
+import { getState } from '../../../state';
 
 let _activeDiagnostics: EditorDiagnostic[] = [];
 let _debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -55,8 +57,27 @@ export async function runValidation(
   }
 
   try {
+    const oldDiagnostics = _activeDiagnostics;
     const diagnostics = await validateEditorCode(filePath, content);
     _activeDiagnostics = diagnostics || [];
+
+    // Emit resolution event if any previously flagged issues disappeared
+    const state = getState();
+    const modId = state.editorModId;
+    if (modId && oldDiagnostics.length > 0) {
+      const newKeys = new Set(_activeDiagnostics.map(d => `${d.line}::${(d.target || '').trim().toLowerCase()}`));
+      for (const oldD of oldDiagnostics) {
+        const key = `${oldD.line}::${(oldD.target || '').trim().toLowerCase()}`;
+        if (!newKeys.has(key)) {
+          bus.emit('conflict:resolved', {
+            modId,
+            filePath,
+            line: oldD.line,
+            target: oldD.target,
+          });
+        }
+      }
+    }
 
     const markers: monaco.editor.IMarkerData[] = _activeDiagnostics.map((diag) => {
       let severity = monaco.MarkerSeverity.Error;

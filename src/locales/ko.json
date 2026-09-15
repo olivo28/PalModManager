@@ -599,6 +599,8 @@
     "problems_jump_title": "클릭하여 {line}번째 줄로 이동",
     "problems_fix_btn": "수정",
     "problems_fix_btn_title": "빠른 수정 적용: {suggestion}",
+    "problems_category_conflict": "충돌",
+    "problems_collision_with": "\"{mod}\"와(과) 충돌",
     "status_problems_title": "문제 패널 전환",
     "status_problems_tooltip": "현재 파일에 {fileCount}개, 모드 워크스페이스에 {workspaceCount}개의 문제",
     "status_usmap_title": "Palworld Unreal Engine 리플렉션 스키마",
@@ -776,6 +778,7 @@
     "toast_vortex_pack_success": "Vortex / 수동 루트 호환성으로 모드가 패키징되었습니다!"
   },
   "scanner": {
+    "conflict_resolved_badge": "편집기에서 수정됨",
     "title_conflicts": "충돌 스캐너",
     "title_hotkeys": "단축키 관리 (Hotkeys)",
     "title_saves_doctor": "세이브 닥터",

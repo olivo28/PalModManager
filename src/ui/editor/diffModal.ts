@@ -135,9 +135,11 @@ export async function openEditorDiffModal(modId: string, backupPath: string): Pr
   _currentModId = modId;
   _currentBackupPath = backupPath;
 
-  // Resolve target base file path (e.g. config.jsonc.bak -> config.jsonc)
+  // Resolve target base file path (e.g. config.jsonc.bak -> config.jsonc, config.lua.pre-update.bak -> config.lua)
   let targetPath = backupPath;
-  if (targetPath.endsWith('.bak')) {
+  if (targetPath.endsWith('.pre-update.bak')) {
+    targetPath = targetPath.slice(0, -15);
+  } else if (targetPath.endsWith('.bak')) {
     targetPath = targetPath.slice(0, -4);
   } else if (targetPath.endsWith('.bak1') || targetPath.endsWith('.bak2')) {
     targetPath = targetPath.slice(0, -5);

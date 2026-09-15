@@ -66,7 +66,7 @@ pub fn save_config(mod_id: String, content: String, state: State<AppState>) -> R
         }
     };
 
-    create_rotated_backup(&config_path);
+    create_safety_backup(&config_path);
 
     fs::write(&config_path, &content).map_err(|e| format!("Cannot write config: {}", e))?;
 
@@ -480,7 +480,7 @@ pub fn save_mod_file(mod_id: String, file_path: String, content: String, state: 
 
     let full_path = get_full_mod_file_path(mod_info, &file_path)?;
 
-    create_rotated_backup(&full_path);
+    create_safety_backup(&full_path);
 
     if let Some(parent) = full_path.parent() {
         fs::create_dir_all(parent).map_err(|e| format!("Cannot create directories: {}", e))?;
@@ -529,20 +529,22 @@ pub fn restore_mod_backup(mod_id: String, backup_file_path: String, state: State
         return Err("Backup file not found".to_string());
     }
 
-    let target_rel_path = if let Some(stripped) = backup_file_path.strip_suffix(".bak") {
+    let target_rel_path = if let Some(stripped) = backup_file_path.strip_suffix(".pre-update.bak") {
+        stripped
+    } else if let Some(stripped) = backup_file_path.strip_suffix(".bak") {
         stripped
     } else if let Some(stripped) = backup_file_path.strip_suffix(".bak1") {
         stripped
     } else if let Some(stripped) = backup_file_path.strip_suffix(".bak2") {
         stripped
     } else {
-        return Err("Not a recognized backup file extension (.bak, .bak1, .bak2)".to_string());
+        return Err("Not a recognized backup file extension (.bak, .pre-update.bak)".to_string());
     };
 
     let target_full_path = get_full_mod_file_path(mod_info, target_rel_path)?;
 
     if target_full_path.exists() {
-        create_rotated_backup(&target_full_path);
+        create_safety_backup(&target_full_path);
     }
 
     let backup_content = fs::read_to_string(&backup_full_path)
@@ -576,14 +578,16 @@ pub fn merge_mod_backup(mod_id: String, backup_file_path: String, state: State<A
         return Err("Backup file not found".to_string());
     }
 
-    let target_rel_path = if let Some(stripped) = backup_file_path.strip_suffix(".bak") {
+    let target_rel_path = if let Some(stripped) = backup_file_path.strip_suffix(".pre-update.bak") {
+        stripped
+    } else if let Some(stripped) = backup_file_path.strip_suffix(".bak") {
         stripped
     } else if let Some(stripped) = backup_file_path.strip_suffix(".bak1") {
         stripped
     } else if let Some(stripped) = backup_file_path.strip_suffix(".bak2") {
         stripped
     } else {
-        return Err("Not a recognized backup file extension (.bak, .bak1, .bak2)".to_string());
+        return Err("Not a recognized backup file extension (.bak, .pre-update.bak)".to_string());
     };
 
     let target_full_path = get_full_mod_file_path(mod_info, target_rel_path)?;
@@ -603,7 +607,7 @@ pub fn merge_mod_backup(mod_id: String, backup_file_path: String, state: State<A
     let merged_content = crate::config_merge::merge_file_contents(&backup_content, &active_content, &ext, ignored_slice)
         .ok_or_else(|| "Failed to merge configuration: unsupported file format or invalid syntax".to_string())?;
 
-    create_rotated_backup(&target_full_path);
+    create_safety_backup(&target_full_path);
 
     fs::write(&target_full_path, &merged_content)
         .map_err(|e| format!("Cannot write merged file: {}", e))?;
@@ -668,27 +672,15 @@ fn find_lua_config(dir: &Path) -> Option<PathBuf> {
     None
 }
 
-/// Rotates backups up to 3 versions: .bak -> .bak1 -> .bak2
-/// to ensure a user's original reference backup is never destroyed on intermediate saves.
-fn create_rotated_backup(path: &Path) {
+/// Creates an immutable safety backup (.bak) of the original file if not already present.
+/// Preserves the pristine original version across intermediate saves without generating .bak1/.bak2 spam.
+fn create_safety_backup(path: &Path) {
     if !path.exists() || !path.is_file() {
         return;
     }
 
-    let p_str = path.to_string_lossy();
-    let bak1 = PathBuf::from(format!("{}.bak", p_str));
-    let bak2 = PathBuf::from(format!("{}.bak1", p_str));
-    let bak3 = PathBuf::from(format!("{}.bak2", p_str));
-
-    if bak3.exists() {
-        let _ = fs::remove_file(&bak3);
+    let bak = PathBuf::from(format!("{}.bak", path.to_string_lossy()));
+    if !bak.exists() {
+        let _ = fs::copy(path, &bak);
     }
-    if bak2.exists() {
-        let _ = fs::rename(&bak2, &bak3);
-    }
-    if bak1.exists() {
-        let _ = fs::rename(&bak1, &bak2);
-    }
-
-    let _ = fs::copy(path, &bak1);
 }

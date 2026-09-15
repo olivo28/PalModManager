@@ -599,6 +599,8 @@
     "problems_jump_title": "点击跳转至第 {line} 行",
     "problems_fix_btn": "修复",
     "problems_fix_btn_title": "应用快速修复：{suggestion}",
+    "problems_category_conflict": "冲突",
+    "problems_collision_with": "与 \"{mod}\" 冲突",
     "status_problems_title": "切换问题面板",
     "status_problems_tooltip": "当前文件中有 {fileCount} 个问题，模组工作区中有 {workspaceCount} 个问题",
     "status_usmap_title": "幻兽帕鲁虚幻引擎反射架构",
@@ -776,6 +778,7 @@
     "toast_vortex_pack_success": "模组已按照 Vortex / 手动根目录结构规范打包完成！"
   },
   "scanner": {
+    "conflict_resolved_badge": "已在编辑器中修复",
     "title_conflicts": "冲突检测器",
     "title_hotkeys": "Lua 热键管理器",
     "title_saves_doctor": "存档健康医生",

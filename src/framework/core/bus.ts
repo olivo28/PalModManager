@@ -52,6 +52,9 @@ export interface AppEventMap {
   // Eventos de Configuración y Biblioteca
   'settings:changed': { key: string; value: any };
   'library:refreshed': void;
+
+  // Eventos de Scanner & Conflictos
+  'conflict:resolved': { modId: string; filePath: string; line?: number; target?: string };
 }
 
 export type BusHandler<T> = (payload: T) => void;

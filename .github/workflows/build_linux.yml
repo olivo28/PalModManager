@@ -87,6 +87,32 @@ jobs:
         run: |
           pnpm tauri build
 
+      - name: Recompress AppImage with XZ (Maximum Size Reduction)
+        run: |
+          cd src-tauri/target/release/bundle/appimage
+          APPIMAGE=$(ls PalModManager_*.AppImage | head -n 1)
+          echo "Original AppImage size: $(ls -lh "$APPIMAGE" | awk '{print $5}')"
+
+          # 1. Descargar appimagetool y extraer para ejecutar sin dependencia de FUSE
+          curl -sLo appimagetool https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage
+          chmod +x appimagetool
+          ./appimagetool --appimage-extract
+          mv squashfs-root appimagetool-root
+
+          # 2. Extraer el AppImage generado por Tauri
+          chmod +x "$APPIMAGE"
+          ./"$APPIMAGE" --appimage-extract
+
+          # 3. Strippear símbolos de binarios y librerías en Linux para tamaño mínimo
+          find squashfs-root/ -type f -executable -exec strip --strip-unneeded {} + 2>/dev/null || true
+
+          # 4. Reempaquetar con compresión SquashFS XZ de máxima densidad
+          ARCH=x86_64 ./appimagetool-root/AppRun --comp xz squashfs-root "$APPIMAGE"
+
+          # 5. Limpiar temporales
+          rm -rf appimagetool-root squashfs-root appimagetool
+          echo "Optimized AppImage size: $(ls -lh "$APPIMAGE" | awk '{print $5}')"
+
       - name: Upload Build Artifacts
         uses: actions/upload-artifact@v4
         with:

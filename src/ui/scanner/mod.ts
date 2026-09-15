@@ -11,6 +11,7 @@ export interface ConflictingMod {
   filePath: string;
   lineNumber: number;
   detail: string;
+  resolved?: boolean;
 }
 
 export interface TableRowConflict {
@@ -23,6 +24,7 @@ export interface HookConflict {
   hookTarget: string;
   hookFn: string;
   mods: ConflictingMod[];
+  resolved?: boolean;
 }
 
 export interface ModSummary {
@@ -87,6 +89,7 @@ export interface UsmapHookDiagnostic {
   reason: string;
   suggestion?: string;
   category?: 'ue4ss' | 'palschema' | 'pak' | 'ue4ss_deprecated' | 'anti_pattern';
+  resolved?: boolean;
 }
 
 export interface UsmapDiagnosticSummary {
@@ -147,6 +150,9 @@ export function setRegistrySearchQuery(val: string): void { registrySearchQuery 
 export function setSelectedRegistryModId(val: string | null): void { selectedRegistryModId = val; }
 
 export async function renderScannerView(): Promise<void> {
+  const { initConflictResolverBridge } = await import('./conflicts/bridge');
+  initConflictResolverBridge();
+
   const container = scannerDom.elMaybe('scanner-view');
   if (!container) return;
 

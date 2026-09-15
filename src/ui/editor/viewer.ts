@@ -414,6 +414,7 @@ export async function handleEditorSave(): Promise<void> {
         buf.original = buf.current;
         buf.isDirty = false;
         bus.emit('editor:saved', { filePath: p });
+        bus.emit('conflict:resolved', { modId: currentModId, filePath: p });
       }
 
       _originalContent = getMonacoContent();
@@ -459,6 +460,7 @@ export async function handleEditorSave(): Promise<void> {
     }
     updateUnsavedIndicator();
     bus.emit('editor:saved', { filePath });
+    bus.emit('conflict:resolved', { modId: currentModId, filePath });
     showToast(t('editor.toast_saved'), 'success');
 
     await refreshEditorFileTree(currentModId);

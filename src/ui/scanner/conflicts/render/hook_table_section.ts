@@ -44,6 +44,7 @@ export function buildHookAndTableConflictsHtml(
                       <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
                         <span class="scanner-conflict-mod-file">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
+                        ${m.resolved ? `<span style="font-size: 9px; font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: 1px 5px;">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
                       </div>
                       <div style="font-size:10px; color:var(--text-muted); font-family:monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
                     </div>
@@ -82,6 +83,7 @@ export function buildHookAndTableConflictsHtml(
                       <div style="display: flex; align-items: center; gap: 8px;">
                         <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
                         <span class="scanner-conflict-mod-file">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
+                        ${m.resolved ? `<span style="font-size: 9px; font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: 1px 5px;">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
                       </div>
                       <div style="font-size:10px; color:var(--text-muted); font-family:monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
                     </div>

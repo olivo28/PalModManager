@@ -17,6 +17,12 @@ export async function runScan(): Promise<void> {
   try {
     const result = await invoke<ScanResult>('scan_conflicts');
     setLastScanResult(result);
+    try {
+      const { syncScanDiagnosticsToEditor } = await import('./bridge');
+      syncScanDiagnosticsToEditor(result);
+    } catch (bridgeErr) {
+      console.warn('Failed to sync scan diagnostics to Monaco editor:', bridgeErr);
+    }
     showToast(t('scanner.toast_scan_success', { count: result.totalScanned }), 'success');
   } catch (err: any) {
     console.error(err);
