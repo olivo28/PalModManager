@@ -96,12 +96,12 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
   setBatchItems(results);
 
   const rows = results.map((item, idx) => {
-    let stateBadge = `<span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);font-size:8px;padding:1px 4px;font-weight:700;border-radius:2px;">NEW</span>`;
+    let stateBadge = `<span style="background:var(--accent-dim);color:var(--accent);border:1px solid var(--accent);font-size:var(--text-2xs, 8.5px);padding:1px calc(4px * var(--ui-scale, 1));font-weight:700;border-radius:2px;">NEW</span>`;
     if (item.existingModId) {
       if (item.existingVersion && item.version && item.existingVersion.trim().toLowerCase() === item.version.trim().toLowerCase()) {
-        stateBadge = `<span style="background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid var(--border);font-size:8px;padding:1px 4px;font-weight:700;border-radius:2px;">INSTALLED</span>`;
+        stateBadge = `<span style="background:rgba(255,255,255,0.06);color:var(--text-muted);border:1px solid var(--border);font-size:var(--text-2xs, 8.5px);padding:1px calc(4px * var(--ui-scale, 1));font-weight:700;border-radius:2px;">INSTALLED</span>`;
       } else {
-        stateBadge = `<span style="background:var(--success-dim);color:var(--success);border:1px solid var(--success);font-size:8px;padding:1px 4px;font-weight:700;border-radius:2px;">UPDATE</span>`;
+        stateBadge = `<span style="background:var(--success-dim);color:var(--success);border:1px solid var(--success);font-size:var(--text-2xs, 8.5px);padding:1px calc(4px * var(--ui-scale, 1));font-weight:700;border-radius:2px;">UPDATE</span>`;
       }
     }
 
@@ -109,10 +109,10 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
     const verText = item.version ? `v${item.version}` : '<span style="color:var(--text-muted)">—</span>';
 
     const isPakOrLogicOrHybrid = item.type === 'pak' || item.type === 'logicmods' || (item.type === 'hybrid' && item.hasPak);
-    let pakDestSelectHtml = `<span style="color:var(--text-muted);font-size:10px;">—</span>`;
+    let pakDestSelectHtml = `<span style="color:var(--text-muted);font-size:var(--text-xs, 10px);">—</span>`;
     if (isPakOrLogicOrHybrid) {
       pakDestSelectHtml = `
-        <select id="batch-pak-dest-${idx}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
+        <select id="batch-pak-dest-${idx}" style="padding:calc(2px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1));background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:var(--text-xs, 10px);width:100%;">
           <option value="~mods" ${!item.isLogicModsDefault ? 'selected' : ''}>~mods</option>
           <option value="logicmods" ${item.isLogicModsDefault ? 'selected' : ''}>logicmods</option>
         </select>
@@ -121,18 +121,18 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
 
     return `
       <tr style="border-bottom:1px solid var(--border-light)">
-        <td style="padding:6px 4px;width:28px;"><input type="checkbox" id="batch-install-${idx}" checked style="cursor:pointer;" /></td>
-        <td style="padding:6px;font-size:10px;width:180px;max-width:180px;color:var(--text-secondary);">
-          <div style="display:flex;align-items:center;justify-content:space-between;gap:8px;overflow:hidden;">
+        <td style="padding:calc(6px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1));width:28px;"><input type="checkbox" id="batch-install-${idx}" checked style="cursor:pointer;" /></td>
+        <td style="padding:calc(6px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);width:calc(180px * var(--ui-scale, 1));max-width:calc(180px * var(--ui-scale, 1));color:var(--text-secondary);">
+          <div style="display:flex;align-items:center;justify-content:space-between;gap:calc(8px * var(--ui-scale, 1));overflow:hidden;">
             <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex-grow:1;" title="${escapeHtml(item.filename)}">${escapeHtml(item.filename)}</span>
-        <button id="batch-view-files-${idx}" style="padding:2px 6px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);border-radius:4px;font-size:9px;cursor:pointer;white-space:nowrap;font-weight:600;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='var(--bg-secondary)'">${escapeHtml(t('installer.btn_show_files'))}</button>
+            <button id="batch-view-files-${idx}" style="padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);border-radius:4px;font-size:var(--text-2xs, 9px);cursor:pointer;white-space:nowrap;font-weight:600;">${escapeHtml(t('installer.btn_show_files'))}</button>
           </div>
         </td>
-        <td style="padding:6px;font-size:11px;width:70px;white-space:nowrap;color:var(--text-muted);font-weight:600;">${idText}</td>
-        <td style="padding:6px;font-size:11px;width:60px;white-space:nowrap;color:var(--text-primary);font-weight:600;">${verText}</td>
-        <td style="padding:6px;"><input type="text" id="batch-name-${idx}" value="${escapeHtml(item.name)}" style="width:100%;padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:11px;" /></td>
-        <td style="padding:6px;width:90px;">
-          <select id="batch-type-${idx}" style="padding:2px 4px;background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);font-size:10px;width:100%;">
+        <td style="padding:calc(6px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);width:calc(70px * var(--ui-scale, 1));white-space:nowrap;color:var(--text-muted);font-weight:600;">${idText}</td>
+        <td style="padding:calc(6px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);width:calc(60px * var(--ui-scale, 1));white-space:nowrap;color:var(--text-primary);font-weight:600;">${verText}</td>
+        <td style="padding:calc(6px * var(--ui-scale, 1));"><input type="text" id="batch-name-${idx}" value="${escapeHtml(item.name)}" style="width:100%;box-sizing:border-box;padding:calc(4px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:3px;font-size:var(--text-sm, 11px);" /></td>
+        <td style="padding:calc(6px * var(--ui-scale, 1));width:calc(90px * var(--ui-scale, 1));">
+          <select id="batch-type-${idx}" style="padding:calc(3px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1));background:var(--bg-primary);color:var(--text-primary);border:1px solid var(--border);border-radius:3px;font-size:var(--text-xs, 10px);width:100%;">
             <option value="ue4ss" ${item.type === 'ue4ss' ? 'selected' : ''}>UE4SS</option>
             <option value="palschema" ${item.type === 'palschema' ? 'selected' : ''}>PalSchema</option>
             <option value="pak" ${item.type === 'pak' || item.type === 'logicmods' ? 'selected' : ''}>Pak</option>
@@ -140,25 +140,25 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
             <option value="altermatic" ${item.type === 'altermatic' ? 'selected' : ''}>Altermatic</option>
           </select>
         </td>
-        <td id="batch-pak-dest-container-${idx}" style="padding:6px;width:95px;">${pakDestSelectHtml}</td>
-        <td style="padding:6px;width:50px;text-align:right;">${stateBadge}</td>
+        <td id="batch-pak-dest-container-${idx}" style="padding:calc(6px * var(--ui-scale, 1));width:calc(95px * var(--ui-scale, 1));">${pakDestSelectHtml}</td>
+        <td style="padding:calc(6px * var(--ui-scale, 1));width:calc(50px * var(--ui-scale, 1));text-align:right;">${stateBadge}</td>
       </tr>
     `;
   }).join('');
 
   content.innerHTML = `
-    <div id="batch-table-wrapper" style="overflow-y:auto;border:1px solid var(--border);background:var(--bg-secondary);border-radius:4px;margin-bottom:8px;">
+    <div id="batch-table-wrapper" style="overflow-y:auto;border:1px solid var(--border);background:var(--bg-secondary);border-radius:4px;margin-bottom:calc(8px * var(--ui-scale, 1));">
       <table style="width:100%;border-collapse:collapse;text-align:left;">
         <thead style="position:sticky;top:0;z-index:2;">
-          <tr style="background:var(--bg-tertiary);border-bottom:1px solid var(--border);font-size:10px;font-weight:700;color:var(--text-muted);text-transform:uppercase;">
-            <th style="padding:6px;width:28px;">${escapeHtml(t('installer.batch_col_install'))}</th>
-            <th style="padding:6px;width:180px;">${escapeHtml(t('installer.batch_col_archive'))}</th>
-            <th style="padding:6px;width:70px;">${escapeHtml(t('installer.batch_col_nexus_id'))}</th>
-            <th style="padding:6px;width:60px;">${escapeHtml(t('installer.batch_col_version'))}</th>
-            <th style="padding:6px;">${escapeHtml(t('installer.batch_col_target_folder'))}</th>
-            <th style="padding:6px;width:90px;">${escapeHtml(t('installer.batch_col_type'))}</th>
-            <th style="padding:6px;width:95px;">${escapeHtml(t('installer.batch_col_pak_target'))}</th>
-            <th style="padding:6px;width:50px;text-align:right;padding-right:12px;">${escapeHtml(t('installer.batch_col_status'))}</th>
+          <tr style="background:var(--bg-tertiary);border-bottom:1px solid var(--border);font-size:var(--text-2xs, 10px);font-weight:700;color:var(--text-muted);text-transform:uppercase;">
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:28px;">${escapeHtml(t('installer.batch_col_install'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:calc(180px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_archive'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:calc(70px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_nexus_id'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:calc(60px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_version'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_target_folder'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:calc(90px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_type'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:calc(95px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_pak_target'))}</th>
+            <th style="padding:calc(6px * var(--ui-scale, 1));width:calc(50px * var(--ui-scale, 1));text-align:right;padding-right:calc(12px * var(--ui-scale, 1));">${escapeHtml(t('installer.batch_col_status'))}</th>
           </tr>
         </thead>
         <tbody>
@@ -218,7 +218,7 @@ export async function renderBatchInstallPreview(paths: string[]): Promise<void> 
 
   const modalEl = document.querySelector('#install-modal .modal') as HTMLElement | null;
   if (modalEl) {
-    modalEl.style.width = '900px';
+    modalEl.style.width = 'min(calc(920px * var(--ui-scale, 1)), 96vw)';
   }
   const wrapper = installerDom.elMaybe('batch-table-wrapper');
   if (wrapper) {

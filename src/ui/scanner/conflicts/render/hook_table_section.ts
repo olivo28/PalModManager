@@ -24,35 +24,35 @@ export function buildHookAndTableConflictsHtml(
 
   return `
     ${pakConflictsHtml}
-    <div style="display: flex; gap: 20px; flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: 20px;">
+    <div style="display: flex; gap: calc(20px * var(--ui-scale, 1)); flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: calc(20px * var(--ui-scale, 1));">
       <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer;" open>
         <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between;">
-          <span>${escapeHtml(t('scanner.hook_conflicts_title', { count: hookCount }))}</span>
-          <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.hook_conflicts_desc'))}</span>
+          <span style="font-size: var(--text-base, 13.5px); font-weight: 700;">${escapeHtml(t('scanner.hook_conflicts_title', { count: hookCount }))}</span>
+          <span style="font-size: var(--text-xs, 11px); color: var(--text-muted);">${escapeHtml(t('scanner.hook_conflicts_desc'))}</span>
         </summary>
-        <div class="scanner-card-body" style="cursor: default; gap: 14px;">
+        <div class="scanner-card-body" style="cursor: default; gap: calc(14px * var(--ui-scale, 1));">
           ${hookCount > 0 ? res.hookConflicts.map(c => `
             <div class="scanner-conflict-item">
               <div class="scanner-conflict-header">
-                <span class="scanner-conflict-title">${escapeHtml(c.hookTarget)}</span>
-                <span class="scanner-conflict-type lua">${escapeHtml(c.hookFn)}</span>
+                <span class="scanner-conflict-title" style="font-size: var(--text-sm, 12.5px);">${escapeHtml(c.hookTarget)}</span>
+                <span class="scanner-conflict-type lua" style="font-size: var(--text-2xs, 10px);">${escapeHtml(c.hookFn)}</span>
               </div>
               <div class="scanner-conflict-mods">
                 ${c.mods.map(m => `
-                  <div class="scanner-conflict-mod-row" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
+                  <div class="scanner-conflict-mod-row" style="display: flex; align-items: center; justify-content: space-between; gap: calc(8px * var(--ui-scale, 1)); margin-bottom: calc(6px * var(--ui-scale, 1));">
                     <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
-                        <span class="scanner-conflict-mod-file">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
-                        ${m.resolved ? `<span style="font-size: 9px; font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: 1px 5px;">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
+                      <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                        <span class="scanner-conflict-mod-name" style="font-size: var(--text-sm, 12px);">${escapeHtml(m.modName)}</span>
+                        <span class="scanner-conflict-mod-file" style="font-size: var(--text-xs, 10.5px);">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
+                        ${m.resolved ? `<span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
                       </div>
-                      <div style="font-size:10px; color:var(--text-muted); font-family:monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
+                      <div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-family: monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="font-size: 10px; padding: 2px 8px;">
+                    <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
                         📝 ${escapeHtml(t('common.edit') || 'Edit')}
                       </button>
-                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: 10px; padding: 2px 8px;">
+                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
                         🚫 ${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}
                       </button>
                     </div>
@@ -60,38 +60,38 @@ export function buildHookAndTableConflictsHtml(
                 `).join('')}
               </div>
             </div>
-          `).join('') : `<div style="color:var(--text-muted); font-size:11px;">${escapeHtml(t('scanner.hook_conflicts_none'))}</div>`}
+          `).join('') : `<div style="color:var(--text-muted); font-size:var(--text-sm, 12px);">${escapeHtml(t('scanner.hook_conflicts_none'))}</div>`}
         </div>
       </details>
 
       <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer;" open>
         <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between;">
-          <span>${escapeHtml(t('scanner.table_conflicts_title', { count: tableCount }))}</span>
-          <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.table_conflicts_desc'))}</span>
+          <span style="font-size: var(--text-base, 13.5px); font-weight: 700;">${escapeHtml(t('scanner.table_conflicts_title', { count: tableCount }))}</span>
+          <span style="font-size: var(--text-xs, 11px); color: var(--text-muted);">${escapeHtml(t('scanner.table_conflicts_desc'))}</span>
         </summary>
-        <div class="scanner-card-body" style="cursor: default; gap: 14px;">
+        <div class="scanner-card-body" style="cursor: default; gap: calc(14px * var(--ui-scale, 1));">
           ${tableCount > 0 ? res.tableConflicts.map(c => `
             <div class="scanner-conflict-item">
               <div class="scanner-conflict-header">
-                <span class="scanner-conflict-title">${escapeHtml(c.tableName)}</span>
-                <span class="scanner-conflict-type json">${escapeHtml(c.rowName)}</span>
+                <span class="scanner-conflict-title" style="font-size: var(--text-sm, 12.5px);">${escapeHtml(c.tableName)}</span>
+                <span class="scanner-conflict-type json" style="font-size: var(--text-2xs, 10px);">${escapeHtml(c.rowName)}</span>
               </div>
               <div class="scanner-conflict-mods">
                 ${c.mods.map(m => `
-                  <div class="scanner-conflict-mod-row" style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
+                  <div class="scanner-conflict-mod-row" style="display: flex; align-items: center; justify-content: space-between; gap: calc(8px * var(--ui-scale, 1)); margin-bottom: calc(6px * var(--ui-scale, 1));">
                     <div style="display: flex; flex-direction: column; align-items: flex-start; gap: 2px;">
-                      <div style="display: flex; align-items: center; gap: 8px;">
-                        <span class="scanner-conflict-mod-name">${escapeHtml(m.modName)}</span>
-                        <span class="scanner-conflict-mod-file">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
-                        ${m.resolved ? `<span style="font-size: 9px; font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: 1px 5px;">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
+                      <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                        <span class="scanner-conflict-mod-name" style="font-size: var(--text-sm, 12px);">${escapeHtml(m.modName)}</span>
+                        <span class="scanner-conflict-mod-file" style="font-size: var(--text-xs, 10.5px);">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
+                        ${m.resolved ? `<span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
                       </div>
-                      <div style="font-size:10px; color:var(--text-muted); font-family:monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
+                      <div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-family: monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
                     </div>
-                    <div style="display: flex; align-items: center; gap: 6px;">
-                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="font-size: 10px; padding: 2px 8px;">
+                    <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
                         📝 ${escapeHtml(t('common.edit') || 'Edit')}
                       </button>
-                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: 10px; padding: 2px 8px;">
+                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
                         🚫 ${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}
                       </button>
                     </div>
@@ -99,7 +99,7 @@ export function buildHookAndTableConflictsHtml(
                 `).join('')}
               </div>
             </div>
-          `).join('') : `<div style="color:var(--text-muted); font-size:11px;">${escapeHtml(t('scanner.table_conflicts_none'))}</div>`}
+          `).join('') : `<div style="color:var(--text-muted); font-size:var(--text-sm, 12px);">${escapeHtml(t('scanner.table_conflicts_none'))}</div>`}
         </div>
       </details>
     </div>

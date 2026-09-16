@@ -40,56 +40,56 @@ export async function showPmmBackupsVaultModal(
 
   const modalHtml = `
     <div id="pmm-backups-vault-modal" class="modal-overlay active" style="z-index: 9999; display: flex; align-items: center; justify-content: center; position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px);">
-      <div class="modal" style="max-width: 680px; width: 100%; max-height: 85vh; display: flex; flex-direction: column; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 10px; box-shadow: 0 16px 36px rgba(0,0,0,0.6); overflow: hidden;">
+      <div class="modal" style="max-width: min(calc(680px * var(--ui-scale, 1)), 95vw); width: 100%; max-height: 85vh; display: flex; flex-direction: column; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(10px * var(--ui-scale, 1)); box-shadow: 0 calc(16px * var(--ui-scale, 1)) calc(36px * var(--ui-scale, 1)) rgba(0,0,0,0.6); overflow: hidden;">
         
         <!-- Header -->
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2);">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">📦</span>
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2);">
+          <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
+            <span style="font-size: calc(20px * var(--ui-scale, 1));">📦</span>
             <div>
-              <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">
+              <h3 style="margin: 0; font-size: var(--text-md, 15px); font-weight: 700; color: var(--text-primary);">
                 ${escapeHtml(t('scanner.vault_title') || 'PMM World Backups Vault')}
               </h3>
-              <span style="font-size: 11px; color: var(--text-muted);">
+              <span style="font-size: var(--text-xs, 11px); color: var(--text-muted);">
                 ${escapeHtml(world.customMeta?.nickname || world.worldName)} • ${backups.length} ${escapeHtml(t('scanner.vault_count_label') || 'Backups')} (${formatBytes(totalBytes)})
               </span>
             </div>
           </div>
-          <button class="modal-close-btn" id="pmm-vault-close-x" style="background: none; border: none; font-size: 16px; color: var(--text-muted); cursor: pointer;">✕</button>
+          <button class="modal-close-btn" id="pmm-vault-close-x" style="background: none; border: none; font-size: calc(16px * var(--ui-scale, 1)); color: var(--text-muted); cursor: pointer;">✕</button>
         </div>
 
         <!-- Body / Content -->
-        <div class="modal-body" style="padding: 16px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 14px;">
+        <div class="modal-body" style="padding: calc(16px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: calc(14px * var(--ui-scale, 1));">
           
-          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15); padding: 10px 14px; border-radius: 6px; border: 1px solid var(--border); gap: 12px;">
-            <div style="font-size: 11.5px; color: var(--text-secondary); display: flex; flex-direction: column; gap: 4px; min-width: 0;">
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)); border: 1px solid var(--border); gap: calc(12px * var(--ui-scale, 1));">
+            <div style="font-size: var(--text-xs, 11.5px); color: var(--text-secondary); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1)); min-width: 0;">
               <span>💡 ${escapeHtml(t('scanner.vault_desc') || 'Manual and pre-repair ZIP archives managed by PalModManager.')}</span>
-              <div style="display: flex; align-items: center; gap: 6px; font-size: 10.5px; color: var(--text-muted); font-family: monospace;">
+              <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); font-size: var(--text-2xs, 10.5px); color: var(--text-muted); font-family: monospace;">
                 <span>📍 ${escapeHtml(t('scanner.vault_location_label') || 'Saved in:')}</span>
-                <span style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: 2px 6px; border-radius: 4px; border: 1px solid rgba(56, 189, 248, 0.2);">AppData/Local/PalModManager/backups/worlds/</span>
+                <span style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); border-radius: calc(4px * var(--ui-scale, 1)); border: 1px solid rgba(56, 189, 248, 0.2);">AppData/Local/PalModManager/backups/worlds/</span>
               </div>
             </div>
-            <button id="btn-open-vault-folder" class="btn-secondary btn-sm" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 6px 12px; white-space: nowrap; flex-shrink: 0;">
+            <button id="btn-open-vault-folder" class="btn-secondary btn-sm" style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); white-space: nowrap; flex-shrink: 0;">
               <span>📁</span> <span>${escapeHtml(t('scanner.btn_open_folder') || 'Open in Explorer')}</span>
             </button>
           </div>
 
-          <div id="pmm-vault-items-list" style="display: flex; flex-direction: column; gap: 8px;">
+          <div id="pmm-vault-items-list" style="display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
             ${backups.length === 0 ? `
-              <div style="text-align: center; padding: 36px 16px; color: var(--text-muted); font-size: 12px; display: flex; flex-direction: column; gap: 8px;">
-                <span style="font-size: 28px;">📭</span>
+              <div style="text-align: center; padding: calc(36px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); color: var(--text-muted); font-size: var(--text-xs, 12px); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
+                <span style="font-size: calc(28px * var(--ui-scale, 1));">📭</span>
                 <span>${escapeHtml(t('scanner.vault_empty') || 'No PMM backups found for this world.')}</span>
-                <span style="font-size: 11px; opacity: 0.8;">${escapeHtml(t('scanner.vault_empty_hint') || 'Click "Backup World Now" in the Save Doctor panel to create your first safety backup.')}</span>
+                <span style="font-size: var(--text-xs, 11px); opacity: 0.8;">${escapeHtml(t('scanner.vault_empty_hint') || 'Click "Backup World Now" in the Save Doctor panel to create your first safety backup.')}</span>
               </div>
             ` : backups.map(b => `
-              <div class="pmm-backup-item-card" data-filepath="${escapeHtml(b.filePath)}" style="display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; gap: 12px;">
-                <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-                  <span style="font-size: 18px;">🗜️</span>
-                  <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px;">
-                    <span style="font-size: 12.5px; font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(b.fileName)}">
+              <div class="pmm-backup-item-card" data-filepath="${escapeHtml(b.filePath)}" style="display: flex; justify-content: space-between; align-items: center; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); background: var(--bg-card); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); gap: calc(12px * var(--ui-scale, 1));">
+                <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1)); min-width: 0; flex: 1;">
+                  <span style="font-size: calc(18px * var(--ui-scale, 1));">🗜️</span>
+                  <div style="min-width: 0; display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
+                    <span style="font-size: var(--text-sm, 12.5px); font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(b.fileName)}">
                       ${escapeHtml(b.fileName)}
                     </span>
-                    <div style="display: flex; align-items: center; gap: 8px; font-size: 10.5px; color: var(--text-muted);">
+                    <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-2xs, 10.5px); color: var(--text-muted);">
                       <span>🕒 ${escapeHtml(b.createdAt)}</span>
                       <span>•</span>
                       <span style="color: #38bdf8; font-weight: 600;">📁 ${formatBytes(b.fileSizeBytes)}</span>
@@ -97,11 +97,11 @@ export async function showPmmBackupsVaultModal(
                   </div>
                 </div>
 
-                <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                  <button class="btn-primary btn-sm btn-vault-restore" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: 4px 10px; font-size: 11px; display: flex; align-items: center; gap: 4px;">
+                <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-shrink: 0;">
+                  <button class="btn-primary btn-sm btn-vault-restore" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); display: flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
                     <span>🔄</span> <span>${escapeHtml(t('scanner.btn_restore') || 'Restore')}</span>
                   </button>
-                  <button class="btn-danger btn-sm btn-vault-delete" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: 4px 8px; font-size: 11px; background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); color: #ff5f56; border-radius: var(--radius); cursor: pointer;" title="${escapeHtml(t('common.delete') || 'Delete')}">
+                  <button class="btn-danger btn-sm btn-vault-delete" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); color: #ff5f56; border-radius: var(--radius); cursor: pointer;" title="${escapeHtml(t('common.delete') || 'Delete')}">
                     <span>🗑️</span>
                   </button>
                 </div>
@@ -111,8 +111,8 @@ export async function showPmmBackupsVaultModal(
         </div>
 
         <!-- Footer -->
-        <div class="modal-footer" style="padding: 12px 18px; border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); display: flex; justify-content: flex-end;">
-          <button id="pmm-vault-close-btn" class="btn-secondary" style="padding: 6px 16px; font-size: 12px;">
+        <div class="modal-footer" style="padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-top: 1px solid var(--border); background: rgba(0,0,0,0.15); display: flex; justify-content: flex-end;">
+          <button id="pmm-vault-close-btn" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); font-size: var(--text-xs, 12px);">
             ${escapeHtml(t('common.close') || 'Close')}
           </button>
         </div>

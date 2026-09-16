@@ -1,15 +1,15 @@
 
 .discovery-modal-close-btn {
   position: absolute;
-  top: 14px;
-  right: 14px;
+  top: calc(14px * var(--ui-scale, 1));
+  right: calc(14px * var(--ui-scale, 1));
   background: rgba(0, 0, 0, 0.65);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  width: 32px;
-  height: 32px;
+  width: calc(34px * var(--ui-scale, 1));
+  height: calc(34px * var(--ui-scale, 1));
   border-radius: 50%;
-  font-size: 14px;
+  font-size: var(--text-base, 14px);
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -25,24 +25,24 @@
 
 .discovery-modal-header-info {
   position: absolute;
-  bottom: 16px;
-  left: 24px;
-  right: 24px;
+  bottom: calc(16px * var(--ui-scale, 1));
+  left: calc(24px * var(--ui-scale, 1));
+  right: calc(24px * var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   z-index: 5;
 }
 
 .discovery-modal-badges {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
 }
 
 .discovery-modal-title {
   margin: 0;
-  font-size: 24px;
+  font-size: calc(24px * var(--ui-scale, 1));
   font-weight: 800;
   color: #fff;
   text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
@@ -50,26 +50,26 @@
 }
 
 .discovery-modal-author-row {
-  font-size: 12px;
+  font-size: var(--text-sm, 12.5px);
   color: #ccc;
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
 }
 
 .discovery-modal-stats-bar {
   display: flex;
   align-items: center;
-  gap: 16px;
-  margin-top: 6px;
+  gap: calc(16px * var(--ui-scale, 1));
+  margin-top: calc(6px * var(--ui-scale, 1));
   flex-wrap: wrap;
 }
 
 .discovery-stat-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 12px;
+  gap: calc(6px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 12.5px);
 }
 
 .discovery-stat-val {
@@ -79,13 +79,13 @@
 
 .discovery-stat-lbl {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
 }
 
 .discovery-modal-quick-actions {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   margin-left: auto;
 }
 
@@ -93,14 +93,14 @@
   background: rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  font-size: 11px;
+  padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  border-radius: calc(6px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   transition: all 0.15s ease;
 }
 
@@ -135,13 +135,13 @@
   display: flex;
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
-  padding: 0 24px;
+  padding: 0 calc(24px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
 .discovery-modal-tab {
-  padding: 12px 20px;
-  font-size: 12px;
+  padding: calc(12px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 12.5px);
   font-weight: 700;
   border: none;
   background: transparent;
@@ -163,7 +163,7 @@
 /* MODAL BODY */
 .discovery-modal-body {
   flex: 1;
-  padding: 24px;
+  padding: calc(24px * var(--ui-scale, 1));
   overflow-y: auto;
 }
 
@@ -177,7 +177,7 @@
 
 /* BBCODE AND DESCRIPTION FORMATTING */
 .discovery-description-content {
-  font-size: 13px;
+  font-size: var(--text-base, 13.5px);
   line-height: 1.65;
   color: var(--text-primary);
 }
@@ -187,16 +187,16 @@
 .discovery-description-content h3,
 .bbcode-heading {
   color: var(--text-primary);
-  margin: 14px 0 8px 0;
+  margin: calc(14px * var(--ui-scale, 1)) 0 calc(8px * var(--ui-scale, 1)) 0;
   font-weight: 800;
 }
 
 .bbcode-quote {
   border-left: 4px solid var(--accent);
   background: var(--accent-dim);
-  padding: 10px 14px;
-  margin: 12px 0;
-  border-radius: 0 6px 6px 0;
+  padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
+  margin: calc(12px * var(--ui-scale, 1)) 0;
+  border-radius: 0 calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0;
   color: var(--text-secondary);
   font-style: italic;
 }
@@ -204,9 +204,9 @@
 .bbcode-spoiler {
   background: var(--bg-secondary);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  margin: 10px 0;
+  border-radius: calc(6px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  margin: calc(10px * var(--ui-scale, 1)) 0;
 }
 
 .bbcode-spoiler summary {
@@ -217,21 +217,21 @@
 }
 
 .bbcode-spoiler-content {
-  margin-top: 8px;
-  padding-top: 8px;
+  margin-top: calc(8px * var(--ui-scale, 1));
+  padding-top: calc(8px * var(--ui-scale, 1));
   border-top: 1px solid var(--border);
 }
 
 .bbcode-code {
   background: var(--bg-code);
   border: 1px solid var(--border);
-  padding: 12px;
-  border-radius: 6px;
+  padding: calc(12px * var(--ui-scale, 1));
+  border-radius: calc(6px * var(--ui-scale, 1));
   font-family: monospace;
-  font-size: 12px;
+  font-size: var(--text-sm, 12px);
   color: var(--accent);
   overflow-x: auto;
-  margin: 10px 0;
+  margin: calc(10px * var(--ui-scale, 1)) 0;
 }
 
 .bbcode-list {

@@ -15,22 +15,22 @@ export async function openUAssetInspectorModal(params: {
 
   const loadingModalHtml = `
     <div id="uasset-inspector-modal" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); display: flex; align-items: center; justify-content: center; z-index: 10000; animation: fadeIn 0.15s ease;">
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; width: 780px; max-width: 95vw; max-height: 88vh; box-shadow: 0 16px 40px rgba(0,0,0,0.7); display: flex; flex-direction: column; overflow: hidden;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: calc(12px * var(--ui-scale, 1)); width: min(calc(840px * var(--ui-scale, 1)), 95vw); max-width: 95vw; max-height: 88vh; box-shadow: 0 calc(16px * var(--ui-scale, 1)) calc(40px * var(--ui-scale, 1)) rgba(0,0,0,0.7); display: flex; flex-direction: column; overflow: hidden;">
         
-        <div style="background: var(--bg-secondary); padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">📦</span>
+        <div style="background: var(--bg-secondary); padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
+            <span style="font-size: calc(20px * var(--ui-scale, 1));">📦</span>
             <div>
-              <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.uasset_modal_title') || 'Unreal Engine Asset Inspector')}</div>
-              <div style="font-size: 11px; color: var(--text-muted); font-family: monospace;">${escapeHtml(params.assetInternalPath)}</div>
+              <div style="font-size: var(--text-md, 14px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.uasset_modal_title') || 'Unreal Engine Asset Inspector')}</div>
+              <div style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-family: monospace;">${escapeHtml(params.assetInternalPath)}</div>
             </div>
           </div>
-          <button id="btn-close-uasset-modal" style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer; padding: 4px;">✕</button>
+          <button id="btn-close-uasset-modal" style="background: none; border: none; font-size: calc(18px * var(--ui-scale, 1)); color: var(--text-muted); cursor: pointer; padding: calc(4px * var(--ui-scale, 1));">✕</button>
         </div>
 
-        <div id="uasset-modal-body" style="padding: 36px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; min-height: 280px;">
-          <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(0, 188, 255, 0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-          <span style="font-size: 12.5px; color: var(--text-secondary);">${escapeHtml(t('common.loading') || 'Loading asset details...')}</span>
+        <div id="uasset-modal-body" style="padding: calc(36px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(12px * var(--ui-scale, 1)); min-height: calc(280px * var(--ui-scale, 1));">
+          <div class="spinner" style="width: calc(28px * var(--ui-scale, 1)); height: calc(28px * var(--ui-scale, 1)); border: 3px solid rgba(0, 188, 255, 0.2); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+          <span style="font-size: var(--text-sm, 12.5px); color: var(--text-secondary);">${escapeHtml(t('common.loading') || 'Loading asset details...')}</span>
         </div>
 
       </div>
@@ -64,172 +64,172 @@ export async function openUAssetInspectorModal(params: {
 
     bodyEl.innerHTML = `
       <!-- Tabs Navigation -->
-      <div style="background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--border); display: flex; gap: 4px; padding: 8px 16px 0 16px; overflow-x: auto;">
-        <button class="uasset-tab-btn active" data-tab="tab-overview" style="background: var(--bg-card); border: 1px solid var(--border); border-bottom: none; color: var(--accent); font-weight: 700; font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+      <div style="background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--border); display: flex; gap: calc(4px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)) 0 calc(16px * var(--ui-scale, 1)); overflow-x: auto;">
+        <button class="uasset-tab-btn active" data-tab="tab-overview" style="background: var(--bg-card); border: 1px solid var(--border); border-bottom: none; color: var(--accent); font-weight: 700; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
           📊 ${escapeHtml(t('scanner.uasset_tab_overview') || 'Overview')}
         </button>
         ${isTexture ? `
-        <button class="uasset-tab-btn" data-tab="tab-texture" style="background: none; border: 1px solid transparent; color: #00bcff; font-weight: 700; font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+        <button class="uasset-tab-btn" data-tab="tab-texture" style="background: none; border: 1px solid transparent; color: #00bcff; font-weight: 700; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
           🖼️ ${escapeHtml(t('scanner.uasset_tab_texture') || 'GPU Texture')}
         </button>
         ` : ''}
-        <button class="uasset-tab-btn" data-tab="tab-exports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+        <button class="uasset-tab-btn" data-tab="tab-exports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
           📤 ${escapeHtml(t('scanner.uasset_tab_exports') || 'Exports')} (${details.exports.length})
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-imports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+        <button class="uasset-tab-btn" data-tab="tab-imports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
           📥 ${escapeHtml(t('scanner.uasset_tab_imports') || 'Imports')} (${details.imports.length})
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-names" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+        <button class="uasset-tab-btn" data-tab="tab-names" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
           🔤 ${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map')} (${details.summary.nameCount})
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-schema" style="background: none; border: 1px solid transparent; color: #38bdf8; font-size: 11.5px; padding: 6px 14px; border-radius: 6px 6px 0 0; cursor: pointer; transition: all 0.15s ease;">
+        <button class="uasset-tab-btn" data-tab="tab-schema" style="background: none; border: 1px solid transparent; color: #38bdf8; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
           ⚡ ${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema (USMAP)')} ${details.resolvedSchema ? `(${details.resolvedSchema.totalProperties})` : ''}
         </button>
       </div>
 
       <!-- Tab Content Area -->
-      <div style="padding: 16px 18px; overflow-y: auto; max-height: 55vh; min-height: 160px; display: flex; flex-direction: column; gap: 12px;">
+      <div style="padding: calc(16px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); overflow-y: auto; max-height: 55vh; min-height: calc(160px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1));">
         
         <!-- Tab 1: Overview -->
-        <div id="tab-overview" class="uasset-tab-pane" style="display: flex; flex-direction: column; gap: 12px;">
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px;">
+        <div id="tab-overview" class="uasset-tab-pane" style="display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1));">
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(200px * var(--ui-scale, 1)), 1fr)); gap: calc(10px * var(--ui-scale, 1));">
             
-            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
-              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_engine_version') || 'Engine Version')}</span>
-              <strong style="color: var(--accent); font-size: 12px;">${escapeHtml(details.engineVersion)}</strong>
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(3px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-2xs, 10px); color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_engine_version') || 'Engine Version')}</span>
+              <strong style="color: var(--accent); font-size: var(--text-xs, 12px);">${escapeHtml(details.engineVersion)}</strong>
             </div>
 
-            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
-              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_asset_classification') || 'Asset Classification')}</span>
-              <span class="badge" style="align-self: flex-start; font-size: 10.5px; padding: 2px 8px; background: rgba(0,188,255,0.15); color: #00bcff; border: 1px solid rgba(0,188,255,0.3); font-weight: 700;">${escapeHtml(details.assetType)}</span>
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(3px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-2xs, 10px); color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_asset_classification') || 'Asset Classification')}</span>
+              <span class="badge" style="align-self: flex-start; font-size: var(--text-2xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); background: rgba(0,188,255,0.15); color: #00bcff; border: 1px solid rgba(0,188,255,0.3); font-weight: 700;">${escapeHtml(details.assetType)}</span>
             </div>
 
-            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
-              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_header_size') || 'Header Size (.uasset)')}</span>
-              <strong style="color: var(--text-primary); font-family: monospace; font-size: 11.5px;">${formatBytes(details.summary.uassetSizeBytes)}</strong>
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(3px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-2xs, 10px); color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_header_size') || 'Header Size (.uasset)')}</span>
+              <strong style="color: var(--text-primary); font-family: monospace; font-size: var(--text-xs, 11.5px);">${formatBytes(details.summary.uassetSizeBytes)}</strong>
             </div>
 
-            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; gap: 3px;">
-              <span style="font-size: 10px; color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_payload_size') || 'Payload Size (.uexp)')}</span>
-              <strong style="color: var(--text-primary); font-family: monospace; font-size: 11.5px;">${details.summary.uexpSizeBytes ? formatBytes(details.summary.uexpSizeBytes) : escapeHtml(t('scanner.uasset_embedded_in_uasset') || 'Embedded in .uasset')}</strong>
+            <div style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(3px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-2xs, 10px); color: var(--text-muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px;">${escapeHtml(t('scanner.uasset_payload_size') || 'Payload Size (.uexp)')}</span>
+              <strong style="color: var(--text-primary); font-family: monospace; font-size: var(--text-xs, 11.5px);">${details.summary.uexpSizeBytes ? formatBytes(details.summary.uexpSizeBytes) : escapeHtml(t('scanner.uasset_embedded_in_uasset') || 'Embedded in .uasset')}</strong>
             </div>
 
           </div>
 
           ${isTexture ? `
-            <div style="background: rgba(0, 188, 255, 0.05); border: 1px solid rgba(0, 188, 255, 0.2); border-radius: 8px; padding: 12px 16px; display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <span style="font-size: 24px; flex-shrink: 0;">🖼️</span>
-                <div style="display: flex; flex-direction: column; gap: 2px;">
-                  <span style="font-size: 11.5px; font-weight: 700; color: #00bcff;">${escapeHtml(t('scanner.uasset_texture_title') || 'DirectDraw Surface / GPU Texture2D Binary')}</span>
-                  <span style="font-size: 10px; color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_texture_desc', { size: details.summary.uexpSizeBytes ? formatBytes(details.summary.uexpSizeBytes) : (t('scanner.uasset_embedded_in_uasset') || 'Embedded') }) || `Cooked texture streaming resource. Raw mipmaps and BC7/DXT compressed pixel buffers are embedded in the .uexp payload.`)}</span>
+            <div style="background: rgba(0, 188, 255, 0.05); border: 1px solid rgba(0, 188, 255, 0.2); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui-scale, 1));">
+              <div style="display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
+                <span style="font-size: calc(24px * var(--ui-scale, 1)); flex-shrink: 0;">🖼️</span>
+                <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
+                  <span style="font-size: var(--text-xs, 11.5px); font-weight: 700; color: #00bcff;">${escapeHtml(t('scanner.uasset_texture_title') || 'DirectDraw Surface / GPU Texture2D Binary')}</span>
+                  <span style="font-size: var(--text-2xs, 10px); color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_texture_desc', { size: details.summary.uexpSizeBytes ? formatBytes(details.summary.uexpSizeBytes) : (t('scanner.uasset_embedded_in_uasset') || 'Embedded') }) || `Cooked texture streaming resource. Raw mipmaps and BC7/DXT compressed pixel buffers are embedded in the .uexp payload.`)}</span>
                 </div>
               </div>
-              <button id="btn-quick-goto-texture" class="btn btn-primary btn-sm" style="font-size: 11px; padding: 5px 12px; display: inline-flex; align-items: center; gap: 5px; white-space: nowrap;">
+              <button id="btn-quick-goto-texture" class="btn btn-primary btn-sm" style="font-size: var(--text-xs, 11px); padding: calc(5px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(5px * var(--ui-scale, 1)); white-space: nowrap;">
                 <span>🖼️</span> <span>${escapeHtml(t('scanner.uasset_tab_texture') || 'View Texture')}</span>
               </button>
             </div>
           ` : (isMaterial ? `
-            <div style="background: rgba(192, 132, 252, 0.05); border: 1px solid rgba(192, 132, 252, 0.2); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 24px; flex-shrink: 0;">🎨</span>
-              <div style="display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 11.5px; font-weight: 700; color: #c084fc;">${escapeHtml(t('scanner.uasset_material_title') || 'Material / Shader Graph Instance')}</span>
-                <span style="font-size: 10px; color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_material_desc') || 'Contains compiled shader parameter overrides, texture sampler references, and material pipeline definitions.')}</span>
+            <div style="background: rgba(192, 132, 252, 0.05); border: 1px solid rgba(192, 132, 252, 0.2); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
+              <span style="font-size: calc(24px * var(--ui-scale, 1)); flex-shrink: 0;">🎨</span>
+              <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
+                <span style="font-size: var(--text-xs, 11.5px); font-weight: 700; color: #c084fc;">${escapeHtml(t('scanner.uasset_material_title') || 'Material / Shader Graph Instance')}</span>
+                <span style="font-size: var(--text-2xs, 10px); color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_material_desc') || 'Contains compiled shader parameter overrides, texture sampler references, and material pipeline definitions.')}</span>
               </div>
             </div>
           ` : (isDataTable ? `
-            <div style="background: rgba(74, 246, 38, 0.05); border: 1px solid rgba(74, 246, 38, 0.2); border-radius: 8px; padding: 10px 14px; display: flex; align-items: center; gap: 12px;">
-              <span style="font-size: 24px; flex-shrink: 0;">📊</span>
-              <div style="display: flex; flex-direction: column; gap: 2px;">
-                <span style="font-size: 11.5px; font-weight: 700; color: #4af626;">${escapeHtml(t('scanner.uasset_datatable_title') || 'Unreal Engine DataTable Asset')}</span>
-                <span style="font-size: 10px; color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_datatable_desc') || 'Contains structured game data rows, item templates, stats, or configuration mappings.')}</span>
+            <div style="background: rgba(74, 246, 38, 0.05); border: 1px solid rgba(74, 246, 38, 0.2); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
+              <span style="font-size: calc(24px * var(--ui-scale, 1)); flex-shrink: 0;">📊</span>
+              <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
+                <span style="font-size: var(--text-xs, 11.5px); font-weight: 700; color: #4af626;">${escapeHtml(t('scanner.uasset_datatable_title') || 'Unreal Engine DataTable Asset')}</span>
+                <span style="font-size: var(--text-2xs, 10px); color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_datatable_desc') || 'Contains structured game data rows, item templates, stats, or configuration mappings.')}</span>
               </div>
             </div>
           ` : ''))}
 
           <!-- Quick Metrics Bar -->
-          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; display: flex; justify-content: space-around; align-items: center; text-align: center; flex-wrap: wrap; gap: 10px;">
+          <div style="background: rgba(0,0,0,0.2); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; justify-content: space-around; align-items: center; text-align: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1));">
             <div>
-              <div style="font-size: 16px; font-weight: 700; color: #4af626;">${details.exports.length}</div>
-              <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_exports') || 'Exported Objects')}</div>
+              <div style="font-size: calc(16px * var(--ui-scale, 1)); font-weight: 700; color: #4af626;">${details.exports.length}</div>
+              <div style="font-size: var(--text-2xs, 10px); color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_exports') || 'Exported Objects')}</div>
             </div>
-            <div style="width: 1px; height: 24px; background: var(--border);"></div>
+            <div style="width: 1px; height: calc(24px * var(--ui-scale, 1)); background: var(--border);"></div>
             <div>
-              <div style="font-size: 16px; font-weight: 700; color: #38bdf8;">${details.imports.length}</div>
-              <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_imports') || 'Imported Dependencies')}</div>
+              <div style="font-size: calc(16px * var(--ui-scale, 1)); font-weight: 700; color: #38bdf8;">${details.imports.length}</div>
+              <div style="font-size: var(--text-2xs, 10px); color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_imports') || 'Imported Dependencies')}</div>
             </div>
-            <div style="width: 1px; height: 24px; background: var(--border);"></div>
+            <div style="width: 1px; height: calc(24px * var(--ui-scale, 1)); background: var(--border);"></div>
             <div>
-              <div style="font-size: 16px; font-weight: 700; color: #ffd166;">${details.summary.nameCount}</div>
-              <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map Tokens')}</div>
+              <div style="font-size: calc(16px * var(--ui-scale, 1)); font-weight: 700; color: #ffd166;">${details.summary.nameCount}</div>
+              <div style="font-size: var(--text-2xs, 10px); color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map Tokens')}</div>
             </div>
-            <div style="width: 1px; height: 24px; background: var(--border);"></div>
+            <div style="width: 1px; height: calc(24px * var(--ui-scale, 1)); background: var(--border);"></div>
             <div>
-              <div style="font-size: 16px; font-weight: 700; color: #38bdf8;">${details.resolvedSchema ? details.resolvedSchema.totalProperties : '—'}</div>
-              <div style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema Properties')}</div>
+              <div style="font-size: calc(16px * var(--ui-scale, 1)); font-weight: 700; color: #38bdf8;">${details.resolvedSchema ? details.resolvedSchema.totalProperties : '—'}</div>
+              <div style="font-size: var(--text-2xs, 10px); color: var(--text-muted);">${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema Properties')}</div>
             </div>
           </div>
         </div>
 
         ${isTexture ? `
         <!-- Tab: GPU Texture Preview (Lazy Loaded) -->
-        <div id="tab-texture" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: 10px;">
-          <div id="tex-lazy-loader" style="padding: 48px 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px;">
-            <div class="spinner" style="width: 28px; height: 28px; border: 3px solid rgba(0, 188, 255, 0.2); border-top-color: #00bcff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
-            <span style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(t('scanner.uasset_loading_texture') || 'Decoding GPU texture in memory...')}</span>
+        <div id="tab-texture" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: calc(10px * var(--ui-scale, 1));">
+          <div id="tex-lazy-loader" style="padding: calc(48px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(12px * var(--ui-scale, 1));">
+            <div class="spinner" style="width: calc(28px * var(--ui-scale, 1)); height: calc(28px * var(--ui-scale, 1)); border: 3px solid rgba(0, 188, 255, 0.2); border-top-color: #00bcff; border-radius: 50%; animation: spin 0.8s linear infinite;"></div>
+            <span style="font-size: var(--text-xs, 12px); color: var(--text-secondary);">${escapeHtml(t('scanner.uasset_loading_texture') || 'Decoding GPU texture in memory...')}</span>
           </div>
-          <div id="tex-viewport-content" style="display: none; flex-direction: column; gap: 10px;"></div>
+          <div id="tex-viewport-content" style="display: none; flex-direction: column; gap: calc(10px * var(--ui-scale, 1));"></div>
         </div>
         ` : ''}
 
         <!-- Tab 2: Exports -->
-        <div id="tab-exports" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: 8px;">
-          <input type="text" id="uasset-exports-filter" placeholder="${escapeHtml(t('scanner.uasset_search_exports') || 'Filter exports by object or class name...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 11px; outline: none;" />
+        <div id="tab-exports" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
+          <input type="text" id="uasset-exports-filter" placeholder="${escapeHtml(t('scanner.uasset_search_exports') || 'Filter exports by object or class name...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); outline: none;" />
           
-          <div id="uasset-exports-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px; max-height: 240px; min-height: 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+          <div id="uasset-exports-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)); max-height: calc(240px * var(--ui-scale, 1)); min-height: calc(80px * var(--ui-scale, 1)); overflow-y: auto; display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
             ${details.exports.length === 0 ? `
-              <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 11px;">${escapeHtml(t('scanner.uasset_no_exports') || 'No exports found in asset header.')}</div>
+              <div style="padding: calc(20px * var(--ui-scale, 1)); text-align: center; color: var(--text-muted); font-size: var(--text-xs, 11px);">${escapeHtml(t('scanner.uasset_no_exports') || 'No exports found in asset header.')}</div>
             ` : details.exports.map(exp => `
-              <div class="uasset-export-row" data-search="${escapeHtml((exp.objectName + ' ' + exp.className + ' ' + (exp.outerName || '')).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: monospace; font-size: 11px;">
-                <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden;">
+              <div class="uasset-export-row" data-search="${escapeHtml((exp.objectName + ' ' + exp.className + ' ' + (exp.outerName || '')).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; gap: calc(10px * var(--ui-scale, 1)); font-family: monospace; font-size: var(--text-xs, 11px);">
+                <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1)); overflow: hidden;">
                   <strong style="color: #4af626; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(exp.objectName)}</strong>
-                  ${exp.outerName ? `<span style="font-size: 9px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_parent_prefix') || 'Parent')}: ${escapeHtml(exp.outerName)}</span>` : ''}
+                  ${exp.outerName ? `<span style="font-size: var(--text-2xs, 9px); color: var(--text-muted);">${escapeHtml(t('scanner.uasset_parent_prefix') || 'Parent')}: ${escapeHtml(exp.outerName)}</span>` : ''}
                 </div>
-                <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(74, 246, 38, 0.12); color: #4af626; border: 1px solid rgba(74, 246, 38, 0.25); white-space: nowrap;">${escapeHtml(exp.className)}</span>
+                <span class="badge" style="font-size: var(--text-2xs, 9.5px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(74, 246, 38, 0.12); color: #4af626; border: 1px solid rgba(74, 246, 38, 0.25); white-space: nowrap;">${escapeHtml(exp.className)}</span>
               </div>
             `).join('')}
           </div>
         </div>
 
         <!-- Tab 3: Imports -->
-        <div id="tab-imports" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: 8px;">
-          <input type="text" id="uasset-imports-filter" placeholder="${escapeHtml(t('scanner.uasset_search_imports') || 'Filter imports by dependency or package...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 11px; outline: none;" />
+        <div id="tab-imports" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
+          <input type="text" id="uasset-imports-filter" placeholder="${escapeHtml(t('scanner.uasset_search_imports') || 'Filter imports by dependency or package...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); outline: none;" />
           
-          <div id="uasset-imports-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px; max-height: 240px; min-height: 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+          <div id="uasset-imports-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)); max-height: calc(240px * var(--ui-scale, 1)); min-height: calc(80px * var(--ui-scale, 1)); overflow-y: auto; display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
             ${details.imports.length === 0 ? `
-              <div style="padding: 20px; text-align: center; color: var(--text-muted); font-size: 11px;">${escapeHtml(t('scanner.uasset_no_imports') || 'No external imports found.')}</div>
+              <div style="padding: calc(20px * var(--ui-scale, 1)); text-align: center; color: var(--text-muted); font-size: var(--text-xs, 11px);">${escapeHtml(t('scanner.uasset_no_imports') || 'No external imports found.')}</div>
             ` : details.imports.map(imp => `
-              <div class="uasset-import-row" data-search="${escapeHtml((imp.objectName + ' ' + imp.className + ' ' + imp.classPackage).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: monospace; font-size: 11px;">
-                <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden;">
+              <div class="uasset-import-row" data-search="${escapeHtml((imp.objectName + ' ' + imp.className + ' ' + imp.classPackage).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; gap: calc(10px * var(--ui-scale, 1)); font-family: monospace; font-size: var(--text-xs, 11px);">
+                <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1)); overflow: hidden;">
                   <strong style="color: #38bdf8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(imp.objectName)}</strong>
-                  <span style="font-size: 9px; color: var(--text-muted);">${escapeHtml(t('scanner.uasset_package_prefix') || 'Package')}: ${escapeHtml(imp.classPackage)}</span>
+                  <span style="font-size: var(--text-2xs, 9px); color: var(--text-muted);">${escapeHtml(t('scanner.uasset_package_prefix') || 'Package')}: ${escapeHtml(imp.classPackage)}</span>
                 </div>
-                <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(imp.className)}</span>
+                <span class="badge" style="font-size: var(--text-2xs, 9.5px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(imp.className)}</span>
               </div>
             `).join('')}
           </div>
         </div>
 
         <!-- Tab 4: Name Map -->
-        <div id="tab-names" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: 8px;">
-          <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
-            <input type="text" id="uasset-names-filter" placeholder="${escapeHtml(t('scanner.uasset_search_names') || 'Search name table tokens and identifiers...')}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 11px; outline: none;" />
-            <span id="uasset-names-count" style="font-size: 10px; color: var(--text-muted); white-space: nowrap;">${escapeHtml(t('scanner.uasset_tokens_count', { count: details.summary.nameCount }) || `${details.summary.nameCount} tokens`)}</span>
+        <div id="tab-names" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
+          <div style="display: flex; justify-content: space-between; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+            <input type="text" id="uasset-names-filter" placeholder="${escapeHtml(t('scanner.uasset_search_names') || 'Search name table tokens and identifiers...')}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); outline: none;" />
+            <span id="uasset-names-count" style="font-size: var(--text-2xs, 10px); color: var(--text-muted); white-space: nowrap;">${escapeHtml(t('scanner.uasset_tokens_count', { count: details.summary.nameCount }) || `${details.summary.nameCount} tokens`)}</span>
           </div>
 
-          <div id="uasset-names-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 8px; max-height: 240px; min-height: 80px; overflow-y: auto; display: flex; flex-wrap: wrap; gap: 5px; align-content: flex-start;">
+          <div id="uasset-names-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)); max-height: calc(240px * var(--ui-scale, 1)); min-height: calc(80px * var(--ui-scale, 1)); overflow-y: auto; display: flex; flex-wrap: wrap; gap: calc(5px * var(--ui-scale, 1)); align-content: flex-start;">
             ${details.namesSample.map(name => `
-              <span class="uasset-name-tag" data-name="${escapeHtml(name)}" data-search="${escapeHtml(name.toLowerCase())}" title="${escapeHtml(t('scanner.uasset_click_to_copy') || 'Click to copy')}" style="background: var(--bg-secondary); border: 1px solid var(--border); color: #ffd166; font-family: monospace; font-size: 10px; padding: 2px 7px; border-radius: 4px; cursor: pointer; user-select: all; transition: all 0.1s ease;">
+              <span class="uasset-name-tag" data-name="${escapeHtml(name)}" data-search="${escapeHtml(name.toLowerCase())}" title="${escapeHtml(t('scanner.uasset_click_to_copy') || 'Click to copy')}" style="background: var(--bg-secondary); border: 1px solid var(--border); color: #ffd166; font-family: monospace; font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)); border-radius: calc(4px * var(--ui-scale, 1)); cursor: pointer; user-select: all; transition: all 0.1s ease;">
                 ${escapeHtml(name)}
               </span>
             `).join('')}
@@ -237,46 +237,46 @@ export async function openUAssetInspectorModal(params: {
         </div>
 
         <!-- Tab 5: Schema (USMAP) -->
-        <div id="tab-schema" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: 8px;">
+        <div id="tab-schema" class="uasset-tab-pane" style="display: none; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
           ${details.resolvedSchema ? `
-            <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 6px; padding: 8px 12px; display: flex; justify-content: space-between; align-items: center; font-size: 11px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px;">⚡</span>
-                <span><strong>${escapeHtml(details.resolvedSchema.matchedStructName)}</strong> ${details.resolvedSchema.superType ? `<span style="color: var(--text-muted); font-size: 10px;">(extends ${escapeHtml(details.resolvedSchema.superType)})</span>` : ''}</span>
+            <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-xs, 11px);">
+              <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                <span style="font-size: calc(14px * var(--ui-scale, 1));">⚡</span>
+                <span><strong>${escapeHtml(details.resolvedSchema.matchedStructName)}</strong> ${details.resolvedSchema.superType ? `<span style="color: var(--text-muted); font-size: var(--text-2xs, 10px);">(extends ${escapeHtml(details.resolvedSchema.superType)})</span>` : ''}</span>
               </div>
-              <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
+              <span class="badge" style="font-size: var(--text-2xs, 9.5px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
                 ${details.resolvedSchema.totalProperties} ${escapeHtml(t('scanner.uasset_schema_props_count') || 'Properties Resolved')}
               </span>
             </div>
 
-            <input type="text" id="uasset-schema-filter" placeholder="${escapeHtml(t('scanner.uasset_search_schema') || 'Filter schema properties by name or type...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 10px; font-size: 11px; outline: none;" />
+            <input type="text" id="uasset-schema-filter" placeholder="${escapeHtml(t('scanner.uasset_search_schema') || 'Filter schema properties by name or type...')}" style="width: 100%; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); outline: none;" />
 
-            <div id="uasset-schema-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: 6px; padding: 6px; max-height: 220px; min-height: 80px; overflow-y: auto; display: flex; flex-direction: column; gap: 4px;">
+            <div id="uasset-schema-list" style="background: var(--bg-primary); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)); max-height: calc(220px * var(--ui-scale, 1)); min-height: calc(80px * var(--ui-scale, 1)); overflow-y: auto; display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
               ${details.resolvedSchema.properties.map(p => `
-                <div class="uasset-schema-row" data-search="${escapeHtml((p.name + ' ' + p.typeName + ' ' + (p.structType || '') + ' ' + (p.enumType || '') + ' ' + (p.innerType || '')).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; padding: 6px 10px; display: flex; justify-content: space-between; align-items: center; gap: 10px; font-family: monospace; font-size: 11px;">
-                  <div style="display: flex; align-items: center; gap: 8px; overflow: hidden;">
-                    <span style="font-size: 9.5px; color: var(--text-muted); min-width: 24px;">#${p.index}</span>
+                <div class="uasset-schema-row" data-search="${escapeHtml((p.name + ' ' + p.typeName + ' ' + (p.structType || '') + ' ' + (p.enumType || '') + ' ' + (p.innerType || '')).toLowerCase())}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; gap: calc(10px * var(--ui-scale, 1)); font-family: monospace; font-size: var(--text-xs, 11px);">
+                  <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); overflow: hidden;">
+                    <span style="font-size: var(--text-2xs, 9.5px); color: var(--text-muted); min-width: calc(24px * var(--ui-scale, 1));">#${p.index}</span>
                     <strong style="color: #38bdf8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">${escapeHtml(p.name)}</strong>
                   </div>
-                  <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                    ${p.structType ? `<span style="font-size: 9.5px; color: #ffd166;">${escapeHtml(p.structType)}</span>` : ''}
-                    ${p.enumType ? `<span style="font-size: 9.5px; color: #c084fc;">${escapeHtml(p.enumType)}</span>` : ''}
-                    ${p.innerType ? `<span style="font-size: 9.5px; color: #4ade80;">&lt;${escapeHtml(p.innerType)}&gt;</span>` : ''}
-                    <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">${escapeHtml(p.typeName)}</span>
+                  <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-shrink: 0;">
+                    ${p.structType ? `<span style="font-size: var(--text-2xs, 9.5px); color: #ffd166;">${escapeHtml(p.structType)}</span>` : ''}
+                    ${p.enumType ? `<span style="font-size: var(--text-2xs, 9.5px); color: #c084fc;">${escapeHtml(p.enumType)}</span>` : ''}
+                    ${p.innerType ? `<span style="font-size: var(--text-2xs, 9.5px); color: #4ade80;">&lt;${escapeHtml(p.innerType)}&gt;</span>` : ''}
+                    <span class="badge" style="font-size: var(--text-2xs, 9.5px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25);">${escapeHtml(p.typeName)}</span>
                   </div>
                 </div>
               `).join('')}
             </div>
           ` : `
-            <div style="padding: 24px; text-align: center; color: var(--text-muted); font-size: 11px;">${escapeHtml(t('scanner.uasset_no_schema') || 'No USMAP schema mapping available for this asset.')}</div>
+            <div style="padding: calc(24px * var(--ui-scale, 1)); text-align: center; color: var(--text-muted); font-size: var(--text-xs, 11px);">${escapeHtml(t('scanner.uasset_no_schema') || 'No USMAP schema mapping available for this asset.')}</div>
           `}
         </div>
 
       </div>
 
       <!-- Footer -->
-      <div style="background: var(--bg-secondary); padding: 10px 18px; border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
-        <button id="btn-close-uasset-action" class="btn btn-secondary" style="padding: 5px 16px; font-size: 12px; height: auto;">${escapeHtml(t('common.close') || 'Close')}</button>
+      <div style="background: var(--bg-secondary); padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-top: 1px solid var(--border); display: flex; justify-content: flex-end;">
+        <button id="btn-close-uasset-action" class="btn btn-secondary" style="padding: calc(5px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); font-size: var(--text-xs, 12px); height: auto;">${escapeHtml(t('common.close') || 'Close')}</button>
       </div>
     `;
 

@@ -91,36 +91,36 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
     <div class="scanner-view-container" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
       ${subTabHeader()}
       
-      <div class="scanner-scroll-panel" style="padding: 16px 20px; box-sizing: border-box; display: flex; flex-direction: column; gap: 14px; height: 100%; flex: 1; min-height: 0; overflow: hidden;">
+      <div class="scanner-scroll-panel" style="padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); box-sizing: border-box; display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1)); height: 100%; flex: 1; min-height: 0; overflow: hidden;">
         
         <!-- Header & Directory Selector Bar -->
-        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; flex-shrink: 0;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); padding: calc(10px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
           <div style="display: flex; flex-direction: column; gap: 3px;">
-            <div style="display: flex; align-items: center; gap: 8px;">
-              <span style="font-size: 17px;">💾</span>
-              <span style="font-size: 14.5px; font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.saves_doctor_title') || 'Save Health Doctor & World Hub')}</span>
+            <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+              <span style="font-size: calc(17px * var(--ui-scale, 1));">💾</span>
+              <span style="font-size: var(--text-md, 14.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.saves_doctor_title') || 'Save Health Doctor & World Hub')}</span>
             </div>
-            <span style="font-size: 11px; color: var(--text-muted);">${escapeHtml(t('scanner.saves_doctor_desc') || 'Inspect world options, players roster, storage health, safety snapshots, and 1-click rescue.')}</span>
+            <span style="font-size: var(--text-sm, 11px); color: var(--text-muted);">${escapeHtml(t('scanner.saves_doctor_desc') || 'Inspect world options, players roster, storage health, safety snapshots, and 1-click rescue.')}</span>
           </div>
 
-          <div style="display: flex; align-items: center; gap: 8px;">
-            <button id="doctor-custom-folder-btn" class="btn-secondary" style="padding: 6px 12px; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+            <button id="doctor-custom-folder-btn" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
               <span>📁</span> <span>${escapeHtml(t('scanner.btn_choose_saves_folder') || 'Choose Saves Folder')}</span>
             </button>
-            <button id="doctor-refresh-btn" class="btn-primary" style="padding: 6px 14px; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
+            <button id="doctor-refresh-btn" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
               <span>↻</span> <span>${escapeHtml(t('common.refresh') || 'Refresh')}</span>
             </button>
           </div>
         </div>
 
         <!-- Main 2-Column Master/Detail Layout (Fills Full Height) -->
-        <div class="scanner-master-detail" style="grid-template-columns: 340px 1fr; flex: 1; height: 100%; min-height: 0; display: grid; gap: 14px; overflow: hidden;">
+        <div class="scanner-master-detail" style="grid-template-columns: clamp(260px, calc(320px * var(--ui-scale, 1)), 400px) 1fr; flex: 1; height: 100%; min-height: 0; display: grid; gap: calc(12px * var(--ui-scale, 1)); overflow: hidden;">
           
           <!-- Left: Worlds List -->
           ${worldsListHtml}
 
           <!-- Right: Deep Inspector & Save Hub Panel -->
-          <div class="scanner-inspector-panel" id="doctor-inspector-root" style="height: 100%; display: flex; flex-direction: column; min-height: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); padding: 18px 20px; box-sizing: border-box; overflow-y: auto; gap: 14px;">
+          <div class="scanner-inspector-panel" id="doctor-inspector-root" style="height: 100%; display: flex; flex-direction: column; min-height: 0; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); padding: calc(16px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); box-sizing: border-box; overflow-y: auto; gap: calc(14px * var(--ui-scale, 1));">
             ${selectedWorld ? `
               ${worldHeaderHtml}
               ${worldQuickStatsHtml}
@@ -128,11 +128,11 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
               ${worldOptionsHtml}
               ${storageBreakdownHtml}
               ${playerRosterHtml}
-              <div id="doctor-deep-scan-results" style="display: flex; flex-direction: column; gap: 14px; flex: 1;">
+              <div id="doctor-deep-scan-results" style="display: flex; flex-direction: column; gap: calc(14px * var(--ui-scale, 1)); flex: 1;">
                 ${deepScanResultsHtml}
               </div>
             ` : `
-              <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: 13px;">
+              <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: var(--text-muted); font-size: var(--text-base, 13px);">
                 Select a world on the left to inspect its health.
               </div>
             `}

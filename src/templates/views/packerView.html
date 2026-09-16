@@ -1,31 +1,50 @@
 <!-- BUILD / PACKER TAB -->
 <div id="build-view" class="tab-content" style="display:none; flex-direction: column; width: 100%; height: 100%;">
   <!-- View 1: Projects Hub (Grid/Dashboard) -->
-  <div id="packer-projects-hub" style="display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
+  <div id="packer-projects-hub"
+    style="display: flex; flex-direction: column; width: 100%; height: 100%; overflow: hidden;">
     <div class="packer-toolbar">
       <span class="packer-toolbar-title" data-i18n="packer.hub_title">Mod Packer Workspace</span>
-      <button id="packer-hub-new-btn" class="toolbar-btn toolbar-btn-primary" style="font-size: 12px; padding: 6px 12px; line-height: 1;" data-i18n="packer.btn_new_project">+ Create New Project</button>
+      <button id="packer-hub-new-btn" class="toolbar-btn toolbar-btn-primary"
+        style="font-size: var(--text-sm, 12px); padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); line-height: 1;"
+        data-i18n="packer.btn_new_project">+ Create New Project</button>
     </div>
-    <div id="packer-projects-grid" class="packer-projects-grid" style="flex: 1; padding: 24px; overflow-y: auto; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px; align-content: start;">
+    <div id="packer-projects-grid" class="packer-projects-grid" style="flex: 1;">
       <!-- Project folder cards populated dynamically -->
     </div>
   </div>
 
   <!-- View 2: Active Workspace (Staging Area) -->
-  <div id="packer-workspace-view" style="display: none; flex-direction: row; width: 100%; height: 100%; overflow: hidden;">
+  <div id="packer-workspace-view"
+    style="display: none; flex-direction: row; width: 100%; height: 100%; overflow: hidden;">
     <div class="packer-left">
       <div class="packer-toolbar">
-        <button id="packer-workspace-back-btn" class="toolbar-btn-sm" style="margin-right: 8px;" data-i18n="packer.btn_back_projects">← Projects</button>
-        <span id="packer-workspace-title" class="packer-toolbar-title" data-i18n="packer.workspace_title">Staged Files</span>
+        <button id="packer-workspace-back-btn" class="toolbar-btn-sm" style="margin-right: 8px;"
+          data-i18n="packer.btn_back_projects">← Projects</button>
+        <span id="packer-workspace-title" class="packer-toolbar-title" data-i18n="packer.workspace_title">Staged
+          Files</span>
         <div id="packer-layout-toggle-bar" style="display:flex;align-items:center;gap:4px;margin-right:8px;">
-          <button id="packer-view-list-btn" class="layout-btn active" title="List View" data-i18n-title="packer.view_list_title"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5h14v2H1v-2zm0 4.5h14v2H1V7zm0 4.5h14v2H1v-2z"/></svg></button>
-          <button id="packer-view-tree-btn" class="layout-btn" title="Tree View" data-i18n-title="packer.view_tree_title"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1V1zm8 0h6v6H9V1zm-8 8h6v6H1V9zm8 0h6v6H9V9z"/></svg></button>
+          <button id="packer-view-list-btn" class="layout-btn active" title="List View"
+            data-i18n-title="packer.view_list_title"><svg width="13" height="13" viewBox="0 0 16 16"
+              fill="currentColor">
+              <path d="M1 2.5h14v2H1v-2zm0 4.5h14v2H1V7zm0 4.5h14v2H1v-2z" />
+            </svg></button>
+          <button id="packer-view-tree-btn" class="layout-btn" title="Tree View"
+            data-i18n-title="packer.view_tree_title"><svg width="13" height="13" viewBox="0 0 16 16"
+              fill="currentColor">
+              <path d="M1 1h6v6H1V1zm8 0h6v6H9V1zm-8 8h6v6H1V9zm8 0h6v6H9V9z" />
+            </svg></button>
         </div>
         <button id="packer-add-files-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_files">+ Add Files</button>
-        <button id="packer-add-folder-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_folder">📁 Add Folder</button>
-        <button id="packer-new-virtual-folder-btn" class="toolbar-btn-sm" style="display:none;" data-i18n="packer.btn_new_virtual_folder">➕ New Folder</button>
-        <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;" data-i18n="packer.btn_auto_struct">Auto-Structure</button>
-        <button id="packer-preview-install-btn" class="toolbar-btn-sm" style="display:inline-flex;align-items:center;gap:4px;" data-i18n-title="packer.btn_preview_install_title" data-i18n="packer.btn_preview_install">👁️ Preview Install</button>
+        <button id="packer-add-folder-btn" class="toolbar-btn-sm" data-i18n="packer.btn_add_folder">📁 Add
+          Folder</button>
+        <button id="packer-new-virtual-folder-btn" class="toolbar-btn-sm" style="display:none;"
+          data-i18n="packer.btn_new_virtual_folder">➕ New Folder</button>
+        <button id="packer-autostruct-btn" class="toolbar-btn-sm" style="background:var(--accent);color:#fff;"
+          data-i18n="packer.btn_auto_struct">Auto-Structure</button>
+        <button id="packer-preview-install-btn" class="toolbar-btn-sm"
+          style="display:inline-flex;align-items:center;gap:4px;" data-i18n-title="packer.btn_preview_install_title"
+          data-i18n="packer.btn_preview_install">👁️ Preview Install</button>
         <button id="packer-clear-btn" class="toolbar-btn-sm" data-i18n="packer.btn_clear_all">Clear All</button>
       </div>
       <div id="packer-files-container" class="packer-files-container">
@@ -48,7 +67,8 @@
         <div id="packer-empty-state" class="packer-empty-state">
           <span class="packer-empty-icon">🛠</span>
           <strong data-i18n="packer.empty_state_title">Workspace is Empty</strong>
-          <span data-i18n="packer.empty_state_desc">Drag & drop files or folders here, or use the "Add Files" button to begin staging.</span>
+          <span data-i18n="packer.empty_state_desc">Drag & drop files or folders here, or use the "Add Files" button to
+            begin staging.</span>
         </div>
       </div>
       <div id="packer-drag-overlay" class="packer-drop-overlay">
@@ -58,29 +78,41 @@
     <div class="packer-right">
       <div class="packer-form-header" style="display:flex;align-items:center;justify-content:space-between;">
         <span data-i18n="packer.save_options_title">Project Save Options</span>
-        <button id="packer-workspace-delete-btn" class="btn-tiny" style="background:var(--danger-dim);color:var(--danger);border:none;padding: 2px 6px;" title="Delete Project" data-i18n-title="packer.btn_delete_project_title" data-i18n="common.delete">Delete</button>
+        <button id="packer-workspace-delete-btn" class="btn-tiny"
+          style="background:var(--danger-dim);color:var(--danger);border:none;padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); border-radius: 4px;"
+          title="Delete Project" data-i18n-title="packer.btn_delete_project_title"
+          data-i18n="common.delete">Delete</button>
       </div>
-      <div class="packer-form-group" style="margin-bottom: 12px; display: flex; flex-direction: row; gap: 6px;">
-        <input type="text" id="packer-project-name" class="packer-form-input" style="flex: 1; padding: 4px 8px; font-size: 11px; height:28px;" placeholder="Project Name..." data-i18n-placeholder="packer.project_name_placeholder" />
-        <button id="packer-project-save-btn" class="toolbar-btn-sm" style="padding: 4px 10px; height:28px;" data-i18n="common.save">Save</button>
+      <div class="packer-form-group"
+        style="margin-bottom: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: row; gap: calc(6px * var(--ui-scale, 1));">
+        <input type="text" id="packer-project-name" class="packer-form-input"
+          style="flex: 1; padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); height: calc(30px * var(--ui-scale, 1)); box-sizing: border-box;"
+          placeholder="Project Name..." data-i18n-placeholder="packer.project_name_placeholder" />
+        <button id="packer-project-save-btn" class="toolbar-btn-sm"
+          style="padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); height: calc(30px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px);"
+          data-i18n="common.save">Save</button>
       </div>
 
       <div class="packer-form-header" data-i18n="packer.metadata_title">Mod Metadata</div>
       <div class="packer-form-group">
         <label for="packer-meta-name" data-i18n="packer.label_mod_name">Mod Name</label>
-        <input type="text" id="packer-meta-name" class="packer-form-input" placeholder="e.g. MyAmazingMod" data-i18n-placeholder="packer.placeholder_mod_name" />
+        <input type="text" id="packer-meta-name" class="packer-form-input" placeholder="e.g. MyAmazingMod"
+          data-i18n-placeholder="packer.placeholder_mod_name" />
       </div>
       <div class="packer-form-group">
         <label for="packer-meta-version" data-i18n="packer.label_version">Version</label>
-        <input type="text" id="packer-meta-version" class="packer-form-input" placeholder="e.g. 1.0.0" value="1.0.0" data-i18n-placeholder="packer.placeholder_version" />
+        <input type="text" id="packer-meta-version" class="packer-form-input" placeholder="e.g. 1.0.0" value="1.0.0"
+          data-i18n-placeholder="packer.placeholder_version" />
       </div>
       <div class="packer-form-group">
         <label for="packer-meta-author" data-i18n="packer.label_author">Author</label>
-        <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName" data-i18n-placeholder="packer.placeholder_author" />
+        <input type="text" id="packer-meta-author" class="packer-form-input" placeholder="e.g. CreatorName"
+          data-i18n-placeholder="packer.placeholder_author" />
       </div>
       <div class="packer-form-group">
         <label for="packer-meta-nexus-id" data-i18n="packer.label_nexus_id">Nexus ID</label>
-        <input type="number" id="packer-meta-nexus-id" class="packer-form-input" placeholder="e.g. 1234 (Optional)" min="1" step="1" data-i18n-placeholder="packer.placeholder_nexus_id" />
+        <input type="number" id="packer-meta-nexus-id" class="packer-form-input" placeholder="e.g. 1234 (Optional)"
+          min="1" step="1" data-i18n-placeholder="packer.placeholder_nexus_id" />
       </div>
       <div class="packer-form-group">
         <label for="packer-meta-type" data-i18n="packer.label_mod_type">Mod Type</label>
@@ -95,18 +127,24 @@
       </div>
       <div class="packer-form-group">
         <label for="packer-meta-desc" data-i18n="packer.label_description">Description</label>
-        <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..." data-i18n-placeholder="packer.placeholder_desc"></textarea>
+        <textarea id="packer-meta-desc" class="packer-form-textarea" placeholder="Describe what your mod does..."
+          data-i18n-placeholder="packer.placeholder_desc"></textarea>
       </div>
-      <div class="packer-form-header" style="margin-top: 10px;" data-i18n="packer.export_presets_title">Compatibility & Presets</div>
-      <div class="packer-form-group" style="margin-bottom: 6px;">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 11px; text-transform: none; letter-spacing: normal; color: var(--text-primary);">
-          <input type="checkbox" id="packer-preset-vortex" style="cursor: pointer;" />
+      <div class="packer-form-header" style="margin-top: calc(10px * var(--ui-scale, 1));"
+        data-i18n="packer.export_presets_title">Compatibility & Presets</div>
+      <div class="packer-form-group" style="margin-bottom: calc(6px * var(--ui-scale, 1));">
+        <label
+          style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); cursor: pointer; font-size: var(--text-sm, 12.5px); text-transform: none; letter-spacing: normal; color: var(--text-primary);">
+          <input type="checkbox" id="packer-preset-vortex"
+            style="cursor: pointer; width: calc(15px * var(--ui-scale, 1)); height: calc(15px * var(--ui-scale, 1));" />
           <span data-i18n="packer.opt_vortex_structure">Vortex / Manual Root Structure</span>
         </label>
       </div>
-      <div class="packer-form-group" style="margin-bottom: 12px;">
-        <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 11px; text-transform: none; letter-spacing: normal; color: var(--text-primary);">
-          <input type="checkbox" id="packer-preset-dual" style="cursor: pointer;" />
+      <div class="packer-form-group" style="margin-bottom: calc(12px * var(--ui-scale, 1));">
+        <label
+          style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); cursor: pointer; font-size: var(--text-sm, 12.5px); text-transform: none; letter-spacing: normal; color: var(--text-primary);">
+          <input type="checkbox" id="packer-preset-dual"
+            style="cursor: pointer; width: calc(15px * var(--ui-scale, 1)); height: calc(15px * var(--ui-scale, 1));" />
           <span data-i18n="packer.opt_dual_zip">Dual Package (Steam Win64 + Xbox WinGDK)</span>
         </label>
       </div>

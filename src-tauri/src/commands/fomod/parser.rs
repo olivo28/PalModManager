@@ -59,7 +59,12 @@ fn parse_visibility(xml: &str) -> Option<FomodVisibility> {
         return None;
     };
 
-    let operator = extract_attr(vis_attrs, "operator").unwrap_or_else(|| "And".to_string());
+    let operator = extract_attr(vis_attrs, "operator")
+        .or_else(|| {
+            let dep_blocks = extract_tag_blocks(vis_content, "dependencies");
+            dep_blocks.first().and_then(|(d_attrs, _)| extract_attr(d_attrs, "operator"))
+        })
+        .unwrap_or_else(|| "And".to_string());
     let mut flag_deps = Vec::new();
 
     let re_dep = Regex::new(r#"(?is)<flagDependency\b([^>]*?)(?:/>|>(.*?)</flagDependency>)"#).unwrap();
@@ -80,6 +85,7 @@ fn parse_visibility(xml: &str) -> Option<FomodVisibility> {
 
 /// Parses info.xml metadata
 pub fn parse_fomod_info(xml: &str) -> FomodInfo {
+    let xml = xml.trim_start_matches('\u{feff}');
     FomodInfo {
         name: extract_tag_text(xml, "Name").unwrap_or_default(),
         author: extract_tag_text(xml, "Author").unwrap_or_default(),
@@ -91,6 +97,7 @@ pub fn parse_fomod_info(xml: &str) -> FomodInfo {
 
 /// Parses ModuleConfig.xml
 pub fn parse_fomod_config(xml: &str) -> Result<FomodConfig, String> {
+    let xml = xml.trim_start_matches('\u{feff}');
     let module_name = extract_tag_text(xml, "moduleName").unwrap_or_else(|| "Mod".to_string());
 
     let module_image = {
@@ -321,13 +328,25 @@ mod tests {
 
     #[test]
     fn test_parse_real_better_base_building_xml() {
-        let path = "C:/Users/Antikux/.gemini/antigravity-ide/brain/e3e337a3-0160-4474-b72f-a30bebf322c0/scratch/fomod_dump/fomod/ModuleConfig.xml";
-        if let Ok(xml) = std::fs::read_to_string(path) {
+        let zip_path = "C:/Users/Antikux/Downloads/BetterBaseBuilding 5544 2.3.zip";
+        if std::path::Path::new(zip_path).exists() {
+            let xml_opt = crate::zip_handler::read_archive_file(zip_path, "fomod/ModuleConfig.xml");
+            assert!(xml_opt.is_some(), "read_archive_file failed on UTF-16LE ModuleConfig.xml");
+            let xml = xml_opt.unwrap();
             let res = parse_fomod_config(&xml);
             assert!(res.is_ok(), "Failed to parse: {:?}", res.err());
             let config = res.unwrap();
             assert_eq!(config.install_steps.len(), 6);
+            assert_eq!(config.required_install_files.len(), 1);
+            assert_eq!(config.conditional_file_installs.len(), 1);
+
+            let info_opt = crate::zip_handler::read_archive_file(zip_path, "fomod/info.xml");
+            assert!(info_opt.is_some(), "read_archive_file failed on UTF-16LE info.xml");
+            let info = parse_fomod_info(&info_opt.unwrap());
+            assert_eq!(info.name, "BetterBaseBuilding");
+            assert_eq!(info.version, "2.3");
         }
     }
 }
+
 

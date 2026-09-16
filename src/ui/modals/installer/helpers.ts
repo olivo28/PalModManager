@@ -66,10 +66,10 @@ export function closeInstallModal(): void {
     cancelBtn.disabled = false;
   }
 
-  // Restore modal size to default
+  // Restore modal size to stylesheet default
   const modalEl = document.querySelector('#install-modal .modal') as HTMLElement | null;
   if (modalEl) {
-    modalEl.style.width = '750px';
+    modalEl.style.width = '';
   }
 
   if (_onInstallCompleteCallback) {

@@ -254,48 +254,48 @@ function renderLogEntries(): void {
 
     switch (entry.level) {
       case 'crash':
-        levelBadge = `<span style="background:rgba(255,95,86,0.25);color:#ff5f56;border:1px solid rgba(255,95,86,0.5);font-size:9px;font-weight:700;padding:1px 5px;border-radius:3px;">CRASH</span>`;
+        levelBadge = `<span style="background:rgba(255,95,86,0.25);color:#ff5f56;border:1px solid rgba(255,95,86,0.5);font-size:var(--text-2xs, 9px);font-weight:700;padding:1px calc(5px * var(--ui-scale, 1));border-radius:3px;">CRASH</span>`;
         rowBg = 'rgba(255,95,86,0.06)';
         textColor = '#ff7b72';
         break;
       case 'error':
-        levelBadge = `<span style="background:rgba(255,95,86,0.15);color:#ff5f56;border:1px solid rgba(255,95,86,0.3);font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;">ERROR</span>`;
+        levelBadge = `<span style="background:rgba(255,95,86,0.15);color:#ff5f56;border:1px solid rgba(255,95,86,0.3);font-size:var(--text-2xs, 9px);font-weight:700;padding:1px calc(4px * var(--ui-scale, 1));border-radius:3px;">ERROR</span>`;
         rowBg = 'rgba(255,95,86,0.03)';
         textColor = '#ffa198';
         break;
       case 'warning':
-        levelBadge = `<span style="background:rgba(255,170,0,0.15);color:#ffaa00;border:1px solid rgba(255,170,0,0.3);font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;">WARN</span>`;
+        levelBadge = `<span style="background:rgba(255,170,0,0.15);color:#ffaa00;border:1px solid rgba(255,170,0,0.3);font-size:var(--text-2xs, 9px);font-weight:700;padding:1px calc(4px * var(--ui-scale, 1));border-radius:3px;">WARN</span>`;
         textColor = '#f0c674';
         break;
       case 'mod':
-        levelBadge = `<span style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid rgba(46,204,113,0.3);font-size:9px;font-weight:700;padding:1px 4px;border-radius:3px;">MOD</span>`;
+        levelBadge = `<span style="background:rgba(46,204,113,0.15);color:#2ecc71;border:1px solid rgba(46,204,113,0.3);font-size:var(--text-2xs, 9px);font-weight:700;padding:1px calc(4px * var(--ui-scale, 1));border-radius:3px;">MOD</span>`;
         textColor = '#7ee787';
         break;
       default:
-        levelBadge = `<span style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:9px;padding:1px 4px;border-radius:3px;">INFO</span>`;
+        levelBadge = `<span style="background:rgba(255,255,255,0.05);color:var(--text-muted);font-size:var(--text-2xs, 9px);padding:1px calc(4px * var(--ui-scale, 1));border-radius:3px;">INFO</span>`;
         textColor = '#c9d1d9';
     }
 
     const timestampHtml = entry.timestamp
-      ? `<span style="color:var(--text-muted);opacity:0.6;font-size:10.5px;margin-right:8px;flex-shrink:0;">${escapeHtml(entry.timestamp)}</span>`
+      ? `<span style="color:var(--text-muted);opacity:0.6;font-size:var(--text-2xs, 10px);margin-right:calc(8px * var(--ui-scale, 1));flex-shrink:0;">${escapeHtml(entry.timestamp)}</span>`
       : '';
 
     const tagHtml = entry.tag
-      ? `<span style="color:#79c0ff;margin-right:6px;font-weight:600;flex-shrink:0;">[${escapeHtml(entry.tag)}]</span>`
+      ? `<span style="color:#79c0ff;margin-right:calc(6px * var(--ui-scale, 1));font-weight:600;flex-shrink:0;">[${escapeHtml(entry.tag)}]</span>`
       : '';
 
     let jumpLinkHtml = '';
     if (entry.script_file && entry.script_line && entry.mod_name) {
       jumpLinkHtml = `
-        <button class="ue4ss-jump-btn" data-mod="${escapeHtml(entry.mod_name)}" data-file="${escapeHtml(entry.script_file)}" data-line="${entry.script_line}" style="margin-left:8px;display:inline-flex;align-items:center;gap:3px;padding:1px 6px;font-size:10px;font-weight:600;background:rgba(0,188,255,0.12);color:#00bcff;border:1px solid rgba(0,188,255,0.3);border-radius:4px;cursor:pointer;white-space:nowrap;" title="Open in PalModManager Script Editor">
+        <button class="ue4ss-jump-btn" data-mod="${escapeHtml(entry.mod_name)}" data-file="${escapeHtml(entry.script_file)}" data-line="${entry.script_line}" style="margin-left:calc(8px * var(--ui-scale, 1));display:inline-flex;align-items:center;gap:3px;padding:calc(1px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));font-size:var(--text-2xs, 10px);font-weight:600;background:rgba(0,188,255,0.12);color:#00bcff;border:1px solid rgba(0,188,255,0.3);border-radius:4px;cursor:pointer;white-space:nowrap;" title="Open in PalModManager Script Editor">
           <span>📝</span> <span>${escapeHtml(entry.script_file)}:${entry.script_line}</span>
         </button>
       `;
     }
 
     return `
-      <div class="ue4ss-log-row" style="display:flex;align-items:flex-start;gap:6px;padding:3px 6px;border-radius:3px;background:${rowBg};">
-        <span style="color:var(--text-muted);opacity:0.4;min-width:38px;text-align:right;user-select:none;font-size:10px;padding-top:2px;">${entry.line_number}</span>
+      <div class="ue4ss-log-row" style="display:flex;align-items:flex-start;gap:calc(6px * var(--ui-scale, 1));padding:calc(3px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));border-radius:3px;background:${rowBg};font-size:var(--text-sm, 11px);">
+        <span style="color:var(--text-muted);opacity:0.4;min-width:calc(38px * var(--ui-scale, 1));text-align:right;user-select:none;font-size:var(--text-2xs, 10px);padding-top:2px;">${entry.line_number}</span>
         <div style="flex-shrink:0;padding-top:1px;">${levelBadge}</div>
         ${timestampHtml}
         ${tagHtml}

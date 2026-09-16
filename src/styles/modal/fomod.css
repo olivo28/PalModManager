@@ -5,9 +5,9 @@
 }
 
 .fomod-wizard-modal {
-  width: 1060px;
+  width: min(calc(1060px * var(--ui-scale, 1)), 96vw);
   max-width: 96vw;
-  height: 720px;
+  height: min(calc(720px * var(--ui-scale, 1)), 90vh);
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -25,7 +25,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 18px;
+  padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
@@ -34,20 +34,20 @@
 .fomod-header-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
   min-width: 0;
 }
 
 .fomod-icon-box {
-  width: 32px;
-  height: 32px;
+  width: calc(32px * var(--ui-scale, 1));
+  height: calc(32px * var(--ui-scale, 1));
   border-radius: var(--radius, 4px);
   background: var(--accent-dim);
   border: 1px solid rgba(0, 120, 212, 0.3);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 16px;
+  font-size: calc(16px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
@@ -61,13 +61,13 @@
 .fomod-title-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   min-width: 0;
 }
 
 .fomod-title-text {
   margin: 0;
-  font-size: 14px;
+  font-size: var(--text-base, 13.5px);
   font-weight: 700;
   color: #ffffff;
   overflow: hidden;
@@ -76,9 +76,9 @@
 }
 
 .fomod-version-pill {
-  font-size: 11px;
-  padding: 1px 7px;
-  border-radius: 3px;
+  font-size: var(--text-xs, 11px);
+  padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1));
+  border-radius: calc(3px * var(--ui-scale, 1));
   background: var(--accent-dim);
   border: 1px solid rgba(0, 120, 212, 0.3);
   color: var(--accent);
@@ -87,21 +87,21 @@
 }
 
 .fomod-author-text {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   color: var(--text-secondary);
 }
 
 .fomod-header-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
 }
 
 .fomod-step-counter-pill {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   font-weight: 600;
-  padding: 3px 8px;
-  border-radius: 4px;
+  padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
+  border-radius: calc(4px * var(--ui-scale, 1));
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   color: #ffffff;
@@ -164,7 +164,7 @@
 
 /* Left Steps Sidebar */
 .fomod-sidebar {
-  width: 260px;
+  width: calc(260px * var(--ui-scale, 1));
   flex-shrink: 0;
   background: var(--bg-primary);
   border-right: 1px solid var(--border);
@@ -174,12 +174,12 @@
 }
 
 .fomod-sidebar-header {
-  padding: 12px 14px 8px 14px;
+  padding: calc(12px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .fomod-sidebar-title {
-  font-size: 10px;
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   letter-spacing: 0.08em;
   color: var(--text-secondary);
@@ -189,16 +189,16 @@
 .fomod-steps-list {
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  padding: 8px 8px;
+  gap: calc(3px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1));
 }
 
 .fomod-step-nav-btn {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  padding: 8px 10px;
+  gap: calc(8px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
   border-radius: var(--radius, 4px);
   background: transparent;
   border: 1px solid transparent;
@@ -226,21 +226,21 @@
 .step-nav-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   min-width: 0;
   flex: 1;
 }
 
 .step-num-badge {
-  width: 20px;
-  height: 20px;
+  width: calc(20px * var(--ui-scale, 1));
+  height: calc(20px * var(--ui-scale, 1));
   border-radius: 50%;
   background: var(--bg-card);
   border: 1px solid var(--border);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 10.5px;
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   flex-shrink: 0;
   color: var(--text-secondary);
@@ -260,7 +260,7 @@
 }
 
 .step-nav-label {
-  font-size: 11.5px;
+  font-size: var(--text-xs, 11px);
   line-height: 1.35;
   overflow: hidden;
   display: -webkit-box;
@@ -273,7 +273,7 @@
 }
 
 .step-status-icon {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   font-weight: 700;
   color: var(--success);
   flex-shrink: 0;
@@ -286,8 +286,8 @@
   display: flex;
   flex-direction: column;
   overflow-y: auto;
-  padding: 14px 20px 20px 20px;
-  gap: 12px;
+  padding: calc(14px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
+  gap: calc(12px * var(--ui-scale, 1));
   background: var(--bg-secondary);
 }
 
@@ -295,22 +295,22 @@
 .fomod-main-header {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: calc(4px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border);
-  padding-bottom: 10px;
+  padding-bottom: calc(10px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
 .fomod-step-heading {
   margin: 0;
-  font-size: 14.5px;
+  font-size: var(--text-md, 15px);
   font-weight: 700;
   color: #ffffff;
   line-height: 1.35;
 }
 
 .fomod-step-subtitle {
-  font-size: 12px;
+  font-size: var(--text-sm, 12px);
   color: #38bdf8 !important;
   font-weight: 600;
   line-height: 1.4;
@@ -321,8 +321,8 @@
   border: 1px solid rgba(234, 179, 8, 0.35);
   border-left: 3px solid #eab308;
   border-radius: var(--card-radius);
-  padding: 7px 10px 7px 12px;
-  font-size: 11.5px;
+  padding: calc(7px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
   line-height: 1.5;
   color: #fef08a !important;
   flex-shrink: 0;
@@ -332,7 +332,7 @@
 .fomod-groups-flow {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   width: 100%;
 }
 
@@ -358,12 +358,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 9px 12px;
+  padding: calc(9px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   cursor: pointer;
   background: var(--bg-card);
   user-select: none;
   transition: background 0.15s ease;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
 }
 
 .fomod-accordion-header:hover {
@@ -373,17 +373,17 @@
 .accordion-header-left {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   min-width: 0;
   flex: 1;
 }
 
 .accordion-chevron {
-  font-size: 9px;
+  font-size: var(--text-2xs, 9.5px);
   color: var(--text-secondary);
   transition: transform 0.18s ease;
   flex-shrink: 0;
-  width: 12px;
+  width: calc(12px * var(--ui-scale, 1));
   display: inline-block;
   text-align: center;
 }
@@ -394,7 +394,7 @@
 }
 
 .accordion-title {
-  font-size: 13px;
+  font-size: var(--text-sm, 12.5px);
   font-weight: 700;
   color: #ffffff;
   line-height: 1.35;
@@ -402,9 +402,9 @@
 }
 
 .accordion-badge {
-  font-size: 9px;
-  padding: 1px 6px;
-  border-radius: 3px;
+  font-size: var(--text-2xs, 9.5px);
+  padding: calc(1px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
+  border-radius: calc(3px * var(--ui-scale, 1));
   font-weight: 600;
   flex-shrink: 0;
   white-space: nowrap;
@@ -431,27 +431,27 @@
 .accordion-header-right {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
 .accordion-summary {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   color: var(--text-secondary);
-  max-width: 200px;
+  max-width: calc(200px * var(--ui-scale, 1));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .accordion-check {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   font-weight: 700;
   color: var(--success);
 }
 
 .accordion-warn {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   font-weight: 700;
   color: var(--danger);
 }
@@ -459,8 +459,8 @@
 .fomod-accordion-body {
   display: none;
   flex-direction: column;
-  gap: 5px;
-  padding: 8px 12px 12px 12px;
+  gap: calc(5px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   border-top: 1px solid var(--border);
   background: var(--bg-secondary);
 }
@@ -470,14 +470,14 @@
 }
 
 .fomod-group-instruction {
-  font-size: 11.5px;
+  font-size: var(--text-xs, 11px);
   line-height: 1.45;
   color: #e2e8f0;
   background: rgba(0, 120, 212, 0.1);
   border-left: 3px solid var(--accent);
-  padding: 8px 12px;
-  border-radius: 0 4px 4px 0;
-  margin-bottom: 6px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  border-radius: 0 calc(4px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1)) 0;
+  margin-bottom: calc(6px * var(--ui-scale, 1));
   word-break: break-word;
 }
 
@@ -486,9 +486,9 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 10px;
-  padding: 8px 12px;
-  border-radius: 4px;
+  gap: calc(10px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  border-radius: var(--radius, 4px);
   background: var(--bg-card);
   border: 1px solid var(--border);
   cursor: pointer;
@@ -519,7 +519,7 @@
 .fomod-option-left {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
   flex: 1;
   min-width: 0;
 }
@@ -528,14 +528,14 @@
   cursor: inherit;
   accent-color: var(--accent);
   flex-shrink: 0;
-  width: 14px;
-  height: 14px;
+  width: calc(15px * var(--ui-scale, 1));
+  height: calc(15px * var(--ui-scale, 1));
 }
 
 .fomod-option-content {
   display: flex;
   flex-direction: column;
-  gap: 3px;
+  gap: calc(3px * var(--ui-scale, 1));
   flex: 1;
   min-width: 0;
 }
@@ -543,12 +543,12 @@
 .fomod-option-label-row {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   flex-wrap: wrap;
 }
 
 .fomod-option-name {
-  font-size: 13px;
+  font-size: var(--text-sm, 12.5px);
   font-weight: 600;
   color: #ffffff;
   line-height: 1.35;
@@ -556,7 +556,7 @@
 }
 
 .fomod-option-desc {
-  font-size: 11.5px;
+  font-size: var(--text-xs, 11px);
   color: #94a3b8;
   line-height: 1.4;
   margin: 0;
@@ -565,12 +565,12 @@
 
 /* Badges (Recommended, Vanilla, Required) */
 .fomod-tag-rec {
-  font-size: 8.5px;
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));
+  border-radius: calc(3px * var(--ui-scale, 1));
   background: var(--success-dim);
   border: 1px solid rgba(46, 160, 67, 0.35);
   color: var(--success);
@@ -579,12 +579,12 @@
 }
 
 .fomod-tag-vanilla {
-  font-size: 8.5px;
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));
+  border-radius: calc(3px * var(--ui-scale, 1));
   background: var(--bg-tertiary);
   border: 1px solid var(--border);
   color: var(--text-secondary);
@@ -593,12 +593,12 @@
 }
 
 .fomod-tag-remembered {
-  font-size: 8.5px;
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.03em;
-  padding: 1px 5px;
-  border-radius: 3px;
+  padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));
+  border-radius: calc(3px * var(--ui-scale, 1));
   background: rgba(46, 160, 67, 0.15);
   border: 1px solid rgba(46, 160, 67, 0.4);
   color: #3fb950;
@@ -608,9 +608,9 @@
 
 /* Thumbnail */
 .fomod-option-thumb {
-  width: 48px;
-  height: 36px;
-  border-radius: 3px;
+  width: calc(48px * var(--ui-scale, 1));
+  height: calc(36px * var(--ui-scale, 1));
+  border-radius: calc(3px * var(--ui-scale, 1));
   object-fit: cover;
   border: 1px solid var(--border);
   flex-shrink: 0;
@@ -629,7 +629,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 18px;
+  padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border-top: 1px solid var(--border);
   flex-shrink: 0;

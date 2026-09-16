@@ -7,25 +7,25 @@ import type { ScanResult } from '../../mod';
 export function buildStatCardsHtml(res: ScanResult, activeConflictsCount: number, resolvedPakCount: number, hasConflicts: boolean): string {
   return `
     <!-- Stats Row -->
-    <div style="display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap;flex-shrink:0;">
+    <div style="display:flex;gap:calc(12px * var(--ui-scale, 1));margin-bottom:calc(20px * var(--ui-scale, 1));flex-wrap:wrap;flex-shrink:0;">
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_mods_scanned'))}</div>
+        <div style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-muted);letter-spacing:calc(0.5px * var(--ui-scale, 1));text-transform:uppercase;">${escapeHtml(t('scanner.stat_mods_scanned'))}</div>
         <div class="premium-stat-value">${res.totalScanned}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_palschema_json'))}</div>
+        <div style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-muted);letter-spacing:calc(0.5px * var(--ui-scale, 1));text-transform:uppercase;">${escapeHtml(t('scanner.stat_palschema_json'))}</div>
         <div class="premium-stat-value">${res.palschemaScanned}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_ue4ss_lua'))}</div>
+        <div style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-muted);letter-spacing:calc(0.5px * var(--ui-scale, 1));text-transform:uppercase;">${escapeHtml(t('scanner.stat_ue4ss_lua'))}</div>
         <div class="premium-stat-value">${res.ue4ssScanned}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_pak_files'))}</div>
+        <div style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-muted);letter-spacing:calc(0.5px * var(--ui-scale, 1));text-transform:uppercase;">${escapeHtml(t('scanner.stat_pak_files'))}</div>
         <div class="premium-stat-value">${res.pakScanned ?? 0}</div>
       </div>
       <div class="premium-stat-card">
-        <div style="font-size:10px;font-weight:700;color:var(--text-muted);letter-spacing:0.5px;text-transform:uppercase;">${escapeHtml(t('scanner.stat_conflicts'))}</div>
+        <div style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-muted);letter-spacing:calc(0.5px * var(--ui-scale, 1));text-transform:uppercase;">${escapeHtml(t('scanner.stat_conflicts'))}</div>
         <div class="premium-stat-value ${hasConflicts ? 'danger' : 'success'}">${hasConflicts ? activeConflictsCount : (resolvedPakCount > 0 ? `0 (✓${resolvedPakCount})` : '0')}</div>
       </div>
     </div>
@@ -35,9 +35,9 @@ export function buildStatCardsHtml(res: ScanResult, activeConflictsCount: number
 export function buildInfoBannerHtml(): string {
   return `
     <!-- Info notice banner -->
-    <div class="scanner-info-banner" style="margin-bottom: 20px; padding: 14px 18px; background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: 8px; font-size: 12px; line-height: 1.5;">
-      <div style="font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: 8px; font-size: 13px;">
-        <span style="font-size: 14px;">ℹ</span>
+    <div class="scanner-info-banner" style="margin-bottom: calc(20px * var(--ui-scale, 1)); padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); line-height: 1.5;">
+      <div style="font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-md, 15px);">
+        <span style="font-size: calc(16px * var(--ui-scale, 1));">ℹ</span>
         <span>${escapeHtml(t('scanner.info_title'))}</span>
       </div>
       <div style="color: var(--text-secondary);">
@@ -57,34 +57,34 @@ export function buildGamepassNoticeHtml(res: ScanResult): string {
   if (!res.isGamepass || !res.gamepassNotices || res.gamepassNotices.length === 0) return '';
   const gpCount = res.gamepassNotices.length;
   return `
-    <div class="scanner-card-section" style="border-color: var(--border); background: var(--bg-card); margin-bottom: 20px;">
-      <div class="scanner-card-header" style="background: var(--bg-primary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-        <span style="color: var(--accent); display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px;">
+    <div class="scanner-card-section" style="border-color: var(--border); background: var(--bg-card); margin-bottom: calc(20px * var(--ui-scale, 1));">
+      <div class="scanner-card-header" style="background: var(--bg-primary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
+        <span style="color: var(--accent); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-weight: 700; font-size: var(--text-base, 13.5px);">
           <span>🎮</span> ${escapeHtml(t('scanner.gamepass_notice_title'))} (${gpCount})
         </span>
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">PC Game Pass (WinGDK)</span>
-          <button id="btn-convert-all-gamepass" class="btn btn-primary btn-sm" style="font-size: 10.5px; padding: 4px 12px; display: inline-flex; align-items: center; gap: 4px;">
+        <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
+          <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-weight: 600;">PC Game Pass (WinGDK)</span>
+          <button id="btn-convert-all-gamepass" class="btn btn-primary btn-sm" style="font-size: var(--text-xs, 11px); padding: calc(4px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
             <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: gpCount }))}</span>
           </button>
         </div>
       </div>
-      <div class="scanner-card-body" style="gap: 10px; padding: 14px 16px;">
-        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+      <div class="scanner-card-body" style="gap: calc(10px * var(--ui-scale, 1)); padding: calc(14px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));">
+        <div style="font-size: var(--text-sm, 12.5px); color: var(--text-secondary); line-height: 1.5;">
           ${escapeHtml(t('scanner.gamepass_notice_desc'))}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1)); margin-top: calc(4px * var(--ui-scale, 1));">
           ${res.gamepassNotices.map(n => `
-            <div style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 11px; flex-wrap: wrap; gap: 8px;">
-              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; min-width: 200px;">
+            <div style="display: flex; align-items: center; justify-content: space-between; padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); font-size: var(--text-sm, 12px); flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
+              <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); overflow: hidden; min-width: 200px;">
                 <span style="font-weight: 700; color: var(--text-primary);">${escapeHtml(n.modName)}</span>
-                <span style="color: var(--text-muted); font-family: monospace; font-size: 10px;">(${escapeHtml(n.pakFilename)})</span>
+                <span style="color: var(--text-muted); font-family: monospace; font-size: var(--text-xs, 10.5px);">(${escapeHtml(n.pakFilename)})</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                <span style="font-size: 9px; padding: 2px 6px; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">
+              <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex-shrink: 0;">
+                <span style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; font-weight: 700; text-transform: uppercase;">
                   ${escapeHtml(t('scanner.gamepass_missing_badge'))} (${n.missingContainers.join(', ')})
                 </span>
-                <button class="btn btn-secondary btn-sm convert-single-gamepass-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: 10px; padding: 2px 8px; display: inline-flex; align-items: center; gap: 4px;">
+                <button class="btn btn-secondary btn-sm convert-single-gamepass-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
                   <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>
                 </button>
               </div>
@@ -100,25 +100,25 @@ export function buildSchemaNoticesHtml(res: ScanResult): string {
   const schemaNoticeCount = res.schemaNotices ? res.schemaNotices.length : 0;
   if (schemaNoticeCount === 0) return '';
   return `
-    <div style="display: flex; gap: 20px; flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: 20px;">
+    <div style="display: flex; gap: calc(20px * var(--ui-scale, 1)); flex-wrap: wrap; width: 100%; align-items: start; margin-bottom: calc(20px * var(--ui-scale, 1));">
       <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer; border-color: rgba(56, 189, 248, 0.3);" open>
         <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.05); border-bottom: 1px solid rgba(56, 189, 248, 0.15);">
-          <span style="color: #38bdf8; display: flex; align-items: center; gap: 6px; font-weight: 700;">
+          <span style="color: #38bdf8; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); font-weight: 700; font-size: var(--text-base, 13.5px);">
             <span>⚡</span> <span>${escapeHtml(t('scanner.schema_notices_title', { count: schemaNoticeCount }) || `Engine Schema Compatibility (${schemaNoticeCount})`)}</span>
           </span>
-          <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.schema_notices_desc') || 'Verified against Palworld v1.0.3 USMAP Schema')}</span>
+          <span style="font-size: var(--text-xs, 11px); color: var(--text-muted);">${escapeHtml(t('scanner.schema_notices_desc') || 'Verified against Palworld v1.0.3 USMAP Schema')}</span>
         </summary>
-        <div class="scanner-card-body" style="cursor: default; gap: 10px; padding-top: 14px;">
+        <div class="scanner-card-body" style="cursor: default; gap: calc(10px * var(--ui-scale, 1)); padding-top: calc(14px * var(--ui-scale, 1));">
           ${res.schemaNotices!.map(n => `
             <div class="scanner-conflict-item" style="border-left: 2.5px solid #38bdf8;">
               <div class="scanner-conflict-header">
-                <span class="scanner-conflict-title">${escapeHtml(n.modName)}</span>
-                <span class="badge" style="font-size: 9.5px; padding: 2px 6px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(n.structName)}</span>
+                <span class="scanner-conflict-title" style="font-size: var(--text-sm, 12.5px);">${escapeHtml(n.modName)}</span>
+                <span class="badge" style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(n.structName)}</span>
               </div>
-              <div class="scanner-conflict-path" style="font-size: 10.5px; color: var(--text-secondary); margin-top: 3px;">
+              <div class="scanner-conflict-path" style="font-size: var(--text-xs, 11px); color: var(--text-secondary); margin-top: 3px;">
                 <span>📄</span> <span>${escapeHtml(n.assetPath)}</span>
               </div>
-              <div style="font-size: 10.5px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+              <div style="font-size: var(--text-xs, 11px); color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
                 ${escapeHtml(n.message)}
               </div>
             </div>
@@ -136,52 +136,52 @@ export function buildPatchRiskNoticesHtml(res: ScanResult): string {
   const criticalCount = riskNotices.filter(n => n.riskLevel === 'Critical').length;
 
   return `
-    <div class="scanner-card-section" style="border-color: rgba(239, 68, 68, 0.45); background: var(--bg-card); margin-bottom: 20px;">
-      <div class="scanner-card-header" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-        <span style="color: #ef4444; display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 13px;">
+    <div class="scanner-card-section" style="border-color: rgba(239, 68, 68, 0.45); background: var(--bg-card); margin-bottom: calc(20px * var(--ui-scale, 1));">
+      <div class="scanner-card-header" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
+        <span style="color: #ef4444; display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-weight: 700; font-size: var(--text-base, 13.5px);">
           <span>🚨</span> <span>${escapeHtml(t('scanner.patch_risk_title', { count: riskNotices.length }) || `Core Game Overwrites / Update Crash Risk (${riskNotices.length})`)}</span>
         </span>
-        <span style="font-size: 10px; color: var(--text-muted); font-weight: 600;">
+        <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-weight: 600;">
           ${criticalCount > 0 ? `<span style="color: #ef4444; font-weight: 700;">⚠ ${criticalCount} Critical</span> · ` : ''}${escapeHtml(t('scanner.patch_risk_version_tag') || 'Palworld Update Compatibility')}
         </span>
       </div>
-      <div class="scanner-card-body" style="gap: 10px; padding: 14px 16px;">
-        <div style="font-size: 12px; color: var(--text-secondary); line-height: 1.5;">
+      <div class="scanner-card-body" style="gap: calc(10px * var(--ui-scale, 1)); padding: calc(14px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));">
+        <div style="font-size: var(--text-sm, 12.5px); color: var(--text-secondary); line-height: 1.5;">
           ${escapeHtml(t('scanner.patch_risk_desc') || 'The following mods overwrite core vanilla game Blueprints or UI widgets. When Palworld updates, older versions of these files cause fatal crashes (CTD) on world load.')}
         </div>
-        <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 4px;">
+        <div style="display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1)); margin-top: calc(4px * var(--ui-scale, 1));">
           ${riskNotices.map(n => {
-            const isCrit = n.riskLevel === 'Critical';
-            const borderCol = isCrit ? 'rgba(239, 68, 68, 0.5)' : 'rgba(245, 158, 11, 0.5)';
-            const bgBadge = isCrit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)';
-            const textBadge = isCrit ? '#ef4444' : '#f59e0b';
+    const isCrit = n.riskLevel === 'Critical';
+    const borderCol = isCrit ? 'rgba(239, 68, 68, 0.5)' : 'rgba(245, 158, 11, 0.5)';
+    const bgBadge = isCrit ? 'rgba(239, 68, 68, 0.15)' : 'rgba(245, 158, 11, 0.15)';
+    const textBadge = isCrit ? '#ef4444' : '#f59e0b';
 
-            return `
-              <div class="scanner-conflict-item" style="border-left: 3px solid ${textBadge}; background: var(--bg-secondary); padding: 10px 14px; border-radius: var(--radius); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
-                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
-                  <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                    <span style="font-weight: 700; color: var(--text-primary); font-size: 12px;">${escapeHtml(n.modName)}</span>
-                    <span style="font-size: 10px; color: var(--text-muted); font-family: monospace;">(${escapeHtml(n.pakFilename)})</span>
-                    <span style="font-size: 9px; padding: 2px 7px; background: ${bgBadge}; color: ${textBadge}; border: 1px solid ${borderCol}; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
+    return `
+              <div class="scanner-conflict-item" style="border-left: 3px solid ${textBadge}; background: var(--bg-secondary); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: var(--radius); border-top: 1px solid var(--border); border-right: 1px solid var(--border); border-bottom: 1px solid var(--border);">
+                <div style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
+                  <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex-wrap: wrap;">
+                    <span style="font-weight: 700; color: var(--text-primary); font-size: var(--text-sm, 12.5px);">${escapeHtml(n.modName)}</span>
+                    <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-family: monospace;">(${escapeHtml(n.pakFilename)})</span>
+                    <span style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)); background: ${bgBadge}; color: ${textBadge}; border: 1px solid ${borderCol}; border-radius: 4px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px;">
                       ${escapeHtml(n.riskLevel)}
                     </span>
-                    <span style="font-size: 9px; padding: 2px 7px; background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; font-weight: 600;">
+                    <span style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 4px; font-weight: 600;">
                       ${escapeHtml(n.assetCategory)}
                     </span>
                   </div>
-                  <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: 10px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 5px;">
+                  <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: var(--text-xs, 11px); padding: calc(3px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
                     <span>🚫</span> <span>${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}</span>
                   </button>
                 </div>
-                <div style="font-size: 10.5px; color: var(--text-secondary); font-family: monospace; margin-top: 5px;">
+                <div style="font-size: var(--text-xs, 11px); color: var(--text-secondary); font-family: monospace; margin-top: 5px;">
                   <span>📄</span> <span>${escapeHtml(n.assetPath)}</span>
                 </div>
-                <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
+                <div style="font-size: var(--text-xs, 11.5px); color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
                   ${escapeHtml(n.reason)}
                 </div>
               </div>
             `;
-          }).join('')}
+  }).join('')}
         </div>
       </div>
     </div>
@@ -191,7 +191,7 @@ export function buildPatchRiskNoticesHtml(res: ScanResult): string {
 export function buildFrameworkMissingHtml(): string {
   const state = getState();
   const allMods: ModInfo[] = state.allMods || [];
-  const isAltermaticInstalled = state.dependencies?.altermatic_installed || 
+  const isAltermaticInstalled = state.dependencies?.altermatic_installed ||
     allMods.some((m: ModInfo) => m.enabled && (m.nexusModId === 1626 || m.name.toLowerCase().includes('altermatic - runtime') || (m.name.toLowerCase().startsWith('altermatic') && m.type === 'altermatic')));
 
   const altermaticMods = allMods.filter((m: ModInfo) => m.enabled && m.type === 'altermatic' && m.nexusModId !== 1626 && !m.name.toLowerCase().includes('altermatic - runtime') && !m.name.toLowerCase().startsWith('altermatic'));
@@ -200,15 +200,15 @@ export function buildFrameworkMissingHtml(): string {
   if (!isAltermaticMissing) return '';
 
   return `
-    <div style="width: 100%; margin-bottom: 20px; background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: var(--card-radius); padding: 14px 18px; display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap;">
-      <div style="display: flex; align-items: center; gap: 12px;">
-        <span style="font-size: 22px;">⚠️</span>
+    <div style="width: 100%; margin-bottom: calc(20px * var(--ui-scale, 1)); background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: var(--card-radius); padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; gap: calc(16px * var(--ui-scale, 1)); flex-wrap: wrap;">
+      <div style="display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
+        <span style="font-size: calc(22px * var(--ui-scale, 1));">⚠️</span>
         <div style="display: flex; flex-direction: column; gap: 2px;">
-          <span style="font-size: 13px; font-weight: 700; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title') || 'Altermatic Framework Required')}</span>
-          <span style="font-size: 11px; color: var(--text-secondary);">${escapeHtml(t('scanner.altermatic_missing_body', { count: altermaticMods.length, names: altermaticMods.map(m => m.name).slice(0, 3).join(', ') }) || `You have ${altermaticMods.length} active Altermatic replacer mod(s) (${altermaticMods.map(m => m.name).slice(0, 3).join(', ')}), but the base Altermatic framework is not installed.`)}</span>
+          <span style="font-size: var(--text-base, 13.5px); font-weight: 700; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title') || 'Altermatic Framework Required')}</span>
+          <span style="font-size: var(--text-xs, 11.5px); color: var(--text-secondary);">${escapeHtml(t('scanner.altermatic_missing_body', { count: altermaticMods.length, names: altermaticMods.map(m => m.name).slice(0, 3).join(', ') }) || `You have ${altermaticMods.length} active Altermatic replacer mod(s) (${altermaticMods.map(m => m.name).slice(0, 3).join(', ')}), but the base Altermatic framework is not installed.`)}</span>
         </div>
       </div>
-      <button id="btn-scanner-download-altermatic" class="btn btn-secondary" style="font-size: 11px; font-weight: 700; padding: 6px 14px; border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap;">
+      <button id="btn-scanner-download-altermatic" class="btn btn-secondary" style="font-size: var(--text-xs, 11px); font-weight: 700; padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap;">
         <span>📦</span> <span>${escapeHtml(t('installer.btn_get_altermatic') || 'Get Altermatic (#1626)')}</span>
       </button>
     </div>
@@ -218,14 +218,14 @@ export function buildFrameworkMissingHtml(): string {
 export function buildWarningsHtml(res: ScanResult): string {
   if (!res.warnings || res.warnings.length === 0) return '';
   return `
-    <details class="scanner-card-section" style="margin-top: 24px; cursor: pointer;">
+    <details class="scanner-card-section" style="margin-top: calc(24px * var(--ui-scale, 1)); cursor: pointer;">
       <summary class="scanner-card-header" style="outline:none;">
         <span>${escapeHtml(t('scanner.warnings_title', { count: res.warnings.length }))}</span>
-        <span style="font-size:10px;color:var(--warning);">${escapeHtml(t('scanner.warnings_desc'))}</span>
+        <span style="font-size:var(--text-xs, 11px);color:var(--warning);">${escapeHtml(t('scanner.warnings_desc'))}</span>
       </summary>
       <div class="scanner-card-body" style="cursor: default; background: rgba(0,0,0,0.15);">
         ${res.warnings.map(w => `
-          <div class="scanner-warning-row" style="display: flex; gap: 8px; align-items: center; font-size: 11px; padding: 4px 0;">
+          <div class="scanner-warning-row" style="display: flex; gap: calc(8px * var(--ui-scale, 1)); align-items: center; font-size: var(--text-xs, 11.5px); padding: calc(4px * var(--ui-scale, 1)) 0;">
             <span class="scanner-warning-icon" style="color: var(--warning);">⚠</span>
             <span>${escapeHtml(w)}</span>
           </div>

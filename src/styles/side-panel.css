@@ -35,8 +35,8 @@
 #detail-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 14px 20px;
+  gap: calc(8px * var(--ui-scale, 1));
+  padding: calc(14px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border);
   background: var(--bg-primary);
   flex-shrink: 0;
@@ -56,7 +56,7 @@
   width: 100%;
   font-size: var(--text-md, 14.5px);
   font-weight: 700;
-  padding: 2px 6px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   border: 1px solid var(--accent);
   background: var(--bg-primary);
   color: var(--text-primary);
@@ -69,7 +69,7 @@
   color: var(--text-muted);
   cursor: pointer;
   font-size: var(--text-xs, 9.5px);
-  padding: 2px 6px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   font-weight: 600;
   flex-shrink: 0;
 }
@@ -86,7 +86,7 @@
   color: var(--text-muted);
   font-size: var(--text-lg, 16.5px);
   cursor: pointer;
-  padding: 2px 6px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   transition: all 0.15s;
 }
 
@@ -106,7 +106,7 @@
   display: flex;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  padding: 0 12px;
+  padding: 0 calc(12px * var(--ui-scale, 1));
   gap: 0;
 }
 
@@ -134,23 +134,23 @@
   content: '';
   position: absolute;
   bottom: 0;
-  left: 8px;
-  right: 8px;
+  left: calc(8px * var(--ui-scale, 1));
+  right: calc(8px * var(--ui-scale, 1));
   height: 2px;
   background: var(--accent);
 }
 
 .detail-tab-content {
-  padding: 16px 20px;
+  padding: calc(16px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: calc(12px * var(--ui-scale, 1));
   flex: 1;
   min-height: 0;
 }
 
 #detail-image-container {
-  height: 200px;
+  height: calc(200px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border: 1px solid var(--border-light);
   overflow: hidden;
@@ -167,8 +167,8 @@
 .detail-row-group {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 0 0 8px;
+  gap: calc(4px * var(--ui-scale, 1));
+  padding: 0 0 calc(8px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -176,16 +176,16 @@
   font-size: var(--text-base, 13px);
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   word-break: break-all;
-  padding: 3px 0;
+  padding: calc(3px * var(--ui-scale, 1)) 0;
 }
 
 .detail-label {
   color: var(--text-muted);
   font-size: var(--text-xs, 9.5px);
   font-weight: 700;
-  min-width: 60px;
+  min-width: calc(60px * var(--ui-scale, 1));
   flex-shrink: 0;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -194,7 +194,7 @@
 .mod-type-badge {
   font-size: var(--text-xs, 9.5px);
   font-weight: 700;
-  padding: 2px 8px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   border: 1px solid;
   text-transform: uppercase;
   letter-spacing: 0.3px;
@@ -209,7 +209,7 @@
 
 .detail-status {
   font-size: var(--text-xs, 9.5px);
-  padding: 2px 8px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   border: 1px solid;
   font-weight: 700;
 }
@@ -228,8 +228,8 @@
 .detail-section {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  padding: 0 0 8px;
+  gap: calc(4px * var(--ui-scale, 1));
+  padding: 0 0 calc(8px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border-light);
 }
 
@@ -251,7 +251,7 @@
 .detail-nexus-id-row {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
 }
 
 .detail-nexus-edit-row input,
@@ -261,7 +261,7 @@
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  padding: 3px 6px;
+  padding: calc(3px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   font-size: var(--text-sm, 11px);
   outline: none;
 }
@@ -276,12 +276,12 @@
 .detail-tags-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 3px;
+  gap: calc(3px * var(--ui-scale, 1));
 }
 
 .detail-tag-chip {
   font-size: var(--text-xs, 9.5px);
-  padding: 2px 6px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   border: 1px solid var(--border);
   color: var(--text-muted);
   white-space: nowrap;
@@ -292,16 +292,16 @@
   font-size: var(--text-base, 13px);
   line-height: 1.7;
   color: var(--text-primary);
-  padding: 12px;
+  padding: calc(12px * var(--ui-scale, 1));
   border: 1px solid var(--border);
-  min-height: 150px;
+  min-height: calc(150px * var(--ui-scale, 1));
   flex: 1;
   overflow-y: auto;
 }
 
 .detail-description h1, .detail-description h2, .detail-description h3,
 .detail-description h4, .detail-description h5, .detail-description h6 {
-  margin: 12px 0 6px;
+  margin: calc(12px * var(--ui-scale, 1)) 0 calc(6px * var(--ui-scale, 1));
   font-weight: 700;
   color: var(--accent);
 }
@@ -314,8 +314,8 @@
 
 .detail-description blockquote {
   border-left: 3px solid var(--accent);
-  padding: 6px 12px;
-  margin: 8px 0;
+  padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  margin: calc(8px * var(--ui-scale, 1)) 0;
   color: var(--text-secondary);
   font-style: italic;
   background: var(--bg-primary);
@@ -323,16 +323,16 @@
 
 .detail-description pre {
   background: var(--bg-code);
-  padding: 12px;
+  padding: calc(12px * var(--ui-scale, 1));
   overflow-x: auto;
-  margin: 8px 0;
-  font-size: 12px;
+  margin: calc(8px * var(--ui-scale, 1)) 0;
+  font-size: var(--text-xs, 11px);
   border: 1px solid var(--border);
 }
 
 .detail-description code {
   font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
-  font-size: 12px;
+  font-size: var(--text-xs, 11px);
 }
 
 .detail-description pre code {
@@ -342,13 +342,13 @@
 
 .detail-description img {
   max-width: 100%;
-  margin: 8px 0;
+  margin: calc(8px * var(--ui-scale, 1)) 0;
 }
 
 .detail-description hr {
   border: none;
   border-top: 1px solid var(--border);
-  margin: 16px 0;
+  margin: calc(16px * var(--ui-scale, 1)) 0;
 }
 
 .detail-description a {
@@ -356,23 +356,23 @@
 }
 
 .detail-description ul, .detail-description ol {
-  padding-left: 20px;
-  margin: 6px 0;
+  padding-left: calc(20px * var(--ui-scale, 1));
+  margin: calc(6px * var(--ui-scale, 1)) 0;
 }
 
 .detail-description li {
-  margin: 2px 0;
+  margin: calc(2px * var(--ui-scale, 1)) 0;
 }
 
 .detail-description table {
   width: 100%;
   border-collapse: collapse;
-  margin: 8px 0;
-  font-size: 12px;
+  margin: calc(8px * var(--ui-scale, 1)) 0;
+  font-size: var(--text-xs, 11px);
 }
 .detail-description th, .detail-description td {
   border: 1px solid var(--border);
-  padding: 6px 10px;
+  padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
   text-align: left;
 }
 .detail-description th {
@@ -386,7 +386,7 @@
   padding-bottom: 56.25%;
   height: 0;
   overflow: hidden;
-  margin: 8px 0;
+  margin: calc(8px * var(--ui-scale, 1)) 0;
 }
 .detail-description .youtube-embed iframe {
   position: absolute;
@@ -397,13 +397,13 @@
 }
 
 .detail-description p {
-  margin: 0 0 8px;
+  margin: 0 0 calc(8px * var(--ui-scale, 1));
 }
 
 .detail-description details {
-  margin: 8px 0;
+  margin: calc(8px * var(--ui-scale, 1)) 0;
   background: var(--bg-primary);
-  padding: 6px 10px;
+  padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
   border: 1px solid var(--border-light);
 }
 .detail-description summary {
@@ -412,9 +412,9 @@
   color: var(--accent);
 }
 .detail-description .spoiler-content {
-  padding: 8px 4px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1));
   border-top: 1px solid var(--border-light);
-  margin-top: 6px;
+  margin-top: calc(6px * var(--ui-scale, 1));
 }
 
 .version-value {
@@ -426,7 +426,7 @@
 }
 
 .btn-tiny {
-  padding: 2px 8px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   border: 1px solid var(--border);
   background: transparent;
   color: var(--text-muted);
@@ -444,9 +444,9 @@
 
 .detail-actions {
   display: flex;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   flex-wrap: wrap;
-  padding: 12px 20px;
+  padding: calc(12px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
   border-top: 1px solid var(--border);
   flex-shrink: 0;
   background: var(--bg-primary);
@@ -454,8 +454,8 @@
 
 .btn-action {
   flex: 1;
-  min-width: 64px;
-  padding: 8px 12px;
+  min-width: calc(64px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   border: 1px solid var(--border);
   background: var(--bg-primary);
   color: var(--text-secondary);

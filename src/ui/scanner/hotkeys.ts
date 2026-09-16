@@ -131,18 +131,18 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
     `;
 
     const keysDisplay = isEditing ? `
-      <div style="display:flex; flex-direction:column; gap:4px; width:100%;">
-        <input type="text" id="hk-input-${idx}" class="hotkey-edit-input" value="${escapeHtml(hk.keys)}" placeholder="${escapeHtml(t('scanner.hotkey_press_keys'))}" style="padding:6px 12px; background:rgba(0,0,0,0.3); border:1px solid var(--accent); color:var(--text-primary); font-size:11px; font-family:monospace; border-radius:4px; outline:none; width:100%; box-sizing:border-box;" />
-        <div style="font-size:9.5px; color:var(--text-muted);">${escapeHtml(t('scanner.hotkey_press_hint') || 'Press any key on keyboard to capture, or type manually.')}</div>
+      <div style="display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); width:100%;">
+        <input type="text" id="hk-input-${idx}" class="hotkey-edit-input" value="${escapeHtml(hk.keys)}" placeholder="${escapeHtml(t('scanner.hotkey_press_keys'))}" style="padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background:rgba(0,0,0,0.3); border:1px solid var(--accent); color:var(--text-primary); font-size:var(--text-xs, 11px); font-family:monospace; border-radius:calc(4px * var(--ui-scale, 1)); outline:none; width:100%; box-sizing:border-box;" />
+        <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">${escapeHtml(t('scanner.hotkey_press_hint') || 'Press any key on keyboard to capture, or type manually.')}</div>
       </div>
     ` : `
-      <div style="display:flex; align-items:center; gap:8px; flex-wrap:wrap;">
+      <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
         ${formatKeyboardBadge(hk.keys)}
         ${isConflicting ? `
-          <span style="font-size:10px; font-weight:700; color:var(--danger); background:rgba(255,75,75,0.15); border:1px solid rgba(255,75,75,0.3); border-radius:4px; padding:2px 6px;">
+          <span style="font-size:var(--text-2xs, 10px); font-weight:700; color:var(--danger); background:rgba(255,75,75,0.15); border:1px solid rgba(255,75,75,0.3); border-radius:calc(4px * var(--ui-scale, 1)); padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
             ⚠️ ${escapeHtml(t('scanner.hotkey_conflict_tag') || 'Conflict')}
           </span>
-          <button class="hk-quick-rebind-btn" data-idx="${idx}" data-suggest="${escapeHtml(suggestedKey)}" style="font-size:9.5px; font-weight:600; background:none; border:1px dashed var(--accent); color:var(--accent); border-radius:4px; padding:2px 6px; cursor:pointer;" title="${escapeHtml(t('scanner.btn_quick_rebind_tooltip') || 'Quickly reassign to free function key')}">
+          <button class="hk-quick-rebind-btn" data-idx="${idx}" data-suggest="${escapeHtml(suggestedKey)}" style="font-size:var(--text-2xs, 9.5px); font-weight:600; background:none; border:1px dashed var(--accent); color:var(--accent); border-radius:calc(4px * var(--ui-scale, 1)); padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); cursor:pointer;" title="${escapeHtml(t('scanner.btn_quick_rebind_tooltip') || 'Quickly reassign to free function key')}">
             ⚡ ${escapeHtml(t('scanner.btn_quick_rebind', { key: suggestedKey }) || `Rebind to ${suggestedKey}`)}
           </button>
         ` : ''}
@@ -151,26 +151,26 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
 
     const locationDisplay = hk.isVariable ? `
       <div>
-        <div style="font-family:monospace; font-size:11px; color:var(--text-primary);">${escapeHtml(hk.definitionFilePath || hk.filePath)}:L${hk.definitionLineNumber || hk.lineNumber}</div>
-        <div style="font-size:9.5px; color:var(--accent); display:flex; align-items:center; gap:4px; margin-top:2px;">
+        <div style="font-family:monospace; font-size:var(--text-xs, 11px); color:var(--text-primary);">${escapeHtml(hk.definitionFilePath || hk.filePath)}:L${hk.definitionLineNumber || hk.lineNumber}</div>
+        <div style="font-size:var(--text-2xs, 9.5px); color:var(--accent); display:flex; align-items:center; gap:calc(4px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
           <span>⚙</span>
           <span><code>${escapeHtml(hk.variableName || 'Variable')}</code></span>
-          <span style="opacity:0.6; font-size:9px;">(${escapeHtml(hk.filePath)}:L${hk.lineNumber})</span>
+          <span style="opacity:0.6; font-size:var(--text-2xs, 9px);">(${escapeHtml(hk.filePath)}:L${hk.lineNumber})</span>
         </div>
       </div>
     ` : `
-      <div style="font-family:monospace; font-size:11px; color:var(--text-muted);">${escapeHtml(hk.filePath)}:L${hk.lineNumber}</div>
+      <div style="font-family:monospace; font-size:var(--text-xs, 11px); color:var(--text-muted);">${escapeHtml(hk.filePath)}:L${hk.lineNumber}</div>
     `;
 
     return `
       <tr style="${isConflicting ? 'background: rgba(255, 75, 75, 0.04);' : ''}">
-        <td style="font-weight:700; color:var(--text-primary); font-size:12px;">
+        <td style="font-weight:700; color:var(--text-primary); font-size:var(--text-xs, 12px);">
           ${escapeHtml(hk.modName)}
         </td>
         <td>${locationDisplay}</td>
         <td>${keysDisplay}</td>
-        <td style="width: 140px; text-align: right;">
-          <div style="display:flex; gap:4px; justify-content:flex-end;">
+        <td style="width: calc(140px * var(--ui-scale, 1)); text-align: right;">
+          <div style="display:flex; gap:calc(4px * var(--ui-scale, 1)); justify-content:flex-end;">
             ${actionButtons}
           </div>
         </td>
@@ -179,12 +179,12 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
   }).join('');
 
   const conflictBanner = totalConflicts > 0 ? `
-    <div style="margin-bottom:16px; padding:10px 16px; background:rgba(255,75,75,0.08); border:1px solid rgba(255,75,75,0.3); border-radius:var(--card-radius); display:flex; align-items:center; justify-content:space-between; gap:12px;">
-      <div style="display:flex; align-items:center; gap:8px; font-size:12px; color:var(--text-primary);">
-        <span style="font-size:16px;">⚠️</span>
+    <div style="margin-bottom:calc(16px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); background:rgba(255,75,75,0.08); border:1px solid rgba(255,75,75,0.3); border-radius:var(--card-radius); display:flex; align-items:center; justify-content:space-between; gap:calc(12px * var(--ui-scale, 1));">
+      <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 12px); color:var(--text-primary);">
+        <span style="font-size:calc(16px * var(--ui-scale, 1));">⚠️</span>
         <span><b>${totalConflicts}</b> ${escapeHtml(t('scanner.hotkey_conflicts_detected_banner') || 'hotkey conflicts detected between active mods.')}</span>
       </div>
-      <div style="font-size:11px; color:var(--text-muted);">
+      <div style="font-size:var(--text-xs, 11px); color:var(--text-muted);">
         ${escapeHtml(t('scanner.hotkey_conflicts_hint') || 'Use Edit or Quick Rebind to resolve overlapping keys.')}
       </div>
     </div>
@@ -204,24 +204,24 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
         ${listRows}
       </tbody>
     </table>
-  ` : `<div style="text-align:center; padding: 48px; color:var(--text-muted); font-size:12px;">${escapeHtml(t('scanner.hero_no_hotkeys_title'))}</div>`;
+  ` : `<div style="text-align:center; padding: calc(48px * var(--ui-scale, 1)); color:var(--text-muted); font-size:var(--text-xs, 12px);">${escapeHtml(t('scanner.hero_no_hotkeys_title'))}</div>`;
 
   container.innerHTML = `
     ${subTabHeader()}
     <!-- Top Filter Bar -->
-    <div style="display:flex; align-items:center; justify-content:space-between; padding: 12px 24px; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.15); flex-shrink: 0;">
+    <div style="display:flex; align-items:center; justify-content:space-between; padding: calc(12px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.15); flex-shrink: 0;">
       <div class="search-wrapper">
         <span class="search-icon">🔍</span>
         <input type="text" id="hk-search-input" class="premium-search-input" placeholder="${escapeHtml(t('scanner.hotkeys_search_placeholder'))}" value="${escapeHtml(hotkeyFilter)}" />
       </div>
-      <div style="display:flex; align-items:center; gap:12px;">
-        <button id="scanner-rescan-hotkeys-btn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:6px; font-size:11px; padding:4px 10px;">
+      <div style="display:flex; align-items:center; gap:calc(12px * var(--ui-scale, 1));">
+        <button id="scanner-rescan-hotkeys-btn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
           <span>🔄</span> <span>${escapeHtml(t('scanner.btn_rescan_hotkeys'))}</span>
         </button>
-        <div style="font-size:10px; color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">${escapeHtml(t('common.selected_count', { count: filtered.length }))}</div>
+        <div style="font-size:var(--text-2xs, 10px); color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">${escapeHtml(t('common.selected_count', { count: filtered.length }))}</div>
       </div>
     </div>
-    <div class="scanner-scroll-panel" style="flex: 1 1 0; min-height: 0; padding: 20px 24px; overflow-y:auto; box-sizing:border-box;">
+    <div class="scanner-scroll-panel" style="flex: 1 1 0; min-height: 0; padding: calc(20px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)); overflow-y:auto; box-sizing:border-box;">
       ${conflictBanner}
       <div class="scanner-card-section" style="cursor: default; padding: 0;">
         ${tableBody}

@@ -53,13 +53,13 @@
                 <button type="button" id="settings-browse-btn" class="btn-secondary" data-i18n="common.browse">Browse</button>
               </div>
               <div id="settings-path-status" class="settings-path-status"></div>
-              <div id="settings-steam-protocol-row" style="margin-top: 8px; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius); font-size: 11px;">
-                <div style="display: flex; align-items: center; gap: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <div id="settings-steam-protocol-row" style="margin-top: calc(8px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius); font-size: var(--text-xs, 11px);">
+                <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   <span>🎮</span>
                   <span data-i18n="settings.steam_proto_title" style="font-weight: 600; color: var(--text-primary);">Steam Launcher Protocol:</span>
-                  <span id="settings-steam-proto-handler" style="color: var(--text-muted); font-family: monospace; font-size: 10px;">checking...</span>
+                  <span id="settings-steam-proto-handler" style="color: var(--text-muted); font-family: monospace; font-size: var(--text-2xs, 10px);">checking...</span>
                 </div>
-                <span id="settings-steam-proto-badge" class="badge badge-secondary" style="font-size: 10px; flex-shrink: 0;">Checking...</span>
+                <span id="settings-steam-proto-badge" class="badge badge-secondary" style="font-size: var(--text-2xs, 10px); flex-shrink: 0;">Checking...</span>
               </div>
             </div>
 
@@ -69,7 +69,7 @@
               </div>
               <div class="settings-hint" data-i18n="settings.data_location_hint">Choose where your database and profile backups are stored. Mod files will be migrated automatically.</div>
               <div class="settings-path-row" style="margin-top: 4px;">
-                <select id="settings-data-path-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                <select id="settings-data-path-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                   <option value="default" data-i18n="settings.opt_storage_default">Default (AppData)</option>
                   <option value="portable" data-i18n="settings.opt_storage_portable">Portable (Executable Folder)</option>
                   <option value="custom" data-i18n="settings.opt_storage_custom">Custom Folder...</option>
@@ -83,12 +83,12 @@
                 <span class="settings-card-title" data-i18n="settings.quick_access_label">Quick Access Folders</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.quick_access_hint">Open game or app data folders directly in system file explorer</div>
-              <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
-                <button type="button" id="open-folder-paks" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_paks">📂 Paks (~mods)</button>
-                <button type="button" id="open-folder-ue4ss" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_ue4ss">📂 UE4SS Mods</button>
-                <button type="button" id="open-folder-palschema" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_palschema">📂 PalSchema Mods</button>
-                <button type="button" id="open-folder-appdata" class="btn-secondary" style="font-size:11px;padding:6px 8px;" data-i18n="settings.folder_appdata">📂 App Storage</button>
-                <button type="button" id="open-folder-profile" class="btn-secondary" style="font-size:11px;padding:6px 8px;grid-column: span 2;" data-i18n="settings.folder_profile">📂 Active Profile Folder</button>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(8px * var(--ui-scale, 1));margin-top:4px;">
+                <button type="button" id="open-folder-paks" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_paks">📂 Paks (~mods)</button>
+                <button type="button" id="open-folder-ue4ss" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_ue4ss">📂 UE4SS Mods</button>
+                <button type="button" id="open-folder-palschema" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_palschema">📂 PalSchema Mods</button>
+                <button type="button" id="open-folder-appdata" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_appdata">📂 App Storage</button>
+                <button type="button" id="open-folder-profile" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));grid-column: span 2;" data-i18n="settings.folder_profile">📂 Active Profile Folder</button>
               </div>
             </div>
           </div>
@@ -105,38 +105,38 @@
             <!-- NXM 1-CLICK DOWNLOADS -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-size:14px;">⚡</span>
+                <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                  <span style="font-size:calc(14px * var(--ui-scale, 1));">⚡</span>
                   <span class="settings-card-title" data-i18n="settings.nexus_nxm_title">1-Click Downloads (nxm://)</span>
                 </div>
-                <span id="nexus-nxm-status-badge" class="badge badge-secondary" style="font-size:10px;">Checking...</span>
+                <span id="nexus-nxm-status-badge" class="badge badge-secondary" style="font-size:var(--text-2xs, 10px);">Checking...</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.nexus_nxm_hint">Captures "Mod Manager Download" buttons on Nexus Mods to download Palworld mods directly into PalModManager.</div>
-              <div id="nexus-nxm-current-handler" style="font-size:11px; margin-top:6px; font-weight:600; color:var(--text-secondary);"></div>
-              <div id="nexus-nxm-actions" style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"></div>
+              <div id="nexus-nxm-current-handler" style="font-size:var(--text-xs, 11px); margin-top:6px; font-weight:600; color:var(--text-secondary);"></div>
+              <div id="nexus-nxm-actions" style="margin-top:8px; display:flex; gap:calc(8px * var(--ui-scale, 1)); align-items:center; flex-wrap:wrap;"></div>
             </div>
 
             <!-- LOGIN OAUTH PROTOCOL -->
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
-                <div style="display:flex; align-items:center; gap:6px;">
-                  <span style="font-size:14px;">🔑</span>
+                <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                  <span style="font-size:calc(14px * var(--ui-scale, 1));">🔑</span>
                   <span class="settings-card-title" data-i18n="settings.nexus_proto_title">Login Protocol (palmodmanager://)</span>
                 </div>
-                <span id="nexus-protocol-status-badge" class="badge badge-secondary" style="font-size:10px;">Checking...</span>
+                <span id="nexus-protocol-status-badge" class="badge badge-secondary" style="font-size:var(--text-2xs, 10px);">Checking...</span>
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.nexus_proto_hint">Enables 1-click browser login redirect for SSO OAuth authentication.</div>
-              <div id="nexus-protocol-actions" style="margin-top:8px; display:flex; gap:8px; align-items:center; flex-wrap:wrap;"></div>
+              <div id="nexus-protocol-actions" style="margin-top:8px; display:flex; gap:calc(8px * var(--ui-scale, 1)); align-items:center; flex-wrap:wrap;"></div>
             </div>
 
             <div class="settings-section-card">
-              <details style="font-size:12px; color:var(--text-muted); cursor:pointer;">
+              <details style="font-size:var(--text-sm, 12px); color:var(--text-muted); cursor:pointer;">
                 <summary data-i18n="settings.nexus_manual_callback_title" style="font-weight:600;">Manual Authorization Code / URL (Fallback)</summary>
                 <div style="margin-top:8px;">
-                  <label style="font-size:11px;" data-i18n="settings.nexus_manual_callback_label">Paste Redirect URL or Authorization Code from Nexus:</label>
+                  <label style="font-size:var(--text-xs, 11px);" data-i18n="settings.nexus_manual_callback_label">Paste Redirect URL or Authorization Code from Nexus:</label>
                   <div class="settings-key-row" style="margin-top:6px;">
-                    <input type="text" id="nexus-manual-callback-input" placeholder="Paste URL (palmodmanager://...) or code (eyJ...)" style="font-size:11px; padding:6px 10px;" />
-                    <button type="button" id="btn-nexus-manual-callback" class="btn btn-secondary btn-sm" style="font-size:11px; padding:6px 12px; height:auto;" data-i18n="common.apply">Apply</button>
+                    <input type="text" id="nexus-manual-callback-input" placeholder="Paste URL (palmodmanager://...) or code (eyJ...)" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" />
+                    <button type="button" id="btn-nexus-manual-callback" class="btn btn-secondary btn-sm" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); height:auto;" data-i18n="common.apply">Apply</button>
                   </div>
                 </div>
               </details>
@@ -160,18 +160,18 @@
                 <span class="settings-card-title" data-i18n="settings.ue4ss_mode_title">UE4SS Activation Mode</span>
               </div>
               <div class="settings-hint" style="margin-bottom:8px;" data-i18n="settings.ue4ss_mode_hint">Choose how UE4SS mods are enabled and disabled:</div>
-              <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <label class="settings-toggle-row">
                   <input type="radio" name="ue4ss-control-mode" id="settings-ue4ss-mode-enabled-txt" value="enabled_txt" checked />
                   <div>
-                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.ue4ss_mode_enabled_txt_label">PMM Native (Folder Isolation & enabled.txt)</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:600;" data-i18n="settings.ue4ss_mode_enabled_txt_label">PMM Native (Folder Isolation & enabled.txt)</span>
                     <div class="settings-hint" data-i18n="settings.ue4ss_mode_enabled_txt_desc">Disabled mods are moved to profile storage. mods.txt is untouched unless Force Load Order is enabled.</div>
                   </div>
                 </label>
                 <label class="settings-toggle-row">
                   <input type="radio" name="ue4ss-control-mode" id="settings-ue4ss-mode-mods-txt" value="mods_txt" />
                   <div>
-                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.ue4ss_mode_mods_txt_label">Direct mods.txt (In-place 1/0 toggle)</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:600;" data-i18n="settings.ue4ss_mode_mods_txt_label">Direct mods.txt (In-place 1/0 toggle)</span>
                     <div class="settings-hint" data-i18n="settings.ue4ss_mode_mods_txt_desc">Mods remain in ue4ss/Mods. Toggling edits mods.txt in-place without moving files or losing custom section comments.</div>
                   </div>
                 </label>
@@ -184,7 +184,7 @@
               </div>
               <div class="settings-hint" data-i18n="settings.ue4ss_build_flavor_hint">Choose which UE4SS build package to install and update from Okaetsu's official releases:</div>
               <div class="settings-path-row" style="margin-top: 6px;">
-                <select id="settings-ue4ss-flavor-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                <select id="settings-ue4ss-flavor-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                   <option value="standard" data-i18n="settings.ue4ss_flavor_standard">Standard Build (Recommended for playing mods)</option>
                   <option value="zdev" data-i18n="settings.ue4ss_flavor_zdev">Developer Build (zDev / Symbols — For mod creators)</option>
                 </select>
@@ -196,17 +196,17 @@
                 <span class="settings-card-title" data-i18n="settings.flo_title">Force Load Order (Experimental)</span>
               </div>
               <div class="settings-hint" style="margin-bottom:6px;" data-i18n="settings.flo_hint">Select which load order system components you want to enforce:</div>
-              <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <label class="settings-toggle-row">
                   <input type="checkbox" id="settings-force-load-order-ue4ss" />
                   <div>
-                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.flo_ue4ss_label">Enforce UE4SS Load Order (via mods.txt)</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:600;" data-i18n="settings.flo_ue4ss_label">Enforce UE4SS Load Order (via mods.txt)</span>
                   </div>
                 </label>
                 <label class="settings-toggle-row">
                   <input type="checkbox" id="settings-force-load-order-palschema" />
                   <div>
-                    <span style="font-size:12px; font-weight:600;" data-i18n="settings.flo_palschema_label">Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:600;" data-i18n="settings.flo_palschema_label">Enforce PalSchema Load Order (via NTFS junctions, Windows Only)</span>
                   </div>
                 </label>
               </div>
@@ -231,7 +231,7 @@
               </div>
               <div class="settings-hint" data-i18n="settings.language_hint">Select your preferred application interface language</div>
               <div class="settings-path-row" style="margin-top: 4px;">
-                <select id="settings-language-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                <select id="settings-language-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                   <option value="en">English (US)</option>
                   <option value="es">Español</option>
                   <option value="pt">Português (Brasil)</option>
@@ -256,7 +256,7 @@
               </div>
               <div class="settings-hint" data-i18n="settings.folder_expand_mode_hint">Choose how mod folders appear when opening the application</div>
               <div class="settings-path-row" style="margin-top: 4px;">
-                <select id="settings-folder-expand-mode-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                <select id="settings-folder-expand-mode-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                   <option value="always_expanded" data-i18n="settings.opt_folder_always_expanded">Always Expanded (Default)</option>
                   <option value="always_collapsed" data-i18n="settings.opt_folder_always_collapsed">Always Collapsed</option>
                   <option value="remember" data-i18n="settings.opt_folder_remember">Remember Last State</option>
@@ -269,9 +269,9 @@
                 <span class="settings-card-title" data-i18n="settings.ui_scale_label">UI Scale</span>
               </div>
               <div class="settings-hint" data-i18n="settings.ui_scale_hint">Adjust the global scale of text, buttons, and cards for high-resolution screens (Ctrl + / Ctrl -)</div>
-              <div style="display:flex;align-items:center;gap:12px;margin-top:6px;">
+              <div style="display:flex;align-items:center;gap:calc(12px * var(--ui-scale, 1));margin-top:6px;">
                 <input type="range" id="settings-ui-scale" min="0.85" max="1.4" step="0.05" style="flex:1;" />
-                <span id="settings-ui-scale-val" style="font-size:12px;font-weight:bold;width:40px;text-align:right;">100%</span>
+                <span id="settings-ui-scale-val" style="font-size:var(--text-sm, 12px);font-weight:bold;width:calc(44px * var(--ui-scale, 1));text-align:right;">100%</span>
               </div>
             </div>
           </div>
@@ -284,8 +284,8 @@
                 <span class="settings-card-title" data-i18n="settings.dns_resolver_title">Secure DNS & Image Proxy (DoH)</span>
               </div>
               <div class="settings-hint" data-i18n="settings.dns_resolver_hint">Resolve and fetch remote mod cover images securely using DNS-over-HTTPS (DoH) to prevent ISP or adblocker connection issues.</div>
-              <div class="settings-path-row" style="margin-top: 6px;">
-                <select id="settings-dns-resolver-select" class="btn-secondary" style="flex:1;text-align:left;padding:8px;height:34px;font-size:12px;font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+              <div class="settings-path-row" style="margin-top: calc(6px * var(--ui-scale, 1));">
+                <select id="settings-dns-resolver-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                   <option value="auto" data-i18n="settings.dns_opt_auto">Auto (Smart Multi-Stage Fallback: System → Cloudflare → Google)</option>
                   <option value="cloudflare" data-i18n="settings.dns_opt_cloudflare">Cloudflare DoH (1.1.1.1)</option>
                   <option value="google" data-i18n="settings.dns_opt_google">Google Public DoH (8.8.8.8)</option>
@@ -296,15 +296,15 @@
 
             <!-- IMAGE CACHE -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.image_cache_title">Offline Thumbnail Cache</span>
                 </div>
-                <span id="settings-image-cache-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                <span id="settings-image-cache-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button type="button" id="btn-purge-image-cache" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
+                <button type="button" id="btn-purge-image-cache" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
               </div>
             </div>
 
@@ -313,46 +313,46 @@
               <div class="settings-card-header">
                 <span class="settings-card-title" data-i18n="settings.sources_title">Official Framework & Dependency Sources</span>
               </div>
-              <div class="settings-hint font-size-11" style="margin-bottom:8px;" data-i18n="settings.sources_hint">Verified GitHub repositories and upstream sources used by PalModManager:</div>
+              <div class="settings-hint" style="margin-bottom:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px);" data-i18n="settings.sources_hint">Verified GitHub repositories and upstream sources used by PalModManager:</div>
               
-              <div style="display:flex; flex-direction:column; gap:8px;">
+              <div style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <!-- UE4SS -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center;">
                   <div>
-                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
-                    <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
+                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
+                    <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));">Maintained by Okaetsu • GitHub Releases</div>
                   </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/latest" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/latest" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.btn_view_source">View Source ↗</button>
                 </div>
 
                 <!-- PalSchema -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center;">
-                  <div style="display:flex; align-items:center; gap:10px;">
-                    <img src="/palschema.png" alt="PalSchema" style="width:24px; height:24px; object-fit:contain;" />
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center;">
+                  <div style="display:flex; align-items:center; gap:calc(10px * var(--ui-scale, 1));">
+                    <img src="/palschema.png" alt="PalSchema" style="width:calc(24px * var(--ui-scale, 1)); height:calc(24px * var(--ui-scale, 1)); object-fit:contain;" />
                     <div>
-                      <div style="font-size:12px; font-weight:700; color:var(--text-primary);">PalSchema Mod Loader</div>
-                      <div style="font-size:10px; color:var(--text-muted);">Maintained by Okaetsu • GitHub Releases</div>
+                      <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">PalSchema Mod Loader</div>
+                      <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));">Maintained by Okaetsu • GitHub Releases</div>
                     </div>
                   </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:11px; padding:4px 8px;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.btn_view_source">View Source ↗</button>
                 </div>
 
                 <!-- retoc (trumank) -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center; gap:calc(12px * var(--ui-scale, 1));">
                   <div style="flex:1; min-width:0;">
-                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">⚡ retoc <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
-                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" data-i18n="settings.sources_retoc_desc">Converts legacy .pak archives into Zen IoStore containers (.utoc / .ucas) — required for mods to load on PC Game Pass (Xbox / WinGDK).</div>
+                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">⚡ retoc <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
+                    <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));" data-i18n="settings.sources_retoc_desc">Converts legacy .pak archives into Zen IoStore containers (.utoc / .ucas) — required for mods to load on PC Game Pass (Xbox / WinGDK).</div>
                   </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/retoc" style="font-size:11px; padding:4px 8px; white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/retoc" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
                 </div>
 
                 <!-- repak (trumank) -->
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; justify-content:space-between; align-items:center; gap:12px;">
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center; gap:calc(12px * var(--ui-scale, 1));">
                   <div style="flex:1; min-width:0;">
-                    <div style="font-size:12px; font-weight:700; color:var(--text-primary);">📦 repak <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
-                    <div style="font-size:10px; color:var(--text-muted); margin-top:2px;" data-i18n="settings.sources_repak_desc_short">Packs and unpacks Unreal Engine .pak archives — used internally to inspect and validate mod contents.</div>
+                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">📦 repak <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
+                    <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));" data-i18n="settings.sources_repak_desc_short">Packs and unpacks Unreal Engine .pak archives — used internally to inspect and validate mod contents.</div>
                   </div>
-                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/repak" style="font-size:11px; padding:4px 8px; white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                  <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/repak" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
                 </div>
               </div>
             </div>
@@ -362,54 +362,54 @@
           <div class="settings-tab-pane" id="settings-pane-resources">
             <!-- MASTER RESOURCE MANIFEST & GAME BUILD BANNER -->
             <div class="settings-section-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%); border-color:rgba(99,102,241,0.3);">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-size:18px;">🛠️</span>
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(6px * var(--ui-scale, 1));">
+                <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
+                  <span style="font-size:calc(18px * var(--ui-scale, 1));">🛠️</span>
                   <div>
                     <span class="settings-card-title" data-i18n="settings.resources_master_title">Palworld Engine & Dev Resources</span>
-                    <div class="settings-hint font-size-11" data-i18n="settings.resources_master_hint">Centralized registry of UE5.1.1 reflection data, AST mappings, C++ headers, and EmmyLua types for mod development and IDE intelligence.</div>
+                    <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.resources_master_hint">Centralized registry of UE5.1.1 reflection data, AST mappings, C++ headers, and EmmyLua types for mod development and IDE intelligence.</div>
                   </div>
                 </div>
-                <button type="button" id="btn-verify-all-resources" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px; white-space:nowrap;">
+                <button type="button" id="btn-verify-all-resources" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1)); white-space:nowrap;">
                   <span id="btn-verify-all-resources-icon">🔄</span>
                   <span data-i18n="settings.btn_verify_all_resources">Verify All Resources</span>
                 </button>
               </div>
 
-              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin-top:8px;">
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:8px 10px;">
-                  <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_steam_build">Detected Steam Build</div>
-                  <div id="settings-resources-steam-build" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:var(--text-primary); margin-top:2px;">Detecting...</div>
+              <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
+                  <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_steam_build">Detected Steam Build</div>
+                  <div id="settings-resources-steam-build" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary); margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
                 </div>
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:8px 10px;">
-                  <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_game_version">Target Game Version</div>
-                  <div id="settings-resources-game-ver" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#22c55e; margin-top:2px;">Detecting...</div>
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
+                  <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_game_version">Target Game Version</div>
+                  <div id="settings-resources-game-ver" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:#22c55e; margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
                 </div>
-                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:8px 10px;">
-                  <div style="font-size:10px; color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_ue4ss_commit">UE4SS Engine Commit</div>
-                  <div id="settings-resources-ue4ss-commit" style="font-family:'JetBrains Mono',monospace; font-size:12px; font-weight:700; color:#eab308; margin-top:2px;">Detecting...</div>
+                <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
+                  <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_ue4ss_commit">UE4SS Engine Commit</div>
+                  <div id="settings-resources-ue4ss-commit" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:#eab308; margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
                 </div>
               </div>
             </div>
 
             <!-- UNREAL ENGINE SCHEMA MAPPINGS (.USMAP) -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.usmap_title">Unreal Engine Schema Mappings (.usmap)</span>
                 </div>
-                <span id="settings-usmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-usmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.usmap_hint">Structural schema mappings used by PalModManager for deep cooked asset inspection, DataTable decoding, and mod compatibility verification. Synced directly from official GitHub repository.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.usmap_hint">Structural schema mappings used by PalModManager for deep cooked asset inspection, DataTable decoding, and mod compatibility verification. Synced directly from official GitHub repository.</div>
               
-              <div id="settings-usmap-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div id="settings-usmap-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-usmap-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Active Mapping:</strong> <span id="settings-usmap-active-file">Palworld.usmap</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-usmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-usmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button type="button" id="btn-sync-usmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
+                <button type="button" id="btn-sync-usmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-usmap-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_usmap">Sync Mappings from GitHub</span>
                 </button>
@@ -418,178 +418,178 @@
 
             <!-- C++ SDK HEADERS (RESOURCES/SDK) -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.sdk_title">C++ SDK Headers (Pal.hpp / CXXHeaderDump)</span>
                 </div>
-                <span id="settings-sdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-sdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.sdk_hint">C++ header definitions (Pal.hpp, Engine.hpp, BP_*.hpp) used by the Hook Diagnostic Engine to validate exact UE4SS functions, RPCs, and delegates with zero false positives.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.sdk_hint">C++ header definitions (Pal.hpp, Engine.hpp, BP_*.hpp) used by the Hook Diagnostic Engine to validate exact UE4SS functions, RPCs, and delegates with zero false positives.</div>
               
-              <div id="settings-sdk-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div id="settings-sdk-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-sdk-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Source:</strong> <span id="settings-sdk-source">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed Classes:</strong> <span id="settings-sdk-classes-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed Functions & Delegates:</strong> <span id="settings-sdk-funcs-count">0</span></div>
-                <div><strong style="color:var(--text-primary);">Location:</strong> <span id="settings-sdk-path" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-sdk-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Location:</strong> <span id="settings-sdk-path" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-sdk-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button type="button" id="btn-sync-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
+                <button type="button" id="btn-sync-sdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-sdk-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_sdk">Sync SDK from GitHub</span>
                 </button>
-                <button type="button" id="btn-import-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                <button type="button" id="btn-import-sdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span>📂</span>
                   <span data-i18n="settings.btn_import_sdk">Import Local CXXHeaderDump</span>
                 </button>
-                <button type="button" id="btn-purge-sdk" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_sdk">🧹 Clear SDK</button>
+                <button type="button" id="btn-purge-sdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_sdk">🧹 Clear SDK</button>
               </div>
             </div>
 
             <!-- JSON PROPERTY MAPPINGS (.JMAP) -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.jmap_title">JSON Property Mappings (.jmap)</span>
                 </div>
-                <span id="settings-jmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-jmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.jmap_hint">Complete JSON AST specification of all Unreal properties, enums, structs, and byte offsets. Powers enum validations, diffing, and AST tooling.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.jmap_hint">Complete JSON AST specification of all Unreal properties, enums, structs, and byte offsets. Powers enum validations, diffing, and AST tooling.</div>
               
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-jmap-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-jmap-file">Palworld.jmap.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-jmap-local-status">Checking...</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-jmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-jmap-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button type="button" id="btn-sync-jmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
+                <button type="button" id="btn-sync-jmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-jmap-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_jmap">Sync .jmap from Repo</span>
                 </button>
-                <button type="button" id="btn-export-jmap" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                <button type="button" id="btn-export-jmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span>📂</span>
                   <span data-i18n="settings.btn_export_jmap">Export .jmap</span>
                 </button>
-                <button type="button" id="btn-purge-jmap" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_jmap">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-jmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_jmap">🧹 Clear Cache</button>
               </div>
             </div>
 
             <!-- LUA EMMYLUA TYPES (SHARED/TYPES) -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.luatypes_title">Lua EmmyLua Types (shared/types)</span>
                 </div>
-                <span id="settings-luatypes-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-luatypes-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.luatypes_hint">1,712 EmmyLua definition files (Pal.lua, Engine.lua) providing rich method signatures, parameter info, and autocompletions in Monaco Editor.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.luatypes_hint">1,712 EmmyLua definition files (Pal.lua, Engine.lua) providing rich method signatures, parameter info, and autocompletions in Monaco Editor.</div>
               
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-luatypes-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Total Type Files:</strong> <span id="settings-luatypes-count">1,712 files</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-luatypes-file">Palworld_LuaTypes.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-luatypes-local-status">Checking...</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-luatypes-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-luatypes-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button type="button" id="btn-sync-luatypes" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
+                <button type="button" id="btn-sync-luatypes" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-luatypes-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_luatypes">Sync Lua Types from Repo</span>
                 </button>
-                <button type="button" id="btn-export-luatypes" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                <button type="button" id="btn-export-luatypes" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span>📂</span>
                   <span data-i18n="settings.btn_export_luatypes">Export Lua Types</span>
                 </button>
-                <button type="button" id="btn-purge-luatypes" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_luatypes">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-luatypes" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_luatypes">🧹 Clear Cache</button>
               </div>
             </div>
 
             <!-- UNREAL HEADER TOOL (UHT) C++ HEADERS -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.uht_title">Unreal Header Tool (UHT) C++ Headers</span>
                 </div>
-                <span id="settings-uht-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-uht-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.uht_hint">24,076 Unreal Header Tool C++ headers with full UCLASS/UPROPERTY/UFUNCTION annotations for building native C++ plugins and RPC inspection.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.uht_hint">24,076 Unreal Header Tool C++ headers with full UCLASS/UPROPERTY/UFUNCTION annotations for building native C++ plugins and RPC inspection.</div>
               
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-uht-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Total Headers:</strong> <span id="settings-uht-count">24,076 files</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-uht-file">Palworld_UHT_SDK.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-uht-local-status">Checking...</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-uht-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-uht-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button type="button" id="btn-sync-uht" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
+                <button type="button" id="btn-sync-uht" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-uht-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_uht">Sync UHT Headers from Repo</span>
                 </button>
-                <button type="button" id="btn-export-uht" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                <button type="button" id="btn-import-uht" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span>📂</span>
-                  <span data-i18n="settings.btn_export_uht">Export UHT SDK</span>
+                  <span data-i18n="settings.btn_import_uht">Import Local CXXHeaderDump</span>
                 </button>
-                <button type="button" id="btn-purge-uht" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_uht">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-uht" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_uht">🧹 Clear Cache</button>
               </div>
             </div>
 
             <!-- BLUEPRINT SDK DUMMY ASSETS (UE4SS_SDK) -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.bpsdk_title">Blueprint SDK Dummy Assets (UE4SS_SDK)</span>
                 </div>
-                <span id="settings-bpsdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-bpsdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.bpsdk_hint">14,090 dummy asset files replicating Palworld internal asset tree. Enables opening and creating cooked .pak mods inside Unreal Engine 5.1.1 Editor.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.bpsdk_hint">14,090 dummy asset files replicating Palworld internal asset tree. Enables opening and creating cooked .pak mods inside Unreal Engine 5.1.1 Editor.</div>
               
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Package Build:</strong> <span id="settings-bpsdk-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Total Dummy Assets:</strong> <span id="settings-bpsdk-count">14,090 assets</span></div>
                 <div><strong style="color:var(--text-primary);">Active Package:</strong> <span id="settings-bpsdk-file">Palworld_BP_SDK.zip</span></div>
                 <div><strong style="color:var(--text-primary);">Local Game Dump:</strong> <span id="settings-bpsdk-local-status">Checking...</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-bpsdk-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-bpsdk-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px; flex-wrap:wrap;">
-                <button type="button" id="btn-sync-bpsdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
+                <button type="button" id="btn-sync-bpsdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-bpsdk-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_bpsdk">Sync BP SDK from Repo</span>
                 </button>
-                <button type="button" id="btn-export-bpsdk" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+                <button type="button" id="btn-export-bpsdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span>📂</span>
                   <span data-i18n="settings.btn_export_bpsdk">Export to UE Project</span>
                 </button>
-                <button type="button" id="btn-purge-bpsdk" class="btn-secondary" style="font-size:11px; padding:6px 12px;" data-i18n="settings.btn_purge_bpsdk">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-bpsdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_bpsdk">🧹 Clear Cache</button>
               </div>
             </div>
 
             <!-- LIVE GAME BLUEPRINTS CATALOG -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.blueprints_title">Live Game Blueprints Catalog</span>
                 </div>
-                <span id="settings-blueprints-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-blueprints-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.blueprints_hint">Extracted game blueprint classes and cooked assets from Pal-Windows.pak used for rich IntelliSense and instant mod overriding. Synced from official GitHub repository.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.blueprints_hint">Extracted game blueprint classes and cooked assets from Pal-Windows.pak used for rich IntelliSense and instant mod overriding. Synced from official GitHub repository.</div>
               
-              <div id="settings-blueprints-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div id="settings-blueprints-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-blueprints-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed Blueprints:</strong> <span id="settings-blueprints-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-blueprints-active-file">---</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-blueprints-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-blueprints-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button type="button" id="btn-sync-blueprints" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
+                <button type="button" id="btn-sync-blueprints" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-blueprints-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_blueprints">Sync Blueprints from GitHub</span>
                 </button>
@@ -598,24 +598,24 @@
 
             <!-- PALSCHEMA DATATABLES CATALOG -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.datatables_title">PalSchema DataTables Catalog</span>
                 </div>
-                <span id="settings-datatables-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-datatables-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.datatables_hint">Decoded game row definitions (ItemData, PalData, CharacterData...) and schema templates used for DataTable autocompletion and conflict detection. Synced from official GitHub repository.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.datatables_hint">Decoded game row definitions (ItemData, PalData, CharacterData...) and schema templates used for DataTable autocompletion and conflict detection. Synced from official GitHub repository.</div>
               
-              <div id="settings-datatables-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div id="settings-datatables-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Game Version:</strong> <span id="settings-datatables-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">Indexed DataTables:</strong> <span id="settings-datatables-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Total Game Rows:</strong> <span id="settings-datatables-rows-count">0</span></div>
                 <div><strong style="color:var(--text-primary);">Active Catalog:</strong> <span id="settings-datatables-active-file">---</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-datatables-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-datatables-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button type="button" id="btn-sync-datatables" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
+                <button type="button" id="btn-sync-datatables" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-datatables-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_datatables">Sync DataTables from GitHub</span>
                 </button>
@@ -624,39 +624,39 @@
 
             <!-- PALSCHEMA JSON SCHEMAS SPECIFICATION -->
             <div class="settings-section-card">
-              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(4px * var(--ui-scale, 1));">
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.schemas_title">PalSchema JSON Schemas Specification</span>
                 </div>
-                <span id="settings-schemas-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">Checking...</span>
+                <span id="settings-schemas-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
-              <div class="settings-hint font-size-11" data-i18n="settings.schemas_hint">Formal JSON Schema (Draft-07) specifications defining all 474 DataTables, Unreal property types, and high-level items/pals/buildings/skins schemas. Powers deep IDE IntelliSense, autocomplete, and real-time linter validation.</div>
+              <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.schemas_hint">Formal JSON Schema (Draft-07) specifications defining all 474 DataTables, Unreal property types, and high-level items/pals/buildings/skins schemas. Powers deep IDE IntelliSense, autocomplete, and real-time linter validation.</div>
               
-              <div id="settings-schemas-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-top:8px; font-size:11px; display:flex; flex-direction:column; gap:4px; color:var(--text-secondary);">
+              <div id="settings-schemas-details" style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); display:flex; flex-direction:column; gap:calc(4px * var(--ui-scale, 1)); color:var(--text-secondary);">
                 <div><strong style="color:var(--text-primary);">Specification Version:</strong> <span id="settings-schemas-version">v0.6.6</span></div>
                 <div><strong style="color:var(--text-primary);">Target Game Build:</strong> <span id="settings-schemas-game-ver">Detecting...</span></div>
                 <div><strong style="color:var(--text-primary);">DataTable Schemas:</strong> <span id="settings-schemas-raw-count">474</span></div>
                 <div><strong style="color:var(--text-primary);">Domain Models:</strong> <span id="settings-schemas-domain-count">5 models (Items, Pals, Buildings, Skins, Utility)</span></div>
                 <div><strong style="color:var(--text-primary);">Engine Enums:</strong> <span id="settings-schemas-enums">Included (enums.schema.json)</span></div>
                 <div><strong style="color:var(--text-primary);">Active Source:</strong> <span id="settings-schemas-source">Detecting...</span></div>
-                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-schemas-hash" style="font-family:'JetBrains Mono',monospace; font-size:10px; color:var(--text-muted);">---</span></div>
+                <div><strong style="color:var(--text-primary);">Checksum (SHA-256):</strong> <span id="settings-schemas-hash" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-2xs, 9.5px); color:var(--text-muted);">---</span></div>
               </div>
 
               <!-- Special Thanks to Okaetsu Acknowledgment Box -->
-              <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:6px; padding:10px 12px; margin-top:8px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
-                <div style="display:flex; align-items:center; gap:8px;">
-                  <span style="font-size:16px;">✨</span>
-                  <div style="font-size:11px; line-height:1.4; color:var(--text-primary);">
+              <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); display:flex; align-items:center; justify-content:space-between; gap:calc(12px * var(--ui-scale, 1));">
+                <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
+                  <span style="font-size:calc(16px * var(--ui-scale, 1));">✨</span>
+                  <div style="font-size:var(--text-xs, 11px); line-height:1.4; color:var(--text-primary);">
                     <span data-i18n="settings.schemas_okaetsu_credit_prefix">Special thanks to</span>
                     <strong style="color:var(--text-primary);">Okaetsu</strong>
                     <span data-i18n="settings.schemas_okaetsu_credit_suffix">for creating and maintaining the official PalSchema specification schemas.</span>
                   </div>
                 </div>
-                <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:10px; padding:4px 8px; white-space:nowrap;" data-i18n="settings.btn_view_source">View Source ↗</button>
+                <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/PalSchema" style="font-size:var(--text-2xs, 9.5px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); white-space:nowrap;" data-i18n="settings.btn_view_source">View Source ↗</button>
               </div>
 
-              <div style="display:flex; gap:8px; margin-top:8px;">
-                <button type="button" id="btn-sync-schemas" class="btn-secondary" style="font-size:11px; padding:6px 12px; display:flex; align-items:center; gap:6px;">
+              <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
+                <button type="button" id="btn-sync-schemas" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
                   <span id="btn-sync-schemas-icon">🔄</span>
                   <span data-i18n="settings.btn_sync_schemas">Sync Schemas from GitHub</span>
                 </button>
@@ -670,14 +670,14 @@
               <div class="settings-card-header">
                 <span class="settings-card-title" data-i18n="settings.safety_title">🛡️ Safety Backup & Troubleshooting</span>
               </div>
-              <div class="settings-hint" style="margin-bottom:6px;" data-i18n="settings.safety_hint">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
-              <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: 8px; font-family: monospace; font-size: 11px;" data-i18n="settings.safety_checking">Checking backup status...</div>
-              <div style="display:flex; flex-direction:column; gap:8px;">
-                <div style="display:flex; gap:8px;">
-                  <button type="button" id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:8px; border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
-                  <button type="button" id="safety-backup-now-btn" class="btn-secondary" style="font-size:11px; padding:8px;" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
+              <div class="settings-hint" style="margin-bottom:calc(6px * var(--ui-scale, 1));" data-i18n="settings.safety_hint">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
+              <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: calc(8px * var(--ui-scale, 1)); font-family: monospace; font-size: var(--text-xs, 11px);" data-i18n="settings.safety_checking">Checking backup status...</div>
+              <div style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
+                <div style="display:flex; gap:calc(8px * var(--ui-scale, 1));">
+                  <button type="button" id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1)); border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
+                  <button type="button" id="safety-backup-now-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
                 </div>
-                <button type="button" id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:11px; padding:8px;" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
+                <button type="button" id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
               </div>
             </div>
 
@@ -686,51 +686,51 @@
               <div class="settings-card-header">
                 <span class="settings-card-title" data-i18n="settings.storage_title">💾 Storage & Cache Management</span>
               </div>
-              <div class="settings-hint" style="margin-bottom:10px;" data-i18n="settings.storage_hint">Inspect and manage disk space used by temporary downloads and local mod libraries:</div>
+              <div class="settings-hint" style="margin-bottom:calc(10px * var(--ui-scale, 1));" data-i18n="settings.storage_hint">Inspect and manage disk space used by temporary downloads and local mod libraries:</div>
               
               <!-- Row 1: Temp Downloads -->
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-bottom:calc(10px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size:14px;">⚡</span>
-                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_temp_title">Temporary Downloads Cache</span>
+                  <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                    <span style="font-size:calc(14px * var(--ui-scale, 1));">⚡</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_temp_title">Temporary Downloads Cache</span>
                   </div>
-                  <span id="storage-temp-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                  <span id="storage-temp-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
-                <div id="storage-temp-details" class="settings-hint" style="font-size:11px;">0 temporary files in cache</div>
-                <div style="display:flex; gap:8px; margin-top:2px;">
-                  <button type="button" id="storage-clear-temp-btn" class="btn-secondary" style="flex:1; font-size:11px; padding:6px 10px;" title="Clean orphaned or cancelled zip downloads" data-i18n-title="settings.btn_clear_temp_title" data-i18n="settings.btn_clear_temp">🧹 Clear Temporary Downloads</button>
-                  <button type="button" id="storage-open-temp-btn" class="btn-secondary" style="font-size:11px; padding:6px 10px;" title="Open temporary downloads folder in explorer" data-i18n-title="settings.btn_open_temp_title" data-i18n="settings.btn_open_temp">📂 Open Temp Folder</button>
+                <div id="storage-temp-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">0 temporary files in cache</div>
+                <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
+                  <button type="button" id="storage-clear-temp-btn" class="btn-secondary" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Clean orphaned or cancelled zip downloads" data-i18n-title="settings.btn_clear_temp_title" data-i18n="settings.btn_clear_temp">🧹 Clear Temporary Downloads</button>
+                  <button type="button" id="storage-open-temp-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open temporary downloads folder in explorer" data-i18n-title="settings.btn_open_temp_title" data-i18n="settings.btn_open_temp">📂 Open Temp Folder</button>
                 </div>
               </div>
 
               <!-- Row 2: Local Library -->
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; margin-bottom:10px; display:flex; flex-direction:column; gap:8px;">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-bottom:calc(10px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size:14px;">📦</span>
-                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_library_title">Local Mod Library</span>
+                  <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                    <span style="font-size:calc(14px * var(--ui-scale, 1));">📦</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_library_title">Local Mod Library</span>
                   </div>
-                  <span id="storage-library-badge" class="badge" style="background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                  <span id="storage-library-badge" class="badge" style="background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
-                <div id="storage-library-details" class="settings-hint" style="font-size:11px;">0 mods, 0 zip archives</div>
-                <div style="display:flex; gap:8px; margin-top:2px;">
-                  <button type="button" id="storage-open-library-btn" class="btn-secondary" style="width:100%; font-size:11px; padding:6px 10px;" title="Open local mod library folder in explorer" data-i18n-title="settings.btn_open_library_title" data-i18n="settings.btn_open_library">📂 Open Library Folder</button>
+                <div id="storage-library-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">0 mods, 0 zip archives</div>
+                <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
+                  <button type="button" id="storage-open-library-btn" class="btn-secondary" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open local mod library folder in explorer" data-i18n-title="settings.btn_open_library_title" data-i18n="settings.btn_open_library">📂 Open Library Folder</button>
                 </div>
               </div>
 
               <!-- Row 3: Image Thumbnail Cache -->
-              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
+              <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                  <div style="display:flex; align-items:center; gap:6px;">
-                    <span style="font-size:14px;">🖼️</span>
-                    <span style="font-size:12px; font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_image_cache_title">Thumbnail Image Cache</span>
+                  <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                    <span style="font-size:calc(14px * var(--ui-scale, 1));">🖼️</span>
+                    <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_image_cache_title">Thumbnail Image Cache</span>
                   </div>
-                  <span id="storage-images-badge" class="badge" style="background:rgba(155,89,182,0.15); color:#9b59b6; border:1px solid rgba(155,89,182,0.3); font-size:11px; font-weight:700; padding:2px 8px; border-radius:4px;">0 B</span>
+                  <span id="storage-images-badge" class="badge" style="background:rgba(155,89,182,0.15); color:#9b59b6; border:1px solid rgba(155,89,182,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
-                <div id="storage-images-details" class="settings-hint" style="font-size:11px;">WebP cached mod cover images</div>
-                <div style="display:flex; gap:8px; margin-top:2px;">
-                  <button type="button" id="storage-clear-images-btn" class="btn-secondary" style="width:100%; font-size:11px; padding:6px 10px;" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
+                <div id="storage-images-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">WebP cached mod cover images</div>
+                <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
+                  <button type="button" id="storage-clear-images-btn" class="btn-secondary" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
                 </div>
               </div>
             </div>

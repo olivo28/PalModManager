@@ -30,21 +30,21 @@
   border-right: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  padding: 16px 12px;
-  gap: 6px;
+  padding: calc(16px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  gap: calc(6px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
 .settings-tab-button {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 12px;
+  gap: calc(10px * var(--ui-scale, 1));
+  padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   border-radius: var(--radius);
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-secondary);
-  font-size: var(--text-sm, 11px);
+  font-size: var(--text-sm, 12px);
   font-weight: 600;
   cursor: pointer;
   text-align: left;
@@ -65,7 +65,7 @@
 }
 
 .settings-tab-button .tab-icon {
-  font-size: var(--text-md, 14.5px);
+  font-size: var(--text-md, 15px);
   line-height: 1;
   display: flex;
   align-items: center;
@@ -74,18 +74,18 @@
 
 .settings-content-viewport {
   flex: 1;
-  padding: 20px 24px;
+  padding: calc(18px * var(--ui-scale, 1)) calc(22px * var(--ui-scale, 1));
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: calc(16px * var(--ui-scale, 1));
   background: var(--bg-secondary);
 }
 
 .settings-tab-pane {
   display: none;
   flex-direction: column;
-  gap: 16px;
+  gap: calc(16px * var(--ui-scale, 1));
   animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -97,10 +97,10 @@
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  padding: 14px 16px;
+  padding: calc(14px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
 }
 
 .settings-card-header {
@@ -111,7 +111,7 @@
 }
 
 .settings-card-title {
-  font-size: var(--text-base, 13px);
+  font-size: var(--text-base, 13.5px);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -119,25 +119,25 @@
 .settings-group {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
 }
 
 .settings-group label {
-  font-size: var(--text-base, 13px);
+  font-size: var(--text-base, 13.5px);
   font-weight: 600;
   color: var(--text-primary);
 }
 
 .settings-hint {
-  font-size: var(--text-sm, 11px);
+  font-size: var(--text-sm, 12px);
   color: var(--text-secondary);
 }
 
 .settings-toggle-row {
   display: flex;
   align-items: flex-start;
-  gap: 12px;
-  padding: 4px 0;
+  gap: calc(12px * var(--ui-scale, 1));
+  padding: calc(4px * var(--ui-scale, 1)) 0;
   cursor: pointer;
 }
 
@@ -145,27 +145,27 @@
   margin-top: 2px;
   cursor: pointer;
   accent-color: var(--accent);
-  width: 16px;
-  height: 16px;
+  width: calc(16px * var(--ui-scale, 1));
+  height: calc(16px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
 .settings-path-row,
 .settings-key-row {
   display: flex;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   align-items: center;
 }
 
 .settings-path-row input,
 .settings-key-row input {
   flex: 1;
-  padding: 8px 12px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: var(--text-base, 13px);
+  font-size: var(--text-base, 13.5px);
   outline: none;
   transition: border-color 0.2s;
 }
@@ -176,7 +176,7 @@
 }
 
 .settings-path-status {
-  font-size: var(--text-sm, 11px);
+  font-size: var(--text-sm, 12px);
   margin-top: 2px;
 }
 
@@ -191,7 +191,7 @@
 .settings-divider {
   height: 1px;
   background: var(--border);
-  margin: 4px 0;
+  margin: calc(4px * var(--ui-scale, 1)) 0;
 }
 
 .btn-icon-inline {
@@ -200,11 +200,11 @@
   border-radius: var(--radius);
   color: var(--text-primary);
   cursor: pointer;
-  padding: 8px;
+  padding: calc(8px * var(--ui-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: var(--text-md, 14.5px);
+  font-size: var(--text-md, 15px);
   transition: all 0.2s;
 }
 
@@ -212,4 +212,5 @@
   background: var(--bg-tertiary);
   border-color: var(--text-muted);
 }
+
 

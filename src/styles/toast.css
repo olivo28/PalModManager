@@ -1,25 +1,25 @@
 #toast-container {
   position: fixed;
-  top: 24px;
-  right: 24px;
+  top: calc(24px * var(--ui-scale, 1));
+  right: calc(24px * var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   align-items: flex-end;
   z-index: 999999;
   pointer-events: none;
 }
 
 .toast {
-  padding: 10px 20px;
-  font-size: 13px;
+  padding: calc(10px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
+  font-size: var(--text-base, 13px);
   font-weight: 500;
   transform: translateY(-20px);
   opacity: 0;
   transition: all 0.3s ease;
   pointer-events: auto;
-  border-radius: 4px;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+  border-radius: calc(4px * var(--ui-scale, 1));
+  box-shadow: 0 calc(4px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) rgba(0,0,0,0.2);
 }
 
 .toast.show { transform: translateY(0); opacity: 1; }

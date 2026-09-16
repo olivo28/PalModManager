@@ -60,6 +60,7 @@ export async function openFomodWizard(
       message: `FOMOD Error: ${String(err)}`,
       type: 'error',
     });
+    throw err;
   }
 }
 

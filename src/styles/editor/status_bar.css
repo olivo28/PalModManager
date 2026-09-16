@@ -6,12 +6,12 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 24px;
-  min-height: 24px;
+  height: calc(24px * var(--ui-scale, 1));
+  min-height: calc(24px * var(--ui-scale, 1));
   background: var(--bg-tertiary, #16181d);
   border-top: 1px solid var(--border, #27272a);
-  padding: 0 10px;
-  font-size: 11px;
+  padding: 0 calc(10px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 9.5px);
   color: var(--text-muted, #71717a);
   user-select: none;
   z-index: 6;
@@ -23,14 +23,14 @@
 .editor-status-bar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
 }
 
 .editor-status-item {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 11px;
+  gap: calc(5px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 9.5px);
   font-family: inherit;
   color: var(--text-muted, #a1a1aa);
   white-space: nowrap;
@@ -39,12 +39,12 @@
 .editor-status-btn {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: calc(5px * var(--ui-scale, 1));
   background: transparent;
   border: none;
   color: var(--text-muted, #a1a1aa);
-  font-size: 11px;
-  padding: 2px 6px;
+  font-size: var(--text-xs, 9.5px);
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   border-radius: 3px;
   cursor: pointer;
   transition: all 0.15s ease;

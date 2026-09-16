@@ -1,27 +1,27 @@
 <!-- LIBRARY TAB -->
 <div id="library-view" class="tab-content" style="display:none">
-  <div id="library-toolbar" style="display:flex;align-items:center;padding:12px 16px;background:var(--bg-primary);border-bottom:1px solid var(--border);gap:12px;">
-    <span style="font-size:13px;font-weight:700;color:var(--text-primary)" data-i18n="library.title">Mod Library</span>
+  <div id="library-toolbar" style="display:flex;align-items:center;padding:calc(12px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));background:var(--bg-primary);border-bottom:1px solid var(--border);gap:calc(12px * var(--ui-scale, 1));">
+    <span style="font-size:var(--text-base, 13px);font-weight:700;color:var(--text-primary)" data-i18n="library.title">Mod Library</span>
 
-    <div class="library-sub-tabs" style="display:flex;gap:4px;background:rgba(0,0,0,0.2);padding:2px;border-radius:6px;border:1px solid var(--border);margin-left:8px;">
-      <button class="library-sub-tab active" data-tab="local" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:4px;cursor:pointer;transition:all 0.2s;" data-i18n="library.tab_local">Local Library</button>
-      <button class="library-sub-tab" data-tab="workshop" style="padding:4px 10px;font-size:11px;font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:4px;cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:6px;">
+    <div class="library-sub-tabs" style="display:flex;gap:calc(4px * var(--ui-scale, 1));background:rgba(0,0,0,0.2);padding:calc(2px * var(--ui-scale, 1));border-radius:calc(6px * var(--ui-scale, 1));border:1px solid var(--border);margin-left:calc(8px * var(--ui-scale, 1));">
+      <button class="library-sub-tab active" data-tab="local" style="padding:calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));font-size:var(--text-xs, 11px);font-weight:600;border:none;background:var(--accent);color:#fff;border-radius:calc(4px * var(--ui-scale, 1));cursor:pointer;transition:all 0.2s;" data-i18n="library.tab_local">Local Library</button>
+      <button class="library-sub-tab" data-tab="workshop" style="padding:calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));font-size:var(--text-xs, 11px);font-weight:600;border:none;background:transparent;color:var(--text-muted);border-radius:calc(4px * var(--ui-scale, 1));cursor:pointer;transition:all 0.2s;display:flex;align-items:center;gap:calc(6px * var(--ui-scale, 1));">
         <span data-i18n="library.tab_workshop">Steam Workshop</span>
-        <span id="workshop-subtab-badge" style="display:none;font-size:8px;background:#00bcff;color:#fff;padding:1px 5px;border-radius:10px;font-weight:bold;">NEW</span>
+        <span id="workshop-subtab-badge" style="display:none;font-size:var(--text-2xs, 8.5px);background:#00bcff;color:#fff;padding:calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));border-radius:calc(10px * var(--ui-scale, 1));font-weight:bold;">NEW</span>
       </button>
     </div>
 
-    <div id="library-workshop-master-wrap" style="display:none; align-items:center; gap:8px; margin-left:12px;">
-      <span style="font-size:11px;color:var(--text-muted);font-weight:600;" data-i18n="library.workshop_enable_label">Enable Workshop:</span>
+    <div id="library-workshop-master-wrap" style="display:none; align-items:center; gap:calc(8px * var(--ui-scale, 1)); margin-left:calc(12px * var(--ui-scale, 1));">
+      <span style="font-size:var(--text-xs, 11px);color:var(--text-muted);font-weight:600;" data-i18n="library.workshop_enable_label">Enable Workshop:</span>
       <label class="toggle-switch">
         <input type="checkbox" id="library-workshop-master-toggle" />
         <span class="toggle-slider"></span>
       </label>
     </div>
 
-    <div style="display:flex;align-items:center;gap:8px;margin-left:auto;flex-wrap:wrap;">
+    <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));margin-left:auto;flex-wrap:wrap;">
       <div id="library-filter-wrap">
-        <select id="library-filter-status" class="sort-select" style="padding:5px 8px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;" title="Filter by installation status" data-i18n-title="library.filter_status_title">
+        <select id="library-filter-status" class="sort-select" style="padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 11px);background:var(--bg-secondary);border:1px solid var(--border);border-radius:calc(4px * var(--ui-scale, 1));color:var(--text-primary);cursor:pointer;outline:none;" title="Filter by installation status" data-i18n-title="library.filter_status_title">
           <option value="all" data-i18n="library.filter_all">All Mods</option>
           <option value="installed" data-i18n="library.filter_installed">Installed Only</option>
           <option value="not_installed" data-i18n="library.filter_not_installed">Not Installed</option>
@@ -30,7 +30,7 @@
       </div>
 
       <div id="library-sort-wrap">
-        <select id="library-sort-select" class="sort-select" style="padding:5px 8px;font-size:11px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;" title="Sort library mods" data-i18n-title="library.sort_select_title">
+        <select id="library-sort-select" class="sort-select" style="padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 11px);background:var(--bg-secondary);border:1px solid var(--border);border-radius:calc(4px * var(--ui-scale, 1));color:var(--text-primary);cursor:pointer;outline:none;" title="Sort library mods" data-i18n-title="library.sort_select_title">
           <option value="name:asc" data-i18n="library.sort_name_asc">Name (A → Z)</option>
           <option value="name:desc" data-i18n="library.sort_name_desc">Name (Z → A)</option>
           <option value="installed:first" data-i18n="library.sort_installed_first">Installed First</option>
@@ -39,20 +39,20 @@
         </select>
       </div>
 
-      <div id="library-layout-toggle-bar" style="display:flex;align-items:center;gap:4px;">
-        <button id="library-layout-grid-btn" class="layout-btn active" title="Grid View (Cards)" data-i18n-title="library.layout_grid_title"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1V1zm8 0h6v6H9V1zm-8 8h6v6H1V9zm8 0h6v6H9V9z"/></svg></button>
-        <button id="library-layout-list-btn" class="layout-btn" title="List View (Compact)" data-i18n-title="library.layout_list_title"><svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5h14v2H1v-2zm0 4.5h14v2H1V7zm0 4.5h14v2H1v-2z"/></svg></button>
+      <div id="library-layout-toggle-bar" style="display:flex;align-items:center;gap:calc(4px * var(--ui-scale, 1));">
+        <button id="library-layout-grid-btn" class="layout-btn active" title="Grid View (Cards)" data-i18n-title="library.layout_grid_title"><svg style="width:calc(13px * var(--ui-scale, 1));height:calc(13px * var(--ui-scale, 1));" viewBox="0 0 16 16" fill="currentColor"><path d="M1 1h6v6H1V1zm8 0h6v6H9V1zm-8 8h6v6H1V9zm8 0h6v6H9V9z"/></svg></button>
+        <button id="library-layout-list-btn" class="layout-btn" title="List View (Compact)" data-i18n-title="library.layout_list_title"><svg style="width:calc(13px * var(--ui-scale, 1));height:calc(13px * var(--ui-scale, 1));" viewBox="0 0 16 16" fill="currentColor"><path d="M1 2.5h14v2H1v-2zm0 4.5h14v2H1V7zm0 4.5h14v2H1v-2z"/></svg></button>
       </div>
 
-      <div id="library-search-wrap" style="position:relative;width:200px;">
-        <input type="text" id="library-search-input" placeholder="Search library..." data-i18n-placeholder="library.search_placeholder" style="width:100%;padding:6px 12px;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);font-size:11px;" />
+      <div id="library-search-wrap" style="position:relative;width:calc(200px * var(--ui-scale, 1));">
+        <input type="text" id="library-search-input" placeholder="Search library..." data-i18n-placeholder="library.search_placeholder" style="width:100%;padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));background:var(--bg-secondary);border:1px solid var(--border);border-radius:calc(4px * var(--ui-scale, 1));color:var(--text-primary);font-size:var(--text-xs, 11px);" />
       </div>
 
-      <button id="workshop-check-updates-btn" class="toolbar-btn-sm" style="display:none;align-items:center;gap:4px;background:rgba(0,188,255,0.15);color:#00bcff;border:1px solid rgba(0,188,255,0.3);" title="Check for Workshop updates on Steam" data-i18n-title="library.btn_check_workshop_updates_title" data-i18n="library.btn_check_workshop_updates">🔍 Check Updates</button>
+      <button id="workshop-check-updates-btn" class="toolbar-btn-sm" style="display:none;align-items:center;gap:calc(4px * var(--ui-scale, 1));background:rgba(0,188,255,0.15);color:#00bcff;border:1px solid rgba(0,188,255,0.3);" title="Check for Workshop updates on Steam" data-i18n-title="library.btn_check_workshop_updates_title" data-i18n="library.btn_check_workshop_updates">🔍 Check Updates</button>
       <button id="library-refresh-btn" class="toolbar-btn-sm" data-i18n="common.refresh">Refresh</button>
     </div>
   </div>
-  <div id="library-bulk-actions-bar" class="bulk-actions-bar" style="display:none;margin:12px 16px 0 16px;">
+  <div id="library-bulk-actions-bar" class="bulk-actions-bar" style="display:none;margin:calc(12px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)) 0 calc(16px * var(--ui-scale, 1));">
     <div class="bulk-actions-info"><span id="library-bulk-selected-count">0</span> mods selected</div>
     <div class="bulk-actions-buttons">
       <button id="library-bulk-install-btn" class="bulk-btn primary" data-i18n="library.btn_install_selected">Install Selected</button>
@@ -60,7 +60,7 @@
       <button id="library-bulk-clear-btn" class="bulk-btn" data-i18n="common.cancel">Cancel</button>
     </div>
   </div>
-  <div id="library-container" style="flex:1;padding:16px;overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(220px, 1fr));gap:16px;align-content:start;">
+  <div id="library-container" style="flex:1;padding:calc(16px * var(--ui-scale, 1));overflow-y:auto;display:grid;grid-template-columns:repeat(auto-fill, minmax(calc(220px * var(--ui-scale, 1)), 1fr));gap:calc(16px * var(--ui-scale, 1));align-content:start;">
     <div id="library-empty" data-i18n="library.empty_local">No mods in library. Mods are automatically copied here when installed.</div>
   </div>
 </div>

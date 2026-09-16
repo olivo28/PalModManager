@@ -12,6 +12,64 @@ pub fn extract_7z_to_temp(path: &str, temp_dir: &Path) -> Result<PathBuf, String
     Ok(temp_dir.to_path_buf())
 }
 
+/// Decodes a raw byte slice from an archive text file into a String,
+/// handling UTF-8 (with or without BOM), UTF-16LE, UTF-16BE, and lossy fallback.
+pub fn decode_text_bytes(bytes: &[u8]) -> Option<String> {
+    if bytes.is_empty() {
+        return Some(String::new());
+    }
+
+    // 1. UTF-8 with BOM: [0xEF, 0xBB, 0xBF]
+    if bytes.starts_with(&[0xEF, 0xBB, 0xBF]) {
+        if let Ok(s) = std::str::from_utf8(&bytes[3..]) {
+            return Some(s.to_string());
+        }
+    }
+
+    // 2. UTF-16LE with BOM: [0xFF, 0xFE]
+    if bytes.starts_with(&[0xFF, 0xFE]) {
+        let u16_slice: Vec<u16> = bytes[2..]
+            .chunks_exact(2)
+            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+            .collect();
+        if let Ok(s) = String::from_utf16(&u16_slice) {
+            return Some(s);
+        }
+        return Some(String::from_utf16_lossy(&u16_slice));
+    }
+
+    // 3. UTF-16BE with BOM: [0xFE, 0xFF]
+    if bytes.starts_with(&[0xFE, 0xFF]) {
+        let u16_slice: Vec<u16> = bytes[2..]
+            .chunks_exact(2)
+            .map(|chunk| u16::from_be_bytes([chunk[0], chunk[1]]))
+            .collect();
+        if let Ok(s) = String::from_utf16(&u16_slice) {
+            return Some(s);
+        }
+        return Some(String::from_utf16_lossy(&u16_slice));
+    }
+
+    // 4. Standard valid UTF-8
+    if let Ok(s) = std::str::from_utf8(bytes) {
+        return Some(s.to_string());
+    }
+
+    // 5. UTF-16LE heuristic without BOM (even length starting with '<' as [0x3C, 0x00])
+    if bytes.len() >= 2 && bytes.len() % 2 == 0 && bytes[0] == 0x3C && bytes[1] == 0x00 {
+        let u16_slice: Vec<u16> = bytes
+            .chunks_exact(2)
+            .map(|chunk| u16::from_le_bytes([chunk[0], chunk[1]]))
+            .collect();
+        if let Ok(s) = String::from_utf16(&u16_slice) {
+            return Some(s);
+        }
+    }
+
+    // 6. Lossy UTF-8 fallback
+    Some(String::from_utf8_lossy(bytes).to_string())
+}
+
 pub fn read_7z_file(path: &str, target_file: &str) -> Option<String> {
     let lower_target = target_file.replace('\\', "/").to_lowercase();
     let mut reader = sevenz_rust::SevenZReader::open(Path::new(path), sevenz_rust::Password::empty()).ok()?;
@@ -21,7 +79,7 @@ pub fn read_7z_file(path: &str, target_file: &str) -> Option<String> {
         if entry_name == lower_target || entry_name.ends_with(&format!("/{}", lower_target)) {
             let mut buf = Vec::new();
             if reader.read_to_end(&mut buf).is_ok() {
-                if let Ok(s) = String::from_utf8(buf) {
+                if let Some(s) = decode_text_bytes(&buf) {
                     content = Some(s);
                     return Ok(false);
                 }
@@ -289,8 +347,8 @@ pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
             if let Ok(output) = cmd.output() {
                 if output.status.success() {
                     let extracted_path = temp_dir.join(target_file);
-                    if let Ok(content) = fs::read_to_string(&extracted_path) {
-                        result = Some(content);
+                    if let Ok(bytes) = fs::read(&extracted_path) {
+                        result = decode_text_bytes(&bytes);
                     }
                 }
             }
@@ -305,9 +363,11 @@ pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
                         if let Ok(mut entry) = archive.by_index(i) {
                             let name = entry.name().replace('\\', "/").to_lowercase();
                             if name == lower_target || name.ends_with(&format!("/{}", lower_target)) {
-                                let mut buf = String::new();
-                                if entry.read_to_string(&mut buf).is_ok() {
-                                    return Some(buf);
+                                let mut buf = Vec::new();
+                                if entry.read_to_end(&mut buf).is_ok() {
+                                    if let Some(s) = decode_text_bytes(&buf) {
+                                        return Some(s);
+                                    }
                                 }
                             }
                         }
@@ -319,9 +379,11 @@ pub fn read_archive_file(zip_path: &str, target_file: &str) -> Option<String> {
                     if let Ok(mut entry) = archive.by_index(i) {
                         let name = entry.name().replace('\\', "/").to_lowercase();
                         if name == lower_target || name.ends_with(&format!("/{}", lower_target)) {
-                            let mut buf = String::new();
-                            if entry.read_to_string(&mut buf).is_ok() {
-                                return Some(buf);
+                            let mut buf = Vec::new();
+                            if entry.read_to_end(&mut buf).is_ok() {
+                                if let Some(s) = decode_text_bytes(&buf) {
+                                    return Some(s);
+                                }
                             }
                         }
                     }

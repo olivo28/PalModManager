@@ -46,45 +46,45 @@ export function showSnapshotComparisonModal(
 
   const modalHtml = `
     <div id="save-compare-modal" class="modal-overlay" style="position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(4px); display: flex; align-items: center; justify-content: center; z-index: 9999; animation: fadeIn 0.15s ease;">
-      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; width: 700px; max-width: 95vw; box-shadow: 0 12px 36px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden;">
+      <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; width: min(calc(700px * var(--ui-scale, 1)), 95vw); max-width: 95vw; box-shadow: 0 12px 36px rgba(0,0,0,0.6); display: flex; flex-direction: column; overflow: hidden;">
         
         <!-- Header -->
-        <div style="background: var(--bg-secondary); padding: 14px 18px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
-          <div style="display: flex; align-items: center; gap: 10px;">
-            <span style="font-size: 20px;">⚖️</span>
+        <div style="background: var(--bg-secondary); padding: calc(12px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
+          <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
+            <span style="font-size: calc(20px * var(--ui-scale, 1));">⚖️</span>
             <div>
-              <div style="font-size: 14px; font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.snap_diff_modal_title') || 'Save vs Snapshot Comparison & Diff')}</div>
-              <div style="font-size: 11px; color: var(--text-muted);">${escapeHtml(world.worldName || world.worldId)}</div>
+              <div style="font-size: var(--text-md, 14px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.snap_diff_modal_title') || 'Save vs Snapshot Comparison & Diff')}</div>
+              <div style="font-size: var(--text-sm, 11px); color: var(--text-muted);">${escapeHtml(world.worldName || world.worldId)}</div>
             </div>
           </div>
-          <button id="btn-close-compare-modal" style="background: none; border: none; font-size: 18px; color: var(--text-muted); cursor: pointer; padding: 4px;">✕</button>
+          <button id="btn-close-compare-modal" style="background: none; border: none; font-size: calc(18px * var(--ui-scale, 1)); color: var(--text-muted); cursor: pointer; padding: 4px;">✕</button>
         </div>
 
         <!-- Body -->
-        <div style="padding: 18px; display: flex; flex-direction: column; gap: 14px;">
+        <div style="padding: calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1));">
           
           <!-- Summary Banner -->
-          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; font-size: 12px; line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
             <div>${diffDescription}</div>
-            <div id="snap-internal-deltas-container" style="display: flex; gap: 14px; font-size: 11px; color: var(--text-secondary); margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.08); flex-wrap: wrap;">
+            <div id="snap-internal-deltas-container" style="display: flex; gap: calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); color: var(--text-secondary); margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.08); flex-wrap: wrap;">
               <span id="snap-deltas-status" style="color: var(--text-muted);">⏳ Reading snapshot details...</span>
             </div>
           </div>
 
           <!-- Side-by-Side Comparison Grid -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: calc(12px * var(--ui-scale, 1));">
             
             <!-- Left: Active Save -->
-            <div style="background: rgba(74, 246, 38, 0.04); border: 1px solid rgba(74, 246, 38, 0.2); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(74, 246, 38, 0.15); padding-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #4af626; font-size: 12.5px;">
+            <div style="background: rgba(74, 246, 38, 0.04); border: 1px solid rgba(74, 246, 38, 0.2); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(74, 246, 38, 0.15); padding-bottom: calc(6px * var(--ui-scale, 1));">
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #4af626; font-size: var(--text-sm, 12.5px);">
                   <span>🟢</span>
                   <span>${escapeHtml(t('scanner.snap_diff_active_save') || 'Current Active Save')}</span>
                 </div>
-                <span class="badge" style="font-size: 9.5px; background: rgba(74, 246, 38, 0.15); color: #4af626;">Live Data</span>
+                <span class="badge" style="font-size: var(--text-2xs, 9.5px); background: rgba(74, 246, 38, 0.15); color: #4af626;">Live Data</span>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+              <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px);">
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">Timestamp:</span>
                   <strong style="color: var(--text-primary); font-family: monospace;">${escapeHtml(world.saveDate || 'Active')}</strong>
@@ -117,16 +117,16 @@ export function showSnapshotComparisonModal(
             </div>
 
             <!-- Right: Snapshot Target -->
-            <div style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: 14px; display: flex; flex-direction: column; gap: 10px;">
-              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding-bottom: 8px;">
-                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #38bdf8; font-size: 12.5px;">
+            <div style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
+              <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding-bottom: calc(6px * var(--ui-scale, 1));">
+                <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #38bdf8; font-size: var(--text-sm, 12.5px);">
                   <span>📦</span>
                   <span>${escapeHtml(t('scanner.snap_diff_target_snap') || 'Selected Snapshot')}</span>
                 </div>
-                <span class="badge" style="font-size: 9.5px; background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Auto-Backup</span>
+                <span class="badge" style="font-size: var(--text-2xs, 9.5px); background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Auto-Backup</span>
               </div>
 
-              <div style="display: flex; flex-direction: column; gap: 6px; font-size: 11.5px;">
+              <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px);">
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">Snapshot Time:</span>
                   <strong style="color: var(--text-primary); font-family: monospace;">${escapeHtml(snap.timestamp)}</strong>
@@ -162,13 +162,13 @@ export function showSnapshotComparisonModal(
         </div>
 
         <!-- Footer -->
-        <div style="background: var(--bg-secondary); padding: 12px 18px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: 10px; align-items: center;">
-          <div style="font-size: 11px; color: var(--text-muted);">
+        <div style="background: var(--bg-secondary); padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-top: 1px solid var(--border); display: flex; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); align-items: center;">
+          <div style="font-size: var(--text-xs, 11px); color: var(--text-muted);">
             Slot: <span style="font-family: monospace; color: var(--text-secondary);">${escapeHtml(snap.slotName)}</span>
           </div>
-          <div style="display: flex; gap: 10px;">
-            <button id="btn-modal-close-action" class="btn-secondary" style="padding: 6px 14px; font-size: 12px;">${escapeHtml(t('common.close') || 'Close')}</button>
-            <button id="btn-modal-restore-action" class="btn-primary" style="padding: 6px 16px; font-size: 12px; display: flex; align-items: center; gap: 6px;">
+          <div style="display: flex; gap: calc(10px * var(--ui-scale, 1));">
+            <button id="btn-modal-close-action" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-xs, 12px);">${escapeHtml(t('common.close') || 'Close')}</button>
+            <button id="btn-modal-restore-action" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); font-size: var(--text-xs, 12px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
               <span>🔄</span>
               <span>${escapeHtml(t('scanner.btn_restore_snapshot') || 'Restore This Snapshot')}</span>
             </button>

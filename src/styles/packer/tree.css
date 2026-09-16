@@ -7,13 +7,13 @@
 .packer-tree-node {
   display: flex;
   align-items: center;
-  padding: 4px 8px;
+  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   font-family: monospace;
-  font-size: 12px;
+  font-size: var(--text-sm, 11px);
   border-radius: var(--radius);
   color: var(--text-primary);
   user-select: none;
-  max-width: 600px;
+  max-width: calc(600px * var(--ui-scale, 1));
   margin: 2px 0;
   transition: background 0.1s ease, outline 0.1s ease;
 }
@@ -23,8 +23,8 @@
 }
 
 .packer-tree-icon {
-  margin-right: 8px;
-  font-size: 13px;
+  margin-right: calc(8px * var(--ui-scale, 1));
+  font-size: var(--text-base, 13px);
   flex-shrink: 0;
 }
 
@@ -35,10 +35,10 @@
 }
 
 .packer-tree-size {
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   color: var(--text-muted);
   margin-left: auto;
-  padding-left: 20px;
+  padding-left: calc(16px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 

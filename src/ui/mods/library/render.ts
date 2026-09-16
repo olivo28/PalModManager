@@ -203,10 +203,11 @@ export async function renderLibraryView(): Promise<void> {
       return;
     }
 
-    container.style.display = 'grid';
-    container.style.gridTemplateColumns = 'repeat(auto-fill, minmax(220px, 1fr))';
-    container.style.gap = '16px';
-    container.style.alignContent = 'start';
+    container.classList.add('grid-layout');
+    container.style.display = '';
+    container.style.gridTemplateColumns = '';
+    container.style.gap = '';
+    container.style.alignContent = '';
     container.style.flexDirection = '';
     container.style.overflowY = 'auto';
     container.style.minHeight = '0';
@@ -246,10 +247,10 @@ export async function renderLibraryView(): Promise<void> {
       // Check if there is an online Nexus update for this library card
       const onlineNexusVer = _libraryOnlineUpdatesMap.get(group.modId);
       const onlineUpdateBadge = onlineNexusVer
-        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: onlineNexusVer }))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px calc(5px * var(--ui-scale, 1)); border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: onlineNexusVer }))}</span>`
         : '';
 
-      let imageHtml = `<div style="font-size:32px;text-align:center;color:var(--text-muted);opacity:0.8;margin:8px 0;">📦</div>`;
+      let imageHtml = `<div style="font-size:calc(32px * var(--ui-scale, 1));text-align:center;color:var(--text-muted);opacity:0.8;margin:calc(8px * var(--ui-scale, 1)) 0;">📦</div>`;
       let resolvedSrc = group.nexusPictureUrl;
       if (resolvedSrc) {
         let displaySrc = resolvedSrc;
@@ -257,9 +258,9 @@ export async function renderLibraryView(): Promise<void> {
           try { displaySrc = convertFileSrc(resolvedSrc); } catch (err) { console.error(err); }
         }
         imageHtml = `
-          <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
+          <div class="library-card-img-container" style="width:100%;height:calc(95px * var(--ui-scale, 1));border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
             <img src="${displaySrc}" data-original-src="${resolvedSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='block'));" />
-            <div style="display:none;font-size:28px;opacity:0.6;">📦</div>
+            <div style="display:none;font-size:calc(28px * var(--ui-scale, 1));opacity:0.6;">📦</div>
             ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
           </div>
         `;
@@ -277,16 +278,16 @@ export async function renderLibraryView(): Promise<void> {
             try { displaySrc = convertFileSrc(src); } catch (err) { console.error(err); }
           }
           imageHtml = `
-            <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
+            <div class="library-card-img-container" style="width:100%;height:calc(95px * var(--ui-scale, 1));border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
               <img src="${displaySrc}" data-original-src="${src}" style="width:100%;height:100%;object-fit:cover;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='block'));" />
-              <div style="display:none;font-size:28px;opacity:0.6;">📦</div>
+              <div style="display:none;font-size:calc(28px * var(--ui-scale, 1));opacity:0.6;">📦</div>
               ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             </div>
           `;
         } else {
           imageHtml = `
-            <div class="library-card-img-container" style="width:100%;height:85px;border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
-              <div style="font-size:28px;opacity:0.6;">📦</div>
+            <div class="library-card-img-container" style="width:100%;height:calc(95px * var(--ui-scale, 1));border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
+              <div style="font-size:calc(28px * var(--ui-scale, 1));opacity:0.6;">📦</div>
               ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             </div>
           `;
@@ -294,8 +295,8 @@ export async function renderLibraryView(): Promise<void> {
       }
 
       const versionControlsHtml = group.versions.length > 1 ? `
-        <div style="display:flex;align-items:center;gap:6px;width:100%;margin-top:auto;border-top:1px solid var(--border);padding-top:6px;">
-          <select class="library-version-select form-select" data-id="${group.modId}" style="flex:1;padding:4px 6px;font-size:11px;font-weight:600;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;">
+        <div style="display:flex;align-items:center;gap:calc(6px * var(--ui-scale, 1));width:100%;margin-top:auto;border-top:1px solid var(--border);padding-top:calc(6px * var(--ui-scale, 1));">
+          <select class="library-version-select form-select" data-id="${group.modId}" style="flex:1;padding:calc(4px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);font-weight:600;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;">
             ${group.versions.map((v, idx) => {
               const displayVer = v.version.startsWith('v') || v.version.startsWith('V') ? v.version : `v${v.version}`;
               return `
@@ -305,10 +306,10 @@ export async function renderLibraryView(): Promise<void> {
               `;
             }).join('')}
           </select>
-          <span class="library-card-size" style="font-size:10px;color:var(--text-muted);white-space:nowrap;">${formatSize(latestVerObj.zipSize)}</span>
+          <span class="library-card-size" style="font-size:var(--text-2xs, 10px);color:var(--text-muted);white-space:nowrap;">${formatSize(latestVerObj.zipSize)}</span>
         </div>
       ` : `
-        <div style="display:flex;justify-content:space-between;align-items:center;font-size:10px;color:var(--text-muted);border-top:1px solid var(--border);padding-top:6px;margin-top:auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;font-size:var(--text-2xs, 10px);color:var(--text-muted);border-top:1px solid var(--border);padding-top:calc(6px * var(--ui-scale, 1));margin-top:auto;">
           <span style="font-weight:600;color:var(--text-primary);">${latestVersion.startsWith('v') || latestVersion.startsWith('V') ? escapeHtml(latestVersion) : 'v' + escapeHtml(latestVersion)}</span>
           <span class="library-card-size">${formatSize(latestVerObj.zipSize)}</span>
         </div>
@@ -318,19 +319,19 @@ export async function renderLibraryView(): Promise<void> {
       const isEndorsed = isNexusModEndorsed(libNexusId, state.currentSettings?.nexusEndorsementsCache);
       const isTracked = isNexusModTracked(libNexusId, state.currentSettings?.nexusTrackedCache);
       const libEndorsedBadge = isEndorsed
-        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px calc(4px * var(--ui-scale, 1)); border-radius: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
         : '';
       const libTrackedBadge = isTracked
-        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px calc(4px * var(--ui-scale, 1)); border-radius: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
         : '';
 
       return `
-        <div class="mod-card library-card ${isSelected ? 'selected' : ''}" data-id="${group.modId}" data-is-installed="${group.isInstalled}" data-installed-version="${escapeHtml(group.installedVersion || '')}" style="cursor:pointer;position:relative;padding:12px;display:flex;flex-direction:column;gap:8px;border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
-          <div class="library-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:6px;width:100%;">
+        <div class="mod-card library-card ${isSelected ? 'selected' : ''}" data-id="${group.modId}" data-is-installed="${group.isInstalled}" data-installed-version="${escapeHtml(group.installedVersion || '')}" style="cursor:pointer;position:relative;padding:calc(10px * var(--ui-scale, 1));display:flex;flex-direction:column;gap:calc(8px * var(--ui-scale, 1));border:1px solid var(--border);border-radius:var(--card-radius);background:var(--bg-secondary);">
+          <div class="library-card-header" style="display:flex;align-items:center;justify-content:space-between;gap:calc(6px * var(--ui-scale, 1));width:100%;">
             <div class="card-checkbox-container" style="display:flex;align-items:center;">
-              <input type="checkbox" class="library-card-checkbox" data-id="${group.modId}" ${isSelected ? 'checked' : ''} style="width:14px;height:14px;cursor:pointer;" />
+              <input type="checkbox" class="library-card-checkbox" data-id="${group.modId}" ${isSelected ? 'checked' : ''} style="width:calc(14px * var(--ui-scale, 1));height:calc(14px * var(--ui-scale, 1));cursor:pointer;" />
             </div>
-            <div style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end;">
+            <div style="display:flex;align-items:center;gap:calc(4px * var(--ui-scale, 1));flex-wrap:wrap;justify-content:flex-end;">
               ${libTrackedBadge}
               ${libEndorsedBadge}
               ${statusBadgeHtml}
@@ -338,21 +339,21 @@ export async function renderLibraryView(): Promise<void> {
             </div>
           </div>
           
-          <div style="display:flex;flex-direction:column;gap:6px;height:100%;justify-content:space-between;">
+          <div style="display:flex;flex-direction:column;gap:calc(6px * var(--ui-scale, 1));height:100%;justify-content:space-between;">
             ${imageHtml}
             <div>
-              <div class="mod-card-name" style="font-weight:600;font-size:12px;text-align:left;word-break:break-word;line-height:1.3;margin-top:2px;">
+              <div class="mod-card-name" style="font-weight:600;font-size:var(--text-sm, 12px);text-align:left;word-break:break-word;line-height:1.3;margin-top:2px;">
                 ${escapeHtml(cleanName)}
               </div>
-              ${author ? `<div style="font-size:10px;color:var(--text-muted);margin-top:1px;text-align:left;">${escapeHtml(t('common.author'))}: ${escapeHtml(author)}</div>` : ''}
-              ${description ? `<div style="font-size:10px;color:var(--text-secondary);opacity:0.8;line-height:1.3;margin-top:4px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word;" title="${escapeHtml(description)}">${escapeHtml(description)}</div>` : ''}
+              ${author ? `<div style="font-size:var(--text-2xs, 10px);color:var(--text-muted);margin-top:1px;text-align:left;">${escapeHtml(t('common.author'))}: ${escapeHtml(author)}</div>` : ''}
+              ${description ? `<div style="font-size:var(--text-2xs, 10px);color:var(--text-secondary);opacity:0.8;line-height:1.3;margin-top:calc(4px * var(--ui-scale, 1));display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;text-overflow:ellipsis;word-break:break-word;" title="${escapeHtml(description)}">${escapeHtml(description)}</div>` : ''}
             </div>
 
             ${versionControlsHtml}
 
-            <div style="display:flex;gap:6px;margin-top:4px;z-index:4;">
-              <button class="library-item-install btn-action ${isUpdateAvailable ? 'btn-action-primary' : ''}" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" style="flex:1;padding:5px 8px;font-size:11px;font-weight:600;cursor:pointer;">${installBtnText}</button>
-              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" data-installed="${group.isInstalled}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:5px 8px;font-size:11px;cursor:pointer;">✕</button>
+            <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));margin-top:calc(4px * var(--ui-scale, 1));z-index:4;">
+              <button class="library-item-install btn-action ${isUpdateAvailable ? 'btn-action-primary' : ''}" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" style="flex:1;padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);font-weight:600;cursor:pointer;">${installBtnText}</button>
+              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" data-installed="${group.isInstalled}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);cursor:pointer;">✕</button>
             </div>
           </div>
         </div>

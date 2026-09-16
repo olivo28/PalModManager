@@ -178,7 +178,7 @@ export function openNexusProfileModal(): void {
 
     if (filtered.length === 0) {
       listContainer.innerHTML = `
-        <div style="text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 11px;">
+        <div style="text-align: center; padding: calc(24px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); color: var(--text-muted); font-size: var(--text-xs, 11px);">
           ${t('nexus_profile.no_endorsements_found')}
         </div>
       `;
@@ -193,21 +193,21 @@ export function openNexusProfileModal(): void {
       const formattedDate = formatDate(item.date);
 
       return `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
-          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${modName}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
-          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${modName}</span>
-              ${isPalworld ? '<span style="font-size: 9px; font-weight: 700; background: rgba(46, 213, 115, 0.2); color: #2ed573; padding: 1px 5px; border-radius: 4px;">Palworld</span>' : `<span style="font-size: 9px; font-weight: 600; color: var(--text-muted);">${domain}</span>`}
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${modName}" style="width: calc(40px * var(--ui-scale, 1)); height: calc(40px * var(--ui-scale, 1)); border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
+          <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1)); min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${modName}</span>
+              ${isPalworld ? '<span style="font-size: var(--text-2xs, 9.5px); font-weight: 700; background: rgba(46, 213, 115, 0.2); color: #2ed573; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1)); border-radius: 4px;">Palworld</span>' : `<span style="font-size: var(--text-2xs, 9.5px); font-weight: 600; color: var(--text-muted);">${domain}</span>`}
             </div>
-            ${item.summary ? `<div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
-            <div style="font-size: 10px; color: var(--text-muted); display: flex; gap: 8px;">
+            ${item.summary ? `<div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
+            <div style="font-size: var(--text-xs, 10px); color: var(--text-muted); display: flex; gap: calc(8px * var(--ui-scale, 1));">
               <span>ID: #${item.modId}</span>
               ${item.version ? `<span>v${item.version}</span>` : ''}
               <span>${formattedDate}</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 10px; flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
             🔗 Nexus
           </button>
         </div>
@@ -265,7 +265,7 @@ export function openNexusProfileModal(): void {
 
     if (filtered.length === 0) {
       listContainer.innerHTML = `
-        <div style="text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 11px;">
+        <div style="text-align: center; padding: calc(24px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); color: var(--text-muted); font-size: var(--text-xs, 11px);">
           ${t('nexus_profile.no_tracked_found')}
         </div>
       `;
@@ -279,19 +279,19 @@ export function openNexusProfileModal(): void {
       const url = `https://www.nexusmods.com/${domain}/mods/${item.modId}`;
 
       return `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
-          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${modName}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
-          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${modName}</span>
-              ${isPalworld ? '<span style="font-size: 9px; font-weight: 700; background: rgba(218, 142, 53, 0.2); color: #da8e35; padding: 1px 5px; border-radius: 4px;">Palworld</span>' : `<span style="font-size: 9px; font-weight: 600; color: var(--text-muted);">${domain}</span>`}
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${modName}" style="width: calc(40px * var(--ui-scale, 1)); height: calc(40px * var(--ui-scale, 1)); border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
+          <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1)); min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${modName}</span>
+              ${isPalworld ? '<span style="font-size: var(--text-2xs, 9.5px); font-weight: 700; background: rgba(218, 142, 53, 0.2); color: #da8e35; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1)); border-radius: 4px;">Palworld</span>' : `<span style="font-size: var(--text-2xs, 9.5px); font-weight: 600; color: var(--text-muted);">${domain}</span>`}
             </div>
-            ${item.summary ? `<div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
-            <div style="font-size: 10px; color: var(--text-muted);">
+            ${item.summary ? `<div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
+            <div style="font-size: var(--text-xs, 10px); color: var(--text-muted);">
               <span>ID: #${item.modId}</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 10px; flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
             🔗 Nexus
           </button>
         </div>
@@ -350,7 +350,7 @@ export function openNexusProfileModal(): void {
 
     if (filtered.length === 0) {
       listContainer.innerHTML = `
-        <div style="text-align: center; padding: 24px 12px; color: var(--text-muted); font-size: 11px;">
+        <div style="text-align: center; padding: calc(24px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); color: var(--text-muted); font-size: var(--text-xs, 11px);">
           ${t('nexus_profile.no_my_mods_found')}
         </div>
       `;
@@ -363,22 +363,22 @@ export function openNexusProfileModal(): void {
       const url = `https://www.nexusmods.com/${domain}/mods/${item.modId}`;
 
       return `
-        <div style="display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 8px 12px; background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
-          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${item.name}" style="width: 38px; height: 38px; border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
-          <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0; flex: 1;">
-            <div style="display: flex; align-items: center; gap: 6px;">
-              <span style="font-size: 12px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
-              ${isPalworld ? '<span style="font-size: 9px; font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: 1px 5px; border-radius: 4px;">Palworld</span>' : `<span style="font-size: 9px; font-weight: 600; color: var(--text-muted);">${domain}</span>`}
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: var(--bg-secondary); border-radius: 8px; border: 1px solid var(--border);">
+          ${item.pictureUrl ? `<img src="${item.pictureUrl}" data-original-src="${item.pictureUrl}" alt="${item.name}" style="width: calc(40px * var(--ui-scale, 1)); height: calc(40px * var(--ui-scale, 1)); border-radius: 6px; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.style.display='none')" />` : ''}
+          <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1)); min-width: 0; flex: 1;">
+            <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+              <span style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.name}</span>
+              ${isPalworld ? '<span style="font-size: var(--text-2xs, 9.5px); font-weight: 700; background: rgba(56, 189, 248, 0.2); color: #38bdf8; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1)); border-radius: 4px;">Palworld</span>' : `<span style="font-size: var(--text-2xs, 9.5px); font-weight: 600; color: var(--text-muted);">${domain}</span>`}
             </div>
-            ${item.summary ? `<div style="font-size: 10px; color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
-            <div style="font-size: 10px; color: var(--text-muted); display: flex; gap: 8px;">
+            ${item.summary ? `<div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${item.summary}</div>` : ''}
+            <div style="font-size: var(--text-xs, 10px); color: var(--text-muted); display: flex; gap: calc(8px * var(--ui-scale, 1));">
               <span>ID: #${item.modId}</span>
               ${item.version ? `<span>v${item.version}</span>` : ''}
               <span>👍 ${item.endorsements || 0}</span>
               <span>📥 ${(item.downloads ?? item.totalDownloads ?? 0).toLocaleString()}</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding: 3px 8px; font-size: 10px; flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
             🔗 Nexus
           </button>
         </div>

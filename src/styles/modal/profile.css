@@ -3,10 +3,10 @@
 #profile-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 320px;
+  gap: calc(8px * var(--ui-scale, 1));
+  max-height: calc(320px * var(--ui-scale, 1));
   overflow-y: auto;
-  margin-bottom: 12px;
+  margin-bottom: calc(12px * var(--ui-scale, 1));
   padding-right: 4px;
 }
 
@@ -14,7 +14,7 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
@@ -24,13 +24,13 @@
 .profile-actions {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: calc(4px * var(--ui-scale, 1));
   flex-shrink: 0;
 }
 
 .profile-actions .btn-sm {
-  padding: 4px 8px;
-  font-size: 11px;
+  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
   white-space: nowrap;
 }
 
@@ -44,19 +44,19 @@
 }
 
 .profile-item-name {
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 500;
   color: var(--text-primary);
 }
 
 .profile-item-badge {
-  font-size: 10px;
+  font-size: var(--text-2xs, 10px);
   font-weight: 600;
   color: var(--accent);
   background: var(--accent-dim);
-  padding: 2px 6px;
+  padding: 2px calc(6px * var(--ui-scale, 1));
   border-radius: 10px;
-  margin-left: 8px;
+  margin-left: calc(8px * var(--ui-scale, 1));
   margin-right: auto;
 }
 
@@ -64,9 +64,9 @@
   background: none !important;
   border: none !important;
   color: var(--text-secondary);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   cursor: pointer;
-  padding: 6px;
+  padding: calc(6px * var(--ui-scale, 1));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -85,18 +85,18 @@
 
 .profile-add-row {
   display: flex;
-  gap: 8px;
-  margin-top: 12px;
+  gap: calc(8px * var(--ui-scale, 1));
+  margin-top: calc(12px * var(--ui-scale, 1));
 }
 
 .profile-add-row input {
   flex: 1;
-  padding: 8px 12px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--radius);
   color: var(--text-primary);
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   outline: none;
 }
 

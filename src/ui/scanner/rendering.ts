@@ -3,19 +3,19 @@ export const customStyles = `
     .scanner-sub-tabs {
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 20px;
-      padding: 3px;
+      border-radius: calc(20px * var(--ui-scale, 1));
+      padding: calc(3px * var(--ui-scale, 1));
       display: inline-flex;
-      gap: 2px;
+      gap: calc(2px * var(--ui-scale, 1));
     }
     .scanner-sub-tab {
       border: none;
       background: transparent;
       color: var(--text-muted);
-      font-size: 11px;
+      font-size: var(--text-sm, 11px);
       font-weight: 600;
-      padding: 6px 14px;
-      border-radius: 17px;
+      padding: calc(5px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
+      border-radius: calc(17px * var(--ui-scale, 1));
       cursor: pointer;
       transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       outline: none;
@@ -34,9 +34,9 @@ export const customStyles = `
     .premium-stat-card {
       background: linear-gradient(135deg, rgba(255, 255, 255, 0.03) 0%, rgba(255, 255, 255, 0.01) 100%);
       border: 1px solid rgba(255, 255, 255, 0.06);
-      border-radius: 12px;
-      padding: 14px 20px;
-      min-width: 130px;
+      border-radius: calc(12px * var(--ui-scale, 1));
+      padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
+      min-width: calc(130px * var(--ui-scale, 1));
       transition: all 0.3s ease;
       position: relative;
       overflow: hidden;
@@ -53,11 +53,11 @@ export const customStyles = `
       box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
     }
     .premium-stat-value {
-      font-size: 26px;
+      font-size: calc(24px * var(--ui-scale, 1));
       font-weight: 800;
       font-family: var(--font-mono, monospace);
       color: var(--text-primary);
-      margin-top: 4px;
+      margin-top: calc(4px * var(--ui-scale, 1));
     }
     .premium-stat-value.danger {
       color: #ff5f56;
@@ -74,9 +74,9 @@ export const customStyles = `
       border: 1px solid #4f525c;
       border-bottom: 3px solid #151619;
       border-radius: 6px;
-      padding: 4px 10px;
+      padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
       font-family: var(--font-mono, monospace);
-      font-size: 11px;
+      font-size: var(--text-sm, 11px);
       font-weight: 700;
       color: #e2e8f0;
       box-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
@@ -98,12 +98,12 @@ export const customStyles = `
     .premium-table th {
       background: rgba(0, 0, 0, 0.25);
       border-bottom: 1.5px solid rgba(255, 255, 255, 0.08);
-      font-size: 10px;
+      font-size: var(--text-2xs, 9.5px);
       font-weight: 700;
       color: var(--text-muted);
       letter-spacing: 0.8px;
       text-transform: uppercase;
-      padding: 12px 16px;
+      padding: calc(8px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
     }
     .premium-table tr {
       border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -113,7 +113,8 @@ export const customStyles = `
       background: rgba(255, 255, 255, 0.015) !important;
     }
     .premium-table td {
-      padding: 14px 16px;
+      padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
+      font-size: var(--text-sm, 11px);
       vertical-align: middle;
     }
 
@@ -122,23 +123,23 @@ export const customStyles = `
       display: flex;
       align-items: center;
       width: 100%;
-      max-width: 320px;
+      max-width: calc(320px * var(--ui-scale, 1));
     }
     .search-icon {
       position: absolute;
-      left: 12px;
+      left: calc(12px * var(--ui-scale, 1));
       color: var(--text-muted);
-      font-size: 13px;
+      font-size: var(--text-base, 13px);
       pointer-events: none;
     }
     .premium-search-input {
       width: 100%;
-      padding: 8px 12px 8px 34px;
-      font-size: 12px;
+      padding: calc(7px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)) calc(34px * var(--ui-scale, 1));
+      font-size: var(--text-sm, 12px);
       background: rgba(255, 255, 255, 0.03);
       border: 1px solid rgba(255, 255, 255, 0.08);
       color: var(--text-primary);
-      border-radius: 20px;
+      border-radius: calc(20px * var(--ui-scale, 1));
       outline: none;
       transition: all 0.3s ease;
     }
@@ -153,13 +154,14 @@ export const customStyles = `
       display: block;
       overflow-y: auto;
       overflow-x: hidden;
+      padding: calc(16px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
     }
     .scanner-scroll-panel, .scanner-detail-list {
       scrollbar-width: thin;
       scrollbar-color: var(--border) transparent;
     }
     .scanner-scroll-panel::-webkit-scrollbar, .scanner-detail-list::-webkit-scrollbar {
-      width: 6px;
+      width: calc(6px * var(--ui-scale, 1));
     }
     .scanner-scroll-panel::-webkit-scrollbar-track, .scanner-detail-list::-webkit-scrollbar-track {
       background: transparent;
@@ -173,7 +175,7 @@ export const customStyles = `
     }
     .scanner-mod-summary-grid {
       column-count: 2;
-      column-gap: 12px;
+      column-gap: calc(12px * var(--ui-scale, 1));
     }
     @media (max-width: 1000px) {
       .scanner-mod-summary-grid {
@@ -182,10 +184,10 @@ export const customStyles = `
     }
     .scanner-mod-summary-card {
       break-inside: avoid;
-      margin-bottom: 12px;
+      margin-bottom: calc(12px * var(--ui-scale, 1));
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 10px 12px;
+      padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
       cursor: pointer;
       background: rgba(255, 255, 255, 0.015);
       transition: border-color 0.2s ease, background 0.2s ease;
@@ -199,10 +201,10 @@ export const customStyles = `
       border: none;
       background: transparent;
       color: var(--text-muted);
-      font-size: 11px;
+      font-size: var(--text-sm, 11px);
       font-weight: 600;
-      padding: 4px 10px;
-      border-radius: 14px;
+      padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
+      border-radius: calc(14px * var(--ui-scale, 1));
       cursor: pointer;
       transition: all 0.2s ease;
       outline: none;
@@ -219,7 +221,7 @@ export const customStyles = `
     }
     .scanner-master-detail {
       display: grid;
-      grid-template-columns: 320px 1fr;
+      grid-template-columns: calc(300px * var(--ui-scale, 1)) 1fr;
       flex: 1;
       min-height: 0;
       height: 100%;
@@ -246,8 +248,8 @@ export const customStyles = `
     .scanner-master-items {
       display: flex;
       flex-direction: column;
-      padding: 8px;
-      gap: 6px;
+      padding: calc(8px * var(--ui-scale, 1));
+      gap: calc(6px * var(--ui-scale, 1));
       flex: 1;
       min-height: 0;
       overflow-y: auto;
@@ -255,14 +257,15 @@ export const customStyles = `
     .scanner-mod-list-item {
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      padding: 10px 12px;
+      gap: calc(4px * var(--ui-scale, 1));
+      padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
       border-radius: 6px;
       border: 1px solid transparent;
       background: rgba(255, 255, 255, 0.02);
       cursor: pointer;
       transition: all 0.2s ease;
       user-select: none;
+      font-size: var(--text-sm, 11px);
     }
     .scanner-mod-list-item:hover {
       background: rgba(255, 255, 255, 0.05);
@@ -276,7 +279,7 @@ export const customStyles = `
     .scanner-inspector-panel {
       display: flex;
       flex-direction: column;
-      padding: 20px 24px;
+      padding: calc(16px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
       overflow-y: auto;
       height: 100%;
       min-height: 0;
@@ -286,16 +289,16 @@ export const customStyles = `
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 16px;
+      padding-bottom: calc(12px * var(--ui-scale, 1));
       border-bottom: 1px solid var(--border);
-      margin-bottom: 16px;
+      margin-bottom: calc(14px * var(--ui-scale, 1));
     }
     .scanner-inspector-card {
       background: rgba(255, 255, 255, 0.02);
       border: 1px solid var(--border);
       border-radius: 6px;
-      padding: 14px 16px;
-      margin-bottom: 14px;
+      padding: calc(12px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
+      margin-bottom: calc(12px * var(--ui-scale, 1));
     }
   </style>
 `;

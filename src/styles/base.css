@@ -11,15 +11,32 @@ body {
   height: 100vh;
   overflow: hidden;
   user-select: none;
-  font-size: 14px;
+  font-size: var(--text-base, 13px);
   line-height: 1.5;
 }
 
-::-webkit-scrollbar { width: 4px; height: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius); }
-::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
-::-webkit-scrollbar-corner { background: transparent; }
+::-webkit-scrollbar {
+  width: var(--scrollbar-w, calc(9px * var(--ui-scale, 1)));
+  height: var(--scrollbar-w, calc(9px * var(--ui-scale, 1)));
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track, transparent);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb, rgba(255, 255, 255, 0.18));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover, rgba(255, 255, 255, 0.38));
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb, rgba(255, 255, 255, 0.18)) var(--scrollbar-track, transparent);
+}
 
 ::selection {
   background: var(--selection-bg, #094771);

@@ -183,6 +183,7 @@ export function openSettingsModal(): void {
         uiScaleVal.textContent = `${Math.round(scale * 100)}%`;
       }
       document.documentElement.style.setProperty('--ui-scale', scale.toString());
+      import('../../editor/monaco/instance').then(m => m.updateMonacoScale(scale)).catch(() => {});
     });
   }
 

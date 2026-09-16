@@ -149,6 +149,7 @@ export async function handleSaveSettings(): Promise<void> {
         const settings = await setUiScale(scale);
         updateState({ currentSettings: settings });
         document.documentElement.style.setProperty('--ui-scale', scale.toString());
+        import('../../editor/monaco/instance').then(m => m.updateMonacoScale(scale)).catch(() => {});
       }
     }
 

@@ -60,14 +60,14 @@ export function buildRegistriesSectionHtml(res: ScanResult): string {
   const inspectorHtml = buildInspectorContent(activeMod || null);
 
   return `
-    <div class="scanner-card-section" style="margin-bottom: 20px;">
-      <div class="scanner-card-header" style="display: flex; align-items: center; justify-content: space-between; gap: 16px;">
-        <div style="display: flex; flex-direction: column; gap: 2px; min-width: 0;">
-          <span style="font-weight: 700; color: var(--text-primary); font-size: 13px;">${escapeHtml(t('scanner.registries_title'))}</span>
-          <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.registries_desc'))}</span>
+    <div class="scanner-card-section" style="margin-bottom: calc(20px * var(--ui-scale, 1));">
+      <div class="scanner-card-header" style="display: flex; align-items: center; justify-content: space-between; gap: calc(16px * var(--ui-scale, 1));">
+        <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1)); min-width: 0;">
+          <span style="font-weight: 700; color: var(--text-primary); font-size: var(--text-base, 13px);">${escapeHtml(t('scanner.registries_title'))}</span>
+          <span style="font-size: var(--text-2xs, 10px); color: var(--text-muted);">${escapeHtml(t('scanner.registries_desc'))}</span>
         </div>
 
-        <div class="scanner-filter-chips" style="display: inline-flex; gap: 2px; background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 20px; padding: 2px; flex-shrink: 0;">
+        <div class="scanner-filter-chips" style="display: inline-flex; gap: calc(2px * var(--ui-scale, 1)); background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: calc(20px * var(--ui-scale, 1)); padding: calc(2px * var(--ui-scale, 1)); flex-shrink: 0;">
           <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'all' ? 'active' : ''}" data-type="all">${escapeHtml(t('scanner.filter_all'))} (${totalCount})</button>
           <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'pak' ? 'active' : ''}" data-type="pak">📦 ${escapeHtml(t('scanner.filter_pak'))} (${pakCount})</button>
           <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'ue4ss' ? 'active' : ''}" data-type="ue4ss">⚡ ${escapeHtml(t('scanner.filter_ue4ss'))} (${ue4ssCount})</button>
@@ -78,15 +78,15 @@ export function buildRegistriesSectionHtml(res: ScanResult): string {
 
       <div class="scanner-master-detail">
         <div class="scanner-master-list">
-          <div class="scanner-master-search-header" style="padding: 10px; border-bottom: 1px solid var(--border); background: rgba(0, 0, 0, 0.2);">
+          <div class="scanner-master-search-header" style="padding: calc(10px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: rgba(0, 0, 0, 0.2);">
             <div class="search-wrapper" style="width: 100%; max-width: 100%;">
-              <span class="search-icon" style="left: 10px; font-size: 11px;">🔍</span>
-              <input type="text" id="registry-search-input" class="premium-search-input" value="${escapeHtml(registrySearchQuery)}" placeholder="${escapeHtml(t('scanner.search_registry_placeholder'))}" style="width: 100%; box-sizing: border-box; padding: 6px 10px 6px 28px; font-size: 11px; border-radius: 6px;" />
+              <span class="search-icon" style="left: calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px);">🔍</span>
+              <input type="text" id="registry-search-input" class="premium-search-input" value="${escapeHtml(registrySearchQuery)}" placeholder="${escapeHtml(t('scanner.search_registry_placeholder'))}" style="width: 100%; box-sizing: border-box; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) calc(28px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); border-radius: calc(6px * var(--ui-scale, 1));" />
             </div>
           </div>
           <div class="scanner-master-items" style="flex: 1; overflow-y: auto;">
             ${filteredSummaries.length > 0 ? listItemsHtml : `
-              <div style="color: var(--text-muted); font-size: 11px; padding: 24px 12px; text-align: center; font-style: italic;">
+              <div style="color: var(--text-muted); font-size: var(--text-xs, 11px); padding: calc(24px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); text-align: center; font-style: italic;">
                 ${escapeHtml(t('scanner.no_registries_match'))}
               </div>
             `}

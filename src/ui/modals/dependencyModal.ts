@@ -194,7 +194,7 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 10px 14px;
+    padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
     background: var(--bg-primary);
     border: 1px solid ${entry.isInstalled ? 'rgba(34, 197, 94, 0.4)' : 'var(--border)'};
     border-radius: 6px;
@@ -206,23 +206,23 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
   left.style.cssText = 'display: flex; flex-direction: column; gap: 3px;';
 
   const titleRow = document.createElement('div');
-  titleRow.style.cssText = 'display: flex; align-items: center; gap: 8px;';
+  titleRow.style.cssText = 'display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));';
 
   const verSpan = document.createElement('span');
-  verSpan.style.cssText = 'font-weight: 700; font-size: 13px; color: var(--text-primary);';
+  verSpan.style.cssText = 'font-weight: 700; font-size: var(--text-base, 13px); color: var(--text-primary);';
   verSpan.textContent = formatVersionDisplay(entry.version, depType);
   titleRow.appendChild(verSpan);
 
   if (entry.isInstalled) {
     const activeBadge = document.createElement('span');
-    activeBadge.style.cssText = 'font-size: 10px; font-weight: 700; padding: 1px 6px; border-radius: 3px; background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); text-transform: uppercase;';
+    activeBadge.style.cssText = 'font-size: var(--text-2xs, 10px); font-weight: 700; padding: 1px calc(6px * var(--ui-scale, 1)); border-radius: 3px; background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); text-transform: uppercase;';
     activeBadge.textContent = t('dependencies.active_badge');
     titleRow.appendChild(activeBadge);
   }
 
   if (entry.isCustom) {
     const customBadge = document.createElement('span');
-    customBadge.style.cssText = 'font-size: 10px; padding: 1px 5px; border-radius: 3px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);';
+    customBadge.style.cssText = 'font-size: var(--text-2xs, 10px); padding: 1px calc(5px * var(--ui-scale, 1)); border-radius: 3px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);';
     customBadge.textContent = t('dependencies.custom_badge');
     titleRow.appendChild(customBadge);
   }
@@ -230,13 +230,13 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
   left.appendChild(titleRow);
 
   const subRow = document.createElement('div');
-  subRow.style.cssText = 'font-size: 11px; color: var(--text-muted); display: flex; gap: 10px;';
+  subRow.style.cssText = 'font-size: var(--text-xs, 11px); color: var(--text-muted); display: flex; gap: calc(10px * var(--ui-scale, 1));';
   subRow.innerHTML = `
     <span>${formatBytes(entry.fileSize)}</span>
     <span>•</span>
     <span>${formatDate(entry.modifiedTime)}</span>
     <span>•</span>
-    <span style="max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${entry.filename}">${entry.filename}</span>
+    <span style="max-width: calc(180px * var(--ui-scale, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${entry.filename}">${entry.filename}</span>
   `;
   left.appendChild(subRow);
 
@@ -244,12 +244,12 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
 
   // Right side: Actions
   const actions = document.createElement('div');
-  actions.style.cssText = 'display: flex; align-items: center; gap: 6px;';
+  actions.style.cssText = 'display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));';
 
   if (!entry.isInstalled) {
     const installBtn = document.createElement('button');
     installBtn.className = 'btn-secondary';
-    installBtn.style.cssText = 'font-size: 11px; padding: 4px 10px; border-radius: 4px;';
+    installBtn.style.cssText = 'font-size: var(--text-xs, 11px); padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); border-radius: 4px;';
     installBtn.textContent = t('dependencies.rollback_install');
     installBtn.title = t('dependencies.rollback_install_hint');
     installBtn.onclick = () => handleVaultInstall(entry, depType);
@@ -257,7 +257,7 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-icon';
-    deleteBtn.style.cssText = 'font-size: 12px; padding: 4px 6px; color: var(--text-muted); background: transparent; border: none; cursor: pointer;';
+    deleteBtn.style.cssText = 'font-size: var(--text-sm, 12px); padding: calc(4px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); color: var(--text-muted); background: transparent; border: none; cursor: pointer;';
     deleteBtn.textContent = '🗑️';
     deleteBtn.title = t('common.delete');
     deleteBtn.onclick = () => handleVaultDelete(entry, depType);

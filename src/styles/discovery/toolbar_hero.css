@@ -4,32 +4,32 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border-bottom: 1px solid var(--border);
-  gap: 12px;
+  gap: calc(10px * var(--ui-scale, 1));
   flex-wrap: wrap;
 }
 
 .discovery-title-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
 }
 
 .discovery-nexus-badge {
   background: linear-gradient(135deg, #da8e35, #b86e20);
   color: #fff;
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 800;
-  padding: 3px 8px;
+  padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   border-radius: 4px;
   letter-spacing: 0.5px;
   box-shadow: 0 2px 6px rgba(218, 142, 53, 0.3);
 }
 
 .discovery-title {
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -37,15 +37,15 @@
 .discovery-filters-wrap {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
   flex-wrap: wrap;
 }
 
 .discovery-select-wrap {
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 11px;
+  gap: calc(6px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   color: var(--text-muted);
 }
@@ -54,9 +54,9 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
-  padding: 5px 8px;
+  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   border-radius: 4px;
   outline: none;
   cursor: pointer;
@@ -71,7 +71,7 @@
 
 .discovery-search-wrap {
   position: relative;
-  width: 200px;
+  width: calc(200px * var(--ui-scale, 1));
 }
 
 .discovery-search-icon {
@@ -166,26 +166,26 @@
 .discovery-hero-content {
   position: relative;
   z-index: 2;
-  padding: 24px 28px;
-  max-width: 600px;
+  padding: calc(20px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1));
+  max-width: calc(600px * var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: calc(8px * var(--ui-scale, 1));
 }
 
 .discovery-hero-top-row {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
 }
 
 .discovery-hero-badge {
   display: inline-block;
   background: #da8e35;
   color: #fff;
-  font-size: 10px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 800;
-  padding: 3px 8px;
+  padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   border-radius: 4px;
   letter-spacing: 0.5px;
 }
@@ -193,9 +193,9 @@
 .discovery-badge-nsfw {
   background: #e53e3e;
   color: #fff;
-  font-size: 9px;
+  font-size: var(--text-2xs, 8.5px);
   font-weight: 800;
-  padding: 2px 6px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   border-radius: 4px;
   letter-spacing: 0.5px;
   box-shadow: 0 1px 4px rgba(229, 62, 62, 0.4);
@@ -203,7 +203,7 @@
 
 .discovery-hero-title {
   margin: 0;
-  font-size: 22px;
+  font-size: calc(22px * var(--ui-scale, 1));
   font-weight: 800;
   color: #fff;
   line-height: 1.25;
@@ -212,7 +212,7 @@
 
 .discovery-hero-summary {
   margin: 0;
-  font-size: 12px;
+  font-size: var(--text-sm, 12px);
   color: #ccc;
   line-height: 1.45;
   display: -webkit-box;
@@ -225,8 +225,8 @@
 .discovery-hero-meta {
   display: flex;
   align-items: center;
-  gap: 10px;
-  font-size: 11px;
+  gap: calc(10px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 11px);
   color: var(--text-muted);
 }
 
@@ -237,16 +237,16 @@
 .discovery-hero-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-top: 6px;
+  gap: calc(12px * var(--ui-scale, 1));
+  margin-top: calc(6px * var(--ui-scale, 1));
 }
 
 .discovery-hero-artwork-wrap {
   position: relative;
   z-index: 2;
-  width: 320px;
-  height: 180px;
-  margin: 16px 24px;
+  width: calc(320px * var(--ui-scale, 1));
+  height: calc(180px * var(--ui-scale, 1));
+  margin: calc(16px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1));
   border-radius: 8px;
   overflow: hidden;
   border: 1px solid rgba(255, 255, 255, 0.15);
@@ -270,14 +270,14 @@
   background: var(--accent);
   color: #fff;
   border: none;
-  font-size: 12px;
+  font-size: var(--text-sm, 12px);
   font-weight: 700;
-  padding: 8px 18px;
+  padding: calc(7px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
   border-radius: 6px;
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   transition: all 0.2s ease;
   box-shadow: 0 4px 12px rgba(0, 120, 212, 0.3);
 }
@@ -291,9 +291,9 @@
   background: rgba(255, 255, 255, 0.12);
   color: #fff;
   border: 1px solid rgba(255, 255, 255, 0.25);
-  font-size: 12px;
+  font-size: var(--text-sm, 12px);
   font-weight: 600;
-  padding: 8px 16px;
+  padding: calc(7px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s ease;

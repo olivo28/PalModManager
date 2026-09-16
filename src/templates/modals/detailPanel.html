@@ -17,22 +17,22 @@
         <div id="detail-image-container">
           <img id="detail-image" src="" alt="" />
         </div>
-        <div class="detail-row" style="margin-top: 10px; display: flex; align-items: center; gap: 8px;">
+        <div class="detail-row" style="margin-top: calc(10px * var(--ui-scale, 1)); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
           <span class="detail-label" data-i18n="detail.folder_label">Folder:</span>
           <select id="detail-folder-select"
-            style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 4px 8px; font-size: 13px; outline: none; flex: 1;">
+            style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-sm, 12.5px); outline: none; flex: 1;">
             <option value="" data-i18n="detail.folder_none">(None / Ungrouped)</option>
           </select>
         </div>
-        <div class="detail-section" id="detail-notes-section" style="margin-top: 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;">
-          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px;">
-            <span class="detail-label" style="font-weight: 700; display: flex; align-items: center; gap: 6px; color: var(--text-primary); font-size: 12px;">
+        <div class="detail-section" id="detail-notes-section" style="margin-top: calc(10px * var(--ui-scale, 1)); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
+          <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: calc(6px * var(--ui-scale, 1));">
+            <span class="detail-label" style="font-weight: 700; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); color: var(--text-primary); font-size: var(--text-sm, 12px);">
               <span>📝</span> <span data-i18n="detail.custom_notes_title">Custom Notes</span>
             </span>
-            <span id="detail-notes-saved-indicator" style="font-size: 11px; color: #4ade80; opacity: 0; transition: opacity 0.3s; font-weight: 600;" data-i18n="detail.notes_saved">Saved</span>
+            <span id="detail-notes-saved-indicator" style="font-size: var(--text-xs, 11px); color: #4ade80; opacity: 0; transition: opacity 0.3s; font-weight: 600;" data-i18n="detail.notes_saved">Saved</span>
           </div>
           <textarea id="detail-custom-notes" rows="3"
-            style="width: 100%; box-sizing: border-box; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 6px 8px; font-size: 12px; font-family: inherit; resize: vertical; outline: none; line-height: 1.4;"
+            style="width: 100%; box-sizing: border-box; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); font-family: inherit; resize: vertical; outline: none; line-height: 1.4;"
             data-i18n-placeholder="detail.custom_notes_placeholder"
             placeholder="Add keybindings, custom config notes, or personal reminders for this mod..."></textarea>
         </div>
@@ -51,7 +51,7 @@
           <div class="detail-row" id="detail-pak-destination-row" style="display:none;">
             <span class="detail-label" data-i18n="detail.pak_target_label">Pak Target</span>
             <select id="detail-pak-destination-select"
-              style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 2px 6px; font-size: 12px; outline: none; margin-left: 8px;">
+              style="background: var(--bg-secondary); border: 1px solid var(--border); color: var(--text-primary); border-radius: calc(4px * var(--ui-scale, 1)); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); outline: none; margin-left: calc(8px * var(--ui-scale, 1));">
               <option value="~mods">~mods</option>
               <option value="LogicMods">LogicMods</option>
             </select>
@@ -62,53 +62,53 @@
               id="detail-install-date"></span></div>
           <div class="detail-row"><span class="detail-label" data-i18n="detail.source_label">Source</span> <span
               id="detail-source-zip"></span></div>
-          <div id="detail-components-container" style="display: flex; flex-direction: column; gap: 8px;"></div>
-          <div class="detail-row" id="detail-duplicate-row" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:8px;">
-            <div style="display:flex; align-items:center; gap:8px; flex:1; min-width:0;">
+          <div id="detail-components-container" style="display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));"></div>
+          <div class="detail-row" id="detail-duplicate-row" style="display:none; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:calc(8px * var(--ui-scale, 1));">
+            <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1)); flex:1; min-width:0;">
               <span class="detail-label" style="color:var(--danger);" data-i18n="detail.duplicate_label">Duplicate</span>
-              <span id="detail-duplicate-warning" style="color:var(--danger);font-size:12px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
+              <span id="detail-duplicate-warning" style="color:var(--danger);font-size:var(--text-sm, 12px); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"></span>
             </div>
-            <button id="detail-merge-hybrid-btn" class="btn-primary btn-tiny" style="display:none; margin-left:auto; font-size:11px; padding:2px 8px; align-items:center; gap:4px; white-space:nowrap;">
+            <button id="detail-merge-hybrid-btn" class="btn-primary btn-tiny" style="display:none; margin-left:auto; font-size:var(--text-xs, 11px); padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); align-items:center; gap:calc(4px * var(--ui-scale, 1)); white-space:nowrap;">
               <span>⚡</span> <span data-i18n="detail.merge_hybrid_btn">Merge as Hybrid</span>
             </button>
           </div>
           <div class="detail-row" id="detail-gamepass-warning-row"
-            style="display:none; background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 6px; padding: 10px 12px; margin: 6px 0;">
-            <div style="display: flex; flex-direction: column; gap: 6px; width: 100%;">
+            style="display:none; background: rgba(255, 170, 0, 0.08); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin: calc(6px * var(--ui-scale, 1)) 0;">
+            <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1)); width: 100%;">
               <div
-                style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px;">
+                style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
                 <span
-                  style="font-weight: 700; color: #ffaa00; font-size: 11.5px; display: flex; align-items: center; gap: 6px;">
+                  style="font-weight: 700; color: #ffaa00; font-size: var(--text-xs, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                   <span>⚠️</span> <span data-i18n="card.badge_gamepass_missing">Game Pass: Missing IoStore</span>
                 </span>
                 <button id="detail-convert-gamepass-btn" class="btn-primary btn-sm"
-                  style="font-size: 10.5px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 4px;">
+                  style="font-size: var(--text-2xs, 10px); padding: calc(3px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
                   <span>⚡</span> <span data-i18n="scanner.btn_convert_gamepass">Convert to Game Pass</span>
                 </button>
               </div>
-              <span style="font-size: 11px; color: var(--text-secondary); line-height: 1.4;"
+              <span style="font-size: var(--text-xs, 11px); color: var(--text-secondary); line-height: 1.4;"
                 data-i18n="card.gamepass_missing_tooltip">This .pak mod needs IoStore (.utoc/.ucas) conversion to load
                 in PC Game Pass.</span>
             </div>
           </div>
-          <div class="detail-row" style="display: flex; align-items: center; gap: 8px;">
+          <div class="detail-row" style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
             <span class="detail-label" data-i18n="detail.config_label">Config</span>
             <span id="detail-config-path"
-              style="flex: 1; word-break: break-all; font-size: 11px; font-family: monospace; overflow: hidden; text-overflow: ellipsis;"></span>
-            <div style="display: flex; gap: 4px; flex-shrink: 0;">
+              style="flex: 1; word-break: break-all; font-size: var(--text-xs, 11px); font-family: monospace; overflow: hidden; text-overflow: ellipsis;"></span>
+            <div style="display: flex; gap: calc(4px * var(--ui-scale, 1)); flex-shrink: 0;">
               <button id="detail-set-config" class="btn-tiny" data-i18n="detail.btn_set_config"
-                style="white-space: nowrap; padding: 2px 8px; font-size: 11px;">Set</button>
+                style="white-space: nowrap; padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px);">Set</button>
               <button id="detail-clear-config" class="btn-tiny" data-i18n="detail.btn_clear_config"
-                style="white-space: nowrap; padding: 2px 8px; font-size: 11px;">Clear</button>
+                style="white-space: nowrap; padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px);">Clear</button>
             </div>
           </div>
-          <div id="detail-pak-contents-container" style="display:none; flex-direction:column; gap:8px; margin-top:4px;">
+          <div id="detail-pak-contents-container" style="display:none; flex-direction:column; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(4px * var(--ui-scale, 1));">
           </div>
         </div>
       </div>
-      <div class="detail-actions" style="display: flex; flex-direction: column; gap: 6px;">
-        <div id="detail-folder-buttons" style="display: flex; gap: 6px; width: 100%;"></div>
-        <div style="display: flex; gap: 6px; width: 100%;">
+      <div class="detail-actions" style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
+        <div id="detail-folder-buttons" style="display: flex; gap: calc(6px * var(--ui-scale, 1)); width: 100%;"></div>
+        <div style="display: flex; gap: calc(6px * var(--ui-scale, 1)); width: 100%;">
           <button id="detail-toggle" class="btn-action" data-i18n="common.disabled" style="flex: 1;">Disable</button>
           <button id="detail-config" class="btn-action" data-i18n="detail.btn_edit_config" style="flex: 1;">Edit
             config</button>

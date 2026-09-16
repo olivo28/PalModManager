@@ -1,0 +1,271 @@
+/* ===== UE4SS LOADED MODS INSPECTOR DRAWER STYLES ===== */
+
+/* Loaded Mods Inspector Drawer */
+.ue4ss-mods-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: min(calc(380px * var(--ui-scale, 1)), 90vw);
+  max-width: 90vw;
+  background: rgba(14, 18, 25, 0.96);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-left: 1px solid var(--border);
+  box-shadow: -8px 0 32px rgba(0, 0, 0, 0.6);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+  animation: ue4ssSlideDrawer 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes ue4ssSlideDrawer {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+.ue4ss-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(14px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
+  border-bottom: 1px solid var(--border);
+  background: rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+.ue4ss-drawer-title-group {
+  display: flex;
+  align-items: center;
+  gap: calc(8px * var(--ui-scale, 1));
+}
+
+.ue4ss-drawer-title {
+  margin: 0;
+  font-size: var(--text-sm, 12.5px);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.ue4ss-drawer-counter {
+  background: rgba(46, 204, 113, 0.15);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.3);
+  font-size: var(--text-2xs, 9.5px);
+  font-weight: 700;
+  padding: calc(1px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
+  border-radius: calc(10px * var(--ui-scale, 1));
+}
+
+.ue4ss-drawer-close-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: var(--text-muted);
+  width: calc(24px * var(--ui-scale, 1));
+  height: calc(24px * var(--ui-scale, 1));
+  border-radius: 50%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--text-xs, 11px);
+  transition: all 0.18s ease;
+  padding: 0;
+}
+
+.ue4ss-drawer-close-btn:hover {
+  background: rgba(255, 95, 86, 0.2);
+  color: #ff7b72;
+  border-color: rgba(255, 95, 86, 0.4);
+}
+
+.ue4ss-drawer-toolbar {
+  padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--ui-scale, 1));
+  background: rgba(0, 0, 0, 0.1);
+  flex-shrink: 0;
+}
+
+.ue4ss-drawer-search-wrap {
+  position: relative;
+  width: 100%;
+}
+
+.ue4ss-drawer-search-wrap .ue4ss-search-icon {
+  position: absolute;
+  left: calc(8px * var(--ui-scale, 1));
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: var(--text-xs, 11px);
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.ue4ss-drawer-search-input {
+  width: 100%;
+  padding: calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1)) calc(28px * var(--ui-scale, 1));
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: calc(6px * var(--ui-scale, 1));
+  color: var(--text-primary);
+  font-size: var(--text-xs, 11px);
+  box-sizing: border-box;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.ue4ss-drawer-search-input:focus {
+  outline: none;
+  border-color: var(--accent, #0078d4);
+  box-shadow: 0 0 0 2px rgba(0, 120, 212, 0.25);
+}
+
+.ue4ss-drawer-chips {
+  display: flex;
+  gap: calc(4px * var(--ui-scale, 1));
+  flex-wrap: wrap;
+}
+
+.ue4ss-drawer-chip {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: calc(4px * var(--ui-scale, 1));
+  color: var(--text-muted);
+  font-size: var(--text-2xs, 9.5px);
+  font-weight: 500;
+  padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
+  cursor: pointer;
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+.ue4ss-drawer-chip:hover {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text-primary);
+}
+
+.ue4ss-drawer-chip.active {
+  background: rgba(0, 188, 255, 0.15);
+  border-color: rgba(0, 188, 255, 0.4);
+  color: #00bcff;
+  font-weight: 600;
+}
+
+.ue4ss-drawer-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  display: flex;
+  flex-direction: column;
+  gap: calc(6px * var(--ui-scale, 1));
+}
+
+.ue4ss-mod-card {
+  padding: calc(9px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: calc(8px * var(--ui-scale, 1));
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: calc(5px * var(--ui-scale, 1));
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.ue4ss-mod-card:hover {
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(255, 255, 255, 0.18);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+}
+
+.ue4ss-mod-card.active {
+  background: rgba(0, 188, 255, 0.12);
+  border-color: rgba(0, 188, 255, 0.45);
+  box-shadow: 0 0 12px rgba(0, 188, 255, 0.2);
+}
+
+.ue4ss-mod-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(8px * var(--ui-scale, 1));
+}
+
+.ue4ss-mod-card-name {
+  font-size: var(--text-sm, 12px);
+  font-weight: 600;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+}
+
+.ue4ss-mod-card-bottom {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--ui-scale, 1));
+}
+
+/* Mod Category Badges */
+.ue4ss-badge-type {
+  font-size: var(--text-2xs, 9.5px);
+  font-weight: 700;
+  padding: calc(1px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
+  border-radius: calc(4px * var(--ui-scale, 1));
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.ue4ss-badge-palschema {
+  background: rgba(0, 210, 255, 0.14);
+  color: #00d2ff;
+  border: 1px solid rgba(0, 210, 255, 0.35);
+}
+
+.ue4ss-badge-lua {
+  background: rgba(56, 189, 248, 0.14);
+  color: #38bdf8;
+  border: 1px solid rgba(56, 189, 248, 0.35);
+}
+
+.ue4ss-badge-cpp {
+  background: rgba(168, 85, 247, 0.14);
+  color: #c084fc;
+  border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+.ue4ss-badge-native {
+  background: rgba(251, 146, 60, 0.14);
+  color: #fb923c;
+  border: 1px solid rgba(251, 146, 60, 0.35);
+}
+
+/* Mod Status Badges */
+.ue4ss-badge-status {
+  font-size: var(--text-2xs, 9.5px);
+  font-weight: 600;
+  padding: calc(1px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
+  border-radius: calc(4px * var(--ui-scale, 1));
+}
+
+.ue4ss-badge-status-loaded {
+  background: rgba(46, 204, 113, 0.12);
+  color: #2ecc71;
+  border: 1px solid rgba(46, 204, 113, 0.25);
+}
+
+.ue4ss-badge-status-disabled {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-muted);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.ue4ss-badge-status-failed {
+  background: rgba(255, 95, 86, 0.12);
+  color: #ff5f56;
+  border: 1px solid rgba(255, 95, 86, 0.3);
+}

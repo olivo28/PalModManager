@@ -17,59 +17,59 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
     <div class="scanner-view-container" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
       ${subTabHeader()}
       
-      <div class="scanner-scroll-panel" style="padding: 24px; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex: 1; overflow-y: auto;">
-        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 12px; padding: 32px 28px; max-width: 680px; width: 100%; box-shadow: 0 16px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; text-align: center; gap: 20px;">
+      <div class="scanner-scroll-panel" style="padding: calc(24px * var(--ui-scale, 1)); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex: 1; overflow-y: auto;">
+        <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: calc(12px * var(--ui-scale, 1)); padding: calc(32px * var(--ui-scale, 1)) calc(28px * var(--ui-scale, 1)); max-width: min(calc(680px * var(--ui-scale, 1)), 92vw); width: 100%; box-shadow: 0 16px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; text-align: center; gap: calc(20px * var(--ui-scale, 1));">
           
-          <div style="width: 64px; height: 64px; border-radius: 16px; background: rgba(74, 246, 38, 0.1); border: 1px solid rgba(74, 246, 38, 0.25); display: flex; align-items: center; justify-content: center; font-size: 32px;">
+          <div style="width: calc(64px * var(--ui-scale, 1)); height: calc(64px * var(--ui-scale, 1)); border-radius: calc(16px * var(--ui-scale, 1)); background: rgba(74, 246, 38, 0.1); border: 1px solid rgba(74, 246, 38, 0.25); display: flex; align-items: center; justify-content: center; font-size: calc(32px * var(--ui-scale, 1));">
             🩺
           </div>
 
-          <div style="display: flex; flex-direction: column; gap: 6px;">
-            <h2 style="font-size: 18px; font-weight: 700; color: var(--text-primary); margin: 0;">${escapeHtml(t('scanner.saves_doctor_hero_title') || 'Save Health Doctor & World Hub')}</h2>
-            <p style="font-size: 12px; color: var(--text-muted); margin: 0; line-height: 1.6; max-width: 540px;">
+          <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
+            <h2 style="font-size: var(--text-lg, 17px); font-weight: 700; color: var(--text-primary); margin: 0;">${escapeHtml(t('scanner.saves_doctor_hero_title') || 'Save Health Doctor & World Hub')}</h2>
+            <p style="font-size: var(--text-sm, 12.5px); color: var(--text-muted); margin: 0; line-height: 1.6; max-width: calc(540px * var(--ui-scale, 1));">
               ${escapeHtml(t('scanner.saves_doctor_hero_desc') || 'Diagnose savegame integrity, detect orphaned mod references, manage auto-backups, and compare save snapshots.')}
             </p>
           </div>
 
           <!-- Feature Cards Preview Grid -->
-          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; width: 100%; text-align: left; margin: 6px 0;">
-            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="font-size: 11.5px; font-weight: 700; color: #4af626; display: flex; align-items: center; gap: 6px;">
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: calc(12px * var(--ui-scale, 1)); width: 100%; text-align: left; margin: calc(6px * var(--ui-scale, 1)) 0;">
+            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
+              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: #4af626; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                 <span>🛡️</span>
                 <span>${escapeHtml(t('scanner.saves_feature_rescue_title') || 'Rescue & Clean')}</span>
               </div>
-              <span style="font-size: 10px; color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_rescue_desc') || 'Detect and sanitize orphaned classes from uninstalled mods.')}</span>
+              <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_rescue_desc') || 'Detect and sanitize orphaned classes from uninstalled mods.')}</span>
             </div>
 
-            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="font-size: 11.5px; font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: 6px;">
+            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
+              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                 <span>⚖️</span>
                 <span>${escapeHtml(t('scanner.saves_feature_diff_title') || 'Snapshot Comparison')}</span>
               </div>
-              <span style="font-size: 10px; color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_diff_desc') || 'Inspect progression differences and rollback safely.')}</span>
+              <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_diff_desc') || 'Inspect progression differences and rollback safely.')}</span>
             </div>
 
-            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 8px; padding: 12px; display: flex; flex-direction: column; gap: 4px;">
-              <div style="font-size: 11.5px; font-weight: 700; color: #ffd166; display: flex; align-items: center; gap: 6px;">
+            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
+              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: #ffd166; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                 <span>👥</span>
                 <span>${escapeHtml(t('scanner.saves_feature_roster_title') || 'Player Roster & Rules')}</span>
               </div>
-              <span style="font-size: 10px; color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_roster_desc') || 'View players, levels, and WorldOption multipliers.')}</span>
+              <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_roster_desc') || 'View players, levels, and WorldOption multipliers.')}</span>
             </div>
           </div>
 
           <!-- Action Buttons -->
-          <div style="display: flex; gap: 12px; align-items: center; margin-top: 6px;">
-            <button id="btn-initial-scan-saves" class="btn-primary" ${isLoading ? 'disabled' : ''} style="padding: 10px 24px; font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 14px rgba(74, 246, 38, 0.25); ${isLoading ? 'opacity: 0.85; cursor: wait;' : ''}">
+          <div style="display: flex; gap: calc(12px * var(--ui-scale, 1)); align-items: center; margin-top: calc(6px * var(--ui-scale, 1)); flex-wrap: wrap; justify-content: center;">
+            <button id="btn-initial-scan-saves" class="btn-primary" ${isLoading ? 'disabled' : ''} style="padding: calc(10px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); font-weight: 700; display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); box-shadow: 0 4px 14px rgba(74, 246, 38, 0.25); ${isLoading ? 'opacity: 0.85; cursor: wait;' : ''}">
               ${isLoading ? `
-                <span class="spinner" style="width: 16px; height: 16px; border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
+                <span class="spinner" style="width: calc(16px * var(--ui-scale, 1)); height: calc(16px * var(--ui-scale, 1)); border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
                 <span>${escapeHtml(t('scanner.saves_doctor_scanning') || 'Scanning Palworld SaveGames...')}</span>
               ` : `
                 <span>🩺</span>
                 <span>${escapeHtml(t('scanner.btn_scan_saves_now') || 'Scan Savegames Now')}</span>
               `}
             </button>
-            <button id="btn-initial-custom-folder" class="btn-secondary" ${isLoading ? 'disabled' : ''} style="padding: 10px 18px; font-size: 13px; display: flex; align-items: center; gap: 6px;">
+            <button id="btn-initial-custom-folder" class="btn-secondary" ${isLoading ? 'disabled' : ''} style="padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
               <span>📁</span>
               <span>${escapeHtml(t('scanner.btn_custom_folder') || 'Choose Custom Folder')}</span>
             </button>

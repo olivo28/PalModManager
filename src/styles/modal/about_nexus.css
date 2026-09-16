@@ -1,7 +1,7 @@
 .about-tabs-bar {
   display: flex;
-  gap: 6px;
-  padding: 8px 20px 0;
+  gap: calc(6px * var(--ui-scale, 1));
+  padding: calc(8px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)) 0;
   border-bottom: 1px solid var(--border);
   background: var(--bg-primary);
 }
@@ -11,8 +11,8 @@
   color: var(--text-secondary);
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 8px 14px;
-  font-size: 12px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 12px);
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -53,8 +53,8 @@
 .nexus-profile-card {
   display: flex;
   align-items: center;
-  gap: 14px;
-  padding: 14px 18px;
+  gap: calc(14px * var(--ui-scale, 1));
+  padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
@@ -62,8 +62,8 @@
 }
 
 .nexus-avatar-wrap {
-  width: 48px;
-  height: 48px;
+  width: calc(48px * var(--ui-scale, 1));
+  height: calc(48px * var(--ui-scale, 1));
   border-radius: 50%;
   overflow: hidden;
   border: 2px solid var(--border);
@@ -79,7 +79,7 @@
 
 .nexus-profile-info {
   flex: 1;
-  min-width: 160px;
+  min-width: calc(160px * var(--ui-scale, 1));
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -88,22 +88,22 @@
 .nexus-profile-header {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   flex-wrap: wrap;
 }
 
 .nexus-username {
-  font-size: 15px;
+  font-size: var(--text-md, 15px);
   font-weight: 700;
   color: var(--text-primary);
 }
 
 .nexus-tier-badge {
-  font-size: 10px;
+  font-size: var(--text-2xs, 10px);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  padding: 2px 8px;
+  padding: 2px calc(8px * var(--ui-scale, 1));
   border-radius: 12px;
 }
 
@@ -126,7 +126,7 @@
 }
 
 .nexus-profile-sub {
-  font-size: 11px;
+  font-size: var(--text-xs, 11px);
   color: var(--text-muted);
 }
 
@@ -134,14 +134,14 @@
   background: linear-gradient(135deg, #da6c00 0%, #f07f07 100%);
   color: #ffffff;
   border: none;
-  padding: 9px 18px;
-  font-size: 12px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 12px);
   font-weight: 700;
   border-radius: var(--radius);
   cursor: pointer;
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   transition: all 0.2s ease;
   box-shadow: 0 2px 8px rgba(218, 108, 0, 0.35);
 }
@@ -154,8 +154,8 @@
 
 .badge {
   display: inline-block;
-  padding: 2px 7px;
-  font-size: 11px;
+  padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
   font-weight: 600;
   border-radius: 4px;
 }
@@ -183,8 +183,8 @@
   border: 1px solid var(--border);
   color: var(--text-primary);
   border-radius: var(--radius);
-  padding: 7px 12px;
-  font-size: 11px;
+  padding: calc(7px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
   outline: none;
   transition: all 0.2s ease;
   flex: 1;

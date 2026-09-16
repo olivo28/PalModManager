@@ -5,13 +5,17 @@
   --card-radius: 6px;
 
   /* Dynamically Scaled Typography (Zero zoom) */
-  --text-2xs: calc(8px * var(--ui-scale, 1));
-  --text-xs: calc(9.5px * var(--ui-scale, 1));
-  --text-sm: calc(11px * var(--ui-scale, 1));
-  --text-base: calc(13px * var(--ui-scale, 1));
-  --text-md: calc(14.5px * var(--ui-scale, 1));
-  --text-lg: calc(16.5px * var(--ui-scale, 1));
-  --text-xl: calc(20px * var(--ui-scale, 1));
+  --text-2xs: calc(9.5px * var(--ui-scale, 1));
+  --text-xs: calc(11px * var(--ui-scale, 1));
+  --text-sm: calc(12.5px * var(--ui-scale, 1));
+  --text-base: calc(13.5px * var(--ui-scale, 1));
+  --text-md: calc(15px * var(--ui-scale, 1));
+  --text-lg: calc(17px * var(--ui-scale, 1));
+  /* Scrollbars (Scaled dynamically with --ui-scale) */
+  --scrollbar-w: calc(9px * var(--ui-scale, 1));
+  --scrollbar-thumb: rgba(255, 255, 255, 0.18);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.38);
+  --scrollbar-track: rgba(0, 0, 0, 0.12);
 }
 
 /* ===== DARK THEME (VS Code-like) ===== */
@@ -99,4 +103,8 @@
   --type-hybrid-dim: rgba(184, 29, 102, 0.1);
   --type-altermatic: #d63031;
   --type-altermatic-dim: rgba(214, 48, 49, 0.1);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.22);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.42);
+  --scrollbar-track: rgba(0, 0, 0, 0.05);
 }

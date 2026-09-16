@@ -1,22 +1,22 @@
 <!-- WORKSHOP MODAL -->
 <div id="workshop-modal" class="modal-overlay">
-  <div class="modal" style="max-width: 640px;">
+  <div class="modal" style="max-width: min(calc(640px * var(--ui-scale, 1)), 92vw); width: 100%;">
     <div class="modal-header">
       <h3 data-i18n="workshop.title">Steam Workshop Mods</h3>
       <button class="modal-close-btn" id="workshop-modal-close-x">✕</button>
     </div>
     <div class="modal-body">
-      <div class="settings-group" style="margin-bottom: 12px; display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); padding:10px 14px; border-radius:6px; border:1px solid var(--border);">
+      <div class="settings-group" style="margin-bottom: calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; justify-content:space-between; background:var(--bg-secondary); padding:calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius:6px; border:1px solid var(--border);">
         <div>
-          <span style="font-weight:bold; font-size:13px; color:var(--text-primary);" data-i18n="workshop.enable_master_label">Enable Workshop Mods</span>
-          <div class="settings-hint" style="margin-top:2px; font-size:11px;" data-i18n="workshop.enable_master_hint">Toggles Master bGlobalEnableMod state</div>
+          <span style="font-weight:bold; font-size:var(--text-base, 13px); color:var(--text-primary);" data-i18n="workshop.enable_master_label">Enable Workshop Mods</span>
+          <div class="settings-hint" style="margin-top:2px; font-size:var(--text-xs, 11px);" data-i18n="workshop.enable_master_hint">Toggles Master bGlobalEnableMod state</div>
         </div>
         <label class="toggle-switch">
           <input type="checkbox" id="workshop-master-toggle" />
           <span class="toggle-slider"></span>
         </label>
       </div>
-      <div id="workshop-list-container" style="display:flex; flex-direction:column; gap:8px; max-height: 380px; overflow-y:auto; padding-right:4px;">
+      <div id="workshop-list-container" style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1)); max-height: calc(380px * var(--ui-scale, 1)); overflow-y:auto; padding-right:4px;">
         <!-- Dynamically populated subscribed mods list -->
       </div>
     </div>

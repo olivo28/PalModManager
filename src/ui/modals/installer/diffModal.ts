@@ -14,12 +14,12 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
   const currentIgnoredKeys = currentMod?.ignoredKeys || [];
 
   let html = `
-    <div class="modal" style="max-width:850px; width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
-      <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-        <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary);">⚙ ${escapeHtml(t('installer.diff_modal_title') || 'Config Settings Merge Preview')}</h3>
-        <button class="modal-close-btn" id="config-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
+    <div class="modal" style="max-width:min(calc(850px * var(--ui-scale, 1)), 94vw); width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
+      <div class="modal-header" style="padding:calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
+        <h3 style="margin:0; font-size:var(--text-lg, 16px); font-weight:700; color:var(--text-primary);">⚙ ${escapeHtml(t('installer.diff_modal_title') || 'Config Settings Merge Preview')}</h3>
+        <button class="modal-close-btn" id="config-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:var(--text-base, 16px);">✕</button>
       </div>
-      <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--bg-primary);">
+      <div class="modal-body" style="flex:1; overflow-y:auto; padding:calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(14px * var(--ui-scale, 1)); background:var(--bg-primary);">
   `;
 
   const collapseByDefault = diffs.length > 1;

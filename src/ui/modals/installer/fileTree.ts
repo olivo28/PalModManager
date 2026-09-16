@@ -103,8 +103,8 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
       if (isFolder) {
         return `
           <div class="tree-folder-node" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; flex-direction: column; gap: 4px;">
-            <div class="tree-folder-header" style="display: flex; align-items: center; gap: 8px; padding: 4px 8px; border-radius: 4px; color: var(--text-primary); font-weight: 600; font-size: 12px; background: rgba(255,255,255,0.02); user-select: none; transition: background 0.2s; cursor: pointer;" onmouseover="this.style.background='rgba(255,255,255,0.05)'" onmouseout="this.style.background='rgba(255,255,255,0.02)'">
-              <span class="tree-folder-icon" style="color: #ffd166; font-size: 13px; display: flex; align-items: center;">📁</span>
+            <div class="tree-folder-header" style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius: 4px; color: var(--text-primary); font-weight: 600; font-size: var(--text-sm, 12px); background: rgba(255,255,255,0.02); user-select: none; transition: background 0.2s; cursor: pointer;">
+              <span class="tree-folder-icon" style="color: #ffd166; font-size: calc(13px * var(--ui-scale, 1)); display: flex; align-items: center;">📁</span>
               <span class="tree-folder-name" style="font-family: monospace;">${escapeHtml(child.name)}</span>
             </div>
             <div class="tree-folder-children" style="border-left: 1px dashed var(--border); margin-left: 7px; padding-left: 6px; display: flex; flex-direction: column; gap: 2px;">
@@ -118,23 +118,23 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
         const pakId = `pak-expand-${Math.random().toString(36).substring(2, 9)}`;
 
         return `
-          <div class="tree-file-node" data-search-text="${escapeHtml((child.name + ' ' + relativeDest).toLowerCase())}" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border-radius: 4px; font-size: 11px; transition: background 0.2s; background: rgba(255,255,255,0.01); border: 1px solid var(--border);" onmouseover="this.style.background='rgba(255,255,255,0.03)'" onmouseout="this.style.background='rgba(255,255,255,0.01)'">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 8px; overflow: hidden; flex-grow: 1;">
-                <span style="color: ${isPak ? 'var(--accent)' : 'var(--text-secondary)'}; font-size: 12px; display: flex; align-items: center;">${isPak ? '📦' : '📄'}</span>
+          <div class="tree-file-node" data-search-text="${escapeHtml((child.name + ' ' + relativeDest).toLowerCase())}" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; flex-direction: column; gap: 4px; padding: calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius: 4px; font-size: var(--text-xs, 11px); transition: background 0.2s; background: rgba(255,255,255,0.01); border: 1px solid var(--border);">
+            <div style="display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui-scale, 1));">
+              <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); overflow: hidden; flex-grow: 1;">
+                <span style="color: ${isPak ? 'var(--accent)' : 'var(--text-secondary)'}; font-size: calc(12px * var(--ui-scale, 1)); display: flex; align-items: center;">${isPak ? '📦' : '📄'}</span>
                 <div style="display: flex; flex-direction: column; overflow: hidden;">
                   <span class="tree-file-name" style="font-family: monospace; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-weight: 500;">${escapeHtml(child.name)}</span>
-                  <span style="font-size: 9px; color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-family: monospace;" title="${escapeHtml(child.destPath || '')}">→ ${escapeHtml(relativeDest)}</span>
+                  <span style="font-size: var(--text-2xs, 9px); color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-family: monospace;" title="${escapeHtml(child.destPath || '')}">→ ${escapeHtml(relativeDest)}</span>
                 </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 6px; flex-shrink: 0;">
-                <span style="font-size: 8.5px; padding: 1px 4px; border-radius: 3px; background: var(--bg-secondary); color: var(--accent); border: 1px solid var(--border); text-transform: uppercase;">${escapeHtml(child.routeType || 'FILE')}</span>
-                ${isPak ? `<button type="button" class="btn-tiny inspect-pak-btn" data-target="${pakId}" data-pak-name="${escapeHtml(child.name)}" data-pak-dest="${escapeHtml(child.destPath || '')}" style="font-size: 10px; padding: 2px 7px; background: var(--bg-card); border-color: var(--accent); color: var(--accent); cursor: pointer;" data-i18n="installer.btn_inspect_pak">🔍 ${escapeHtml(t('installer.btn_inspect_pak') || 'Inspect .pak')}</button>` : ''}
+              <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-shrink: 0;">
+                <span style="font-size: var(--text-2xs, 8.5px); padding: 1px calc(4px * var(--ui-scale, 1)); border-radius: 3px; background: var(--bg-secondary); color: var(--accent); border: 1px solid var(--border); text-transform: uppercase;">${escapeHtml(child.routeType || 'FILE')}</span>
+                ${isPak ? `<button type="button" class="btn-tiny inspect-pak-btn" data-target="${pakId}" data-pak-name="${escapeHtml(child.name)}" data-pak-dest="${escapeHtml(child.destPath || '')}" style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)); background: var(--bg-card); border-color: var(--accent); color: var(--accent); cursor: pointer;" data-i18n="installer.btn_inspect_pak">🔍 ${escapeHtml(t('installer.btn_inspect_pak') || 'Inspect .pak')}</button>` : ''}
               </div>
             </div>
             ${isPak ? `
-              <div id="${pakId}" class="pak-internal-container" style="display:none; margin-top: 6px; padding: 8px 10px; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; flex-direction: column; gap: 6px;">
-                <div class="pak-internal-loading" style="font-size: 10.5px; color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+              <div id="${pakId}" class="pak-internal-container" style="display:none; margin-top: 6px; padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; flex-direction: column; gap: 6px;">
+                <div class="pak-internal-loading" style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
                   <span>⏳</span> <span>${escapeHtml(t('scanner.loading') || 'Loading pak index...')}</span>
                 </div>
                 <div class="pak-internal-content" style="display:none; flex-direction:column; gap:6px;"></div>
@@ -165,31 +165,31 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
   container.style.justifyContent = 'center';
 
   container.innerHTML = `
-    <div class="modal" style="width: 720px; max-width: 92vw; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; max-height: 85vh;">
-      <div class="modal-header" style="padding: 14px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 16px;">📂</span>
-          <h3 style="margin: 0; font-size: 15px; font-weight: 600; color: var(--text-primary);">${escapeHtml(modName)} - ${escapeHtml(t('installer.btn_show_files'))}</h3>
+    <div class="modal" style="width: min(calc(720px * var(--ui-scale, 1)), 94vw); max-width: 94vw; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; max-height: 85vh;">
+      <div class="modal-header" style="padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
+        <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+          <span style="font-size: calc(16px * var(--ui-scale, 1));">📂</span>
+          <h3 style="margin: 0; font-size: var(--text-md, 15px); font-weight: 600; color: var(--text-primary);">${escapeHtml(modName)} - ${escapeHtml(t('installer.btn_show_files'))}</h3>
         </div>
-        <button id="filetree-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 16px;">✕</button>
+        <button id="filetree-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: var(--text-base, 16px);">✕</button>
       </div>
 
       <!-- Quick Search Bar -->
-      <div style="padding: 10px 20px; border-bottom: 1px solid var(--border); background: var(--bg-secondary); display: flex; align-items: center; gap: 10px;">
-        <span style="font-size: 13px; color: var(--text-muted);">🔍</span>
-        <input type="text" id="filetree-search-input" placeholder="${escapeHtml(t('scanner.search_placeholder') || 'Search files or assets...')}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 5px 10px; font-size: 12px; outline: none;" />
-        <span id="filetree-count-badge" class="badge" style="font-size: 10px; padding: 3px 8px; background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">${escapeHtml(t('installer.file_count_badge', { count: routes.length }) || `${routes.length} files`)}</span>
+      <div style="padding: calc(8px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: var(--bg-secondary); display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
+        <span style="font-size: var(--text-base, 13px); color: var(--text-muted);">🔍</span>
+        <input type="text" id="filetree-search-input" placeholder="${escapeHtml(t('scanner.search_placeholder') || 'Search files or assets...')}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); outline: none;" />
+        <span id="filetree-count-badge" class="badge" style="font-size: var(--text-2xs, 10px); padding: 2px calc(8px * var(--ui-scale, 1)); background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">${escapeHtml(t('installer.file_count_badge', { count: routes.length }) || `${routes.length} files`)}</span>
       </div>
 
-      <div class="modal-body" id="filetree-body-container" style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px;">
+      <div class="modal-body" id="filetree-body-container" style="padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 6px;">
         ${renderFileTreeHTML(rootNode)}
       </div>
 
-      <div class="modal-footer" style="padding: 12px 20px; border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; background: var(--bg-secondary);">
-        <div style="font-size: 11px; color: var(--text-muted);">
+      <div class="modal-footer" style="padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; background: var(--bg-secondary);">
+        <div style="font-size: var(--text-xs, 11px); color: var(--text-muted);">
           <span>💡 ${escapeHtml(t('installer.pak_inspect_hint') || 'Click "Inspect .pak" to see internal DataTables, Blueprints & Assets.')}</span>
         </div>
-        <button id="filetree-modal-close" class="btn-primary" style="padding: 6px 14px; font-size: 12px; cursor: pointer; border-radius: 4px;">${escapeHtml(t('common.close'))}</button>
+        <button id="filetree-modal-close" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); cursor: pointer; border-radius: 4px;">${escapeHtml(t('common.close'))}</button>
       </div>
     </div>
   `;

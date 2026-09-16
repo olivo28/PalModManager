@@ -23,6 +23,7 @@ export function setupGlobalShortcuts(): void {
       }
       if (next !== current) {
         document.documentElement.style.setProperty('--ui-scale', next.toString());
+        import('../ui/editor/monaco/instance').then(m => m.updateMonacoScale(next)).catch(() => {});
         const slider = settingsDom.elMaybe('settings-ui-scale');
         const badge = settingsDom.elMaybe('settings-ui-scale-val');
         if (slider) slider.value = next.toString();

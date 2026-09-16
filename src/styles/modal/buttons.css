@@ -14,8 +14,8 @@
   background: var(--bg-secondary);
   border: 1px solid var(--border);
   border-radius: var(--card-radius);
-  padding: 20px;
-  width: calc(320px * var(--ui-scale, 1));
+  padding: calc(18px * var(--ui-scale, 1));
+  width: min(calc(340px * var(--ui-scale, 1)), 90vw);
   max-width: 90vw;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
   animation: modalIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
@@ -23,7 +23,7 @@
 }
 
 .confirm-box p {
-  margin: 0 0 20px 0;
+  margin: 0 0 calc(16px * var(--ui-scale, 1)) 0;
   font-size: var(--text-md, 14.5px);
   line-height: 1.5;
 }
@@ -31,7 +31,7 @@
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
+  gap: calc(10px * var(--ui-scale, 1));
 }
 
 /* ===== COMMON BUTTON STYLES FOR MODALS ===== */
@@ -44,7 +44,7 @@
 .confirm-cancel,
 .confirm-danger,
 .btn {
-  padding: 8px 16px;
+  padding: calc(7px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
   border-radius: var(--radius);
   font-size: var(--text-sm, 11px);
   font-weight: 600;
@@ -54,7 +54,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
 }
 
 .btn-primary,

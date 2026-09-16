@@ -38,7 +38,7 @@
 }
 
 .discovery-filters-sidebar {
-  width: 280px;
+  width: calc(280px * var(--ui-scale, 1));
   background: var(--bg-secondary);
   border-right: 1px solid var(--border);
   display: flex;
@@ -64,14 +64,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
+  padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border);
   background: var(--bg-primary);
 }
 
 .discovery-sidebar-header h4 {
   margin: 0;
-  font-size: 13px;
+  font-size: var(--text-base, 13px);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -80,7 +80,7 @@
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 14px;
+  font-size: var(--text-md, 14px);
   cursor: pointer;
   padding: 2px 6px;
   border-radius: 4px;
@@ -94,15 +94,15 @@
 .discovery-sidebar-content {
   display: flex;
   flex-direction: column;
-  padding: 10px 0;
+  padding: calc(8px * var(--ui-scale, 1)) 0;
 }
 
 .discovery-filter-group {
-  padding: 12px 16px;
+  padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
 }
 
 .discovery-filter-group-header {
@@ -114,7 +114,7 @@
 }
 
 .discovery-filter-group-title {
-  font-size: 11px;
+  font-size: var(--text-xs, 9.5px);
   font-weight: 800;
   text-transform: uppercase;
   letter-spacing: 0.8px;
@@ -245,12 +245,12 @@
 .discovery-sidebar-input,
 .discovery-sidebar-select {
   width: 100%;
-  padding: 6px 10px;
+  padding: calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   background: var(--bg-primary);
   border: 1px solid var(--border);
   border-radius: 4px;
   color: var(--text-primary);
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   box-sizing: border-box;
 }
 
@@ -263,8 +263,8 @@
 .discovery-filter-checkboxes {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  max-height: 220px;
+  gap: calc(6px * var(--ui-scale, 1));
+  max-height: calc(220px * var(--ui-scale, 1));
   overflow-y: auto;
   padding-right: 4px;
 }
@@ -272,8 +272,8 @@
 .discovery-filter-cb-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: calc(8px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 11px);
   color: var(--text-primary);
   cursor: pointer;
   user-select: none;
@@ -292,11 +292,11 @@
   background: var(--bg-secondary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  padding: 6px 10px;
+  padding: calc(5px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
   border-radius: 4px;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 700;
   cursor: pointer;
-  margin-top: 4px;
+  margin-top: calc(4px * var(--ui-scale, 1));
   transition: all 0.15s ease;
 }

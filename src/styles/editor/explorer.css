@@ -7,20 +7,20 @@
 #editor-toolbar {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 8px 20px;
+  gap: calc(8px * var(--ui-scale, 1));
+  padding: calc(6px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
 
 #editor-mod-select {
-  padding: 6px 10px;
+  padding: calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   background: var(--bg-primary);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  font-size: 12px;
-  min-width: 200px;
+  font-size: var(--text-sm, 11px);
+  min-width: calc(200px * var(--ui-scale, 1));
   font-weight: 500;
 }
 
@@ -31,18 +31,18 @@
 
 .editor-sep {
   width: 1px;
-  height: 24px;
+  height: calc(24px * var(--ui-scale, 1));
   background: var(--border);
-  margin: 0 6px;
+  margin: 0 calc(6px * var(--ui-scale, 1));
 }
 
 .btn-editor {
-  padding: 5px 14px;
+  padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
   background: var(--bg-primary);
   color: var(--text-secondary);
   border: 1px solid var(--border);
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   font-weight: 600;
   transition: all 0.15s;
 }
@@ -76,7 +76,7 @@
 
 /* ===== VSCode-style Mod Explorer Panel ===== */
 #editor-mod-panel {
-  width: 180px;
+  width: clamp(150px, calc(175px * var(--ui-scale, 1)), 230px);
   flex-shrink: 0;
   background: var(--bg-primary);
   border-right: 1px solid var(--border);
@@ -86,12 +86,12 @@
 }
 
 .editor-mod-panel-header {
-  font-size: 10px;
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 1px;
-  padding: 10px 12px 6px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
@@ -103,9 +103,9 @@
 .editor-mod-section-header {
   display: flex;
   align-items: center;
-  gap: 4px;
-  padding: 5px 8px;
-  font-size: 10px;
+  gap: calc(4px * var(--ui-scale, 1));
+  padding: calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
+  font-size: var(--text-2xs, 9.5px);
   font-weight: 700;
   color: var(--text-muted);
   text-transform: uppercase;
@@ -120,7 +120,7 @@
 }
 
 .editor-mod-section-chevron {
-  font-size: 8px;
+  font-size: var(--text-2xs, 8px);
   transition: transform 0.2s;
   display: inline-block;
 }
@@ -140,10 +140,10 @@
 .editor-mod-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 4px 8px 4px 16px;
+  gap: calc(6px * var(--ui-scale, 1));
+  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
   cursor: pointer;
-  font-size: 11px;
+  font-size: var(--text-sm, 11px);
   color: var(--text-secondary);
   transition: background 0.12s, color 0.12s;
   white-space: nowrap;
@@ -164,7 +164,7 @@
 }
 
 .editor-mod-item-icon {
-  font-size: 10px;
+  font-size: var(--text-xs, 10px);
   flex-shrink: 0;
   opacity: 0.7;
 }

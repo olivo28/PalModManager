@@ -130,22 +130,22 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
 
     let sourceBadge = '';
     if (isFromLibrary) {
-      sourceBadge = `<span class="update-source-badge local" style="background:rgba(46, 204, 113, 0.15);color:#2ecc71;border:1px solid rgba(46, 204, 113, 0.35);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">📦 ${escapeHtml(t('installer.source_local_library'))}</span>`;
+      sourceBadge = `<span class="update-source-badge local" style="background:rgba(46, 204, 113, 0.15);color:#2ecc71;border:1px solid rgba(46, 204, 113, 0.35);font-size:var(--text-2xs, 9px);font-weight:700;padding:2px calc(6px * var(--ui-scale, 1));border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">📦 ${escapeHtml(t('installer.source_local_library'))}</span>`;
     } else if (isFromNexusDownload || analysis.nexusModId) {
-      sourceBadge = `<span class="update-source-badge remote" style="background:rgba(0, 188, 255, 0.15);color:#00bcff;border:1px solid rgba(0, 188, 255, 0.35);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">⚡ ${escapeHtml(t('installer.source_nexus_download'))}</span>`;
+      sourceBadge = `<span class="update-source-badge remote" style="background:rgba(0, 188, 255, 0.15);color:#00bcff;border:1px solid rgba(0, 188, 255, 0.35);font-size:var(--text-2xs, 9px);font-weight:700;padding:2px calc(6px * var(--ui-scale, 1));border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">⚡ ${escapeHtml(t('installer.source_nexus_download'))}</span>`;
     } else {
-      sourceBadge = `<span class="update-source-badge custom" style="background:rgba(255, 255, 255, 0.08);color:var(--text-muted);border:1px solid var(--border);font-size:9px;font-weight:700;padding:2px 6px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">📁 ${escapeHtml(t('installer.source_custom_file'))}</span>`;
+      sourceBadge = `<span class="update-source-badge custom" style="background:rgba(255, 255, 255, 0.08);color:var(--text-muted);border:1px solid var(--border);font-size:var(--text-2xs, 9px);font-weight:700;padding:2px calc(6px * var(--ui-scale, 1));border-radius:4px;display:inline-flex;align-items:center;gap:4px;text-transform:uppercase;letter-spacing:0.4px;">📁 ${escapeHtml(t('installer.source_custom_file'))}</span>`;
     }
 
     updateHtml = `
-      <div class="update-banner" id="update-banner" style="margin-bottom:12px;padding:8px 12px;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
+      <div class="update-banner" id="update-banner" style="margin-bottom:calc(10px * var(--ui-scale, 1));padding:calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.25);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:calc(10px * var(--ui-scale, 1));">
         <div style="display:flex;flex-direction:column;gap:4px;flex:1;overflow:hidden;">
-          <span class="update-banner-text" style="font-size:11px;font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}">${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}</span>
+          <span class="update-banner-text" style="font-size:var(--text-sm, 11px);font-weight:600;color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}">${escapeHtml(t('installer.already_exists', { name: existingMod.name, version: existingVerStr }))}</span>
           <div>${sourceBadge}</div>
         </div>
         <div style="display:flex;gap:4px;background:var(--bg-primary);padding:2px;border-radius:5px;border:1px solid var(--border);flex-shrink:0;">
-          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:4px 8px;background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_update'))}</button>
-          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:4px 8px;background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:11px;font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_new'))}</button>
+          <button class="update-mode-btn" id="update-mode-btn" type="button" style="padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));background:#00bcff;color:#fff;border:none;border-radius:3px;font-size:var(--text-xs, 11px);font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_update'))}</button>
+          <button class="update-mode-btn" id="install-new-mode-btn" type="button" style="padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));background:transparent;color:var(--text-secondary);border:none;border-radius:3px;font-size:var(--text-xs, 11px);font-weight:600;cursor:pointer;transition:all 0.15s ease;">${escapeHtml(t('installer.mode_new'))}</button>
         </div>
       </div>
     `;
@@ -168,17 +168,17 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
       if (archivedInfo && archivedInfo.files.length > 0) {
         currentArchivedInfo = archivedInfo;
         archivedConfigHtml = `
-          <div class="archived-config-banner" style="margin-bottom:6px;padding:8px 12px;background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-            <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0;">
-              <span style="font-size:16px;">💾</span>
+          <div class="archived-config-banner" style="margin-bottom:calc(6px * var(--ui-scale, 1));padding:calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));background:rgba(46,204,113,0.08);border:1px solid rgba(46,204,113,0.3);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:calc(10px * var(--ui-scale, 1));">
+            <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));flex:1;min-width:0;">
+              <span style="font-size:calc(16px * var(--ui-scale, 1));">💾</span>
               <div style="display:flex;flex-direction:column;min-width:0;">
-                <span style="font-size:11px;font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t('installer.archived_config_detected', { count: archivedInfo.files.length }))}</span>
-                <span style="font-size:10px;color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(archivedInfo.files.join(', '))}">${escapeHtml(archivedInfo.files.join(', '))}</span>
+                <span style="font-size:var(--text-sm, 11px);font-weight:600;color:var(--text-primary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${escapeHtml(t('installer.archived_config_detected', { count: archivedInfo.files.length }))}</span>
+                <span style="font-size:var(--text-2xs, 10px);color:var(--text-muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" title="${escapeHtml(archivedInfo.files.join(', '))}">${escapeHtml(archivedInfo.files.join(', '))}</span>
               </div>
             </div>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
-              <button id="review-archived-config-btn" type="button" class="btn btn-secondary" style="font-size: 10px; padding: 3px 8px; border-color: rgba(46, 204, 113, 0.5); color: #2ecc71; white-space: nowrap; height: auto; margin: 0;">⚙ ${escapeHtml(t('installer.btn_review_archived_config') || 'Review')}</button>
-              <label style="display:flex;align-items:center;gap:6px;font-size:11px;font-weight:600;color:#2ecc71;cursor:pointer;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));flex-shrink:0;">
+              <button id="review-archived-config-btn" type="button" class="btn btn-secondary" style="font-size: var(--text-2xs, 10px); padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-color: rgba(46, 204, 113, 0.5); color: #2ecc71; white-space: nowrap; height: auto; margin: 0;">⚙ ${escapeHtml(t('installer.btn_review_archived_config') || 'Review')}</button>
+              <label style="display:flex;align-items:center;gap:6px;font-size:var(--text-xs, 11px);font-weight:600;color:#2ecc71;cursor:pointer;flex-shrink:0;">
                 <input type="checkbox" id="restore-archived-config-checkbox" data-archive-id="${escapeHtml(archivedInfo.archiveId)}" checked style="accent-color:#2ecc71;cursor:pointer;" />
                 <span>${escapeHtml(t('installer.restore_archived_config'))}</span>
               </label>
@@ -211,14 +211,14 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   const isLogicModsDefault = manifest.modType === 'logicmods' || manifest.routes.some((r: any) => r.routeType === 'logicmods');
 
   let pakDestHtml = `
-    <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${manifest.hasPak ? 'block' : 'none'}; margin-top:8px;">
-      <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:6px;">${escapeHtml(t('installer.pak_dest_title'))}</label>
-      <div class="pak-dest-options" style="display:flex;gap:12px;">
-        <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+    <div class="pak-dest-section" id="single-pak-dest-section" style="display: ${manifest.hasPak ? 'block' : 'none'}; margin-top:calc(8px * var(--ui-scale, 1));">
+      <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:calc(6px * var(--ui-scale, 1));">${escapeHtml(t('installer.pak_dest_title'))}</label>
+      <div class="pak-dest-options" style="display:flex;gap:calc(12px * var(--ui-scale, 1));">
+        <label class="pak-dest-option" style="display:flex;align-items:center;gap:calc(6px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);cursor:pointer;">
           <input type="radio" name="pak-dest" value="~mods" ${isLogicModsDefault ? '' : 'checked'} />
           <span>${escapeHtml(t('installer.pak_dest_res'))}</span>
         </label>
-        <label class="pak-dest-option" style="display:flex;align-items:center;gap:6px;font-size:12px;cursor:pointer;">
+        <label class="pak-dest-option" style="display:flex;align-items:center;gap:calc(6px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);cursor:pointer;">
           <input type="radio" name="pak-dest" value="logicmods" ${isLogicModsDefault ? 'checked' : ''} />
           <span>${escapeHtml(t('installer.pak_dest_logic'))}</span>
         </label>
@@ -256,29 +256,29 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   let altermaticAlertHtml = '';
   if (missingAltermatic) {
     altermaticAlertHtml += `
-      <div style="background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 14px;">⚠️</span>
+      <div style="background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: 6px; padding: calc(7px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); margin-top: 2px;">
+        <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+          <span style="font-size: calc(14px * var(--ui-scale, 1));">⚠️</span>
           <div style="display: flex; flex-direction: column; text-align: left;">
-            <span style="font-size: 11px; font-weight: bold; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title'))}</span>
-            <span style="font-size: 9.5px; color: var(--text-secondary);">${escapeHtml(t('installer.altermatic_missing_desc'))}</span>
+            <span style="font-size: var(--text-xs, 11px); font-weight: bold; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title'))}</span>
+            <span style="font-size: var(--text-2xs, 9.5px); color: var(--text-secondary);">${escapeHtml(t('installer.altermatic_missing_desc'))}</span>
           </div>
         </div>
-        <button id="open-altermatic-nexus-btn" type="button" class="btn btn-secondary" style="font-size: 10px; padding: 3px 8px; border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap; height: auto; margin: 0;">${escapeHtml(t('installer.btn_get_altermatic'))}</button>
+        <button id="open-altermatic-nexus-btn" type="button" class="btn btn-secondary" style="font-size: var(--text-2xs, 10px); padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap; height: auto; margin: 0;">${escapeHtml(t('installer.btn_get_altermatic'))}</button>
       </div>
     `;
   }
   if (missingUniPalUI) {
     altermaticAlertHtml += `
-      <div style="background: rgba(0, 188, 255, 0.08); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 6px; padding: 7px 10px; display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-top: 2px;">
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <span style="font-size: 14px;">ℹ️</span>
+      <div style="background: rgba(0, 188, 255, 0.08); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 6px; padding: calc(7px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); margin-top: 2px;">
+        <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+          <span style="font-size: calc(14px * var(--ui-scale, 1));">ℹ️</span>
           <div style="display: flex; flex-direction: column; text-align: left;">
-            <span style="font-size: 11px; font-weight: bold; color: var(--type-ue4ss);">${escapeHtml(t('installer.unipalui_recommended_title'))}</span>
-            <span style="font-size: 9.5px; color: var(--text-secondary);">${escapeHtml(t('installer.unipalui_recommended_desc'))}</span>
+            <span style="font-size: var(--text-xs, 11px); font-weight: bold; color: var(--type-ue4ss);">${escapeHtml(t('installer.unipalui_recommended_title'))}</span>
+            <span style="font-size: var(--text-2xs, 9.5px); color: var(--text-secondary);">${escapeHtml(t('installer.unipalui_recommended_desc'))}</span>
           </div>
         </div>
-        <button id="open-unipalui-nexus-btn" type="button" class="btn btn-secondary" style="font-size: 10px; padding: 3px 8px; border-color: var(--type-ue4ss); color: var(--type-ue4ss); white-space: nowrap; height: auto; margin: 0;">${escapeHtml(t('installer.btn_get_unipalui'))}</button>
+        <button id="open-unipalui-nexus-btn" type="button" class="btn btn-secondary" style="font-size: var(--text-2xs, 10px); padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-color: var(--type-ue4ss); color: var(--type-ue4ss); white-space: nowrap; height: auto; margin: 0;">${escapeHtml(t('installer.btn_get_unipalui'))}</button>
       </div>
     `;
   }
@@ -286,102 +286,102 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   let fomodBannerHtml = '';
   if (analysis.hasFomod) {
     fomodBannerHtml = `
-      <div class="fomod-detected-banner" style="margin-bottom:6px;padding:8px 12px;background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.35);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:10px;">
-        <div style="display:flex;align-items:center;gap:8px;">
-          <span style="font-size:16px;">✨</span>
+      <div class="fomod-detected-banner" style="margin-bottom:calc(6px * var(--ui-scale, 1));padding:calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));background:rgba(234,179,8,0.1);border:1px solid rgba(234,179,8,0.35);border-radius:6px;display:flex;align-items:center;justify-content:space-between;gap:calc(10px * var(--ui-scale, 1));">
+        <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));">
+          <span style="font-size:calc(16px * var(--ui-scale, 1));">✨</span>
           <div style="display:flex;flex-direction:column;">
-            <span style="font-size:11px;font-weight:700;color:#facc15;">${escapeHtml(t('fomod.detected_title'))}</span>
-            <span style="font-size:10px;color:var(--text-muted);">${escapeHtml(t('fomod.detected_desc'))}</span>
+            <span style="font-size:var(--text-sm, 11px);font-weight:700;color:#facc15;">${escapeHtml(t('fomod.detected_title'))}</span>
+            <span style="font-size:var(--text-xs, 10px);color:var(--text-muted);">${escapeHtml(t('fomod.detected_desc'))}</span>
           </div>
         </div>
-        <span style="font-size:9px;font-weight:700;background:rgba(234,179,8,0.2);color:#fef08a;border:1px solid rgba(234,179,8,0.4);padding:2px 6px;border-radius:3px;text-transform:uppercase;">FOMOD</span>
+        <span style="font-size:var(--text-2xs, 9px);font-weight:700;background:rgba(234,179,8,0.2);color:#fef08a;border:1px solid rgba(234,179,8,0.4);padding:2px calc(6px * var(--ui-scale, 1));border-radius:3px;text-transform:uppercase;">FOMOD</span>
       </div>
     `;
   }
 
   content.innerHTML = `
-    <div style="display:flex;gap:18px;align-items:flex-start;padding:2px 0;">
+    <div style="display:flex;gap:calc(18px * var(--ui-scale, 1));align-items:flex-start;padding:2px 0;">
        <!-- Left Column: Card Preview (Nexus Info or Local Modinfo) -->
        ${analysis.nexusInfo ? `
-       <div style="width:230px;min-width:230px;max-width:230px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
-          <div style="position:relative;width:100%;height:120px;overflow:hidden;background:#000;">
-             ${picUrl ? `<img src="${escapeHtml(picUrl)}" data-original-src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div style="display:none;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">${analysis.nexusInfo.isWorkshop ? 'W' : 'N'}</div>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:32px;">${analysis.nexusInfo.isWorkshop ? 'W' : 'N'}</div>`}
-             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:10px;font-size:9px;color:${analysis.nexusInfo.isWorkshop ? '#ff9d00' : '#00ffcc'};font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+       <div style="width:calc(230px * var(--ui-scale, 1));min-width:calc(230px * var(--ui-scale, 1));max-width:calc(230px * var(--ui-scale, 1));flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+          <div style="position:relative;width:100%;height:calc(120px * var(--ui-scale, 1));overflow:hidden;background:#000;">
+             ${picUrl ? `<img src="${escapeHtml(picUrl)}" data-original-src="${escapeHtml(picUrl)}" style="width:100%;height:100%;object-fit:cover;opacity:0.85;" alt="" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='flex'));" /><div style="display:none;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:calc(32px * var(--ui-scale, 1));">${analysis.nexusInfo.isWorkshop ? 'W' : 'N'}</div>` : `<div style="display:flex;align-items:center;justify-content:center;height:100%;color:var(--text-muted);font-weight:bold;font-size:calc(32px * var(--ui-scale, 1));">${analysis.nexusInfo.isWorkshop ? 'W' : 'N'}</div>`}
+             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px calc(7px * var(--ui-scale, 1));border-radius:10px;font-size:var(--text-2xs, 9px);color:${analysis.nexusInfo.isWorkshop ? '#ff9d00' : '#00ffcc'};font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
                 ${analysis.nexusInfo.isWorkshop ? `WORKSHOP${analysis.nexusInfo.modId ? ` (ID: ${analysis.nexusInfo.modId})` : ''}` : `${analysis.nexusInfo.downloads.toLocaleString()} DLs`}
              </div>
           </div>
-          <div style="padding:10px;display:flex;flex-direction:column;gap:5px;">
-             <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
-             <div style="font-size:9.5px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author || t('common.unknown') }))}</div>
-             <div style="font-size:10.5px;color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
+          <div style="padding:calc(10px * var(--ui-scale, 1));display:flex;flex-direction:column;gap:calc(5px * var(--ui-scale, 1));">
+             <div style="font-size:var(--text-base, 13px);font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.nexusInfo.name)}</div>
+             <div style="font-size:var(--text-xs, 10px);color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.nexusInfo.author || t('common.unknown') }))}</div>
+             <div style="font-size:var(--text-sm, 11px);color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.nexusInfo.summary)}</div>
           </div>
        </div>
        ` : (analysis.modinfo ? `
-       <div style="width:230px;min-width:230px;max-width:230px;flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
-          <div style="position:relative;width:100%;height:120px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
-             <div style="font-size:38px;color:var(--accent);">🛠</div>
-             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px 7px;border-radius:10px;font-size:9px;color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
+       <div style="width:calc(230px * var(--ui-scale, 1));min-width:calc(230px * var(--ui-scale, 1));max-width:calc(230px * var(--ui-scale, 1));flex-shrink:0;background:var(--bg-secondary);border:1px solid var(--border);border-radius:8px;overflow:hidden;display:flex;flex-direction:column;box-shadow:0 4px 15px rgba(0,0,0,0.35);">
+          <div style="position:relative;width:100%;height:calc(120px * var(--ui-scale, 1));overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;border-bottom:1px solid var(--border);">
+             <div style="font-size:calc(38px * var(--ui-scale, 1));color:var(--accent);">🛠</div>
+             <div style="position:absolute;bottom:6px;right:6px;background:rgba(0,0,0,0.75);padding:2px calc(7px * var(--ui-scale, 1));border-radius:10px;font-size:var(--text-2xs, 9px);color:var(--accent);font-weight:700;letter-spacing:0.5px;text-transform:uppercase;">
                 ${escapeHtml(t('installer.local_package'))}
              </div>
           </div>
-          <div style="padding:10px;display:flex;flex-direction:column;gap:5px;">
-             <div style="font-size:12.5px;font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
-             <div style="font-size:9.5px;color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.modinfo.author || t('common.unknown') }))}</div>
-             <div style="font-size:10.5px;color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
+          <div style="padding:calc(10px * var(--ui-scale, 1));display:flex;flex-direction:column;gap:calc(5px * var(--ui-scale, 1));">
+             <div style="font-size:var(--text-base, 13px);font-weight:700;color:var(--text-primary);line-height:1.3;word-break:break-word;">${escapeHtml(analysis.modinfo.name || cleanName)}</div>
+             <div style="font-size:var(--text-xs, 10px);color:var(--text-muted)">${escapeHtml(t('installer.by_author', { author: analysis.modinfo.author || t('common.unknown') }))}</div>
+             <div style="font-size:var(--text-sm, 11px);color:var(--text-secondary);line-height:1.4;margin-top:2px;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden;">${escapeHtml(analysis.modinfo.description || t('installer.no_description'))}</div>
           </div>
        </div>
        ` : '')}
 
         <!-- Right Column: Settings Form -->
-        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:10px;">
+        <div style="flex:1;min-width:0;display:flex;flex-direction:column;gap:calc(10px * var(--ui-scale, 1));">
            ${updateHtml}
            ${fomodBannerHtml}
            ${archivedConfigHtml}
            ${altermaticAlertHtml}
 
-           <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: 6px 10px; margin-top: -2px; margin-bottom: 2px; align-items: center; justify-content: space-between; gap: 12px;">
-              <div style="display: flex; align-items: center; gap: 8px;">
-                <span style="font-size: 14px;">⚙</span>
+           <div id="config-diff-container" style="display: none; border: 1px solid rgba(0, 188, 255, 0.25); background: rgba(0, 40, 60, 0.15); border-radius: 6px; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); margin-top: -2px; margin-bottom: 2px; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui-scale, 1));">
+              <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                <span style="font-size: calc(14px * var(--ui-scale, 1));">⚙</span>
                 <div style="display: flex; flex-direction: column; text-align: left;">
-                   <span style="font-size: 11px; font-weight: bold; color: var(--text-primary);">${escapeHtml(t('installer.config_merge_title'))}</span>
-                   <span id="config-diff-summary-text" style="font-size: 9px; color: var(--text-muted);">${escapeHtml(t('installer.config_merge_desc'))}</span>
+                   <span style="font-size: var(--text-sm, 11px); font-weight: bold; color: var(--text-primary);">${escapeHtml(t('installer.config_merge_title'))}</span>
+                   <span id="config-diff-summary-text" style="font-size: var(--text-2xs, 9px); color: var(--text-muted);">${escapeHtml(t('installer.config_merge_desc'))}</span>
                 </div>
               </div>
-              <button id="view-config-diff-btn" class="btn btn-secondary" style="font-size: 10px; padding: 4px 8px; height: auto; line-height: 1; margin: 0;">${escapeHtml(t('installer.btn_show_details'))}</button>
+              <button id="view-config-diff-btn" class="btn btn-secondary" style="font-size: var(--text-2xs, 10px); padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); height: auto; line-height: 1; margin: 0;">${escapeHtml(t('installer.btn_show_details'))}</button>
            </div>
            
-           <div style="display:flex;gap:12px;">
-             <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_mod_name'))}</label>
-                <input type="text" id="mod-name-input" value="${escapeHtml(existingMod ? existingMod.name : cleanName)}" style="width:100%;padding:7px 10px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;" />
+           <div style="display:flex;gap:calc(12px * var(--ui-scale, 1));">
+             <div style="flex:1;display:flex;flex-direction:column;gap:calc(4px * var(--ui-scale, 1));">
+                <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_mod_name'))}</label>
+                <input type="text" id="mod-name-input" value="${escapeHtml(existingMod ? existingMod.name : cleanName)}" style="width:100%;box-sizing:border-box;min-height:calc(32px * var(--ui-scale, 1));padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:var(--text-sm, 12px);font-weight:600;line-height:1.2;" />
              </div>
-             <div style="flex:1;display:flex;flex-direction:column;gap:4px;">
-                <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_folder_name'))}</label>
-                <input type="text" id="mod-folder-name-input" value="${escapeHtml(manifest.folderName)}" disabled style="width:100%;padding:7px 10px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;cursor:not-allowed;" />
+             <div style="flex:1;display:flex;flex-direction:column;gap:calc(4px * var(--ui-scale, 1));">
+                <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_folder_name'))}</label>
+                <input type="text" id="mod-folder-name-input" value="${escapeHtml(manifest.folderName)}" disabled style="width:100%;box-sizing:border-box;min-height:calc(32px * var(--ui-scale, 1));padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:var(--text-sm, 12px);font-weight:600;cursor:not-allowed;line-height:1.2;" />
              </div>
            </div>
 
-           <div style="display:flex;gap:12px;">
-              <div style="flex:1;display:flex;flex-direction:column;gap:6px;">
-                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_detected_type'))}</label>
-                 <input type="text" value="${escapeHtml(displayType)}" disabled style="width:100%;padding:8px 12px;background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:12px;font-weight:600;cursor:not-allowed;" />
+           <div style="display:flex;gap:calc(12px * var(--ui-scale, 1));">
+              <div style="flex:1;display:flex;flex-direction:column;gap:calc(6px * var(--ui-scale, 1));">
+                 <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_detected_type'))}</label>
+                 <input type="text" value="${escapeHtml(displayType)}" disabled style="width:100%;box-sizing:border-box;min-height:calc(32px * var(--ui-scale, 1));padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));background:var(--bg-primary);color:var(--text-muted);border:1px solid var(--border);border-radius:4px;font-size:var(--text-sm, 12px);font-weight:600;cursor:not-allowed;line-height:1.2;" />
               </div>
-              <div style="width:120px;display:flex;flex-direction:column;gap:6px;">
-                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_version'))}</label>
-                 <input type="text" id="mod-version-input" value="${escapeHtml(versionVal)}" style="width:100%;padding:8px 12px;background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:12px;text-align:center;" />
+              <div style="width:calc(120px * var(--ui-scale, 1));display:flex;flex-direction:column;gap:calc(6px * var(--ui-scale, 1));">
+                 <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_version'))}</label>
+                 <input type="text" id="mod-version-input" value="${escapeHtml(versionVal)}" style="width:100%;box-sizing:border-box;min-height:calc(32px * var(--ui-scale, 1));padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));background:var(--bg-secondary);color:var(--text-primary);border:1px solid var(--border);border-radius:4px;font-size:var(--text-sm, 12px);text-align:center;line-height:1.2;" />
               </div>
            </div>
 
-           <div style="display:flex;flex-direction:column;gap:6px;">
+           <div style="display:flex;flex-direction:column;gap:calc(6px * var(--ui-scale, 1));">
               <div style="display:flex;justify-content:space-between;align-items:center;">
-                 <label style="font-size:11px;font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_files_to_install'))}</label>
-                 <button id="view-all-files-btn" class="btn btn-secondary" style="font-size:10px;padding:2px 6px;height:auto;line-height:1;margin:0;">${escapeHtml(t('installer.btn_show_full_list'))}</button>
+                 <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_files_to_install'))}</label>
+                 <button id="view-all-files-btn" class="btn btn-secondary" style="font-size:var(--text-2xs, 10px);padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));height:auto;line-height:1;margin:0;">${escapeHtml(t('installer.btn_show_full_list'))}</button>
               </div>
-              <div class="manifest-files-list" style="max-height:85px;overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:6px;font-family:monospace;font-size:10px;display:flex;flex-direction:column;gap:4px;">
+              <div class="manifest-files-list" style="max-height:calc(90px * var(--ui-scale, 1));overflow-y:auto;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;padding:calc(6px * var(--ui-scale, 1));font-family:monospace;font-size:var(--text-xs, 10.5px);display:flex;flex-direction:column;gap:calc(4px * var(--ui-scale, 1));">
                 ${manifest.routes.map((r: any) => `
-                  <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:2px;background:rgba(255,255,255,0.02);">
-                    <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;margin-right:8px;" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
-                    <span style="font-size:8px;padding:1px 3px;border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;flex-shrink:0;">${r.routeType}</span>
+                  <div style="display:flex;justify-content:space-between;align-items:center;padding:calc(2px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1));border-radius:2px;background:rgba(255,255,255,0.02);">
+                    <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;margin-right:calc(8px * var(--ui-scale, 1));" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
+                    <span style="font-size:var(--text-2xs, 8.5px);padding:1px calc(4px * var(--ui-scale, 1));border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;flex-shrink:0;">${r.routeType}</span>
                   </div>
                 `).join('')}
               </div>
@@ -425,9 +425,9 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
         const filesListContainer = document.querySelector('.manifest-files-list');
         if (filesListContainer) {
           filesListContainer.innerHTML = newManifest.routes.map((r: any) => `
-            <div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px;border-radius:2px;background:rgba(255,255,255,0.02);">
-              <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:180px;" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
-              <span style="font-size:8px;padding:1px 3px;border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;">${r.routeType}</span>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding:calc(2px * var(--ui-scale, 1)) calc(4px * var(--ui-scale, 1));border-radius:2px;background:rgba(255,255,255,0.02);">
+              <span style="color:var(--text-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;margin-right:calc(8px * var(--ui-scale, 1));" title="${escapeHtml(r.zipPath)}">${escapeHtml(r.zipPath)}</span>
+              <span style="font-size:var(--text-2xs, 8.5px);padding:1px calc(4px * var(--ui-scale, 1));border-radius:3px;background:var(--bg-secondary);color:var(--accent);border:1px solid var(--border);text-transform:uppercase;flex-shrink:0;">${r.routeType}</span>
             </div>
           `).join('');
         }
@@ -580,13 +580,21 @@ export async function delegateFomodInstallIfApplicable(
     version = analysis.nexusInfo?.version || undefined;
   }
 
-  const { openFomodWizard } = await import('../fomod');
-  await openFomodWizard(
-    analysis.zipPath,
-    existingMod ? { id: existingMod.id, name: customName || existingMod.name, version: existingMod.version, fomodChoices: existingMod.fomodChoices } : null,
-    { customName, version }
-  );
-
-  closeInstallModal();
-  return true;
+  try {
+    const { openFomodWizard } = await import('../fomod');
+    await openFomodWizard(
+      analysis.zipPath,
+      existingMod ? { id: existingMod.id, name: customName || existingMod.name, version: existingMod.version, fomodChoices: existingMod.fomodChoices } : null,
+      { customName, version }
+    );
+    closeInstallModal();
+    return true;
+  } catch (err) {
+    console.error('[Installer] FOMOD wizard failed to launch:', err);
+    if (confirmBtn) {
+      confirmBtn.disabled = false;
+      confirmBtn.textContent = `${t('installer.btn_install')} (${t('fomod.wizard_title') || 'FOMOD'}) ➔`;
+    }
+    return false;
+  }
 }

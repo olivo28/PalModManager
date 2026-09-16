@@ -1,6 +1,6 @@
 <!-- PROFILE MANAGER MODAL -->
 <div id="profile-modal" class="modal-overlay">
-  <div class="modal" style="max-width:680px; width:100%;">
+  <div class="modal" style="max-width: min(calc(680px * var(--ui-scale, 1)), 92vw); width: 100%;">
     <div class="modal-header">
       <h3 data-i18n="profiles.title">Manage Profiles</h3>
       <button class="modal-close-btn" id="profile-modal-close-x">✕</button>
@@ -13,7 +13,7 @@
       </div>
     </div>
     <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
-      <button id="profile-import-btn" class="btn-secondary" style="display:inline-flex;align-items:center;gap:6px;padding:6px 14px;font-weight:600;" data-i18n="profiles.btn_import_pack">📥 Import Co-op Pack</button>
+      <button id="profile-import-btn" class="btn-secondary" style="display:inline-flex;align-items:center;gap:calc(6px * var(--ui-scale, 1));padding:calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));font-weight:600;" data-i18n="profiles.btn_import_pack">📥 Import Co-op Pack</button>
       <button id="profile-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
     </div>
   </div>

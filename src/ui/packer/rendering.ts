@@ -76,17 +76,17 @@ function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boole
 
       html += `
         <tr class="packer-table-folder-row" data-folder-path="${escapeHtml(child.path)}">
-          <td style="padding-left: ${indent}px !important;">
-            <div style="display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none;">
-              <span class="editor-tree-chevron" style="display: inline-block; font-size: 8.5px; transition: transform 0.15s ease; ${isCollapsed ? 'transform: rotate(-90deg);' : ''}">▾</span>
-              <span style="font-size: 13px;">📁</span>
-              <strong style="color: var(--text-primary); font-size: 12px;">${escapeHtml(child.name)}</strong>
-              <span style="font-size: 10px; color: var(--text-muted); opacity: 0.7;">(${child.totalSize > 0 ? formatBytes(child.totalSize) : ''})</span>
+          <td style="padding-left: calc(${indent}px * var(--ui-scale, 1)) !important;">
+            <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); cursor: pointer; user-select: none;">
+              <span class="editor-tree-chevron" style="display: inline-block; font-size: var(--text-2xs, 9.5px); transition: transform 0.15s ease; ${isCollapsed ? 'transform: rotate(-90deg);' : ''}">▾</span>
+              <span style="font-size: var(--text-base, 13.5px);">📁</span>
+              <strong style="color: var(--text-primary); font-size: var(--text-sm, 12.5px);">${escapeHtml(child.name)}</strong>
+              <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); opacity: 0.7;">(${child.totalSize > 0 ? formatBytes(child.totalSize) : ''})</span>
             </div>
           </td>
-          <td style="white-space: nowrap; font-family: monospace; font-size: 11px; color: var(--text-muted);">${formatBytes(child.totalSize)}</td>
+          <td style="white-space: nowrap; font-family: monospace; font-size: var(--text-xs, 11px); color: var(--text-muted);">${formatBytes(child.totalSize)}</td>
           <td>
-            <div style="font-family: 'Fira Code', monospace; font-size: 10.5px; color: var(--text-muted); opacity: 0.5;">
+            <div style="font-family: 'Fira Code', monospace; font-size: var(--text-xs, 11px); color: var(--text-muted); opacity: 0.5;">
               ${escapeHtml(child.path)}/
             </div>
           </td>
@@ -167,15 +167,15 @@ function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boole
 
       html += `
         <tr data-index="${index}" class="${isSkipped ? 'skipped' : ''}">
-          <td title="${escapeHtml(file.sourcePath)}" style="padding-left: ${indent}px !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-            <div style="display: flex; align-items: center; gap: 6px; overflow: hidden;">
-              <span style="font-size: 14px; opacity: 0.85; flex-shrink: 0;">${fileIcon}</span>
+          <td title="${escapeHtml(file.sourcePath)}" style="padding-left: calc(${indent}px * var(--ui-scale, 1)) !important; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+            <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); overflow: hidden;">
+              <span style="font-size: calc(15px * var(--ui-scale, 1)); opacity: 0.85; flex-shrink: 0;">${fileIcon}</span>
               <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                <strong style="color: var(--text-primary); font-size: 12px; ${isSkipped ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${escapeHtml(child.name)}</strong>
+                <strong style="color: var(--text-primary); font-size: var(--text-sm, 12.5px); ${isSkipped ? 'text-decoration: line-through; opacity: 0.6;' : ''}">${escapeHtml(child.name)}</strong>
               </div>
             </div>
           </td>
-          <td style="white-space: nowrap; font-family: monospace; font-size: 11px; color: var(--text-muted);">${formatBytes(file.size)}</td>
+          <td style="white-space: nowrap; font-family: monospace; font-size: var(--text-xs, 11px); color: var(--text-muted);">${formatBytes(file.size)}</td>
           <td>
             <input type="text" class="packer-input-target" value="${escapeHtml(displayPath)}" data-index="${index}" ${isSkipped ? 'disabled' : ''} />
             ${!isSkipped ? `
@@ -186,8 +186,8 @@ function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boole
               </div>
             ` : ''}
           </td>
-          <td style="text-align: right; width: 70px;">
-            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 6px;">
+          <td style="text-align: right; width: calc(75px * var(--ui-scale, 1));">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: calc(6px * var(--ui-scale, 1));">
               <button class="packer-table-action-btn packer-skip-file-btn skip ${isSkipped ? 'active' : ''}" data-index="${index}" title="${isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">
                 ${isSkipped ? '↩️' : '🚫'}
               </button>
@@ -516,7 +516,7 @@ export function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
     if (child.isDir) {
       const nextPath = currentPath ? `${currentPath}/${key}` : key;
       html += `
-        <div class="packer-tree-node packer-tree-dir" style="padding-left: ${depth * 16}px;" data-path="${escapeHtml(nextPath)}">
+        <div class="packer-tree-node packer-tree-dir" style="padding-left: calc(${depth * 16}px * var(--ui-scale, 1));" data-path="${escapeHtml(nextPath)}">
           <span class="packer-tree-icon">📁</span>
           <span class="packer-tree-name">${escapeHtml(child.name)}</span>
           <div class="packer-tree-actions">
@@ -530,7 +530,7 @@ export function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
     } else {
       const sizeStr = formatBytes(child.file.size);
       html += `
-        <div class="packer-tree-node packer-tree-file ${child.isSkipped ? 'skipped' : ''}" style="padding-left: ${depth * 16}px;" data-index="${child.index}">
+        <div class="packer-tree-node packer-tree-file ${child.isSkipped ? 'skipped' : ''}" style="padding-left: calc(${depth * 16}px * var(--ui-scale, 1));" data-index="${child.index}">
           <span class="packer-tree-icon">📄</span>
           <span class="packer-tree-name" title="${escapeHtml(t('packer.source_prefix_label', { path: child.file.sourcePath }))}" style="${child.isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(child.name)}</span>
           <span class="packer-tree-size">${sizeStr}</span>
@@ -576,7 +576,7 @@ export function updateBuildButtonState(): void {
   const version = packerDom.elMaybe('packer-meta-version')?.value.trim();
   const type = packerDom.elMaybe('packer-meta-type')?.value;
   const buildBtn = packerDom.elMaybe('packer-build-btn');
-  
+
   if (buildBtn) {
     buildBtn.disabled = !name || !version || !type || stagedFiles.length === 0;
   }

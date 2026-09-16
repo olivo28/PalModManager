@@ -89,7 +89,7 @@
 }
 
 .discovery-file-name {
-  font-size: 14px;
+  font-size: var(--text-md, 14.5px);
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -97,14 +97,14 @@
 .discovery-file-meta {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 11px;
+  gap: calc(12px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
   color: var(--text-muted);
   flex-wrap: wrap;
 }
 
 .discovery-file-desc {
-  font-size: 12px;
+  font-size: var(--text-sm, 12.5px);
   color: var(--text-secondary);
   line-height: 1.45;
   margin: 0;
@@ -114,14 +114,14 @@
   background: var(--accent);
   color: #fff;
   border: none;
-  font-size: 12px;
+  font-size: var(--text-sm, 12.5px);
   font-weight: 700;
-  padding: 8px 18px;
-  border-radius: 6px;
+  padding: calc(8px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
+  border-radius: calc(6px * var(--ui-scale, 1));
   cursor: pointer;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: calc(6px * var(--ui-scale, 1));
   transition: all 0.15s ease;
   flex-shrink: 0;
 }
@@ -147,17 +147,17 @@
   background: var(--bg-secondary);
   border: 1px dashed var(--border);
   color: var(--text-muted);
-  padding: 10px 16px;
-  border-radius: 8px;
-  font-size: 12px;
+  padding: calc(10px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));
+  border-radius: calc(8px * var(--ui-scale, 1));
+  font-size: var(--text-sm, 12px);
   font-weight: 600;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: calc(8px * var(--ui-scale, 1));
   transition: all 0.15s ease;
-  margin-top: 4px;
+  margin-top: calc(4px * var(--ui-scale, 1));
 }
 
 .discovery-archived-toggle-btn:hover {

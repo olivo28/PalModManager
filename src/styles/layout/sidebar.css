@@ -269,16 +269,13 @@ main {
 /* ===== TOOLBAR ===== */
 #toolbar {
   display: flex;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   align-items: center;
   gap: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   background: var(--bg-secondary);
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  scrollbar-width: thin;
 }
 
 #quick-filter-bar {

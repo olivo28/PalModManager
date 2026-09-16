@@ -16,22 +16,22 @@ function ensureDialogElement(): HTMLElement {
   overlay.style.display = 'none';
 
   overlay.innerHTML = `
-    <div class="modal" style="max-width: 680px; width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
-      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between;">
-        <h3 id="profile-sync-dialog-title" style="margin: 0; font-size: 16px; font-weight: 600;">
+    <div class="modal" style="max-width: min(calc(680px * var(--ui-scale, 1)), 94vw); width: 100%; max-height: 85vh; display: flex; flex-direction: column;">
+      <div class="modal-header" style="display: flex; align-items: center; justify-content: space-between; padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));">
+        <h3 id="profile-sync-dialog-title" style="margin: 0; font-size: var(--text-lg, 16px); font-weight: 600;">
           ${escapeHtml(t('profiles.sync_dialog_title'))}
         </h3>
-        <button class="modal-close-btn" id="profile-sync-dialog-close-x" style="background: none; border: none; font-size: 16px; cursor: pointer; color: var(--text-muted);">✕</button>
+        <button class="modal-close-btn" id="profile-sync-dialog-close-x" style="background: none; border: none; font-size: var(--text-base, 16px); cursor: pointer; color: var(--text-muted);">✕</button>
       </div>
-      <div class="modal-body" style="overflow-y: auto; flex: 1; padding: 16px; display: flex; flex-direction: column; gap: 14px;">
-        <div id="profile-sync-dialog-desc" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;"></div>
-        <div id="profile-sync-missing-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+      <div class="modal-body" style="overflow-y: auto; flex: 1; padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1));">
+        <div id="profile-sync-dialog-desc" style="font-size: var(--text-base, 13px); color: var(--text-secondary); line-height: 1.5;"></div>
+        <div id="profile-sync-missing-list" style="display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));"></div>
       </div>
-      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-top: 1px solid var(--border);">
+      <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center; padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-top: 1px solid var(--border);">
         <button id="profile-sync-cancel-btn" class="btn-secondary" style="color: var(--danger);">
           ${escapeHtml(t('profiles.btn_cancel_sync'))}
         </button>
-        <div style="display: flex; gap: 8px;">
+        <div style="display: flex; gap: calc(8px * var(--ui-scale, 1));">
           <button id="profile-sync-background-btn" class="btn-primary">
             ${escapeHtml(t('profiles.btn_sync_background'))}
           </button>
@@ -85,7 +85,7 @@ export function showMissingModsDialog(): void {
   if (listEl) {
     if (session.missingMods.length === 0) {
       listEl.innerHTML = `
-        <div style="padding: 24px; text-align: center; color: var(--success); font-weight: 500;">
+        <div style="padding: calc(20px * var(--ui-scale, 1)); text-align: center; color: var(--success); font-weight: 500; font-size: var(--text-base, 13px);">
           ${escapeHtml(t('profiles.sync_all_downloaded'))}
         </div>
       `;
@@ -98,30 +98,30 @@ export function showMissingModsDialog(): void {
         const badgeClass = `mod-type-badge ${mod.modType.toLowerCase()}`;
 
         return `
-          <div class="missing-mod-card" style="display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; gap: 12px;">
-            <div style="display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1;">
-              <span style="font-size: 11px; font-weight: 700; color: var(--text-muted); width: 20px;">#${idx + 1}</span>
+          <div class="missing-mod-card" style="display: flex; align-items: center; justify-content: space-between; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; gap: calc(12px * var(--ui-scale, 1));">
+            <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1)); min-width: 0; flex: 1;">
+              <span style="font-size: var(--text-xs, 11px); font-weight: 700; color: var(--text-muted); width: 20px;">#${idx + 1}</span>
               <div style="display: flex; flex-direction: column; gap: 3px; min-width: 0;">
-                <div style="display: flex; align-items: center; gap: 8px;">
-                  <span style="font-weight: 600; font-size: 13px; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
+                <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                  <span style="font-weight: 600; font-size: var(--text-base, 13px); color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">
                     ${escapeHtml(mod.name)}
                   </span>
-                  <span class="${badgeClass}" style="font-size: 10px; padding: 1px 6px; border-radius: 3px; text-transform: uppercase;">
+                  <span class="${badgeClass}" style="font-size: var(--text-2xs, 10px); padding: 1px calc(6px * var(--ui-scale, 1)); border-radius: 3px; text-transform: uppercase;">
                     ${escapeHtml(mod.modType)}
                   </span>
                 </div>
-                <div style="font-size: 11px; color: var(--text-secondary);">
+                <div style="font-size: var(--text-xs, 11px); color: var(--text-secondary);">
                   ${escapeHtml(t('profiles.version_req', { version: mod.version || '1.0.0' }))}
                 </div>
               </div>
             </div>
-            <div style="display: flex; align-items: center; gap: 6px;">
+            <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
               ${nexusUrl ? `
-                <button type="button" class="btn-secondary btn-sm sync-open-url-btn" data-url="${escapeHtml(nexusUrl)}" style="font-size: 12px; display: inline-flex; align-items: center; gap: 4px;">
+                <button type="button" class="btn-secondary btn-sm sync-open-url-btn" data-url="${escapeHtml(nexusUrl)}" style="font-size: var(--text-sm, 12px); display: inline-flex; align-items: center; gap: 4px;">
                   🌐 NexusMods
                 </button>
               ` : `
-                <button type="button" class="btn-secondary btn-sm sync-copy-name-btn" data-name="${escapeHtml(mod.name)}" style="font-size: 12px;">
+                <button type="button" class="btn-secondary btn-sm sync-copy-name-btn" data-name="${escapeHtml(mod.name)}" style="font-size: var(--text-sm, 12px);">
                   📋 ${escapeHtml(t('common.copy_name'))}
                 </button>
               `}

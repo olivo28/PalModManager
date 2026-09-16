@@ -186,15 +186,16 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
   definePmmTheme();
   configureMonacoLanguages();
 
+  const currentScale = getState().currentSettings?.uiScale || getState().currentSettings?.toolbarScale || 1.0;
   const editorInstance = monaco.editor.create(container, {
     value: '',
     language: 'lua',
     theme: 'pmm-dark',
     automaticLayout: true,
-    fontSize: 13.5,
+    fontSize: Math.round(13.5 * currentScale * 10) / 10,
     fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
     fontLigatures: true,
-    lineHeight: 22,
+    lineHeight: Math.round(22 * currentScale),
     tabSize: 4,
     insertSpaces: true,
     renderLineHighlight: 'all',
@@ -356,3 +357,14 @@ export function getMonacoContent(): string {
   if (!editor) return '';
   return editor.getValue();
 }
+
+export function updateMonacoScale(scale: number): void {
+  const editor = getMonacoEditor();
+  if (editor) {
+    editor.updateOptions({
+      fontSize: Math.round(13.5 * scale * 10) / 10,
+      lineHeight: Math.round(22 * scale),
+    });
+  }
+}
+
