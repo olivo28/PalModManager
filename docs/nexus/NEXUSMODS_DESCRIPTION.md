@@ -217,22 +217,16 @@ PMM is open-source and completely clean. As an independent project without a com
 
 Special thanks to the entire Palworld modding community for testing, feedback, and compatibility reports.
 
----
-
-## ☕ Support the Project
-
-If you find PalModManager helpful and want to support its ongoing development, you can buy me a coffee:
-
-[![Ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/olivo28)
-
-- **Ko-fi:** [ko-fi.com/olivo28](https://ko-fi.com/olivo28)
-- **Binance Pay / Crypto:** If you prefer supporting via Binance Pay or crypto, feel free to contact me directly on Discord (`olivo28`) for the QR code!
-
----
-
 ## 💬 Community & Support
 
 - **Discord:** [discord.gg/AHTDAUwm77](https://discord.gg/AHTDAUwm77)
-- **Support:** [ko-fi.com/olivo28](https://ko-fi.com/olivo28)
 - **GitHub:** [github.com/olivo28/PalModManager](https://github.com/olivo28/PalModManager)
 - **Nexus Mods:** [nexusmods.com/palworld/mods/4549](https://www.nexusmods.com/palworld/mods/4549)
+
+### ☕ Support the Project
+
+If you find PalModManager helpful and want to support its ongoing development:
+
+[![Ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/olivo28)
+
+*(Prefer **Binance Pay**? Contact me directly on Discord (`olivo28`) for the QR code!)*

@@ -412,24 +412,20 @@ Contributions, mod compatibility feedback, and bug reports are warmly welcomed!
 
 ---
 
-# ☕ Support the Project
-
-If you love PalModManager and want to support its continuous development, maintenance, and future updates, you can buy me a coffee:
-
-[![Ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/olivo28)
-
-- **Ko-fi:** [ko-fi.com/olivo28](https://ko-fi.com/olivo28)
-- **Binance Pay / Crypto:** If you prefer supporting via Binance Pay or crypto, feel free to contact me directly on Discord (`olivo28`) for the QR code!
-
----
-
 # 💬 Community & Support
 
-- **Discord**: [Join the Community](https://discord.gg/AHTDAUwm77)
-- **Support**: [Buy me a coffee on Ko-fi](https://ko-fi.com/olivo28)
+- **Discord**: [Join the Community](https://discord.gg/AHTDAUwm77) — Get help, discuss features, or report bugs.
 - **GitHub**: [github.com/olivo28/PalModManager](https://github.com/olivo28/PalModManager)
 - **Nexus Mods**: [PalModManager on Nexus Mods](https://www.nexusmods.com/palworld/mods/4549)
 - **Contact**: Discord user **olivo28** (Nexus Mods Discord, Palworld Modding Community, PalSchema)
+
+### ☕ Support the Project
+
+If you love PalModManager and want to support its continuous development, maintenance, and future updates:
+
+[![Ko-fi](https://img.shields.io/badge/Support%20on-Ko--fi-ff5e5b?style=for-the-badge&logo=ko-fi&logoColor=white)](https://ko-fi.com/olivo28)
+
+*(Prefer **Binance Pay**? Contact me directly on Discord (`olivo28`) for the QR code!)*
 
 ---
 
