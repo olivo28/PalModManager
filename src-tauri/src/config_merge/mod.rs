@@ -105,6 +105,12 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
         return ConfigSnapshot { entries };
     }
 
+    // Universal Rule: Never snapshot PalSchema files or folders
+    let mod_dir_str = mod_dir.to_string_lossy().to_lowercase();
+    if mod_dir_str.contains("palschema") {
+        return ConfigSnapshot { entries };
+    }
+
     let custom_filename = custom_config.and_then(|c| {
         let t = c.trim();
         if t.is_empty() { None } else { Path::new(t).file_name().map(|f| f.to_os_string()) }
@@ -115,6 +121,10 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
             for entry in dir_entries.flatten() {
                 let path = entry.path();
                 if path.is_dir() {
+                    let dname = path.file_name().and_then(|s| s.to_str()).unwrap_or("").to_lowercase();
+                    if dname == "blueprints" || dname == "tables" || dname == "raw" || dname == "schemas" || dname == "templates" || dname == "palschema" {
+                        continue;
+                    }
                     walk(base, &path, entries, custom_fname);
                 } else if path.is_file() {
                     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {

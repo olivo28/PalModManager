@@ -20,10 +20,10 @@ pub fn check_mod_exists(
             if let (Some(nid1), Some(nid2)) = (nexus_id, m.nexus_mod_id) {
                 if nid1 == nid2 {
                     let db_id = get_physical_identity(&m.game_path, &m.disabled_path);
-                    let norm_existing_name = normalize_name(&m.name);
-                    let name_match = (!db_id.is_empty() && db_id == zip_norm) || norm_existing_name == norm_incoming_name;
-                    
-                    if name_match && is_type_compatible {
+                    // Same Nexus page alone is not a conflict — a mod page can ship multiple
+                    // independent file variants (e.g. body type 1 and body type 2). Only treat
+                    // as a duplicate when they map to the same physical file stem on disk.
+                    if !db_id.is_empty() && db_id == zip_norm && is_type_compatible {
                         return true;
                     }
                 }

@@ -207,12 +207,41 @@ pub fn update_mod(
         }
     }
 
+    // If the new version no longer ships a config, delete the old one from disk
+    // so it doesn't persist as a ghost file, and clear snapshot to prevent resurrection.
+    if new_mod_info.config_path.is_none() {
+        if let Some(ref old_cfg) = existing.config_path {
+            let old_cfg_path = crate::config_merge::resolve_path_in_game(game, old_cfg);
+            if old_cfg_path.exists() && !old_cfg_path.to_string_lossy().contains("shared") {
+                crate::logger::log(&format!(
+                    "[update_mod] Removing stale config '{}' — new version no longer ships this file",
+                    old_cfg
+                ));
+                let _ = fs::remove_file(&old_cfg_path);
+            }
+        }
+        if let Some(ref old_cfgs) = existing.config_paths {
+            for old_cfg in old_cfgs {
+                let old_cfg_path = crate::config_merge::resolve_path_in_game(game, old_cfg);
+                if old_cfg_path.exists() && !old_cfg_path.to_string_lossy().contains("shared") {
+                    crate::logger::log(&format!(
+                        "[update_mod] Removing stale config '{}' — new version no longer ships this file",
+                        old_cfg
+                    ));
+                    let _ = fs::remove_file(&old_cfg_path);
+                }
+            }
+        }
+        snapshot.entries.clear();
+    }
+
     existing.name = new_mod_info.name;
     existing.mod_type = new_mod_info.mod_type;
     existing.version = new_mod_info.version;
     existing.source_zip = new_mod_info.source_zip;
     if !(existing.config_type.as_deref() == Some("manual") && existing.config_path.is_some()) {
         existing.config_path = new_mod_info.config_path;
+        existing.config_paths = new_mod_info.config_paths;
         existing.config_type = new_mod_info.config_type;
     }
     existing.game_path = new_mod_info.game_path;

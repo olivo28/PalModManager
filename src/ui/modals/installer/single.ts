@@ -161,7 +161,12 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
 
   let archivedConfigHtml = '';
   let currentArchivedInfo: any = null;
-  if (!existingMod) {
+  const isPalSchema = analysis.modType === 'palschema'
+    || analysis.detectedType === 'palschema'
+    || cleanName.toLowerCase().includes('palschema')
+    || (analysis.filesToInstall && analysis.filesToInstall.some(f => f.destination?.toLowerCase().includes('palschema') || f.source?.toLowerCase().includes('palschema')));
+
+  if (!existingMod && !isPalSchema) {
     try {
       const { checkArchivedConfig } = await import('../../../api');
       const archivedInfo = await checkArchivedConfig(analysis.nexusModId || null, cleanName);

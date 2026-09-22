@@ -165,6 +165,24 @@ export function runContextAction(action: string, modId: string): void {
         }
       })();
       break;
+    case 'reinstall-mod':
+      (async () => {
+        try {
+          const { triggerInstallFromLibrary } = await import('../library');
+          const libEntries = getState().libraryEntries || [];
+          const normModName = mod.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const normModId = mod.id.toLowerCase().replace(/[^a-z0-9]/g, '');
+          const match = libEntries.find(e => {
+            const nId = (e.modId || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            const nName = (e.nexusName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+            return nId === normModName || nId === normModId || (nName && (nName === normModName || nName === normModId)) || (e.nexusModId && mod.nexusModId && e.nexusModId === mod.nexusModId);
+          });
+          await triggerInstallFromLibrary(match ? match.modId : mod.id, match?.zipName);
+        } catch (e) {
+          showToast(t('toasts.export_failed', { error: String(e) }), 'error');
+        }
+      })();
+      break;
     case 'ignore-update':
       (async () => {
         try {
@@ -320,6 +338,10 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       <button type="button" class="context-menu-item" data-action="check-updates">
         <span class="ctx-icon">&#8634;</span>
         ${escapeHtml(t('context.check_updates'))}
+      </button>
+      <button type="button" class="context-menu-item" data-action="reinstall-mod">
+        <span class="ctx-icon">🔄</span>
+        ${escapeHtml(t('context.reinstall_mod'))}
       </button>
     `;
   }

@@ -221,6 +221,7 @@
     "track_mod": "Seguir en Nexus",
     "untrack_mod": "Dejar de seguir en Nexus",
     "check_updates": "Buscar actualizaciones",
+    "reinstall_mod": "Reinstalar Mod",
     "update_mod": "Actualizar Mod",
     "update_mod_ver": "Actualizar Mod (v{version})",
     "ignore_update": "Ignorar actualización (v{version})",

@@ -1,3 +1,40 @@
+PalModManager - Version 1.7.2 Changelog (2026-09-22)
+
+Added
+- Interactive FOMOD Installation Wizard: Step-by-step modular assistant with image previews, MO2-style choice memory for updates/reinstalls (🟢 PREVIOUSLY SELECTED), retroactive choice deduction from disk, multi-encoding support (UTF-16LE/BE, UTF-8 BOM), and tri-source consensus versioning.
+- TOS-Compliant Profile Sharing (.pmmprofile): Lightweight, copyright-safe profile export sharing only mod metadata, load orders, and user config deltas without redistributing third-party binaries. Includes a missing mods resolver with direct download links and an auto-applying floating helper.
+- Steam Workshop Bridge ("Artificial Workshop Mods"): Register local and Nexus mods directly into Palworld's native in-game Steam Workshop menu (Mods/PalModSettings.ini).
+- Direct Nexus Mods Integration: Endorse, track, and manage mods directly from the app with instant local caching and new Tracked/Endorsed library filter tabs.
+- Save Health Doctor & GVAS Deep Scanner: Structural savegame validation against compiled engine catalogs to detect corrupted parameters, orphaned bases, and missing asset references, with atomic world repair and 1-click backup restore.
+- Real-Time UE4SS Log Viewer: Live streaming log viewer with severity filtering (info, warning, error, crash, mod), search, line numbers, and direct navigation into the code editor.
+- Native Dynamic UI Scaling (100% Zero-Zoom): Fluid proportional scaling (--ui-scale) across all views, dialogs, and Monaco editor with Settings slider (85%–140%) and universal hotkeys (Ctrl +, Ctrl -, Ctrl 0).
+- Conflict Scanner ⇄ Monaco Editor Bridge: Scan diagnostics display directly in Monaco's Problems panel, and in-editor fixes automatically resolve scanner warnings in real-time with non-rotating immutable backups (.bak).
+- Headless Worker Process (--pmm-worker): Dedicated background worker for heavy tasks like deep save scans and sanitization, keeping the interface completely fluid.
+- Reinstall Mod Context Menu Action: 1-click reinstall from the local library to easily re-trigger FOMOD wizards or restore pristine mod states.
+
+Changed
+- Clean-Slate Update Pipeline: Automatically snapshots user configurations and purges obsolete or renamed files from disk when updating directory-based mods (UE4SS and PalSchema), preventing duplicate schema conflicts.
+- Dynamic Zero-Recompile Resource Resolution: Engine catalogs and mappings now resolve dynamically from manifests and disk discovery without hardcoded build IDs.
+- Linux AppImage Optimization: Recompressed Linux AppImages with XZ and removed redundant multimedia frameworks for a substantially lighter bundle.
+- Enhanced Scrollbars: Widened vertical scrollbars with high-contrast semi-transparent thumb styling across dark and light themes.
+- Active Mods Launch Logging: Launching Palworld logs an exhaustive, numbered list of active mods, versions, and types into palmodmanager.log and console.
+
+Fixed
+- Same-Nexus-ID Mod Conflicts: Fixed false conflict detection blocking sequential installation and re-enabling of multi-file mods sharing the same Nexus page ID (e.g. Renamon body variants) by verifying physical disk identity.
+- Orphaned Config Files on Update / Clean Slate: Previous ghost configs are cleanly purged from disk and snapshots when a newer release drops bundled config files (e.g. SmartPause 1.3.14).
+- PalSchema Internal Files Misclassified as Configs: Excluded internal .json and .jsonc blueprint and table files inside PalSchema directories (blueprints, tables, schemas, templates) from config archiving and diff alerts.
+- Cross-Platform Linux & SteamOS Stability: Replaced Windows drive letter backslash globs in asset scope with universal scope, eliminating startup crashes on Linux (Issue #12), fixed non-Windows game launching via official steam://run/1623730 URI, and decoupled AppImage LD_LIBRARY_PATH.
+- Xbox Game Pass Nested Content Directory: Canonical game root discovery automatically handles Microsoft Store wrapper layouts (Palworld\Content\Pal\...).
+- Mod Library Rollback & Metadata Retention: Prevented Nexus API latest version from overwriting user-selected rollback versions, and prevented empty string overrides from wiping thumbnails, authors, and descriptions.
+- PalSchema Profile Sync: Fixed PalSchema false-uninstalled status when switching profiles via vault-aware sync and live runtime checks.
+- UE4SS Log Viewer Error Truncation: Large log files (>2000 lines) no longer discard early startup errors or crash entries during truncation.
+- Monaco Editor Ghost "Unsaved Changes": Keyed file buffers by modId::filePath and purged buffers on mod uninstall, eliminating bogus unsaved changes alerts.
+- Floating Download Tray Positioning: Reanchored the NXM download tray to the bottom-left, keeping Monaco editor Save and Revert buttons fully accessible.
+- OAuth CSRF Security: Hardened Nexus OAuth callback with mandatory strict CSRF state parameter verification.
+- Safe Hook Detection: Enhanced hook scanner to recognize defensive Lua wrappers (safeRegisterHook, safeNotifyOnNewObject) without false positives.
+
+------------------------------------
+
 PalModManager - Version 1.7.1 Changelog (2026-09-09)
 
 Added

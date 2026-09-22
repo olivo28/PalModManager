@@ -136,6 +136,20 @@ pub fn scan_ue4ss_mod(
     let mut files_to_scan = Vec::new();
     collect_files_with_extensions(scripts_path, &["lua"], &mut files_to_scan);
 
+    // Also collect root Lua files directly in mod_path (e.g. main.lua alongside scripts/)
+    if mod_path != scripts_path && mod_path.is_dir() {
+        if let Ok(entries) = fs::read_dir(mod_path) {
+            for entry in entries.flatten() {
+                let p = entry.path();
+                if p.is_file() && p.extension().and_then(|e| e.to_str()).map(|e| e.eq_ignore_ascii_case("lua")).unwrap_or(false) {
+                    if !files_to_scan.contains(&p) {
+                        files_to_scan.push(p);
+                    }
+                }
+            }
+        }
+    }
+
     for file_path in files_to_scan {
         if let Ok(content) = fs::read_to_string(&file_path) {
             let mut file_info = conflict_info.clone();
@@ -176,6 +190,18 @@ pub fn extract_literal_hooks(content: &str) -> Vec<(String, String, u32, String)
     let lines: Vec<&str> = content.lines().collect();
     let mut line_num = 0;
 
+    // Supported hook registration APIs and wrapper patterns
+    let api_patterns = [
+        ("RegisterHook", "RegisterHook"),
+        ("registerHook", "RegisterHook"),
+        ("register_hook", "RegisterHook"),
+        ("Register_Hook", "RegisterHook"),
+        ("NotifyOnNewObject", "NotifyOnNewObject"),
+        ("notifyOnNewObject", "NotifyOnNewObject"),
+        ("notify_on_new_object", "NotifyOnNewObject"),
+        ("Notify_On_New_Object", "NotifyOnNewObject"),
+    ];
+
     while line_num < lines.len() {
         let trimmed = lines[line_num].trim();
         line_num += 1;
@@ -184,21 +210,39 @@ pub fn extract_literal_hooks(content: &str) -> Vec<(String, String, u32, String)
             continue;
         }
 
-        for api in &["RegisterHook", "NotifyOnNewObject"] {
+        for (pattern, canonical_api) in &api_patterns {
             let mut search_from = 0;
-            while let Some(rel_idx) = trimmed[search_from..].find(api) {
+            while let Some(rel_idx) = trimmed[search_from..].find(pattern) {
                 let idx = search_from + rel_idx;
-                search_from = idx + api.len();
+                let end_idx = idx + pattern.len();
+                search_from = end_idx;
 
-                // Ensure boundary before api (avoid false positives on MyCustomRegisterHook)
-                if idx > 0 {
-                    let prev_byte = trimmed.as_bytes()[idx - 1];
-                    if prev_byte.is_ascii_alphanumeric() || prev_byte == b'_' {
+                // 1. Ensure word boundary after pattern (must not be followed by alphanumeric or _)
+                if end_idx < trimmed.len() {
+                    let next_byte = trimmed.as_bytes()[end_idx];
+                    if next_byte.is_ascii_alphanumeric() || next_byte == b'_' {
                         continue;
                     }
                 }
 
-                if let Some((target, decl_code)) = find_hook_target_string(&lines, line_num - 1, idx + api.len()) {
+                // 2. Identify the prefix before pattern
+                let mut id_start = idx;
+                while id_start > 0 {
+                    let b = trimmed.as_bytes()[id_start - 1];
+                    if b.is_ascii_alphanumeric() || b == b'_' {
+                        id_start -= 1;
+                    } else {
+                        break;
+                    }
+                }
+
+                // Skip function declarations (e.g. "local function safeRegisterHook(...)")
+                let before_id = trimmed[..id_start].trim_end();
+                if before_id.ends_with("function") {
+                    continue;
+                }
+
+                if let Some((target, decl_code)) = find_hook_target_string(&lines, line_num - 1, end_idx) {
                     let clean_target = target.trim();
                     let is_valid_target = !clean_target.is_empty()
                         && !clean_target.starts_with(':')
@@ -213,7 +257,7 @@ pub fn extract_literal_hooks(content: &str) -> Vec<(String, String, u32, String)
                         } else {
                             decl_code
                         };
-                        results.push((api.to_string(), clean_target.to_string(), line_num as u32, line_code));
+                        results.push((canonical_api.to_string(), clean_target.to_string(), line_num as u32, line_code));
                     }
                 }
             }
@@ -288,3 +332,74 @@ fn extract_first_quoted_target(text: &str) -> Option<String> {
 
     None
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_extract_literal_hooks_with_safe_register_hook_and_custom_wrappers() {
+        let lua_code = r#"
+-- PalWorldBedtimeExtended realistic snippet
+local function safeRegisterHook(funcName, preCallback, postCallback)
+    local ok, err = pcall(function()
+        if postCallback then
+            RegisterHook(funcName, preCallback, postCallback)
+        else
+            RegisterHook(funcName, preCallback)
+        end
+    end)
+end
+
+function Hooks.Init()
+    -- Multiline safeRegisterHook 1
+    safeRegisterHook(
+        "/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:InterruptSleepActivelyAction",
+        function(self, Parameter) end
+    )
+
+    -- Multiline safeRegisterHook 2
+    safeRegisterHook(
+        "/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:SetBaseCampActionSleep",
+        function(self) end
+    )
+
+    -- Snake_case wrapper
+    safe_register_hook('/Script/Pal.PalPlayerCharacter:OnJump', on_jump)
+
+    -- PascalCase SafeRegisterHook
+    SafeRegisterHook("/Script/Pal.PalUtility:SpawnPal", function() end)
+
+    -- CamelCase direct registerHook
+    registerHook("/Script/Engine.PlayerController:ClientRestart", restart)
+
+    -- Wrapper for NotifyOnNewObject
+    safeNotifyOnNewObject("/Script/Pal.PalMapObjectSpawner", function() end)
+end
+"#;
+
+        let hooks = extract_literal_hooks(lua_code);
+        let targets: Vec<String> = hooks.iter().map(|(_, t, _, _)| t.clone()).collect();
+        let apis: Vec<String> = hooks.iter().map(|(api, _, _, _)| api.clone()).collect();
+
+        // 1. Definition must NOT produce a false hook
+        assert!(!targets.iter().any(|t| t.contains("funcName")), "Function definition argument must not be detected as hook");
+
+        // 2. Both BedtimeExtended hooks must be accurately extracted
+        assert!(targets.contains(&"/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:InterruptSleepActivelyAction".to_string()));
+        assert!(targets.contains(&"/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:SetBaseCampActionSleep".to_string()));
+
+        // 3. Other wrappers extracted
+        assert!(targets.contains(&"/Script/Pal.PalPlayerCharacter:OnJump".to_string()));
+        assert!(targets.contains(&"/Script/Pal.PalUtility:SpawnPal".to_string()));
+        assert!(targets.contains(&"/Script/Engine.PlayerController:ClientRestart".to_string()));
+        assert!(targets.contains(&"/Script/Pal.PalMapObjectSpawner".to_string()));
+
+        assert_eq!(targets.len(), 6, "Must extract exactly 6 active hooks from wrappers and variants");
+
+        // 4. APIs canonicalized
+        assert_eq!(apis.iter().filter(|a| *a == "RegisterHook").count(), 5);
+        assert_eq!(apis.iter().filter(|a| *a == "NotifyOnNewObject").count(), 1);
+    }
+}
+

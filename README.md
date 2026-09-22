@@ -1,10 +1,10 @@
 # 🎮 PalModManager (PMM)
 
-> **Palworld Mod Manager & Modding Toolkit**
+> **The Unified Palworld Mod Management, Game-Data Inspection & Development Suite**
 >
-> A desktop application for managing, installing, inspecting, configuring, and building Palworld mods across Steam and Xbox Game Pass PC environments.
+> A high-performance desktop application for managing, installing, inspecting, configuring, and developing Palworld mods across Steam and Xbox Game Pass PC environments.
 
-[![Version](https://img.shields.io/badge/version-1.7.1-blue)](https://github.com/olivo28/PalModManager/releases)
+[![Version](https://img.shields.io/badge/version-1.7.2-blue)](https://github.com/olivo28/PalModManager/releases)
 [![License](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgrey)](https://github.com/olivo28/PalModManager)
 [![Palworld](https://img.shields.io/badge/game-Palworld-orange)](https://www.palworldgame.com/)
@@ -14,660 +14,427 @@
 
 ## 🌟 What is PalModManager?
 
-**PalModManager (PMM)** is a native desktop application built around the Palworld modding ecosystem.
+**PalModManager (PMM)** is a specialized desktop suite built specifically for the Palworld modding ecosystem.
 
-It is designed to cover the complete modding workflow:
+Rather than acting solely as a conventional mod installer, PMM unites three foundational pillars of the modding lifecycle into a single, cohesive desktop interface:
 
-- discover and download mods from Nexus Mods;
-- install and update UE4SS, PalSchema, Pak, LogicMods, Hybrid, and Altermatic mods;
-- manage UE4SS and PalSchema load order;
-- manage Steam Workshop content;
-- maintain isolated mod profiles;
-- inspect Pak archives and Unreal Engine assets inline;
-- detect mod conflicts and game update crash risks;
-- inspect and repair Palworld save files;
-- edit configuration files in a full Monaco code editor;
-- build and package distributable mods;
-- work with Palworld development resources — SDKs, UHT data, Lua types, JMAP, and USMAP mappings.
+1. **🎮 Mod Management** — End-to-end mod lifecycle management: 1-click Nexus OAuth SSO downloads, multi-format smart installation, isolated profile sandboxes, non-destructive UE4SS and PalSchema load order sequencing, and dedicated Steam Workshop integration.
+2. **🔍 Game-Data Inspection & Diagnostics** — Deep asset analysis: in-app `.pak` and `.uasset` exploration, GPU-accelerated texture previewing, multi-layer conflict detection, hotkey conflict resolution, and binary GVAS save file repair.
+3. **🛠️ Native Mod Development & Tooling** — In-place binary tweaking of cooked properties and DataTables within `.pak` archives, a full Monaco IDE with Palworld reflection and PalSchema autocompletion, USMAP reflection exploration, C++ SDK synchronization, and dual-platform mod packaging.
 
-PMM is more than a traditional mod installer. It combines **mod management, game-data inspection, troubleshooting, and mod-development tooling** in a single application.
+Whether you are a player curating a conflict-free loadout or a mod author authoring complex scripts and schemas, PMM provides the speed, precision, and diagnostic depth required to mod Palworld with confidence.
 
 ---
 
-## 🎮 Platform Support
+## 🎮 Platform Ecosystem
 
-| Environment | Support | Notes |
+PMM is engineered to adapt dynamically to your gaming environment:
+
+| Platform | Support Tier | Architecture & Capabilities |
 |---|---|---|
-| **Steam** | 🟢 Primary | Full mod-management workflow, UE4SS, PalSchema, Pak/IoStore tooling, profiles, saves, and Nexus integration |
-| **Xbox Game Pass PC** | 🟢 Supported | WinGDK environment, platform-specific game paths, `.utoc`/`.ucas` generation |
-| **Linux / Steam Proton** | 🟡 Partial | Save discovery and most tooling supported; NTFS junction features are Windows-only |
+| **Steam** | 🟢 **Primary** | Full end-to-end integration: native Steam Workshop management with per-profile state, real-time Steam Build ID tracking, Master Manifest synchronization, Dev Resources auto-detection, zero-admin NTFS junctions, and direct `nxm://` protocol handling. |
+| **Xbox Game Pass PC** | 🟢 **Supported** | Dedicated WinGDK path normalization, IoStore `.utoc`/`.ucas` manifest generation, and UE4SS GDK mode. Steam Workshop controls are automatically disabled to prevent invalid environment states. |
+| **Linux / Steam Deck** | 🟡 **Proton** | Native desktop build with full save discovery, asset inspection, Monaco editor, and packaging capabilities. Environment flags for Wayland and WebKitGTK rendering are provided out of the box. |
 
 ---
 
-## ✨ Highlights
+## ✨ Architectural Highlights
 
 | | |
 |---|---|
-| 📦 Smart multi-format mod installation | 👤 Isolated mod profiles with instant switching |
-| 🔄 Nexus Mods OAuth SSO & in-app discovery | 🧩 UE4SS & PalSchema dependency management |
-| ⚔️ Multi-layer conflict & crash risk detection | 🔬 Pak / UAsset / DDS texture inspection |
-| 🗄️ USMAP & Unreal reflection explorer | 💾 Save health doctor & world backup vault |
-| 📝 Full Monaco editor with EmmyLua IntelliSense | 🏗️ Mod packer with dual-platform output |
-| 🌐 6-language localization | 🎮 Steam Workshop integration |
+| 📦 **Smart Multi-Format Installer** (.zip, .7z, .rar, Hybrid, Altermatic) | 👤 **Isolated Profiles** with sub-50ms switching and virtual folders |
+| 🔄 **Nexus Mods OAuth SSO** & live in-app catalog browser | 🧩 **Lifecycle Dependency Management** for UE4SS & PalSchema |
+| 🔀 **Non-Destructive Load Orders** (`mods.txt` & zero-admin NTFS junctions) | 🔬 **Pak & UAsset Explorer** with GPU-accelerated texture decoding |
+| 🛠️ **In-Place Pak Tweaker** & cooked binary DataTable editor | 🧬 **Live Blueprint CDO Comparative Diff** against vanilla defaults |
+| ⚔️ **Multi-Layer Conflict Scanner** (Paks, DataTables, Lua hooks & hotkeys) | 💾 **Save Doctor & World Hub** with GVAS binary integrity validation |
+| 📝 **Full Monaco IDE** with EmmyLua & PalSchema IntelliSense | 🏗️ **Dual-Platform Mod Packer** with embedded routing manifests |
+| 🗄️ **USMAP & C++ SDK Manager** with cloud manifest synchronization | 🌐 **Universal 6-Language Localization** across all UI surfaces |
 
 ---
 
-# 🌐 Nexus Mods Integration
+# 🎮 Pillar 1: Mod Management
 
-PMM integrates directly with Nexus Mods so that discovering and installing mods doesn't require switching between applications.
+PMM provides a robust, fail-safe environment for discovering, installing, ordering, and maintaining Palworld mods.
 
-### Authentication
+### 🌐 Nexus Mods Integration
+- **OAuth 2.0 SSO Authentication**: Secure 1-click browser login with persistent sessions and automatic token refresh. Displays your profile tier, avatar, tracked mods, and author status.
+- **In-App Discovery Catalog**: Search and browse the entire Palworld Nexus library. Filter across 13 official categories, multi-select tags with Include/Exclude logic, and search by title, description, or author.
+- **Rich Mod Details**: In-app BBCode and HTML renderer, interactive image lightbox with zoom and pan, changelogs, virus scan safety badges, and categorized file downloads.
+- **Direct Downloads & NXM Protocol**: Full `nxm://` protocol registration lets you trigger downloads from your browser directly into PMM. A sliding-window throughput calculator displays real-time transfer speeds (MB/s) and dynamic ETAs before handing archives off to the installer.
+- **Social Actions**: Endorse, track, and navigate directly to mod bug trackers and community discussions. Built-in author detection prevents accidental self-endorsements.
 
-- OAuth 2.0 SSO — 1-click login with persistent session.
-- Displays your Nexus avatar, tier, endorsements, tracked mods, and published mods.
-- Secure credential handling with automatic token refresh.
+### 📦 Smart Multi-Format Mod Installer
+- **Broad Archive Support**: Seamlessly extracts `.zip`, `.7z`, and `.rar` archives, including complex multi-codec and hybrid packages.
+- **Heuristic Packaging Unpacker**: Normalizes disorganized mod folder structures, automatically bypassing nested wrapper directories such as `(STEAM)`, `(XBOX)`, `Win64`, `WinGDK`, or `UE4SS mods folder`.
+- **7-Way Mod Type Auto-Detection**: Inspects incoming file signatures and routes files automatically to their exact game destinations:
+  - **UE4SS Mods**: Lua scripts, DLL binaries, and configuration assets to `ue4ss/Mods/`.
+  - **PalSchema Mods**: JSON/JSONC data schema overrides to `palschema/mods/`.
+  - **Pak Mods**: Cooked binary assets to `Pal/Content/Paks/~mods/`.
+  - **LogicMods**: Scripted `.pak` bundles routed to `Pal/Content/Paks/LogicMods/`.
+  - **Hybrid Mods**: Multi-target archives containing combinations of Lua, PalSchema, and Pak assets.
+  - **Altermatic Replacers**: Runtime mesh and texture replacer mods utilizing `SwapJSON/` configurations.
+  - **UniPalUI**: Standalone UI frameworks and widget extensions.
+- **Interactive File Preview Tree**: Inspect archive contents, verify projected file destinations, select individual sub-components, and resolve multi-variation installers before writing a single byte to disk.
+- **Batch Drag & Drop**: Queue and install dozens of archives simultaneously with atomic progress tracking.
 
-### In-App Discovery Browser
+### 🔀 Dual UE4SS & PalSchema Load Order
+- **Dual UE4SS Activation Modes**: Switch seamlessly between simple `enabled.txt` toggles and direct `mods.txt` sequencing. The parser is completely non-destructive, preserving developer comments, category headers, and manual load orders.
+- **PalSchema NTFS Zero-Admin Junctions**: PalSchema lacks native sorting logic. PMM solves this transparently on Windows using NTFS junction points:
+  ```
+  PalSchema/
+  └── Storage/         ← Physical mod directories (isolated & untouched)
+      ├── ModA/
+      └── ModB/
 
-- Search and browse the entire Palworld Nexus catalog.
-- Filter by 13 official Palworld categories (Gameplay, Pals, Characters, Visuals, Scripts, etc.).
-- Tag multi-selectors with Includes/Excludes and quick chip removal.
-- Search by Title, Description, Author, or Uploader.
-- Language toggles and adult content filters.
+  mods/                ← Zero-padded junction aliases (strictly ordered)
+  ├── 001_ModA   →   Storage/ModA
+  └── 002_ModB   →   Storage/ModB
+  ```
+  *Requires zero Administrator rights or UAC elevation.*
+- **Side-by-Side Visual Management**: Drag and drop mod entries across synchronized dual panels to balance script and schema execution order simultaneously.
 
-### Mod Details
+### 🧩 Full Lifecycle Dependency Management
+- **Automatic Environment Auditing**: Instantly detects installation status, version strings, and deployment modes (Standard, Steam Workshop, Xbox WinGDK) for core frameworks.
+- **1-Click Official Installation**: Fetches and installs verified releases of **UE4SS** and **PalSchema** directly from GitHub without disturbing existing user modifications.
+- **Dependency Rollback Vault**: Keeps archived versions of dependency frameworks to allow instant rollbacks whenever an experimental release introduces instability.
+- **Sidecar Tracking Manifests**: Maintains `ue4ss.pmm.json` and `palschema.pmm.json` metadata to prevent orphaned files during framework updates.
 
-- Rich mod descriptions with full BBCode/HTML rendering.
-- Image gallery with mouse-wheel zoom and drag-to-pan lightbox.
-- Changelogs, file lists, and virus scan safety badges (Verified / Manual / Quarantine).
-- Categorized file downloads (Main, Updates, Optionals, Archived).
+### 👤 Profile Manager & Virtual Mod Folders
+- **Instant In-Place Switching**: Switch between completely distinct mod loadouts (`Singleplayer`, `Multiplayer`, `Hardcore`, `Development`) in under 50ms without copying large asset files.
+- **Isolated State & Load Orders**: Each profile maintains its own activation list, load order sequence, and mod configurations.
+- **Virtual Mod Folders**: Organize extensive mod lists into custom visual folders with breadcrumb navigation, batch toggles, and contextual actions.
+- **Profile Packs (`.pmmprofile`)**: Export an entire curated setup—including mods, configs, and dependency specifications—into a single distributable bundle for friends or server communities.
 
-### Direct Downloads & NXM Protocol
+### 🎮 Steam Workshop Integration
+- **Strict Steam Environment Gating**: Workshop management is automatically enabled on Steam installations and cleanly disabled on Xbox Game Pass PC to prevent runtime file corruption.
+- **Real Version Detection**: Parses inner `Info.json` manifests to report true mod versions rather than generic workshop item IDs.
+- **Per-Profile Activation**: Enable, disable, or assign Workshop mods to specific profiles independently.
+- **Safe Uninstallation Protection**: Removing a Workshop mod from a profile cleans up its game-level deployment without deleting the underlying Steam Workshop subscription or local download cache.
 
-- Native `nxm://` protocol — 1-click browser downloads piped directly into PMM.
-- Queued download tray with live speed (⚡ MB/s) and ETA (⏳) via a real-time sliding-window throughput calculator.
-- Automatic handoff to the installer on download completion.
-
-### Social Actions
-
-- Endorse, track/untrack mods, and access Community & Bug pages.
-- Automatic `👑 Author` badge detection prevents accidental self-endorsements.
+### 📚 Profile-Aware Mod Library
+- **Centralized Archive**: Retains all downloaded mod archives and multiple version revisions for one-click rollback.
+- **Profile Awareness**: The library detects whether a mod is active in the current profile. If installed only in another profile, it displays as `Not Installed` with a 1-click `Install to Profile` action.
+- **Original Archive Integrity**: Preserves original archive filenames and metadata tokens to ensure accurate historical lineage.
 
 ---
 
-# 📦 Smart Mod Installer
+# 🔍 Pillar 2: Inspection & Compatibility
 
-PMM is designed to handle mods regardless of how their archives are packaged.
+PMM includes a comprehensive diagnostic and inspection engine designed to catch mod collisions, syntax errors, and game-breaking overrides before you launch the game.
 
-### Supported formats
+### 🔬 Pak & UAsset Explorer
+- **Inline Node Exploration**: Open and browse cooked `.pak` archives directly without running external extraction tools.
+- **Category Filter Chips**: Filter archive contents by asset category (`Blueprints`, `Textures`, `Materials`, `DataTables`, `Audio`, `Other`) with live element counts.
+- **Deep UAsset Metadata**: Inspect cooked `.uasset` and `.uexp` binaries across dedicated tabs:
+  - **Overview**: Asset summary, class path, and cooked flags.
+  - **Exports & Imports**: Full table of exported objects and external package references.
+  - **Name Map**: Decoded Unreal FName dictionary table.
+  - **USMAP Schema**: Matched engine struct schema and property layout.
+- **Detached Window Popout**: Pop any asset viewer into a standalone floating window for multi-monitor workflows.
 
-`.zip`, `.7z`, `.rar` — including hybrid and multi-codec archives.
+### 🖼️ GPU Texture Inspector
+- **Hardware-Accelerated Decoding**: Renders Unreal Engine texture formats (BC1/DXT1, BC3/DXT5, BC5, BC7, and uncompressed RGBA) directly on the GPU.
+- **Channel Isolation**: Toggle Red, Green, Blue, and Alpha channels individually to inspect normal maps, roughness channels, and opacity masks.
+- **Asset Metadata & Export**: View texture dimensions, mipmap levels, and surface formats, with 1-click export to standard PNG images.
 
-### Auto mod-type detection
+### ⚔️ Multi-Layer Conflict Scanner
+- **Pak Asset Node Collisions**: Scans all active `.pak` archives to identify overlapping file paths and cooked assets, predicting which mod will override assets based on load priority.
+- **PalSchema DataTable Collisions**: Identifies competing schema mods modifying the same DataTable rows (e.g., conflicting Pal capture rates or weapon damage stats).
+- **Lua Engine Hook Collisions**: Detects multiple UE4SS Lua scripts intercepting the same internal engine function (`NotifyOnNewObject`, `RegisterHook`).
+- **Lua Hotkey Scanner**: Analyzes active scripts for keybinding declarations (`RegisterKeyBind`). Identifies overlapping keys and features a **1-Click Quick Rebind** utility to reassign conflicting hotkeys to free function keys (F1–F12).
+- **Recursive Variable Resolution**: Recursively traces configuration variables across script files (e.g., mapping `Config.MenuKey` back to its root definition in `settings.lua`) to allow direct inline editing.
 
-PMM analyzes an archive and identifies structures for:
+### 🛠️ 1-Click Compatibility Patch Engine
+- When conflicting `.pak` mods are detected, PMM can automatically synthesize an override patch archive:
+  ```
+  zzz_PMM_Patch_MergedAssets.pak
+  ```
+  This resolves file collisions dynamically, allowing conflicting mods to coexist without manual repackaging.
 
-- **UE4SS** (Lua scripts, DLLs, `enabled.txt`)
-- **PalSchema** (JSON/JSONC data schemas)
-- **Pak** (`.pak` binary assets)
-- **LogicMods** (`.pak` in `LogicMods/`)
-- **Hybrid mods** (multiple types in a single archive)
-- **Altermatic** (runtime replacer mods with `SwapJSON/` configs)
-- **UniPalUI**
+### ⚠️ Crash Risk Diagnostics
+- **Critical Asset Overwrite Warnings**: Flags mods that overwrite core vanilla Blueprints and UI widgets known to cause fatal crashes when Palworld updates:
+  - Character & Camera: `BP_PalPlayerCharacter`, `BP_PalPlayerState`, `BP_PlayerCamera`
+  - Core UI Widgets: `WBP_TitleMenu`, `WBP_EscMenu`, `WBP_WorldMap`
+  - Camp & World Systems: `BP_PalBaseCampModel`, `BP_PalBox`
+- **Triage Badges**: Categorizes risks as `Critical`, `High`, or `Moderate` with 1-click disable actions.
 
-### Smart heuristic unpacker
+### 🔍 Engine Schema Hook Validation
+- Validates UE4SS `RegisterHook` parameters against live USMAP engine reflection data.
+- Accurately distinguishes between native C++ classes and dynamic Blueprint asset classes:
+  - `✅ Valid` — Verified C++ engine class and function target.
+  - `🔷 Dynamic Blueprint` — Valid Blueprint asset resolved through asset registry.
+  - `❌ Missing Class` — Engine class not found in current game build.
+  - `⚠️ Missing Function` — Class exists, but target function signature does not match.
 
-PMM normalizes any ZIP structure before installation — no matter how nested or disorganized. Automatically bypasses common packaging wrappers:
+### 💾 Save Doctor & World Hub
+- **Multi-Platform Save Discovery**: Automatically locates world saves across Steam, Xbox Game Pass PC (WinGDK), and Linux Proton wineprefixes.
+- **GVAS Binary Integrity Validation**: Validates the structural health of `Level.sav` and player save files. Scans for corrupted byte offsets and orphaned asset class references left behind by uninstalled mods.
+- **Snapshot History & Progression Diff**: Compare save backups side-by-side with metrics for world day progression, player levels, Paldeck completion counts, and file size deltas.
+- **WorldOption Inspector**: View and adjust world difficulty parameters and multiplier settings across 5 distinct categories.
+- **Base Camp Decay Guard**: Detects when building deterioration is enabled (`BuildObjectDeteriorationDamageRate > 0`) alongside base expansion mods, alerting you to structure decay risks outside standard camp boundaries.
+
+---
+
+# 🛠️ Pillar 3: Mod Development & Tooling
+
+PMM introduces a comprehensive suite of native mod-development utilities, bridging the gap between playing mods and building them.
+
+### 🔬 In-Place Pak Tweaker & Binary Asset Editor
+Directly modify cooked Unreal Engine properties and DataTable rows inside packed `.pak` archives without external tools:
+- **Pristine Safety Backups (`.original.bak`)**: Automatically creates an untouched backup before applying any binary modification, guaranteeing 1-click rollback at any time.
+- **Interactive DataTable Grid Viewer**: View item parameters, drop tables, and Pal attributes in a clean, searchable table with inline cell editing (`✏️`).
+- **Live Blueprint CDO Comparative Diff**: A 5-column comparative matrix displaying Property Name, Data Type, Vanilla Default, Mod Value, and a 1-click reset to vanilla—revealing precisely what a mod changes relative to the base game.
+- **3-Way Noise Filter**: Switch between viewing `All Properties`, `Only Modified Deltas`, or `Conflicting Properties` to isolate edits instantly.
+
+### 🌐 Palworld Development Resources Hub
+A centralized dashboard providing modders with instant access to essential reverse-engineering and development resources:
+- **Live Environment Metadata**: Real-time display of current Palworld game version, Steam Build ID, and UE4SS runtime state.
+- **Master Manifest Integration**: Automatically queries and syncs with official remote manifests to resolve game dumps and mapping assets without recompiling the application.
+- **1-Click Resource Synchronization**: Download, index, and update C++ SDKs, JMAP dump files, and USMAP reflection mappings with dynamic progress tracking.
+
+### 📝 Monaco Code Editor & IntelliSense
+A fully integrated, multi-buffer Monaco IDE tailored for Palworld mod development:
+- **Multi-Buffer Workspace**: Edit multiple Lua, JSON, and JSONC files simultaneously with full unsaved-change preservation across tab switches.
+- **Integrated File Tree**: Create, rename, delete, and organize files and directories directly within the editor sidebar.
+- **Unsaved Changes Protection**: Floating revert controls and a multi-file safety modal protect pending edits when switching views or changing active profiles.
+- **JSONC Comment Preservation**: Full JSON with Comments support—comments are preserved during save cycles while payload data is validated against active schemas.
+
+### 💡 EmmyLua & PalSchema IntelliSense
+- **20,000+ Engine Classes**: Autocompletion engine powered by Palworld C++ reflection and EmmyLua type definitions.
+- **Blueprint Reflection Autocomplete**: Autocompletes dynamic Blueprint classes, components, and event signatures.
+- **PalSchema DataTable IntelliSense**: Provides autocompletion and hover documentation across 423 game DataTables and 149,000+ rows, complete with parameter hints and return types.
+- **Diagnostics & QuickFix**: Real-time syntax validation, missing symbol diagnostics, and 1-click QuickFix corrections.
+
+### 🗄️ USMAP Reflection Explorer
+- **Interactive Engine Schema Explorer**: Browse all cooked Palworld engine classes, structs, enums, properties, and FNames directly from the Database tab.
+- **Inheritance Hierarchy Breadcrumbs**: Visual class hierarchy navigation (e.g., `PalPlayerCharacter → PalCharacter → Character → Pawn → Actor → Object`).
+- **Memory Layout & Offsets**: Detailed property offset tables, type definitions, and inner struct dimensions for native reverse engineering.
+
+### 🧩 C++ SDK Manager
+- Visual indexing and version management for Palworld C++ SDK headers.
+- Import local SDK dumps or synchronize pre-built SDK packages directly from the Dev Resources Hub.
+
+### 🏗️ Mod Packer & Builder
+A visual packaging studio for mod authors:
+- **Hierarchical Staging Workspace**: Drag and drop mod files into a visual tree and configure target deployment paths.
+- **Manifest Generation (`modinfo.pmm.json`)**: Automatically embeds routing metadata into the packaged archive for zero-configuration, heuristic-free installation on user machines.
+- **Dual-Platform Packaging**: Compiles platform-optimized archives simultaneously:
+  ```
+  ModName_Steam_Win64.zip
+  ModName_Xbox_WinGDK.zip
+  ```
+- **Vortex / Root Preset**: Generates game-relative directory trees compatible with Vortex and manual installation methods.
+
+---
+
+# 🧩 Pillar 4: Configuration & Data
+
+PMM ensures you have complete control over mod configurations, application state, and personal ergonomics.
+
+### ⚙️ Config Editor & Dynamic Form Views
+- Edit mod configuration files using the Monaco code editor or intuitive, auto-generated form interfaces with toggles, sliders, and color pickers.
+- Supports `config.lua`, `settings.lua`, `config.json`, and `config.jsonc`.
+
+### 🔄 Smart Config Archiving & Merge
+- When updating a mod, PMM automatically archives existing user configurations before deploying new files.
+- **Granular Config Review Dialog**: Inspect a side-by-side diff between your customized configuration and the incoming update. Cherry-pick individual keys or restore entire files with a single click.
+
+### 🗄️ Database Grid Inspector
+- Inspect and manage internal PMM database entities (Mods, Profiles, Settings) directly.
+- Features strict JSON validation, entity cloning, and automatic masking of sensitive credentials (e.g., Nexus API tokens).
+
+### 📌 Mod Notes & Ergonomic Reminders
+- Attach personal notes, load order reminders, and custom keybinding cheatsheets directly to any mod card.
+- Notes are preserved across updates and stored within profile metadata.
+
+### 🛡️ Strict Profile Isolation
+- Configuration changes made in one profile are strictly sandboxed, preventing setting leakage or corrupted states across different play styles.
+
+---
+
+# ⚙️ Pillar 5: Platform & Infrastructure
+
+PalModManager is engineered on top of a modern, resilient desktop architecture designed for raw performance and low resource consumption.
+
+### ⚡ PMM-Core Reactive Framework
+- **Zero-VDOM Architecture**: Utilizes direct, compile-time typed DOM scope accessors (`mainDom`, `editorDom`, `detailDom`, etc.) eliminating virtual DOM overhead.
+- **Decoupled Event Mesh (`bus`)**: Subsystems communicate asynchronously via a strongly typed event mesh (`bus.emit` / `bus.on`), preventing circular dependencies and guaranteeing responsive UI rendering.
+- **Declarative State Projections**: Automatic UI synchronization via reactive binders connected to the centralized application state store.
+
+### 🌐 Universal 6-Language Localization
+Every user-facing string—including UI controls, dialogs, error prompts, toasts, and tooltips—is 100% localized across all 6 supported languages:
+
+| Language | Locale Code | Coverage |
+|---|---|---|
+| 🇺🇸 **English** | `en` | 100% |
+| 🇪🇸 **Spanish** | `es` | 100% |
+| 🇧🇷 **Portuguese** | `pt` | 100% |
+| 🇨🇳 **Simplified Chinese** | `zh-CN` | 100% |
+| 🇯🇵 **Japanese** | `ja` | 100% |
+| 🇰🇷 **Korean** | `ko` | 100% |
+
+### 🔒 Safety Vaults & Rollback Systems
+- **Dependency Rollback Vault**: Preserves previous versions of UE4SS and PalSchema for one-click restoration.
+- **Pristine Asset Backups**: Maintains untouched `.original.bak` copies for all in-place binary edits.
+- **Automated World Save Protection**: Creates redundant save backups before performing any structural repair or salvage operation.
+
+---
+
+# 🏗️ Technical Architecture
 
 ```
-(STEAM)   (XBOX)   Win64   WinGDK   UE4SS mods folder
+┌─────────────────────────────────────────────────────────────────────────┐
+│                       PalModManager Desktop                             │
+├─────────────────────────────────────────────────────────────────────────┤
+│                     Frontend (TypeScript & Vite)                        │
+│                                                                         │
+│  PMM-Core Scopes       Reactive Event Mesh (bus)       Monaco Editor    │
+│  Vanilla CSS Themes    6-Language i18n Engine          Virtual Folders  │
+├─────────────────────────────────────────────────────────────────────────┤
+│                             Tauri v2 IPC                                │
+├─────────────────────────────────────────────────────────────────────────┤
+│                       Backend Core (Rust)                               │
+│                                                                         │
+│  Smart Unpacker        Pak & UAsset Inspector     USMAP / SDK Indexer   │
+│  Nexus OAuth / NXM     In-Place Pak Tweaker       Conflict & Hotkey Scan│
+│  Profile Engine        GVAS Save Doctor           Patch Generator       │
+│  Workshop Manager      Config Merge Engine        Mod Packer & Builder  │
+└─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### Installation features
-
-- **Interactive file preview tree** — inspect ZIP contents and projected install targets before deploying.
-- **Batch installation** — drag and drop multiple archives at once.
-- **Installed version comparison** — side-by-side view of installed vs. incoming version when updating.
-- **Pak destination selector** — choose `~mods` or `LogicMods` target per Pak.
-- **Dependency warnings** — alerts for missing UE4SS or PalSchema before installing mods that require them.
-
-### Configuration preservation
-
-PMM archives and merges user configuration during mod updates instead of overwriting them:
-
-```
-config.lua    settings.lua
-config.json   config.jsonc   settings.json
-```
-
-A **granular config review dialog** lets you toggle which config files or individual keys to restore before applying the merge.
-
----
-
-# 🔀 UE4SS & PalSchema Load Order
-
-## UE4SS
-
-PMM provides a dedicated drag-and-drop load-order interface for UE4SS mods:
-
-- Drag-and-drop reordering in the sidebar Load tab.
-- Automatic state transitions between `enabled.txt` and `mods.txt`.
-- Cleanly removes deleted mod entries from `mods.txt`.
-- Profile-aware load order persistence.
-
-## PalSchema *(Windows — unique feature)*
-
-PalSchema has no native sorting logic. PMM solves this with **zero-admin NTFS Junction Points**:
-
-```
-PalSchema/
-└── Storage/      ← physical mod directories (isolated)
-    ├── ModA/
-    └── ModB/
-
-mods/             ← zero-padded junctions (ordered)
-├── 001_ModA  →  Storage/ModA
-└── 002_ModB  →  Storage/ModB
-```
-
-No Administrator or UAC permissions required. Side-by-side dual panels manage UE4SS and PalSchema load orders simultaneously.
-
----
-
-# 🧩 Dependency Management
-
-PMM provides full lifecycle management for UE4SS and PalSchema.
-
-- **Auto-detection** — detects installation state, version, and install mode (Standard, Workshop, Xbox GDK).
-- **1-click auto-install** — installs UE4SS and PalSchema from official GitHub releases without overwriting user mods.
-- **Version vault** — archives dependency versions for rollback when a new release causes issues.
-- **Sidecar manifests** — maintains `ue4ss.pmm.json` and `palschema.pmm.json` for precise tracking and safe reinstallation.
-- **Directional SemVer comparison** — correctly handles custom and test builds (e.g. `"Palworld_ForPS066"`) by falling back to file modification dates when version strings are non-standard.
-
----
-
-# 👤 Profile Manager
-
-Create independent mod setups for different play styles:
-
-```
-Vanilla        Singleplayer      Multiplayer
-Hardcore       Testing           Mod Development
-```
-
-Each profile maintains its own enabled/disabled mod state, load order, and deployment.
-
-### Profile features
-
-- Instant profile switching (< 50ms in-place switching when dependency mode matches).
-- Isolated mod configurations per profile.
-- Profile cloning, backup, export, and import.
-- Stable mod IDs (Nexus ID or sanitized name — no random UUIDs).
-- Cross-profile state preservation when switching.
-- **Profile Packs** — export and share a complete mod setup (mods + config + dependencies) as a `.pmmprofile` package.
-
-### Virtual Mod Folders
-
-Explorer-style folder cards with:
-
-- Double-click navigation.
-- Breadcrumb bar.
-- Right-click context menus (Rename, Toggle all, Check updates, Delete).
-
----
-
-# 📚 Mod Library
-
-Centralized archive of all your downloaded mods.
-
-- Auto-fetched Nexus thumbnails, authors, descriptions, and update statuses.
-- Retains multiple downloaded versions per mod for rollback.
-- 1-click reinstallation and 1-click version rollback.
-- Bulk selection and drag selection.
-- Profile-aware deployment.
-
-> PMM preserves the exact original archive filename (e.g. `Quality Of Life 4599 1 2026-07-30T23-44Z QXTyhgimX.zip`) so that rollback metadata is never lost.
-
-### Steam Workshop
-
-- Browse, enable, and update Steam Workshop mods directly from the Library tab.
-- Full `Info.json` InstallRule routing for multi-target hybrid mods (Lua → `ue4ss/Mods/`, Paks → `~mods/`, PalSchema → `palschema/mods/`).
-- Smart dependency reconciliation — Workshop mods requiring UE4SS or PalSchema show `✓ Managed by PMM` instead of false missing-dependency warnings.
-
----
-
-# 🔍 Conflict Scanner & Diagnostics
-
-PMM provides multi-layer conflict detection rather than treating every mod collision as a simple filename clash.
-
-### Pak collisions
-
-Detect overlapping asset nodes between `.pak` mods.
-
-### 1-Click Compatibility Patch Engine
-
-Detects collisions and auto-generates a merged priority patch:
-
-```
-zzz_PMM_Patch_*.pak
-```
-
-### PalSchema table collisions
-
-Detect conflicting DataTable row overrides across enabled PalSchema mods.
-
-### Lua hook collisions
-
-Identify mods hooking the same engine function in UE4SS Lua scripts.
-
-### Crash risk detection
-
-Flags mods overwriting critical vanilla Blueprints and UI widgets that break on game updates:
-
-- `BP_PalPlayerCharacter`, `BP_PalPlayerState`, `BP_PlayerCamera`
-- `WBP_TitleMenu`, `WBP_EscMenu`, `WBP_WorldMap`
-- `BP_PalBaseCampModel`, `BP_PalBox`
-
-Risk levels: `critical`, `high`, `moderate` — with 1-click disable actions.
-
-### Lua hotkeys manager
-
-- Scans active Lua scripts for `RegisterKeyBind(...)` calls.
-- Highlights conflicts when multiple mods use the same key.
-- Inline key rebinding with recursive variable resolution (resolves `Config.OpenMenuKey` to its definition line).
-- `⚡ Quick Rebind` auto-assigns a free function key (F1–F12).
-
-### Engine schema hook validation
-
-- USMAP-backed validation of `RegisterHook` targets.
-- Distinguishes native C++ engine classes from dynamic Blueprint asset classes.
-- Reports `✅ Valid`, `🔷 Dynamic Blueprint`, `❌ Missing Class`, `⚠️ Missing Function`.
-
-### 1-click mitigation
-
-Disable or jump directly to code from any conflict card.
-
----
-
-# 💾 Save Doctor & World Hub
-
-Dedicated save management and diagnostics for Palworld worlds.
-
-### Save discovery
-
-Auto-discovers saves across Steam, PC Game Pass (WinGDK), and Linux Proton.
-
-### GVAS integrity validation
-
-- Validates binary save integrity.
-- Scans `Level.sav` for orphaned asset class references left by uninstalled mods.
-- 1-click save rescue with automated backup before any destructive operation.
-
-### Snapshot history & diff inspector
-
-- Side-by-side backup comparison with size deltas.
-- In-game day progression, player level differences, Paldeck counts.
-- 1-click restore.
-
-### WorldOption inspector
-
-- Difficulty multipliers across 5 categories.
-- Player character data: UID, level, captured Pals, storage analytics.
-
-### Base camp decay alert
-
-Warns when structure deterioration is enabled (`BuildObjectDeteriorationDamageRate > 0`) and base expansion mods are present, advising how to preserve outer buildings.
-
----
-
-# 🖼️ GPU Texture Inspector
-
-PMM can decode and preview supported Unreal texture formats directly inside the application:
-
-- Texture preview with GPU-accelerated rendering.
-- Channel filtering (RGBA).
-- Dimensions, format name, mip count display.
-- PNG export.
-
----
-
-# ✏️ Code Editor & IntelliSense
-
-PMM includes a full-featured **Monaco Editor** for configuration and mod-development workflows.
-
-### Editor features
-
-- Syntax highlighting for Lua, JSON, and JSONC.
-- Line/column information and file tree navigation.
-- Problems panel with diagnostics.
-- QuickFix actions for supported issues.
-- Search (Ctrl+F), formatting, auto-indentation.
-- Native keyboard shortcuts.
-- File and folder creation.
-- JSONC support — comments preserved on save, validated on stripped content.
-- Safety guards — prompts to save or discard before switching profiles.
-
-### Pak & UAsset Explorer
-
-Browse `.pak` archive contents inline without external tools:
-
-- Live search input.
-- Category filter chips (All / Blueprints / Textures / Materials / DataTables / Other) with live counts.
-- Color-coded asset type pills and companion `Payload` badges.
-- 1-click inspection of `.uasset`/`.uexp` files:
-  - Tabs: Overview, GPU Texture Preview, Exports, Imports, Name Map, USMAP Schema.
-  - `← Return to .pak` navigation and `⛶ Open in Window` popout.
-
-### Smart Status Bar
-
-- Automatically switches between **binary mode** (asset count + file size) and **text mode** (Ln/Col + UTF-8) based on the active file type.
-
-### EmmyLua IntelliSense
-
-- 1,700+ Palworld engine class definitions parsed from Palworld EmmyLua bindings.
-- Tab-stop snippet parameters (e.g. `APalCharacter:PalMoveToLocation(${1:Location}, ${2:Speed})`).
-- Hover documentation cards with parameter types and return types.
-- Palworld-aware completions including C++ reflection data, Blueprint info, PalSchema DataTable rows.
-
-### Breadcrumb navigation
-
-Styled `📦 ModName › 📁 folder › 📄 file.ext` breadcrumb bar with distinct accent colors.
-
----
-
-# 🏗️ Mod Packer & Builder
-
-PMM includes a dedicated build workflow for mod authors.
-
-### Projects hub
-
-Create, rename, delete, and manage mod packaging projects visually.
-
-### Route manifesting (`modinfo.pmm.json`)
-
-Package mods with:
-
-- Custom target routing per file.
-- Version, author, description, and Nexus ID.
-- `modinfo.pmm.json` manifest embedded inside the ZIP for instant, heuristic-free installation on client machines.
-
-### Staging tree
-
-Drag and drop files into the staging workspace and rearrange destination paths before packaging.
-
-### Dual-platform output
-
-Automatically builds both:
-
-```
-ModName_Steam_Win64.zip
-ModName_Xbox_WinGDK.zip
-```
-
-with correct platform-specific path structures.
-
-### Vortex/Manual root preset
-
-Maps files to full game-relative paths for Vortex and manual installation compatibility.
-
----
-
-# 🗄️ USMAP & Unreal Reflection Explorer
-
-PMM includes USMAP tooling for working with cooked Palworld data.
-
-- USMAP v4 parsing and synchronization.
-- Dynamic build detection via `resources/manifest.json` — resolves game versions, UE4SS commits, and mapping paths for future Palworld updates **without recompiling the binary**.
-- DataTable decoding and PalSchema schema indexing.
-
-### Schema Explorer (DB Tab)
-
-Live-searchable interactive explorer for all Palworld engine classes, structs, enums, properties, and FNames:
-
-- Full inheritance hierarchy breadcrumbs (e.g. `PalPlayerCharacter → PalCharacter → Character → Pawn → Actor → Object`).
-- Complete property offset tables with types and inner dimensions.
-- Enum value lists and dual Schema/JSON inspection modes.
-
----
-
-# 🔧 Settings & Database Inspector
-
-- **Database Grid Inspector** — View and edit Mods, Profiles, and Settings with raw JSON validation and secure credential masking.
-- **Custom Storage Redirection** — Redirect app data (profiles, library, backups) to any folder or portable directory with automated migration.
-- **Toolbar Scaling** — Resize main workspace toolbars from 80% to 180%.
-- **Window State Persistence** — Remembers and restores window size, position, and maximized state.
-- **Network & Sources** — Configure Nexus credentials, SDK sync, and resource sources.
-
----
-
-# 🌍 Localization
-
-PMM is fully localized in 6 languages:
-
-| | |
-|---|---|
-| 🇺🇸 English | 🇪🇸 Spanish |
-| 🇧🇷 Portuguese | 🇨🇳 Simplified Chinese |
-| 🇯🇵 Japanese | 🇰🇷 Korean |
-
-All UI strings, dialogs, prompts, toasts, and tooltips are covered.
-
----
-
-# 🏗️ Architecture
-
-```
-┌─────────────────────────────────────────┐
-│             PalModManager               │
-├─────────────────────────────────────────┤
-│     TypeScript / PMM-Core UI Layer      │
-│     Vite + Reactive Event Mesh (bus)    │
-├─────────────────────────────────────────┤
-│               Tauri v2                  │
-├─────────────────────────────────────────┤
-│             Rust Backend                │
-│                                         │
-│  Installer        Nexus & NXM           │
-│  Profiles         Save Scanner          │
-│  Pak Inspector    USMAP / SDK           │
-│  Texture Tools    Altermatic            │
-│  Dependencies     Conflict Scanner      │
-│  Workshop         Config Merge          │
-│  Patching         File Watchers         │
-└─────────────────────────────────────────┘
-```
-
-- **Frontend**: TypeScript, Vite 8 (Rolldown), Monaco Editor, Vanilla CSS, PMM-Core Framework (zero-VDOM, compile-time typed scopes, event mesh).
-- **Backend**: Rust, Tauri v2 — domain-specific command modules for installer, profiles, scanner, Nexus, USMAP, save tools, Pak/UAsset inspection, texture decoding.
-- **Storage**: JSON database with secure credential isolation.
+- **Frontend**: TypeScript, Vite 8 (Rolldown), Monaco Editor, Vanilla CSS, PMM-Core Framework.
+- **Backend**: Rust, Tauri v2 — modular domain command crates for installation, inspection, extraction, reflection, and network communication.
+- **Storage**: Local JSON database with isolated credential vault and portable directory redirection.
 
 ---
 
 # 🧪 Development & Testing
 
-The codebase includes dedicated integration and module tests covering:
-
-- Archive resilience and extraction.
-- Configuration archive lifecycle and merging.
-- Dependency management.
-- Hybrid mod enable/disable behavior.
-- Pak inspection and conflict scanning.
-- USMAP parsing.
-- Installation pipeline regression tests.
-
-### Development commands
+PMM includes a comprehensive suite of automated tests covering archive extraction, configuration merging, USMAP parsing, and mod lifecycle journeys:
 
 ```bash
-pnpm dev              # Frontend dev server
-pnpm tauri dev        # Full app dev mode
-pnpm build            # Frontend build
-pnpm tauri build      # Production build
+pnpm dev              # Launch frontend development server
+pnpm tauri dev        # Launch complete desktop application in dev mode
+pnpm build            # Build frontend production bundle
+pnpm tauri build      # Compile desktop release binaries
 pnpm check            # TypeScript type checking
-pnpm test             # Run Rust integration tests
-pnpm test:verbose     # Verbose serialized test output
-pnpm clean            # Clean build artifacts
-pnpm dumps:check      # Check Palworld development dump status
-pnpm dumps:sync       # Sync UE4SS dumps and resources
+pnpm test             # Run Rust backend integration tests
+pnpm test:verbose     # Run Rust tests with verbose serialized output
+pnpm clean            # Clean build artifacts and debug caches
+pnpm dumps:check      # Verify Palworld development dump status
+pnpm dumps:sync       # Synchronize UE4SS dumps and development assets
 ```
 
 ---
 
-# 🚀 Installation
+# 🚀 Installation & Setup
 
 ## Windows
 
 Download the latest release from **[GitHub Releases](https://github.com/olivo28/PalModManager/releases)**.
 
-**Option 1 — Installer (recommended)**
+- **Setup Wizard (Recommended)**: Download and run `PalModManager_1.7.2_x64-setup.exe`.
+- **Portable Edition**: Download `palmodmanager.exe` and run it from any folder—no system installation required.
 
-Run `PalModManager_1.7.1_x64-setup.exe` and follow the setup wizard.
+### Quick Start
+1. Launch PMM and open **Settings** (⚙).
+2. Select your Palworld installation folder. PMM will automatically detect your platform (Steam or Xbox Game Pass PC).
+3. Connect your Nexus Mods account with 1-click OAuth SSO.
+4. Drag and drop mod archives directly into PMM, or download mods directly with 1-click NXM links.
 
-**Option 2 — Portable**
+## Linux / Steam Deck (SteamOS)
 
-Place `palmodmanager.exe` anywhere and launch it directly — no installation required.
-
-### First launch
-
-1. Open **Settings** (⚙).
-2. Select your Palworld installation folder.
-3. PMM detects the platform (Steam / Xbox / Workshop) automatically.
-4. Configure your first profile.
-5. Log in to Nexus Mods with 1-click SSO, or drag & drop a mod archive to install.
-
-## Linux
-
-PMM has native Linux support. If you experience crashes or a blank screen:
+PMM runs natively on Linux. If you experience WebKitGTK or driver-related launch issues:
 
 ```bash
-# Resolve Wayland/WebKitGTK crashes
+# Force X11 backend for Wayland environments
 GDK_BACKEND=x11 ./palmodmanager
 
-# Resolve blank screen on Nvidia/Intel drivers
+# Disable DMA-BUF renderer for Nvidia/Intel graphics issues
 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
 
-# Combined
+# Combined launch command (recommended for Steam Deck desktop mode)
 GDK_BACKEND=x11 WEBKIT_DISABLE_DMABUF_RENDERER=1 ./palmodmanager
 ```
 
 ---
 
-# 🛠️ Building from Source
-
-### Requirements
-
-- Node.js (v18+)
-- pnpm
-- Rust & Cargo (latest stable)
-- Tauri v2 system dependencies for your target platform
-
-```bash
-git clone https://github.com/olivo28/PalModManager.git
-cd PalModManager
-
-pnpm install       # Install frontend dependencies
-pnpm tauri dev     # Development mode
-pnpm check         # TypeScript type check
-pnpm test          # Run tests
-pnpm tauri build   # Production build
-```
-
-Build output:
-- **Portable**: `src-tauri/target/release/palmodmanager.exe`
-- **Installer**: `src-tauri/target/release/bundle/nsis/`
-
----
-
 # 🔐 Security, Backups & Antivirus
 
-## Back up your game
-
-Before experimenting with new mods or major changes, keep independent backups of:
-
+### Independent Backups
+While PMM automatically creates safety backups before performing binary modifications, dependency updates, and save repairs, we strongly encourage maintaining independent backups of your game directories:
 ```
 Pal/Content/Paks
 Pal/Binaries/Win64/ue4ss    (Steam)
 Pal/Binaries/WinGDK/ue4ss   (Xbox)
 ```
 
-PMM provides automatic backups for many operations, but **these complement — not replace — your own backups**.
+### Antivirus False Positives
+PalModManager is 100% open-source, safe, and free of malware. Because PMM is an independent community project without an expensive corporate digital signing certificate, some antivirus engines may flag it with generic heuristic alerts (e.g., `Trojan:Win32/Wacatac.B!ml` or `Heur.Boring.1`).
 
-## Antivirus false positives
+**Why this occurs**: Machine learning heuristics automatically flag unsigned applications that extract files, modify `.pak` archives, and manage game binaries within protected directories like `steamapps/common`.
 
-PMM is open-source and completely clean. As an independent community project without a commercial code-signing certificate, some antivirus engines may trigger heuristic detections (e.g. `Trojan:Win32/Wacatac.B!ml`).
-
-**Why it happens:** ML heuristics flag unsigned executables that access, create, and modify files in Steam game directories.
-
-If PMM is flagged:
-1. Verify you downloaded it from the official GitHub or Nexus page.
-2. Compare the release with the public repository.
-3. On the Windows SmartScreen prompt, click *"More Info"* → *"Run Anyway"*.
-4. Or add `palmodmanager.exe` to your antivirus exclusions.
+**How to resolve**:
+1. Verify you downloaded PMM from the official [GitHub Releases](https://github.com/olivo28/PalModManager/releases) or [Nexus Mods](https://www.nexusmods.com/palworld/mods/4549).
+2. On the Windows SmartScreen dialog, click **"More Info"** → **"Run Anyway"**.
+3. If necessary, add `palmodmanager.exe` to your antivirus whitelist.
 
 ---
 
 # 🐛 Troubleshooting
 
-Before reporting an issue:
+Before submitting a bug report, please verify:
+1. Your Palworld path is correctly configured in Settings.
+2. Required frameworks (UE4SS or PalSchema) are installed and enabled.
+3. You have checked the Conflict Scanner for incompatible mod combinations.
+4. Testing in a clean profile helps determine if an issue is mod-specific.
 
-1. Confirm your Palworld installation path is correct in Settings.
-2. Check that required mod frameworks (UE4SS, PalSchema) are installed.
-3. Review PMM's dependency and conflict information.
-4. Try a clean profile to isolate the issue.
-5. Back up your saves before attempting repair operations.
-
-When reporting a bug, please include:
-
+When reporting an issue, please include:
 ```
-PMM version:
-Palworld version / platform (Steam / Xbox):
-Mod(s) involved:
-Profile mode:
-Steps to reproduce:
-Expected behavior:
-Actual behavior:
-Relevant logs (found in Settings > Logs or app data folder):
+PMM Version: 1.7.2
+Platform: Steam / Xbox Game Pass PC
+Game Version / Steam Build ID:
+Active Profile Mode:
+Steps to Reproduce:
+Expected vs. Actual Behavior:
+Relevant logs from Settings > Logs
 ```
 
 ---
 
 # 🤝 Contributing & Feedback
 
-Bug reports, testing feedback, and mod compatibility reports are especially valuable because PMM interacts with a rapidly changing modding ecosystem.
+Contributions, mod compatibility feedback, and bug reports are warmly welcomed!
 
-Before opening a pull request:
-
-- Keep changes focused and minimal.
-- Follow the existing module structure and naming conventions.
-- Run `pnpm check` and `pnpm test`.
-- Document user-facing features.
-- Include reproduction steps for bug fixes.
+- Fork the repository and create a focused feature branch.
+- Ensure all changes pass `pnpm check` and `pnpm test`.
+- Adhere to the established PMM-Core framework patterns and universal 6-language localization rules.
 
 ---
 
 # 💬 Community & Support
 
-- **Discord**: [discord.gg/AHTDAUwm77](https://discord.gg/AHTDAUwm77)
+- **Discord**: [Join the Community](https://discord.gg/AHTDAUwm77)
 - **GitHub**: [github.com/olivo28/PalModManager](https://github.com/olivo28/PalModManager)
-- **Nexus Mods**: [nexusmods.com/palworld/mods/4549](https://www.nexusmods.com/palworld/mods/4549)
-- **Contact**: Discord tag **olivo28** (Nexus Mods Discord, Palworld Modding Community, PalSchema)
+- **Nexus Mods**: [PalModManager on Nexus Mods](https://www.nexusmods.com/palworld/mods/4549)
+- **Contact**: Discord user **olivo28** (Nexus Mods Discord, Palworld Modding Community, PalSchema)
 
 ---
 
 # 📜 License
 
-Distributed under the **MIT License**. See [LICENSE](LICENSE) for details.
+PalModManager is distributed under the **[MIT License](LICENSE)**.
 
 ---
 
-## ❤️ Credits
+## ❤️ Credits & Acknowledgments
 
-Developed with ❤️ by **Olivo28**.
+Crafted with dedication by **Olivo28**.
 
-- **HalRiveria** — Community tester and dedicated bug reporter across multiple releases. Tracked down mod update regressions, load order edge cases, batch installer failures, and more. Thank you!
-- **Valdacil** — Detailed real-world bug reports that helped identify hybrid mod update and filename tracking issues.
-
-Special thanks to the entire Palworld modding community for testing, feedback, and compatibility reports that shape every release.
+- **HalRiveria** — Dedicated community tester and bug reporter across multiple release cycles. Crucial in diagnosing load order edge cases, mod update regressions, and batch installer stability.
+- **Valdacil** — Invaluable real-world feedback, bug reports, and suggestions regarding hybrid mod routing, filename tracking, and installer workflows.
+- **Palworld Modding Community** — Thank you to all mod authors, reverse engineers, and players whose daily feedback and testing continue to push PalModManager forward.
 
 ---
 
-*PalModManager — manage your mods, inspect your game data, and build for Palworld.*
+*PalModManager — Manage your mods, inspect your game data, and build for Palworld.*

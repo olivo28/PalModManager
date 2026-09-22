@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use chrono::Utc;
 use serde::{Deserialize, Serialize};
 use tauri::State;
-use crate::models::ModInfo;
+use crate::models::{ModInfo, ModType};
 use crate::state::AppState;
 use crate::profiles::utils::get_profile_dir;
 use crate::commands::install::diff::ConfigDiff;
@@ -56,6 +56,16 @@ pub fn archive_mod_configs(
         return Ok(0);
     }
 
+    // Universal Rule: Never archive any files for PalSchema mods or folders
+    if mod_info.mod_type == ModType::PalSchema
+        || mod_info.game_path.to_lowercase().contains("palschema")
+        || mod_info.disabled_path.to_lowercase().contains("palschema")
+        || mod_info.name.to_lowercase().contains("palschema")
+    {
+        crate::logger::log(&format!("archive_mod_configs: Skipping PalSchema mod '{}' (data/patch mod, not config)", mod_info.name));
+        return Ok(0);
+    }
+
     let archive_key = if let Some(nexus_id) = mod_info.nexus_mod_id {
         format!("nexus_{}", nexus_id)
     } else {
@@ -103,6 +113,17 @@ pub fn archive_mod_configs(
             }
         }
     }
+
+    // Exclude any PalSchema or schema directories
+    candidate_dirs.retain(|d| {
+        let dl = d.to_string_lossy().to_lowercase();
+        !dl.contains("palschema")
+            && !dl.contains("blueprints")
+            && !dl.contains("tables")
+            && !dl.contains("raw")
+            && !dl.contains("schemas")
+            && !dl.contains("templates")
+    });
 
     let mut all_entries: Vec<(PathBuf, String)> = Vec::new();
 
@@ -184,16 +205,51 @@ pub fn archive_mod_configs(
     Ok(saved_file_names.len())
 }
 
+fn sanitize_and_filter_archived_meta(mut meta: ArchivedConfigInfo) -> Option<ArchivedConfigInfo> {
+    let mod_name_lower = meta.mod_name.to_lowercase();
+    if mod_name_lower.contains("palschema") {
+        return None;
+    }
+
+    meta.files.retain(|f| {
+        let fl = f.to_lowercase();
+        !fl.contains("palschema")
+            && !fl.contains("blueprints")
+            && !fl.contains("tables")
+            && !fl.contains("raw")
+            && !fl.contains("schemas")
+            && !fl.contains("templates")
+    });
+
+    if meta.files.is_empty() {
+        None
+    } else {
+        Some(meta)
+    }
+}
+
 #[tauri::command]
 pub fn check_archived_config(
     nexus_mod_id: Option<u32>,
     mod_name: String,
     state: State<AppState>,
 ) -> Result<Option<ArchivedConfigInfo>, String> {
+    if mod_name.to_lowercase().contains("palschema") {
+        return Ok(None);
+    }
+
     let data = state.data.lock().map_err(|e| e.to_string())?;
     let program_path = data.settings.program_path.clone();
     let current_profile_id = data.current_profile_id.clone();
+    let is_palschema_mod = data.mods.iter().any(|m| {
+        (m.name.eq_ignore_ascii_case(&mod_name) || (nexus_mod_id.is_some() && m.nexus_mod_id == nexus_mod_id))
+            && (m.mod_type == ModType::PalSchema || m.game_path.to_lowercase().contains("palschema"))
+    });
     drop(data);
+
+    if is_palschema_mod {
+        return Ok(None);
+    }
 
     let archives_root = get_profile_dir(&program_path, &current_profile_id).join("archived_configs");
     if !archives_root.exists() {
@@ -208,7 +264,9 @@ pub fn check_archived_config(
             if meta_path.exists() {
                 if let Ok(content) = fs::read_to_string(&meta_path) {
                     if let Ok(meta) = serde_json::from_str::<ArchivedConfigInfo>(&content) {
-                        return Ok(Some(meta));
+                        if let Some(clean_meta) = sanitize_and_filter_archived_meta(meta) {
+                            return Ok(Some(clean_meta));
+                        }
                     }
                 }
             }
@@ -223,7 +281,9 @@ pub fn check_archived_config(
         if meta_path.exists() {
             if let Ok(content) = fs::read_to_string(&meta_path) {
                 if let Ok(meta) = serde_json::from_str::<ArchivedConfigInfo>(&content) {
-                    return Ok(Some(meta));
+                    if let Some(clean_meta) = sanitize_and_filter_archived_meta(meta) {
+                        return Ok(Some(clean_meta));
+                    }
                 }
             }
         }
@@ -239,7 +299,9 @@ pub fn check_archived_config(
                         if meta.mod_name.eq_ignore_ascii_case(&mod_name)
                             || (nexus_mod_id.is_some() && meta.nexus_mod_id == nexus_mod_id)
                         {
-                            return Ok(Some(meta));
+                            if let Some(clean_meta) = sanitize_and_filter_archived_meta(meta) {
+                                return Ok(Some(clean_meta));
+                            }
                         }
                     }
                 }

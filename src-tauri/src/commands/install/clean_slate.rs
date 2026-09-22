@@ -93,6 +93,17 @@ pub fn purge_existing_mod_files(game_path: &Path, mod_info: &ModInfo) {
         delete_path_and_sidecar(extra);
     }
 
+    // Also clean up tracked config files so stale configs don't persist
+    // when the new version no longer ships a config.
+    if let Some(ref cfg) = mod_info.config_path {
+        delete_path_and_sidecar(cfg);
+    }
+    if let Some(ref cfgs) = mod_info.config_paths {
+        for cfg in cfgs {
+            delete_path_and_sidecar(cfg);
+        }
+    }
+
     // Also clean up PalSchema Storage and junction directories for this mod
     let binaries_dir = crate::dependency_checker::get_binaries_dir(game_path);
     let folder_name = crate::profiles::get_mod_folder_name(mod_info);
@@ -264,6 +275,15 @@ fn collect_mod_disk_roots(game_path: &Path, mod_info: &ModInfo) -> Vec<(PathBuf,
 
     for extra in &mod_info.extra_files {
         add_path(extra);
+    }
+
+    if let Some(ref cfg) = mod_info.config_path {
+        add_path(cfg);
+    }
+    if let Some(ref cfgs) = mod_info.config_paths {
+        for cfg in cfgs {
+            add_path(cfg);
+        }
     }
 
     roots

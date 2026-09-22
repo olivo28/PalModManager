@@ -221,6 +221,7 @@
     "track_mod": "在 Nexus 上关注",
     "untrack_mod": "取消关注",
     "check_updates": "检查更新",
+    "reinstall_mod": "重新安装模组",
     "update_mod": "更新模组",
     "update_mod_ver": "更新模组 (v{version})",
     "ignore_update": "忽略此更新 (v{version})",

@@ -200,6 +200,22 @@ pub fn remove_mod(mod_id: String, state: State<AppState>) -> Result<Value, Strin
         }
     }
 
+    if let Some(ref cfgs) = mod_info.config_paths {
+        for cfg in cfgs {
+            delete_path_and_sidecar(cfg);
+            if let Some(stem) = Path::new(cfg).file_stem().map(|s| s.to_string_lossy().to_string()) {
+                let stem_lower = stem.to_lowercase();
+                let stem_clean = stem_lower.replace(|c: char| !c.is_alphanumeric(), "");
+                if !match_stems.contains(&stem_lower) {
+                    match_stems.push(stem_lower);
+                }
+                if !stem_clean.is_empty() && !match_stems.contains(&stem_clean) {
+                    match_stems.push(stem_clean);
+                }
+            }
+        }
+    }
+
     for extra in &mod_info.extra_files {
         delete_path_and_sidecar(extra);
         if let Some(stem) = Path::new(extra).file_stem().map(|s| s.to_string_lossy().to_string()) {

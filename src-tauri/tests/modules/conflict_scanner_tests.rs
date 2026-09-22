@@ -78,3 +78,74 @@ fn test_editor_syntax_validator_hook_start_and_literal_extraction() {
     println!("          * Direct: '{}'", target2);
     println!("          * Xpcall: '{}'", target3);
 }
+
+#[test]
+fn test_extract_literal_hooks_with_safe_register_hook_and_custom_wrappers() {
+    let lua_code = r#"
+-- PalWorldBedtimeExtended realistic snippet
+local function safeRegisterHook(funcName, preCallback, postCallback)
+    local ok, err = pcall(function()
+        if postCallback then
+            RegisterHook(funcName, preCallback, postCallback)
+        else
+            RegisterHook(funcName, preCallback)
+        end
+    end)
+end
+
+function Hooks.Init()
+    -- Multiline safeRegisterHook 1
+    safeRegisterHook(
+        "/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:InterruptSleepActivelyAction",
+        function(self, Parameter) end
+    )
+
+    -- Multiline safeRegisterHook 2
+    safeRegisterHook(
+        "/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:SetBaseCampActionSleep",
+        function(self) end
+    )
+
+    -- Snake_case wrapper
+    safe_register_hook('/Script/Pal.PalPlayerCharacter:OnJump', on_jump)
+
+    -- PascalCase SafeRegisterHook
+    SafeRegisterHook("/Script/Pal.PalUtility:SpawnPal", function() end)
+
+    -- CamelCase direct registerHook
+    registerHook("/Script/Engine.PlayerController:ClientRestart", restart)
+
+    -- Wrapper for NotifyOnNewObject
+    safeNotifyOnNewObject("/Script/Pal.PalMapObjectSpawner", function() end)
+end
+"#;
+
+    let hooks = extract_literal_hooks(lua_code);
+    let targets: Vec<String> = hooks.iter().map(|(_, t, _, _)| t.clone()).collect();
+    let apis: Vec<String> = hooks.iter().map(|(api, _, _, _)| api.clone()).collect();
+
+    // 1. Definition must NOT produce a false hook
+    assert!(!targets.iter().any(|t| t.contains("funcName")), "Function definition argument must not be detected as hook");
+
+    // 2. Both BedtimeExtended hooks must be accurately extracted
+    assert!(targets.contains(&"/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:InterruptSleepActivelyAction".to_string()));
+    assert!(targets.contains(&"/Game/Pal/Blueprint/Controller/Monster/BP_MonsterAIController_BaseCamp.BP_MonsterAIController_BaseCamp_C:SetBaseCampActionSleep".to_string()));
+
+    // 3. Other wrappers extracted
+    assert!(targets.contains(&"/Script/Pal.PalPlayerCharacter:OnJump".to_string()));
+    assert!(targets.contains(&"/Script/Pal.PalUtility:SpawnPal".to_string()));
+    assert!(targets.contains(&"/Script/Engine.PlayerController:ClientRestart".to_string()));
+    assert!(targets.contains(&"/Script/Pal.PalMapObjectSpawner".to_string()));
+
+    assert_eq!(targets.len(), 6, "Must extract exactly 6 active hooks from wrappers and variants");
+
+    // 4. APIs canonicalized
+    assert_eq!(apis.iter().filter(|a| *a == "RegisterHook").count(), 5);
+    assert_eq!(apis.iter().filter(|a| *a == "NotifyOnNewObject").count(), 1);
+
+    println!("  [WRAPPER HOOKS] Successfully extracted {} hooks with canonical APIs:", hooks.len());
+    for (api, target, line, code) in &hooks {
+        println!("          * Line {}: [{}] {} ({})", line, api, target, code);
+    }
+}
+

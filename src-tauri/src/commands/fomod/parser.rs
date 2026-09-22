@@ -4,13 +4,31 @@ use regex::Regex;
 /// Extracts the inner text of the first matching XML tag e.g. <Name>Text</Name>
 fn extract_tag_text(xml: &str, tag: &str) -> Option<String> {
     let pattern = format!(r"(?is)<{}\b[^>]*>(.*?)</{}>", regex::escape(tag), regex::escape(tag));
-    Regex::new(&pattern).ok()?.captures(xml).map(|cap| cap[1].trim().to_string())
+    let text = Regex::new(&pattern).ok()?.captures(xml).map(|cap| cap[1].trim().to_string())?;
+    let decoded = text
+        .replace("&apos;", "'")
+        .replace("&quot;", "\"")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">");
+    Some(decoded)
 }
 
-/// Extracts an attribute value from an XML tag string e.g. path="foo/bar"
+/// Extracts an attribute value from an XML tag string e.g. path="foo/bar" or name="Let's Crank It Up"
 fn extract_attr(tag_str: &str, attr: &str) -> Option<String> {
-    let pattern = format!(r#"(?i)\b{}\s*=\s*["']([^"']*)["']"#, regex::escape(attr));
-    Regex::new(&pattern).ok()?.captures(tag_str).map(|cap| cap[1].trim().to_string())
+    let pattern = format!(r#"(?i)\b{}\s*=\s*(?:"([^"]*)"|'([^']*)')"#, regex::escape(attr));
+    let raw = Regex::new(&pattern).ok()?.captures(tag_str).and_then(|cap| {
+        cap.get(1).or_else(|| cap.get(2)).map(|m| m.as_str().trim().to_string())
+    })?;
+
+    let decoded = raw
+        .replace("&apos;", "'")
+        .replace("&quot;", "\"")
+        .replace("&amp;", "&")
+        .replace("&lt;", "<")
+        .replace("&gt;", ">");
+
+    Some(decoded)
 }
 
 /// Extracts all matching tag blocks, returning (full_tag_with_attrs, inner_content)
@@ -346,6 +364,39 @@ mod tests {
             assert_eq!(info.name, "BetterBaseBuilding");
             assert_eq!(info.version, "2.3");
         }
+    }
+
+    #[test]
+    fn test_extract_attr_with_apostrophes_and_entities() {
+        let xml = r#"<config>
+            <installSteps>
+                <installStep name="Presets">
+                    <optionalFileGroups>
+                        <group name="Presets" type="SelectExactlyOne">
+                            <plugins>
+                                <plugin name="1.5 X Base Size With Everything - Let's Crank It Up A Little...">
+                                    <description>1.5 X Base Size With Everything - Let's Crank It Up A Little...</description>
+                                </plugin>
+                                <plugin name="2 X Base Size With Everything - Now We're Cooking!">
+                                    <description>2 X Base Size With Everything - Now We're Cooking!</description>
+                                </plugin>
+                                <plugin name='Single Quoted Option With "Double Quotes" Inside'>
+                                    <description>Works seamlessly</description>
+                                </plugin>
+                            </plugins>
+                        </group>
+                    </optionalFileGroups>
+                </installStep>
+            </installSteps>
+        </config>"#;
+
+        let config = parse_fomod_config(xml).expect("parse failed");
+        assert_eq!(config.install_steps.len(), 1);
+        let plugins = &config.install_steps[0].groups[0].plugins;
+        assert_eq!(plugins.len(), 3);
+        assert_eq!(plugins[0].name, "1.5 X Base Size With Everything - Let's Crank It Up A Little...");
+        assert_eq!(plugins[1].name, "2 X Base Size With Everything - Now We're Cooking!");
+        assert_eq!(plugins[2].name, "Single Quoted Option With \"Double Quotes\" Inside");
     }
 }
 

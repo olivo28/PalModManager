@@ -2,6 +2,7 @@
 node_modules/
 dist/
 dist-ssr/
+dist-beta/
 *.local
 .env
 .env.*
@@ -12,9 +13,17 @@ src-tauri/.env
 
 # --- Rust & Tauri ---
 target/
+target*/
+target_*/
 target-*/
 src-tauri/target/
+src-tauri/target*/
+src-tauri/target_*/
 src-tauri/target-*/
+**/target/
+**/target*/
+**/target_*/
+**/target-*/
 src-tauri/Cargo.lock
 src-tauri/target-desktop/
 src-tauri/.tauri/
@@ -119,3 +128,8 @@ sdk_index.json
 docs/ANALISIS_PROYECTO.md
 docs/ANALISIS_PROYECTO_ChatGPT.md
 /src-tauri/target-test/debug
+
+docs/analisis/PMM_ANALISIS_AGENTE_FROM_SCRATCH.md
+docs/plans/PLAN_v1.7.x.md
+walkthrough.md
+implementation_plan.md

@@ -221,6 +221,7 @@
     "track_mod": "Nexusで追跡する",
     "untrack_mod": "Nexusの追跡を解除",
     "check_updates": "更新を確認",
+    "reinstall_mod": "Modを再インストール",
     "update_mod": "MODを更新",
     "update_mod_ver": "MODを更新 (v{version})",
     "ignore_update": "この更新を無視 (v{version})",

@@ -221,6 +221,7 @@
     "track_mod": "Nexus에서 추적하기",
     "untrack_mod": "Nexus 추적 해제",
     "check_updates": "업데이트 확인",
+    "reinstall_mod": "모드 다시 설치",
     "update_mod": "모드 업데이트",
     "update_mod_ver": "모드 업데이트 (v{version})",
     "ignore_update": "이 업데이트 무시 (v{version})",

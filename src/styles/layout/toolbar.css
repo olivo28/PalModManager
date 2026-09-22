@@ -209,7 +209,7 @@
 }
 
 .toolbar-btn {
-  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
+  padding: calc(3px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
   background: var(--bg-primary);
   color: var(--text-secondary);
   border: 1px solid var(--border);

@@ -35,10 +35,17 @@ pub fn enable_mod_internal(
 
         for (i, other) in data.mods.iter().enumerate() {
             if i != mod_index && other.enabled && other.nexus_author.as_deref() != Some("UE4SS Native Mod") {
-                let same_nexus = target_nexus_id.is_some() && other.nexus_mod_id == target_nexus_id && other.mod_type == mod_type;
+                let other_phys = crate::installer::helpers::get_physical_identity(&other.game_path, &other.disabled_path);
+                // Same Nexus page alone is not a conflict — a page can ship multiple independent
+                // file variants (e.g. body type variants). Only block if they also land at the
+                // same physical file stem on disk, meaning a true file-level collision.
+                let same_nexus = target_nexus_id.is_some()
+                    && other.nexus_mod_id == target_nexus_id
+                    && other.mod_type == mod_type
+                    && !target_phys.is_empty()
+                    && target_phys.eq_ignore_ascii_case(&other_phys);
                 let other_folder = get_mod_folder_name(other);
                 let same_folder = !target_folder.is_empty() && target_folder.eq_ignore_ascii_case(&other_folder) && other.mod_type == mod_type;
-                let other_phys = crate::installer::helpers::get_physical_identity(&other.game_path, &other.disabled_path);
                 let same_phys = !target_phys.is_empty() && target_phys.eq_ignore_ascii_case(&other_phys);
 
                 if same_nexus || same_folder || same_phys {

@@ -5,12 +5,13 @@
   --card-radius: 6px;
 
   /* Dynamically Scaled Typography (Zero zoom) */
-  --text-2xs: calc(9.5px * var(--ui-scale, 1));
-  --text-xs: calc(11px * var(--ui-scale, 1));
-  --text-sm: calc(12.5px * var(--ui-scale, 1));
-  --text-base: calc(13.5px * var(--ui-scale, 1));
-  --text-md: calc(15px * var(--ui-scale, 1));
-  --text-lg: calc(17px * var(--ui-scale, 1));
+  --text-2xs: calc(8px * var(--ui-scale, 1));
+  --text-xs: calc(9.5px * var(--ui-scale, 1));
+  --text-sm: calc(11px * var(--ui-scale, 1));
+  --text-base: calc(13px * var(--ui-scale, 1));
+  --text-md: calc(14.5px * var(--ui-scale, 1));
+  --text-lg: calc(16.5px * var(--ui-scale, 1));
+  --text-xl: calc(20px * var(--ui-scale, 1));
   /* Scrollbars (Scaled dynamically with --ui-scale) */
   --scrollbar-w: calc(9px * var(--ui-scale, 1));
   --scrollbar-thumb: rgba(255, 255, 255, 0.18);
