@@ -137,6 +137,7 @@
 [size=4][b]💬 Community & Support[/b][/size]
 Need help, want to report a bug, or suggest a new feature? Join our official Discord community:
 [url=https://discord.gg/AHTDAUwm77][b]Join Discord Server (AHTDAUwm77)[/b][/url]
+Support the project: [url=https://ko-fi.com/olivo28][b]Buy me a coffee on Ko-fi[/b][/url] [i](or reach out on Discord for Binance Pay QR)[/i]
 
 [hr]
 

@@ -124,6 +124,7 @@ Thanks to the low volume of bug reports this past week, I had the dedicated time
 ### 💬 Community & Support
 Need help, want to report a bug, or suggest a new feature? Join our official Discord community:
 * **Discord Community:** [Join Discord Server (AHTDAUwm77)](https://discord.gg/AHTDAUwm77)
+* **Support the Project:** [Buy me a coffee on Ko-fi](https://ko-fi.com/olivo28) *(or contact on Discord for Binance Pay QR)*
 
 ---
 
