@@ -87,7 +87,7 @@ jobs:
         run: |
           pnpm tauri build
 
-      - name: Recompress AppImage with XZ (Maximum Size Reduction)
+      - name: Recompress AppImage with Zstandard (Maximum Size & Performance)
         run: |
           cd src-tauri/target/release/bundle/appimage
           APPIMAGE=$(ls PalModManager_*.AppImage | head -n 1)
@@ -106,8 +106,8 @@ jobs:
           # 3. Strippear símbolos de binarios y librerías en Linux para tamaño mínimo
           find squashfs-root/ -type f -executable -exec strip --strip-unneeded {} + 2>/dev/null || true
 
-          # 4. Reempaquetar con compresión SquashFS XZ de máxima densidad
-          ARCH=x86_64 ./appimagetool-root/AppRun --comp xz squashfs-root "$APPIMAGE"
+          # 4. Reempaquetar con compresión SquashFS Zstandard (zstd) de alta densidad
+          ARCH=x86_64 ./appimagetool-root/AppRun --comp zstd squashfs-root "$APPIMAGE"
 
           # 5. Limpiar temporales
           rm -rf appimagetool-root squashfs-root appimagetool
@@ -120,6 +120,5 @@ jobs:
           path: |
             src-tauri/target/release/bundle/appimage/*.AppImage
             src-tauri/target/release/bundle/deb/*.deb
-            src-tauri/target/release/bundle/rpm/*.rpm
           if-no-files-found: error
           retention-days: 14

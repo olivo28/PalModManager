@@ -15,7 +15,7 @@ Added
 Changed
 - Clean-Slate Update Pipeline: Automatically snapshots user configurations and purges obsolete or renamed files from disk when updating directory-based mods (UE4SS and PalSchema), preventing duplicate schema conflicts.
 - Dynamic Zero-Recompile Resource Resolution: Engine catalogs and mappings now resolve dynamically from manifests and disk discovery without hardcoded build IDs.
-- Linux AppImage Optimization: Recompressed Linux AppImages with XZ and removed redundant multimedia frameworks for a substantially lighter bundle.
+- Linux AppImage Optimization: Recompressed Linux AppImages with Zstandard (zstd) and removed redundant multimedia frameworks for a substantially lighter bundle.
 - Enhanced Scrollbars: Widened vertical scrollbars with high-contrast semi-transparent thumb styling across dark and light themes.
 - Active Mods Launch Logging: Launching Palworld logs an exhaustive, numbered list of active mods, versions, and types into palmodmanager.log and console.
 
