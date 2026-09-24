@@ -27,6 +27,7 @@ pub mod dependency_manifest;
 pub mod worker;
 pub mod workshop_bridge;
 pub mod system_open;
+pub mod game_detector;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -183,6 +184,8 @@ pub fn run() {
             settings_commands::set_folder_expand_mode,
             settings_commands::set_ue4ss_control_mode,
             settings_commands::set_ue4ss_build_flavor,
+            game_detector::validate_game_path,
+            game_detector::auto_detect_game_path,
             image_proxy::fetch_and_cache_image,
             image_proxy::get_image_cache_size,
             image_proxy::purge_image_cache,

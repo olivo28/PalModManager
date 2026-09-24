@@ -146,6 +146,17 @@ export function openSettingsModal(): void {
   } else {
     pathStatus.textContent = t('settings.path_not_configured');
     pathStatus.className = 'settings-path-status invalid';
+
+    import('../../../api/settings').then(async ({ autoDetectGamePath }) => {
+      const detected = await autoDetectGamePath();
+      const currentInput = settingsDom.elMaybe('settings-game-path');
+      const currentStatus = settingsDom.elMaybe('settings-path-status');
+      if (detected && currentInput && !currentInput.value && currentStatus) {
+        currentInput.value = detected;
+        currentStatus.textContent = t('settings.path_auto_detected');
+        currentStatus.className = 'settings-path-status valid';
+      }
+    }).catch(() => {});
   }
 
   const dataPathSelect = settingsDom.elMaybe('settings-data-path-select');

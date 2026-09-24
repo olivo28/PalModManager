@@ -9,6 +9,14 @@ export async function setGamePath(path: string): Promise<AppSettings> {
   return invoke('set_game_path', { path });
 }
 
+export async function validateGamePath(path: string): Promise<string> {
+  return invoke('validate_game_path', { path });
+}
+
+export async function autoDetectGamePath(): Promise<string | null> {
+  return invoke('auto_detect_game_path');
+}
+
 export async function setHideNativeMods(hide: boolean): Promise<AppSettings> {
   return invoke('set_hide_native_mods', { hide });
 }

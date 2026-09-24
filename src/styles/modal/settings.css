@@ -184,6 +184,10 @@
   color: var(--success);
 }
 
+.settings-path-status.checking {
+  color: var(--accent);
+}
+
 .settings-path-status.invalid {
   color: var(--danger);
 }

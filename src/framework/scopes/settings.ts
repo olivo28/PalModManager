@@ -5,6 +5,7 @@ export interface SettingsDomMap {
   'settings-modal-close-x': HTMLButtonElement;
   'settings-pane-game': HTMLElement;
   'settings-game-path': HTMLInputElement;
+  'settings-auto-detect-btn': HTMLButtonElement;
   'settings-browse-btn': HTMLButtonElement;
   'settings-path-status': HTMLElement;
   'settings-steam-protocol-row': HTMLElement;

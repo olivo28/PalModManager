@@ -1,10 +1,10 @@
-import { openSettingsModal, closeSettingsModal, handleDataPathChange, handleSettingsBrowse, handleSaveSettings } from './settings';
+import { openSettingsModal, closeSettingsModal, handleDataPathChange, handleSettingsBrowse, handleSaveSettings, handleAutoDetectGamePath } from './settings';
 import { handleInstall, closeInstallModal, handleInstallConfirm } from './installer';
 import { openConsoleModal } from './console';
 import { openAboutModal, closeAboutModal, setupAboutModal } from './about';
 import { mainDom, settingsDom, installerDom } from '../../framework';
 
-export { openSettingsModal, closeSettingsModal, handleDataPathChange, handleSettingsBrowse, handleSaveSettings, _tempCustomDataPath } from './settings';
+export { openSettingsModal, closeSettingsModal, handleDataPathChange, handleSettingsBrowse, handleSaveSettings, handleAutoDetectGamePath, _tempCustomDataPath } from './settings';
 export { showInstallModal, closeInstallModal, setModalStatus, getCleanNameFromFilename, showFileTreeModal, renderInstallPreview, renderBatchInstallPreview, handleInstallConfirm as handleConfirmInstall, handleInstall, openInstallModalForZip, setInstallModalCallback, _pendingUpdateModId, _pendingBatchPaths } from './installer';
 
 export { openWorkshopModal, refreshWorkshopUI } from './workshop';
@@ -18,6 +18,7 @@ export function setupModalListeners(): void {
   mainDom.elMaybe('settings-btn')?.addEventListener('click', openSettingsModal);
   settingsDom.elMaybe('settings-modal-close-x')?.addEventListener('click', closeSettingsModal);
   settingsDom.elMaybe('settings-cancel')?.addEventListener('click', closeSettingsModal);
+  settingsDom.elMaybe('settings-auto-detect-btn')?.addEventListener('click', handleAutoDetectGamePath);
   settingsDom.elMaybe('settings-browse-btn')?.addEventListener('click', handleSettingsBrowse);
   settingsDom.elMaybe('settings-data-path-select')?.addEventListener('change', handleDataPathChange);
   settingsDom.elMaybe('settings-save')?.addEventListener('click', handleSaveSettings);

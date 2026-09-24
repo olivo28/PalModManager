@@ -62,10 +62,53 @@ export async function handleSettingsBrowse(): Promise<void> {
     if (selected) {
       const path = typeof selected === 'string' ? selected : selected as string;
       const pathInput = settingsDom.el('settings-game-path');
+      const pathStatus = settingsDom.el('settings-path-status');
       pathInput.value = path;
+
+      pathStatus.textContent = t('settings.path_checking');
+      pathStatus.className = 'settings-path-status checking';
+
+      try {
+        const { validateGamePath } = await import('../../../api/settings');
+        const canonical = await validateGamePath(path);
+        pathInput.value = canonical;
+        pathStatus.textContent = t('settings.path_valid_ready');
+        pathStatus.className = 'settings-path-status valid';
+      } catch (err) {
+        pathStatus.textContent = String(err);
+        pathStatus.className = 'settings-path-status invalid';
+      }
     }
   } catch (e) {
     console.error('Error browsing path:', e);
+  }
+}
+
+export async function handleAutoDetectGamePath(): Promise<void> {
+  const pathInput = settingsDom.el('settings-game-path');
+  const pathStatus = settingsDom.el('settings-path-status');
+  const autoDetectBtn = settingsDom.elMaybe('settings-auto-detect-btn');
+  if (autoDetectBtn) autoDetectBtn.disabled = true;
+
+  pathStatus.textContent = t('settings.path_checking');
+  pathStatus.className = 'settings-path-status checking';
+
+  try {
+    const { autoDetectGamePath } = await import('../../../api/settings');
+    const detected = await autoDetectGamePath();
+    if (detected) {
+      pathInput.value = detected;
+      pathStatus.textContent = t('settings.path_auto_detected');
+      pathStatus.className = 'settings-path-status valid';
+    } else {
+      pathStatus.textContent = t('settings.path_not_found');
+      pathStatus.className = 'settings-path-status invalid';
+    }
+  } catch (err) {
+    pathStatus.textContent = String(err);
+    pathStatus.className = 'settings-path-status invalid';
+  } finally {
+    if (autoDetectBtn) autoDetectBtn.disabled = false;
   }
 }
 
