@@ -183,6 +183,7 @@ fn extract_vdf_quoted_value(line: &str) -> Option<String> {
 
 /// Common candidate directories across various drives and gaming platforms.
 fn get_candidate_game_paths() -> Vec<PathBuf> {
+    #[allow(unused_mut)]
     let mut candidates = Vec::new();
 
     #[cfg(target_os = "windows")]
@@ -211,6 +212,14 @@ fn get_candidate_game_paths() -> Vec<PathBuf> {
             candidates.push(home_p.join(".local/share/Steam/steamapps/common/Palworld"));
             candidates.push(home_p.join(".steam/steam/steamapps/common/Palworld"));
             candidates.push(PathBuf::from("/home/deck/.local/share/Steam/steamapps/common/Palworld"));
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    {
+        if let Ok(home) = std::env::var("HOME") {
+            let home_p = PathBuf::from(home);
+            candidates.push(home_p.join("Library/Application Support/Steam/steamapps/common/Palworld"));
         }
     }
 

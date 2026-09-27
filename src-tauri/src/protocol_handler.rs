@@ -424,14 +424,14 @@ pub fn unregister_protocol() -> Result<(), String> {
 
 /// Automatically ensures the OAuth login protocol (palmodmanager://) is registered to the current running executable
 pub fn auto_register_if_needed() -> Result<(), String> {
-    let current_exe = match get_current_exe_path() {
+    let _current_exe = match get_current_exe_path() {
         Ok(p) => p.to_string_lossy().to_string(),
         Err(_) => return Ok(()),
     };
 
     #[cfg(target_os = "windows")]
     {
-        let pmm_status = check_single_scheme_status("palmodmanager", &current_exe);
+        let pmm_status = check_single_scheme_status("palmodmanager", &_current_exe);
         match pmm_status {
             ProtocolStatus::Registered { .. } => Ok(()),
             ProtocolStatus::NotRegistered | ProtocolStatus::OutdatedPath { .. } => {
@@ -445,7 +445,7 @@ pub fn auto_register_if_needed() -> Result<(), String> {
     {
         let pmm_handler = check_linux_scheme_handler("palmodmanager");
         if pmm_handler.as_deref() != Some("palmodmanager.desktop") {
-            let _ = register_linux_protocols("palmodmanager", &current_exe);
+            let _ = register_linux_protocols("palmodmanager", &_current_exe);
         }
         Ok(())
     }
