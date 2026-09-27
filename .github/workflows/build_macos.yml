@@ -1,0 +1,99 @@
+name: Build macOS (DMG & App)
+
+on:
+  workflow_dispatch: # Se ejecuta manualmente desde la pestaña Actions en GitHub
+
+jobs:
+  build-macos:
+    name: Build macOS (${{ matrix.target == 'aarch64-apple-darwin' && 'Apple Silicon' || 'Intel' }})
+    runs-on: macos-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target:
+          - aarch64-apple-darwin # Apple Silicon (M1/M2/M3/M4)
+          - x86_64-apple-darwin  # Intel x86_64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
+          run_install: false
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Setup Rust cache
+        uses: swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+
+      - name: Install frontend dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Inject .env credentials
+        env:
+          NEXUS_CLIENT_ID: ${{ secrets.NEXUS_CLIENT_ID }}
+          NEXUS_CLIENT_SECRET: ${{ secrets.NEXUS_CLIENT_SECRET }}
+          NEXUS_REDIRECT_URI: ${{ secrets.NEXUS_REDIRECT_URI || 'palmodmanager://oauth/callback' }}
+        run: |
+          cat <<EOF > .env
+          NEXUS_CLIENT_ID=${NEXUS_CLIENT_ID}
+          NEXUS_CLIENT_SECRET=${NEXUS_CLIENT_SECRET}
+          NEXUS_REDIRECT_URI=${NEXUS_REDIRECT_URI}
+          EOF
+          cp .env src-tauri/.env
+          echo "Environment credentials successfully staged."
+
+      - name: Build Tauri Application (macOS DMG & .app)
+        env:
+          NEXUS_CLIENT_ID: ${{ secrets.NEXUS_CLIENT_ID }}
+          NEXUS_CLIENT_SECRET: ${{ secrets.NEXUS_CLIENT_SECRET }}
+          NEXUS_REDIRECT_URI: ${{ secrets.NEXUS_REDIRECT_URI || 'palmodmanager://oauth/callback' }}
+        run: |
+          pnpm tauri build --target ${{ matrix.target }}
+
+      - name: Compress .app to ZIP
+        shell: bash
+        run: |
+          BUNDLE_DIR="src-tauri/target/${{ matrix.target }}/release/bundle"
+          cd "$BUNDLE_DIR/macos"
+          APP_NAME=$(ls -d *.app | head -n 1)
+          if [ -d "$APP_NAME" ]; then
+            zip -r -y "${APP_NAME%.app}.zip" "$APP_NAME"
+            echo "Successfully zipped $APP_NAME to ${APP_NAME%.app}.zip"
+          fi
+
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PalModManager-macOS-${{ matrix.target }}
+          path: |
+            src-tauri/target/${{ matrix.target }}/release/bundle/dmg/*.dmg
+            src-tauri/target/${{ matrix.target }}/release/bundle/macos/*.zip
+          if-no-files-found: error
+          retention-days: 14
