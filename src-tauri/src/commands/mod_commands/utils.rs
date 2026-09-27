@@ -97,35 +97,33 @@ pub fn detect_configs(mod_path: &Path) -> (Option<String>, Option<Vec<String>>) 
     }
 
     let config_subdirs = ["config", "settings", "scripts"];
-    for subdir in &config_subdirs {
-        let sub_path = mod_path.join(subdir);
-        if sub_path.is_dir() {
-            for name in &config_names {
-                let full = sub_path.join(name);
-                if full.exists() {
-                    let rel = format!("{}/{}", subdir, name);
-                    if !configs.iter().any(|c| c.eq_ignore_ascii_case(&rel)) {
-                        configs.push(rel);
-                    }
-                }
-            }
+    if let Ok(root_entries) = fs::read_dir(mod_path) {
+        for rentry in root_entries.flatten() {
+            let rpath = rentry.path();
+            if rpath.is_dir() {
+                let actual_sub_name = rentry.file_name().to_string_lossy().to_string();
+                if config_subdirs.iter().any(|s| s.eq_ignore_ascii_case(&actual_sub_name)) {
+                    if let Ok(entries) = fs::read_dir(&rpath) {
+                        for entry in entries.flatten() {
+                            let p = entry.path();
+                            let name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
+                            let name_lower = name.to_lowercase();
+                            if p.is_file() {
+                                let is_known_config = config_names.iter().any(|cn| cn.eq_ignore_ascii_case(&name_lower));
+                                let is_pattern_config = (name_lower.ends_with(".lua") || name_lower.ends_with(".json") || name_lower.ends_with(".ini"))
+                                    && (name_lower.contains("config") || name_lower.contains("setting") || name_lower.contains("option"))
+                                    && !name_lower.contains("do_not_edit")
+                                    && !name_lower.ends_with("manager.lua")
+                                    && !name_lower.ends_with("handler.lua")
+                                    && !name_lower.ends_with("helper.lua")
+                                    && !name_lower.ends_with("service.lua");
 
-            if let Ok(entries) = fs::read_dir(&sub_path) {
-                for entry in entries.flatten() {
-                    let p = entry.path();
-                    let name = p.file_name().unwrap_or_default().to_string_lossy().to_string();
-                    let name_lower = name.to_lowercase();
-                    if p.is_file() && (name_lower.ends_with(".lua") || name_lower.ends_with(".json") || name_lower.ends_with(".ini")) {
-                        if (name_lower.contains("config") || name_lower.contains("setting") || name_lower.contains("option"))
-                            && !name_lower.contains("do_not_edit")
-                            && !name_lower.ends_with("manager.lua")
-                            && !name_lower.ends_with("handler.lua")
-                            && !name_lower.ends_with("helper.lua")
-                            && !name_lower.ends_with("service.lua")
-                        {
-                            let rel = format!("{}/{}", subdir, name);
-                            if !configs.iter().any(|c| c.eq_ignore_ascii_case(&rel)) {
-                                configs.push(rel);
+                                if is_known_config || is_pattern_config {
+                                    let rel = format!("{}/{}", actual_sub_name, name);
+                                    if !configs.iter().any(|c| c.eq_ignore_ascii_case(&rel)) {
+                                        configs.push(rel);
+                                    }
+                                }
                             }
                         }
                     }

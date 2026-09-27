@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use crate::models::{ModInfo, ModType, RouteType};
 use super::helpers::{
-    copy_folder_contents, detect_config_local, determine_mod_id,
+    copy_folder_contents, detect_config_local, detect_configs_local, determine_mod_id,
     get_palschema_component_root, get_ue4ss_component_root,
     move_path, normalize_path_separator,
 };
@@ -47,6 +47,7 @@ pub fn execute_manifest(
 
     let mut primary_path = String::new();
     let mut config_path = None;
+    let mut config_paths = None;
 
     // 1. Copy/move files defined in the manifest routes
     for route in &manifest.routes {
@@ -90,7 +91,9 @@ pub fn execute_manifest(
         // Track config file (config normally only applies to UE4SS mods)
         if route.route_type == RouteType::Ue4ss && config_path.is_none() {
             let u_root = PathBuf::from(&ue4ss_component);
-            config_path = detect_config_local(&u_root);
+            let (detected_primary, detected_all) = detect_configs_local(&u_root);
+            config_path = detected_primary;
+            config_paths = detected_all;
         }
     }
 
@@ -99,6 +102,7 @@ pub fn execute_manifest(
             let comp_lower = comp.to_lowercase();
             if comp_lower.contains("swapjson") && comp_lower.ends_with(".json") {
                 config_path = Some(comp.clone());
+                config_paths = Some(vec![comp.clone()]);
                 break;
             }
         }
@@ -250,7 +254,7 @@ pub fn execute_manifest(
         version: manifest.version.clone(),
         install_date: now.to_string(),
         source_zip: String::new(),
-        config_paths: config_path.as_ref().map(|cp| vec![cp.clone()]),
+        config_paths,
         config_path,
         config_type: Some("auto".to_string()),
         enabled: true,

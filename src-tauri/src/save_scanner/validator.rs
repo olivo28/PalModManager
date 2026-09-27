@@ -182,9 +182,12 @@ fn validate_map_objects(
                     let id = s.trim();
                     if !id.is_empty() && id != "None" {
                         let in_dt = if let Some(ref dt) = dt_catalog {
-                            let build_table = dt.find_table("DT_BuildObjectDataTable_Common");
-                            let map_table = dt.find_table("DT_MapObjectMasterDataTable_Common");
-                            let item_table = dt.find_table("DT_ItemDataTable_Common");
+                            let build_table = dt.find_table("DT_BuildObjectDataTable")
+                                .or_else(|| dt.find_table("DT_BuildObjectDataTable_Common"));
+                            let map_table = dt.find_table("DT_MapObjectMasterDataTable")
+                                .or_else(|| dt.find_table("DT_MapObjectMasterDataTable_Common"));
+                            let item_table = dt.find_table("DT_ItemDataTable")
+                                .or_else(|| dt.find_table("DT_ItemDataTable_Common"));
                             build_table.map_or(false, |t| t.rows.iter().any(|r| r.eq_ignore_ascii_case(id)))
                                 || map_table.map_or(false, |t| t.rows.iter().any(|r| r.eq_ignore_ascii_case(id)))
                                 || item_table.map_or(false, |t| t.rows.iter().any(|r| r.eq_ignore_ascii_case(id)))

@@ -135,11 +135,37 @@ pub fn restore_save_from_backup(
     fs::copy(&backup_world_file, &dest_level_sav)
         .map_err(|e| format!("Failed to restore Level.sav: {e}"))?;
 
-    // 3. Restore LocalData.sav if snapshot has one
-    let backup_local_file = world_path.join("backup").join("local").join(backup_slot).join("LocalData.sav");
-    if backup_local_file.exists() {
-        let dest_local_sav = world_path.join("LocalData.sav");
-        let _ = fs::copy(&backup_local_file, &dest_local_sav);
+    // 3. Restore LevelMeta.sav if snapshot has one
+    let snapshot_world_dir = world_path.join("backup").join("world").join(backup_slot);
+    let backup_meta_file = snapshot_world_dir.join("LevelMeta.sav");
+    if backup_meta_file.exists() {
+        let dest_meta_sav = world_path.join("LevelMeta.sav");
+        let _ = fs::copy(&backup_meta_file, &dest_meta_sav);
+    }
+
+    // 4. Restore LocalData.sav (check backup/world/<slot>/LocalData.sav then backup/local/<slot>/LocalData.sav)
+    let backup_local_in_world = snapshot_world_dir.join("LocalData.sav");
+    let backup_local_in_local = world_path.join("backup").join("local").join(backup_slot).join("LocalData.sav");
+    let dest_local_sav = world_path.join("LocalData.sav");
+    if backup_local_in_world.exists() {
+        let _ = fs::copy(&backup_local_in_world, &dest_local_sav);
+    } else if backup_local_in_local.exists() {
+        let _ = fs::copy(&backup_local_in_local, &dest_local_sav);
+    }
+
+    // 5. Restore Players directory if snapshot has one
+    let snapshot_players_dir = snapshot_world_dir.join("Players");
+    if snapshot_players_dir.exists() && snapshot_players_dir.is_dir() {
+        let dest_players_dir = world_path.join("Players");
+        let _ = fs::create_dir_all(&dest_players_dir);
+        if let Ok(entries) = fs::read_dir(&snapshot_players_dir) {
+            for entry in entries.flatten() {
+                if entry.file_type().map_or(false, |ft| ft.is_file()) {
+                    let dest_player_file = dest_players_dir.join(entry.file_name());
+                    let _ = fs::copy(entry.path(), &dest_player_file);
+                }
+            }
+        }
     }
 
     Ok(SaveRepairResult {

@@ -18,3 +18,25 @@ fn test_find_hook_start_and_extract_string_literal() {
     assert_eq!(target3, "/Script/Pal.PalCharacter:Die");
 }
 
+#[test]
+fn test_map_object_validation_vanilla_recognition() {
+    use palmodmanager_lib::usmap::get_or_load_datatable_index;
+    if let Some(dt) = get_or_load_datatable_index("") {
+        let build_table = dt.find_table("DT_BuildObjectDataTable")
+            .or_else(|| dt.find_table("DT_BuildObjectDataTable_Common"));
+        let map_table = dt.find_table("DT_MapObjectMasterDataTable")
+            .or_else(|| dt.find_table("DT_MapObjectMasterDataTable_Common"));
+
+        assert!(build_table.is_some(), "DT_BuildObjectDataTable should be found");
+        assert!(map_table.is_some(), "DT_MapObjectMasterDataTable should be found");
+
+        let b = build_table.unwrap();
+        let m = map_table.unwrap();
+
+        assert!(b.rows.iter().any(|r| r.eq_ignore_ascii_case("Wooden_wall")), "Wooden_wall must be in DT_BuildObjectDataTable");
+        assert!(m.rows.iter().any(|r| r.eq_ignore_ascii_case("TreasureBox_FishingJunk_RequiredLongHold")), "TreasureBox_FishingJunk_RequiredLongHold must be in DT_MapObjectMasterDataTable");
+        assert!(!b.rows.iter().any(|r| r.eq_ignore_ascii_case("EPK_GachaPC")), "EPK_GachaPC must not be in build table");
+        assert!(!m.rows.iter().any(|r| r.eq_ignore_ascii_case("EPK_GachaPC")), "EPK_GachaPC must not be in map table");
+    }
+}
+

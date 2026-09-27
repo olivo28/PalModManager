@@ -74,8 +74,9 @@ export function closeInstallModal(): void {
 
   if (_onInstallCompleteCallback) {
     const cb = _onInstallCompleteCallback;
+    const success = _lastInstallSuccess;
     setInstallModalCallback(null);
-    cb(_lastInstallSuccess);
+    cb(success);
   }
   setLastInstallSuccess(false);
 }

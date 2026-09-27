@@ -93,9 +93,19 @@ pub fn inspect_snapshot_details(world_dir: &Path, slot_name: &str) -> Result<Sav
         if let Ok(decompressed) = decompress_palworld_save(&raw) {
             uncompressed_size_bytes = Some(decompressed.len() as u64);
             let paths = extract_fstring_asset_paths(&decompressed);
-            let count = paths.iter().filter(|p| is_mod_asset_path(p)).count();
-            mod_refs_count = Some(count);
-            is_clean_vanilla = Some(count == 0);
+            let raw_count = paths.iter().filter(|p| is_mod_asset_path(p)).count();
+
+            let empty_mods: &[String] = &[];
+            let validation = super::validator::validate_save_with_catalogs(
+                &decompressed,
+                empty_mods,
+                None,
+            );
+            let map_obj_count: usize = validation.suspicious_map_objects.iter().map(|(_, c)| *c).sum();
+            let total_mod_refs = raw_count + map_obj_count + validation.missing_blueprint_refs.len();
+
+            mod_refs_count = Some(total_mod_refs);
+            is_clean_vanilla = Some(total_mod_refs == 0);
         }
     }
 
@@ -531,6 +541,10 @@ pub fn deep_scan_save(
     let map_obj_total_count: usize = catalog_validation.suspicious_map_objects.iter().map(|(_, c)| *c).sum();
     let total_refs = raw_mod_paths.len() + catalog_validation.missing_blueprint_refs.len() + map_obj_total_count;
     let has_orphans = !orphaned_mod_refs.is_empty();
+    let has_repairable_paths = raw_mod_paths.iter().any(|p| p.starts_with("/Game/Mods/") || p.contains("/Mods/"))
+        || catalog_validation.missing_blueprint_refs.iter().any(|p| p.starts_with("/Game/Mods/") || p.contains("/Mods/"));
+    let has_placed_building_hazard = !catalog_validation.suspicious_map_objects.is_empty();
+    let can_repair = is_valid_gvas && has_repairable_paths && !has_placed_building_hazard;
     let has_corrupt_players = !corrupt_player_files.is_empty();
     let has_critical_catalog_issues = !catalog_validation.is_clean;
 
@@ -588,7 +602,7 @@ pub fn deep_scan_save(
         pmm_backups,
         has_external_edits: has_ext_edits,
         external_edit_details,
-        can_repair: has_orphans && is_valid_gvas,
+        can_repair,
         can_restore_backup,
         world_options,
         base_deterioration_rate,

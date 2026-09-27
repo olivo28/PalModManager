@@ -328,3 +328,95 @@ fn test_ue4ss_shared_and_multi_config_detection_archiving_and_merge() {
     println!("           * Archived count: {}", archived_count);
     println!("           * Merged shared config content:\n{}", merged_icon.trim());
 }
+
+#[test]
+fn test_ue4ss_scripts_config_lua_preserved_on_update_and_reinstall() {
+    let env = TestEnv::new_steam_win64();
+
+    // 1. Authentic v1.0 ZIP with Scripts/config.lua
+    let v1_zip = ZipBuilder::new("AntiPhat-1.0.0-3799-1-0-0-1700000000.zip")
+        .add_text_file("AntiPhat/Scripts/main.lua", "print('AntiPhat v1.0')\n")
+        .add_text_file("AntiPhat/Scripts/config.lua", "Config = {\n    PalScale = 0.5,\n    ShowUI = true\n}\n")
+        .add_text_file("AntiPhat/enabled.txt", "");
+
+    let mut mod_info = env.install_builder(&v1_zip).expect("Install AntiPhat v1.0 should succeed");
+    let mod_dir = PathBuf::from(&mod_info.game_path);
+    assert!(mod_dir.exists(), "AntiPhat mod dir must exist");
+
+    let cfg_path = mod_dir.join("Scripts").join("config.lua");
+    assert!(cfg_path.exists(), "Scripts/config.lua must exist after initial install");
+    assert!(
+        mod_info.config_path.as_ref().map(|p| p.contains("config.lua")).unwrap_or(false),
+        "mod_info.config_path must be detected on install: {:?}",
+        mod_info.config_path
+    );
+
+    // 2. User edits config.lua on disk
+    fs::write(&cfg_path, "Config = {\n    PalScale = 0.25,\n    ShowUI = true\n}\n").unwrap();
+
+    // 3. Author releases v2.0 with a new configuration option
+    let v2_zip = ZipBuilder::new("AntiPhat-2.0.0-3799-2-0-0-1700000000.zip")
+        .add_text_file("AntiPhat/Scripts/main.lua", "print('AntiPhat v2.0')\n")
+        .add_text_file("AntiPhat/Scripts/config.lua", "Config = {\n    PalScale = 0.5,\n    ShowUI = true,\n    HideInWild = false\n}\n")
+        .add_text_file("AntiPhat/enabled.txt", "")
+        .build_in(&env.temp_dir);
+
+    let v2_analysis = palmodmanager_lib::zip_handler::analyze_zip(v2_zip.to_str().unwrap()).unwrap();
+    let temp_extracted = env.temp_dir.join("extracted_antiphat_v2");
+    let extracted_dir = palmodmanager_lib::zip_handler::extract_zip_to_temp(v2_zip.to_str().unwrap(), &temp_extracted).unwrap();
+
+    // 4. Run update_mod pipeline
+    palmodmanager_lib::installer::update_mod(
+        &mut mod_info,
+        env.game_root.to_str().unwrap(),
+        env.program_data.to_str().unwrap(),
+        "default",
+        &extracted_dir,
+        &v2_analysis,
+        "AntiPhat-2.0.0-3799-2-0-0-1700000000.zip",
+        "2026-09-25T00:00:00Z",
+        false,
+        false,
+    ).expect("update_mod should succeed");
+
+    // 5. Verify config.lua was NOT deleted by update_mod
+    assert!(cfg_path.exists(), "Scripts/config.lua MUST NOT be deleted after update_mod");
+    let merged_content = fs::read_to_string(&cfg_path).unwrap();
+    assert!(
+        merged_content.contains("PalScale = 0.25") || merged_content.contains("PalScale =0.25"),
+        "User customized PalScale must be preserved after upgrade: {}",
+        merged_content
+    );
+    assert!(
+        merged_content.contains("HideInWild = false") || merged_content.contains("HideInWild =false"),
+        "Author new config key HideInWild must be merged after upgrade: {}",
+        merged_content
+    );
+
+    // 6. Verify pre-update backup was created
+    let bak_path = mod_dir.join("Scripts").join("config.lua.pre-update.bak");
+    assert!(bak_path.exists(), "config.lua.pre-update.bak must exist");
+
+    // 7. Simulate Reinstall with the same archive
+    let temp_reinstall = env.temp_dir.join("extracted_antiphat_reinstall");
+    let reinstall_dir = palmodmanager_lib::zip_handler::extract_zip_to_temp(v2_zip.to_str().unwrap(), &temp_reinstall).unwrap();
+
+    palmodmanager_lib::installer::update_mod(
+        &mut mod_info,
+        env.game_root.to_str().unwrap(),
+        env.program_data.to_str().unwrap(),
+        "default",
+        &reinstall_dir,
+        &v2_analysis,
+        "AntiPhat-2.0.0-3799-2-0-0-1700000000.zip",
+        "2026-09-25T00:00:00Z",
+        false,
+        false,
+    ).expect("reinstall via update_mod should succeed");
+
+    assert!(cfg_path.exists(), "Scripts/config.lua MUST NOT be deleted after reinstall");
+
+    println!("  [CONFIG] UE4SS Scripts/config.lua Preservation & Merge on Reinstall: PASS");
+    println!("           * Final merged content:\n{}", merged_content.trim());
+}
+

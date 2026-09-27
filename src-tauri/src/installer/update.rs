@@ -139,7 +139,7 @@ pub fn update_mod(
         modinfo_data,
     )?;
 
-    let new_mod_info = execute_manifest(
+    let mut new_mod_info = execute_manifest(
         &manifest,
         extracted,
         game,
@@ -209,10 +209,35 @@ pub fn update_mod(
 
     // If the new version no longer ships a config, delete the old one from disk
     // so it doesn't persist as a ghost file, and clear snapshot to prevent resurrection.
-    if new_mod_info.config_path.is_none() {
+    // Safety Guard: Check if the newly extracted manifest actually installed/contains this file.
+    let mut still_has_config = new_mod_info.config_path.is_some();
+    if !still_has_config {
         if let Some(ref old_cfg) = existing.config_path {
             let old_cfg_path = crate::config_merge::resolve_path_in_game(game, old_cfg);
-            if old_cfg_path.exists() && !old_cfg_path.to_string_lossy().contains("shared") {
+            if manifest_installed_files.contains(&normalize_for_compare(&old_cfg_path)) {
+                still_has_config = true;
+                new_mod_info.config_path = Some(old_cfg.clone());
+            }
+        }
+        if !still_has_config {
+            if let Some(ref old_cfgs) = existing.config_paths {
+                for old_cfg in old_cfgs {
+                    let old_cfg_path = crate::config_merge::resolve_path_in_game(game, old_cfg);
+                    if manifest_installed_files.contains(&normalize_for_compare(&old_cfg_path)) {
+                        still_has_config = true;
+                        new_mod_info.config_path = Some(old_cfg.clone());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    if !still_has_config {
+        if let Some(ref old_cfg) = existing.config_path {
+            let old_cfg_path = crate::config_merge::resolve_path_in_game(game, old_cfg);
+            let norm_old = normalize_for_compare(&old_cfg_path);
+            if old_cfg_path.exists() && !old_cfg_path.to_string_lossy().contains("shared") && !manifest_installed_files.contains(&norm_old) {
                 crate::logger::log(&format!(
                     "[update_mod] Removing stale config '{}' — new version no longer ships this file",
                     old_cfg
@@ -223,7 +248,8 @@ pub fn update_mod(
         if let Some(ref old_cfgs) = existing.config_paths {
             for old_cfg in old_cfgs {
                 let old_cfg_path = crate::config_merge::resolve_path_in_game(game, old_cfg);
-                if old_cfg_path.exists() && !old_cfg_path.to_string_lossy().contains("shared") {
+                let norm_old = normalize_for_compare(&old_cfg_path);
+                if old_cfg_path.exists() && !old_cfg_path.to_string_lossy().contains("shared") && !manifest_installed_files.contains(&norm_old) {
                     crate::logger::log(&format!(
                         "[update_mod] Removing stale config '{}' — new version no longer ships this file",
                         old_cfg

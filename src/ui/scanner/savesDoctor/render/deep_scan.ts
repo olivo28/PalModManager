@@ -120,19 +120,29 @@ export function renderDeepScanResultsHtml(
     `;
   }
 
+  const cleanSnapshot = curHealth.availableBackups?.find(snap => snap.isCleanVanilla === true);
+
   return `
     <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1));">
-        <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+        <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex: 1; min-width: 200px;">
           <span style="font-size: calc(16px * var(--ui-scale, 1));">${curHealth.healthStatus === 'healthy' ? '✅' : '⚠️'}</span>
           <span style="font-size: var(--text-base, 13px); font-weight: 700; color: var(--text-primary);">${escapeHtml(curHealth.summaryMessage)}</span>
         </div>
-        ${curHealth.canRepair ? `
-          <button id="btn-repair-save" class="btn-primary" style="background: #2ed573; border-color: #2ed573; color: #000; font-weight: 700; padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" ${curRepairing ? 'disabled' : ''}>
-            <span>🛠️</span>
-            <span>${curRepairing ? escapeHtml(t('scanner.repairing') || 'Sanitizing...') : escapeHtml(t('scanner.btn_sanitize_save') || '1-Click Rescue & Clean Save')}</span>
-          </button>
-        ` : ''}
+        <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex-wrap: wrap;">
+          ${curHealth.canRepair ? `
+            <button id="btn-repair-save" class="btn-primary" style="background: #2ed573; border-color: #2ed573; color: #000; font-weight: 700; padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" ${curRepairing ? 'disabled' : ''}>
+              <span>🛠️</span>
+              <span>${curRepairing ? escapeHtml(t('scanner.repairing') || 'Sanitizing...') : escapeHtml(t('scanner.btn_sanitize_save') || '1-Click Rescue & Clean Save')}</span>
+            </button>
+          ` : ''}
+          ${cleanSnapshot && (curHealth.healthStatus !== 'healthy' || curHealth.orphanedModRefs.length > 0) ? `
+            <button class="btn-secondary btn-restore-snap" data-slot="${escapeHtml(cleanSnapshot.slotName || (cleanSnapshot as any).slot_name)}" data-time="${escapeHtml(cleanSnapshot.timestamp)}" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1)); border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-weight: 600;" ${curRestoring ? 'disabled' : ''}>
+              <span>🔄</span>
+              <span>${escapeHtml(t('scanner.btn_restore_clean_snapshot') || 'Restore Clean Snapshot')} (${escapeHtml(cleanSnapshot.timestamp)})</span>
+            </button>
+          ` : ''}
+        </div>
       </div>
 
       ${(curHealth.baseDeteriorationRate !== undefined && curHealth.baseDeteriorationRate !== null && curHealth.baseDeteriorationRate > 0) ? `
@@ -253,14 +263,22 @@ export function renderDeepScanResultsHtml(
               diffTag = `<span style="font-size: var(--text-2xs, 9.5px); color: #ff5f56; background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.25); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1));">-${formatBytes(Math.abs(diffBytes))} ${escapeHtml(t('scanner.snap_size_loss') || 'smaller')}</span>`;
             }
 
+            let cleanTag = '';
+            if (snap.isCleanVanilla === true) {
+              cleanTag = `<span style="font-size: var(--text-2xs, 9.5px); color: #4af626; background: rgba(74, 246, 38, 0.12); border: 1px solid rgba(74, 246, 38, 0.3); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1)); font-weight: 600;">✓ ${escapeHtml(t('scanner.snap_clean_vanilla') || 'Clean (Pre-Mod)')}</span>`;
+            } else if (snap.isCleanVanilla === false || (snap.modRefsCount !== undefined && snap.modRefsCount !== null && snap.modRefsCount > 0)) {
+              cleanTag = `<span style="font-size: var(--text-2xs, 9.5px); color: #ffaa00; background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1)); font-weight: 600;">⚠️ ${escapeHtml(t('scanner.snap_has_mods') || 'Has Mod Data')}</span>`;
+            }
+
             return `
               <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 6px; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; gap: calc(10px * var(--ui-scale, 1)); transition: background 0.15s ease;">
                 <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
                   <span style="font-size: calc(15px * var(--ui-scale, 1));">📦</span>
                   <div style="display: flex; flex-direction: column; gap: 2px;">
-                    <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                    <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex-wrap: wrap;">
                       <span style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--text-primary); font-family: monospace;">${escapeHtml(snap.timestamp)}</span>
                       ${diffTag}
+                      ${cleanTag}
                     </div>
                     <span style="font-size: var(--text-2xs, 10px); color: var(--text-muted);">${formatBytes(snap.levelSizeBytes)} • ${snap.localDataExists ? 'Level + LocalData' : 'Level only'}</span>
                   </div>

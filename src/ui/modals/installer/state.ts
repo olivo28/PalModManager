@@ -29,6 +29,8 @@ export function setIsProcessingInstall(val: boolean): void {
 
 export function setInstallModalCallback(cb: ((success: boolean) => void) | null): void {
   _onInstallCompleteCallback = cb;
-  _lastInstallSuccess = false;
-  _isProcessingInstall = false;
+  if (cb !== null) {
+    _lastInstallSuccess = false;
+    _isProcessingInstall = false;
+  }
 }

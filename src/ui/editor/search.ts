@@ -11,7 +11,13 @@ export function resetFindMatches(): void {
 export function openFind(): void {
   const editor = getMonacoEditor();
   if (editor) {
-    editor.getAction('actions.find')?.run();
+    editor.focus();
+    const action = editor.getAction('actions.find');
+    if (action) {
+      action.run();
+    } else {
+      editor.trigger('keyboard', 'actions.find', null);
+    }
   }
 }
 

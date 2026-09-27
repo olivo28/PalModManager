@@ -87,6 +87,9 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
   const playerRosterHtml = selectedWorld ? renderPlayerRosterHtml(curHealth) : '';
   const deepScanResultsHtml = selectedWorld ? renderDeepScanResultsHtml(curHealth, selectedWorld, curRepairing, curRestoring, curDeep) : '';
 
+  const prevInspector = container.querySelector<HTMLElement>('#doctor-inspector-root');
+  const savedScrollTop = prevInspector ? prevInspector.scrollTop : 0;
+
   container.innerHTML = `
     <div class="scanner-view-container" style="height: 100%; display: flex; flex-direction: column; overflow: hidden;">
       ${subTabHeader()}
@@ -142,6 +145,13 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
       </div>
     </div>
   `;
+ 
+  if (savedScrollTop > 0) {
+    const newInspector = container.querySelector<HTMLElement>('#doctor-inspector-root');
+    if (newInspector) {
+      newInspector.scrollTop = savedScrollTop;
+    }
+  }
 
   // Attach event handlers
   attachSavesDoctorListeners(container, renderSavesDoctorPanel);

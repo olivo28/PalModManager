@@ -142,15 +142,11 @@ pub fn copy_folder_contents(src: &Path, dest: &Path) -> Result<(), String> {
 }
 
 pub fn detect_config_local(dir: &Path) -> Option<String> {
-    for entry in walkdir::WalkDir::new(dir).max_depth(3).into_iter().filter_map(|e| e.ok()) {
-        if entry.file_type().is_file() {
-            let name = entry.file_name().to_string_lossy().to_lowercase();
-            if name == "config.json" || name == "config.jsonc" || name == "config.txt" || name == "config.cfg" || name == "settings.json" || name == "settings.txt" {
-                return Some(entry.path().to_string_lossy().to_string());
-            }
-        }
-    }
-    None
+    crate::commands::mod_commands::utils::detect_config(dir)
+}
+
+pub fn detect_configs_local(dir: &Path) -> (Option<String>, Option<Vec<String>>) {
+    crate::commands::mod_commands::utils::detect_configs(dir)
 }
 
 pub fn determine_mod_id(

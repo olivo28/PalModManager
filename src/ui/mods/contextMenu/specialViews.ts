@@ -338,11 +338,11 @@ export function showEditorContextMenu(x: number, y: number): void {
     }
   });
 
-  menu.querySelector('#editor-ctx-find')?.addEventListener('click', (e) => {
+  menu.querySelector('#editor-ctx-find')?.addEventListener('click', async (e) => {
     e.stopPropagation();
     hideContextMenu();
-    const ev = new KeyboardEvent('keydown', { key: 'f', ctrlKey: true, bubbles: true });
-    document.dispatchEvent(ev);
+    const { openFind } = await import('../../editor/search');
+    openFind();
   });
 
   menu.querySelector('#editor-ctx-selectall')?.addEventListener('click', (e) => {
@@ -504,6 +504,12 @@ export function setupContextMenu(): void {
 
     if (isAnyModalActive() || target.closest('.modal-overlay, .detail-overlay, .confirm-overlay, .modal, #sidebar, #toolbar, #quick-filter-bar, #search-wrap, #sort-bar, #editor-toolbar, #library-toolbar')) {
       e.preventDefault();
+      hideContextMenu();
+      return;
+    }
+
+    if (target.closest('#editor-monaco-container, .monaco-editor')) {
+      // Allow Monaco's native context menu to open freely (Find, Format, Cut, Copy, Paste, etc.)
       hideContextMenu();
       return;
     }

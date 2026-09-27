@@ -12,7 +12,7 @@ import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { getCleanNameFromFilename, closeInstallModal, setModalStatus } from './helpers';
 import { showFileTreeModal } from './fileTree';
-import { setPendingUpdateModId } from './state';
+import { setPendingUpdateModId, _onInstallCompleteCallback, setInstallModalCallback } from './state';
 import { showConfigDiffModal, showArchivedConfigDiffModal } from './diffModal';
 import { installerDom } from '../../../framework';
 import { compareVersions } from '../../mods/library/helpers';
@@ -161,10 +161,10 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
 
   let archivedConfigHtml = '';
   let currentArchivedInfo: any = null;
-  const isPalSchema = analysis.modType === 'palschema'
+  const isPalSchema = (analysis as any).modType === 'palschema'
     || analysis.detectedType === 'palschema'
     || cleanName.toLowerCase().includes('palschema')
-    || (analysis.filesToInstall && analysis.filesToInstall.some(f => f.destination?.toLowerCase().includes('palschema') || f.source?.toLowerCase().includes('palschema')));
+    || ((analysis as any).filesToInstall && (analysis as any).filesToInstall.some((f: any) => f.destination?.toLowerCase().includes('palschema') || f.source?.toLowerCase().includes('palschema')));
 
   if (!existingMod && !isPalSchema) {
     try {
@@ -586,7 +586,11 @@ export async function delegateFomodInstallIfApplicable(
   }
 
   try {
-    const { openFomodWizard } = await import('../fomod');
+    const { openFomodWizard, setFomodCompleteCallback } = await import('../fomod');
+    if (_onInstallCompleteCallback) {
+      setFomodCompleteCallback(_onInstallCompleteCallback);
+      setInstallModalCallback(null);
+    }
     await openFomodWizard(
       analysis.zipPath,
       existingMod ? { id: existingMod.id, name: customName || existingMod.name, version: existingMod.version, fomodChoices: existingMod.fomodChoices } : null,

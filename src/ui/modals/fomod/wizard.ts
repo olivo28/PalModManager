@@ -22,6 +22,14 @@ import {
 
 import fomodModalHtml from '../../../templates/modals/fomodModal.html?raw';
 
+let _fomodCompleteCallback: ((success: boolean) => void) | null = null;
+let _fomodInstalledSuccess = false;
+
+export function setFomodCompleteCallback(cb: ((success: boolean) => void) | null): void {
+  _fomodCompleteCallback = cb;
+  _fomodInstalledSuccess = false;
+}
+
 export function ensureFomodModalInDom(): void {
   if (!document.getElementById('fomod-modal')) {
     const root = document.getElementById('modals-root') || document.body;
@@ -41,6 +49,14 @@ export function openFomodModal(): void {
 export function closeFomodModal(): void {
   const modal = fomodDom.el('fomod-modal');
   modal.classList.remove('visible', 'active');
+
+  if (_fomodCompleteCallback) {
+    const cb = _fomodCompleteCallback;
+    const success = _fomodInstalledSuccess;
+    _fomodCompleteCallback = null;
+    _fomodInstalledSuccess = false;
+    cb(success);
+  }
 }
 
 export function renderCurrentStep(): void {
@@ -268,6 +284,7 @@ async function performFomodInstall(): Promise<void> {
     const installedMod = await installModWithManifest(manifest, state.zipPath);
     console.log('[FOMOD] Installed successfully:', installedMod.name);
 
+    _fomodInstalledSuccess = true;
     closeFomodModal();
 
     bus.emit('toast:show', {

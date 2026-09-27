@@ -10,7 +10,7 @@ import { showToast } from '../ui/toast';
 import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
 import { openInstallModalForZip, setInstallModalCallback } from '../ui/modals/installer';
-import { mainDom, bus } from '../framework';
+import { mainDom, fomodDom, bus } from '../framework';
 import { getState } from '../state';
 
 export interface NxmQueueItem {
@@ -265,9 +265,10 @@ async function processDownloads(): Promise<void> {
 
 export async function checkNextInstall(): Promise<void> {
   const installModal = mainDom.elMaybe('install-modal');
-  const isModalOpen = installModal && installModal.classList.contains('visible');
-  if (!isModalOpen) {
-    isInstallingActive = false;
+  const fomodModal = fomodDom.elMaybe('fomod-modal');
+  const isModalOpen = (installModal && installModal.classList.contains('visible')) ||
+                      (fomodModal && fomodModal.classList.contains('visible'));
+  if (!isModalOpen && !isInstallingActive) {
     queue.forEach((q) => {
       if (q.status === 'installing') {
         q.status = 'awaiting_install';
@@ -275,7 +276,7 @@ export async function checkNextInstall(): Promise<void> {
     });
   }
 
-  if (isInstallingActive) return;
+  if (isInstallingActive || isModalOpen) return;
 
   const nextToInstall = queue.find((q) => q.status === 'awaiting_install');
   if (!nextToInstall || !nextToInstall.tempZipPath) {
@@ -306,12 +307,29 @@ export async function checkNextInstall(): Promise<void> {
   setInstallModalCallback(async (success: boolean) => {
     isInstallingActive = false;
 
-    // Check if the mod actually got installed into state
-    const state = getState();
-    const isActuallyInstalled = success || state.allMods.some(
-      (m) => (nextToInstall.modName && m.name && m.name.toLowerCase() === nextToInstall.modName.toLowerCase()) ||
-             (nextToInstall.modId && m.nexusModId === nextToInstall.modId)
-    );
+    let isActuallyInstalled = success;
+    if (!isActuallyInstalled) {
+      // Reload mods from disk to ensure state.allMods is fresh
+      try {
+        const { loadMods } = await import('../ui/mods/loader');
+        await loadMods();
+      } catch {}
+
+      const state = getState();
+      const normQueueName = (nextToInstall.modName || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+      isActuallyInstalled = state.allMods.some((m) => {
+        if (nextToInstall.modId && m.nexusModId && m.nexusModId === nextToInstall.modId) {
+          return true;
+        }
+        if (normQueueName && m.name) {
+          const normModName = m.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (normModName === normQueueName || normModName.includes(normQueueName) || normQueueName.includes(normModName)) {
+            return true;
+          }
+        }
+        return false;
+      });
+    }
 
     nextToInstall.status = isActuallyInstalled ? 'done' : 'cancelled';
     renderQueueUI();

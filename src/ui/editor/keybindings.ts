@@ -4,15 +4,19 @@ import { switchEditorMod, renderEditorModTree, revealAndSelectFile } from './tre
 import { confirmDiscardOrSave } from './unsaved';
 import { editorDom, mainDom } from '../../framework';
 import { getMonacoEditor } from './monaco/instance';
+import { openFind } from './search';
 
 export function setupEditorKeybindings(): void {
   document.addEventListener('keydown', (e: KeyboardEvent) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
-      const editorView = editorDom.elMaybe('editor-view');
-      if (editorView && editorView.style.display !== 'none') {
-        e.preventDefault();
-        handleEditorSave();
-      }
+    const editorView = editorDom.elMaybe('editor-view');
+    if (!editorView || editorView.style.display === 'none') return;
+
+    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
+      e.preventDefault();
+      handleEditorSave();
+    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
+      e.preventDefault();
+      openFind();
     }
   });
 
