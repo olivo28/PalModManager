@@ -6,6 +6,23 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>PalModManager</title>
   <link rel="icon" type="image/png" href="/src/assets/logo.png" />
+  <script>
+    (function () {
+      try {
+        var theme = localStorage.getItem('pmm-theme') || '';
+        var activeId = localStorage.getItem('pmm-active-theme-id') || '';
+        if (theme === 'light' || activeId === 'builtin-light') {
+          document.documentElement.dataset.theme = 'light';
+        } else if (activeId && activeId !== 'builtin-dark') {
+          var customThemes = JSON.parse(localStorage.getItem('pmm-custom-themes') || '[]');
+          var found = customThemes.find(function (t) { return t.id === activeId; });
+          if (found && found.mode === 'light') {
+            document.documentElement.dataset.theme = 'light';
+          }
+        }
+      } catch (e) {}
+    })();
+  </script>
   <link rel="stylesheet" href="/src/styles/main.css" />
   <style>
     #app-loading {
@@ -25,6 +42,10 @@
       visibility: visible;
       transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.35s ease;
       user-select: none;
+    }
+
+    [data-theme="light"] #app-loading {
+      background: #f8fafc;
     }
 
     #app-loading.fade-out {
@@ -62,6 +83,11 @@
       animation: spin 0.75s linear infinite;
     }
 
+    [data-theme="light"] .loading-spinner {
+      border: 3px solid rgba(0, 0, 0, 0.08);
+      border-top-color: #0284c7;
+    }
+
     @keyframes spin {
       to {
         transform: rotate(360deg);
@@ -76,6 +102,10 @@
       letter-spacing: 0.8px;
     }
 
+    [data-theme="light"] .loading-text {
+      color: #0f172a;
+    }
+
     .loading-subtext {
       color: #64748b;
       font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -83,6 +113,10 @@
       font-weight: 500;
       letter-spacing: 0.4px;
       margin-top: -8px;
+    }
+
+    [data-theme="light"] .loading-subtext {
+      color: #64748b;
     }
   </style>
 </head>
@@ -135,7 +169,7 @@
         <button class="sidebar-tab" data-tab="library" title="Mod Library" data-i18n-title="sidebar.tab_library_title" style="position:relative;">
           <span class="sidebar-tab-icon">📦</span>
           <span class="sidebar-tab-label" data-i18n="sidebar.tab_library">Library</span>
-          <span id="sidebar-library-badge" style="display:none;position:absolute;top:6px;right:6px;width:8px;height:8px;background:#00bcff;border-radius:50%;box-shadow:0 0 6px #00bcff;"></span>
+          <span id="sidebar-library-badge" style="display:none;position:absolute;top:6px;right:6px;width:8px;height:8px;background:var(--accent);border-radius:50%;box-shadow:0 0 6px var(--accent);"></span>
         </button>
         <button class="sidebar-tab" data-tab="build" title="Mod Packer" data-i18n-title="sidebar.tab_build_title">
           <span class="sidebar-tab-icon">🛠</span>

@@ -16,6 +16,8 @@ pub fn update_mod(
     now: &str,
     force_load_order_ue4ss: bool,
     force_load_order_palschema: bool,
+    files_to_preserve: Option<&[String]>,
+    files_to_purge: Option<&[String]>,
 ) -> Result<(), String> {
     let delete_path_and_sidecar = |path_str: &str| {
         if path_str.is_empty() {
@@ -196,13 +198,13 @@ pub fn update_mod(
         if !new_mod_info.game_path.is_empty() {
             let p = crate::config_merge::resolve_path_in_game(game, &new_mod_info.game_path);
             if p.is_dir() {
-                purge_stale_files_in_mod_dir(&p, &manifest_installed_files, &snapshot);
+                purge_stale_files_in_mod_dir(&p, &manifest_installed_files, &snapshot, files_to_preserve, files_to_purge);
             }
         }
         for extra in &new_mod_info.extra_files {
             let p = crate::config_merge::resolve_path_in_game(game, extra);
             if p.is_dir() {
-                purge_stale_files_in_mod_dir(&p, &manifest_installed_files, &snapshot);
+                purge_stale_files_in_mod_dir(&p, &manifest_installed_files, &snapshot, files_to_preserve, files_to_purge);
             }
         }
     }
@@ -509,6 +511,8 @@ fn purge_stale_files_in_mod_dir(
     mod_dir: &Path,
     manifest_installed_files: &std::collections::HashSet<String>,
     snapshot: &crate::config_merge::ConfigSnapshot,
+    files_to_preserve: Option<&[String]>,
+    files_to_purge: Option<&[String]>,
 ) {
     if !mod_dir.exists() || !mod_dir.is_dir() {
         return;
@@ -518,6 +522,14 @@ fn purge_stale_files_in_mod_dir(
     if matches!(dir_name.as_str(), "paks" | "logicmods" | "mods" | "win64" | "binaries" | "pal" | "content") {
         return;
     }
+
+    let preserve_set: Option<std::collections::HashSet<String>> = files_to_preserve.map(|slice| {
+        slice.iter().map(|p| p.replace('\\', "/").to_lowercase()).collect()
+    });
+
+    let purge_set: Option<std::collections::HashSet<String>> = files_to_purge.map(|slice| {
+        slice.iter().map(|p| p.replace('\\', "/").to_lowercase()).collect()
+    });
 
     let mut files_to_delete = Vec::new();
 
@@ -546,13 +558,68 @@ fn purge_stale_files_in_mod_dir(
             continue;
         }
 
-        // Skip if this file was preserved as a user configuration in snapshot
-        let is_snapshotted = snapshot.entries.iter().any(|(rel, _)| {
-            let snap_norm = normalize_for_compare(rel);
-            normalized.ends_with(&snap_norm)
-        });
-        if is_snapshotted {
-            continue;
+        // Relative path normalized for matching against preserve/purge lists
+        let rel_normalized = file_path
+            .strip_prefix(mod_dir)
+            .map(|p| p.to_string_lossy().replace('\\', "/").to_lowercase())
+            .unwrap_or_else(|_| fname_lower.clone());
+
+        // Check if explicitly instructed to preserve
+        if let Some(ref set) = preserve_set {
+            if set.contains(&rel_normalized) || set.contains(&fname_lower) || set.contains(&normalized) {
+                crate::logger::log(&format!("[update_mod] Preserving user-selected file from purge: {:?}", file_path));
+                continue;
+            }
+        }
+
+        // Check if explicitly instructed to purge
+        let explicitly_purged = if let Some(ref set) = purge_set {
+            set.contains(&rel_normalized) || set.contains(&fname_lower) || set.contains(&normalized)
+        } else {
+            false
+        };
+
+        if !explicitly_purged {
+            // Skip if this file was preserved as a user configuration in snapshot
+            let is_snapshotted = snapshot.entries.iter().any(|(rel, _)| {
+                let snap_norm = normalize_for_compare(rel);
+                normalized.ends_with(&snap_norm)
+            });
+            if is_snapshotted {
+                continue;
+            }
+
+            // Heuristic safety: Preserve user-generated configuration files (*.ini, *.cfg, *.toml, *.yaml, *.yml, *.lua)
+            // and runtime data directories (Saved/, storage/, data/, cache/) even if not in snapshot
+            let ext = file_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
+            let path_str_lower = file_path.to_string_lossy().to_lowercase();
+            let is_runtime_data = path_str_lower.contains("/saved/")
+                || path_str_lower.contains("\\saved\\")
+                || path_str_lower.contains("/storage/")
+                || path_str_lower.contains("\\storage\\")
+                || path_str_lower.contains("/data/")
+                || path_str_lower.contains("\\data\\")
+                || path_str_lower.contains("/cache/")
+                || path_str_lower.contains("\\cache\\");
+
+            let is_user_config = is_runtime_data
+                || ext == "ini"
+                || ext == "cfg"
+                || ext == "toml"
+                || ext == "yaml"
+                || ext == "yml"
+                || ((ext == "json" || ext == "jsonc" || ext == "txt" || ext == "lua")
+                    && (fname_lower.contains("config")
+                        || fname_lower.contains("setting")
+                        || fname_lower.contains("option")
+                        || fname_lower.contains("pref")
+                        || path_str_lower.contains("config")
+                        || path_str_lower.contains("setting")));
+
+            if is_user_config {
+                crate::logger::log(&format!("[update_mod] Retaining detected user config/runtime file: {:?}", file_path));
+                continue;
+            }
         }
 
         files_to_delete.push(file_path.to_path_buf());

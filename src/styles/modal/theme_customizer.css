@@ -1,0 +1,234 @@
+/* ===== THEME CUSTOMIZER STYLES ===== */
+
+/* --- Category Navigation Tabs --- */
+
+.theme-color-nav {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-tertiary);
+  padding: 3px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  margin-top: calc(4px * var(--ui-scale, 1));
+}
+
+.theme-color-nav-btn {
+  flex: 1;
+  padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
+  font-size: var(--text-xs, 11px);
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: calc(var(--radius) - 1px);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.theme-color-nav-btn:hover {
+  color: var(--text-primary);
+}
+
+.theme-color-nav-btn.active {
+  background: var(--bg-card);
+  color: var(--accent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+
+/* --- Color Cards Layout & Overflow Guard --- */
+.theme-color-group-pane {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(calc(135px * var(--ui-scale, 1)), 1fr));
+  gap: calc(8px * var(--ui-scale, 1));
+  margin-top: calc(4px * var(--ui-scale, 1));
+}
+
+.theme-color-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.theme-color-card:hover {
+  border-color: var(--accent);
+  box-shadow: 0 2px 8px var(--accent-dim);
+}
+
+.theme-color-card-label {
+  font-size: var(--text-xs, 10.5px);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-color-card-hint {
+  font-size: var(--text-2xs, 9px);
+  color: var(--text-muted);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.theme-color-card-row {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--ui-scale, 1));
+  margin-top: 4px;
+  width: 100%;
+  min-width: 0;
+}
+
+.theme-color-picker-input {
+  width: calc(28px * var(--ui-scale, 1));
+  height: calc(28px * var(--ui-scale, 1));
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  background: none;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.theme-color-hex-input {
+  flex: 1;
+  min-width: 0;
+  width: 100%;
+  font-size: var(--text-xs, 10.5px);
+  font-family: var(--font-mono, monospace);
+  padding: calc(4px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
+  text-transform: uppercase;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-sizing: border-box;
+}
+
+.theme-color-hex-input:focus {
+  border-color: var(--accent);
+  outline: none;
+}
+
+/* --- Image Artwork Cards with Thumbnails --- */
+.theme-image-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px * var(--ui-scale, 1));
+  transition: border-color 0.15s ease;
+}
+
+.theme-image-card:hover {
+  border-color: var(--accent);
+}
+
+.theme-image-card-main {
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--ui-scale, 1));
+}
+
+.theme-image-thumb-box {
+  width: calc(44px * var(--ui-scale, 1));
+  height: calc(36px * var(--ui-scale, 1));
+  border-radius: 4px;
+  border: 1px solid var(--border);
+  background-color: var(--bg-tertiary);
+  background-image: linear-gradient(45deg, rgba(128,128,128,0.1) 25%, transparent 25%),
+                    linear-gradient(-45deg, rgba(128,128,128,0.1) 25%, transparent 25%),
+                    linear-gradient(45deg, transparent 75%, rgba(128,128,128,0.1) 75%),
+                    linear-gradient(-45deg, transparent 75%, rgba(128,128,128,0.1) 75%);
+  background-size: 8px 8px;
+  background-position: 0 0, 0 4px, 4px -4px, -4px 0px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.theme-image-thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: none;
+}
+
+.theme-image-thumb-empty {
+  font-size: 14px;
+  color: var(--text-muted);
+  opacity: 0.6;
+}
+
+.theme-image-card-content {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.theme-slider-val-badge {
+  font-size: var(--text-2xs, 9.5px);
+  min-width: 30px;
+  font-family: var(--font-mono, monospace);
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  padding: 1px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  text-align: center;
+}
+
+/* --- Compact Image Adjust Selectors --- */
+.theme-image-card-subrow {
+  display: flex;
+  align-items: center;
+  gap: calc(12px * var(--ui-scale, 1));
+  margin-top: calc(2px * var(--ui-scale, 1));
+  flex-wrap: wrap;
+}
+
+.theme-image-card-control-item {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--ui-scale, 1));
+}
+
+.theme-select-compact {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: var(--text-2xs, 9.5px);
+  padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.theme-select-compact:hover,
+.theme-select-compact:focus {
+  border-color: var(--accent);
+}

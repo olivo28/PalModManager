@@ -30,6 +30,10 @@ export interface InstallerDomMap {
   'review-archived-config-btn': HTMLButtonElement;
   'restore-archived-config-checkbox': HTMLInputElement;
   'archived-config-diff-modal': HTMLElement;
+  'orphan-files-container': HTMLElement;
+  'orphan-files-toggle-header': HTMLElement;
+  'orphan-files-list-body': HTMLElement;
+  'orphan-files-chevron': HTMLElement;
 }
 
 export const installerDom = createScope<InstallerDomMap>('installer');

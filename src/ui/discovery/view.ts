@@ -7,7 +7,7 @@ import { scrollToTop } from './helpers';
 import { openLightbox, closeLightbox, updateLightboxTransform, setupLightboxPanZoom } from './lightbox';
 import { renderTagChips, renderTagMenu, setupTagPickers } from './tags';
 import { renderGrid } from './grid';
-import { closeDiscoveryModal, setupDiscoveryModalEventListeners } from './detailsModal';
+import { closeDiscoveryModal, openModDetails, setupDiscoveryModalEventListeners } from './detailsModal';
 import { discoveryDom } from '../../framework';
 
 export async function renderDiscoveryView(): Promise<void> {
@@ -41,6 +41,24 @@ export function setupEventListeners(): void {
         discState.currentPage = 1;
         loadMods();
       }, 350);
+    });
+
+    searchInput.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const val = searchInput.value.trim();
+        let targetId: number | null = null;
+        if (/^\d+$/.test(val)) {
+          targetId = parseInt(val, 10);
+        } else if (val.includes('/mods/')) {
+          const match = val.match(/\/mods\/(\d+)/);
+          if (match) targetId = parseInt(match[1], 10);
+        }
+        if (targetId) {
+          e.preventDefault();
+          clearTimeout(debounceTimeout);
+          openModDetails(targetId);
+        }
+      }
     });
   }
 

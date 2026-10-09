@@ -131,24 +131,24 @@ export async function refreshVaultView(depType: 'ue4ss' | 'palschema'): Promise<
   
   if (!isInstalled) {
     statusBadgeEl.textContent = t('dependencies.not_installed');
-    statusBadgeEl.style.background = 'rgba(255, 74, 74, 0.15)';
-    statusBadgeEl.style.color = '#ff4a4a';
-    statusBadgeEl.style.border = '1px solid rgba(255, 74, 74, 0.3)';
+    statusBadgeEl.style.background = 'var(--danger-dim)';
+    statusBadgeEl.style.color = 'var(--danger)';
+    statusBadgeEl.style.border = '1px solid var(--danger-dim)';
   } else if (isWorkshop) {
     statusBadgeEl.textContent = 'Steam Workshop';
-    statusBadgeEl.style.background = 'rgba(59, 130, 246, 0.15)';
-    statusBadgeEl.style.color = '#60a5fa';
-    statusBadgeEl.style.border = '1px solid rgba(59, 130, 246, 0.3)';
+    statusBadgeEl.style.background = 'var(--info-dim)';
+    statusBadgeEl.style.color = 'var(--info)';
+    statusBadgeEl.style.border = '1px solid var(--info-dim)';
   } else if (needsUpdate) {
     statusBadgeEl.textContent = t('dependencies.update_available');
-    statusBadgeEl.style.background = 'rgba(245, 158, 11, 0.15)';
-    statusBadgeEl.style.color = '#f59e0b';
-    statusBadgeEl.style.border = '1px solid rgba(245, 158, 11, 0.3)';
+    statusBadgeEl.style.background = 'var(--warning-dim)';
+    statusBadgeEl.style.color = 'var(--warning)';
+    statusBadgeEl.style.border = '1px solid var(--warning-dim)';
   } else {
     statusBadgeEl.textContent = t('dependencies.up_to_date');
-    statusBadgeEl.style.background = 'rgba(34, 197, 94, 0.15)';
-    statusBadgeEl.style.color = '#22c55e';
-    statusBadgeEl.style.border = '1px solid rgba(34, 197, 94, 0.3)';
+    statusBadgeEl.style.background = 'var(--success-dim)';
+    statusBadgeEl.style.color = 'var(--success)';
+    statusBadgeEl.style.border = '1px solid var(--success-dim)';
   }
 
   // 2. Remote latest version
@@ -215,14 +215,14 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
 
   if (entry.isInstalled) {
     const activeBadge = document.createElement('span');
-    activeBadge.style.cssText = 'font-size: var(--text-2xs, 10px); font-weight: 700; padding: 1px calc(6px * var(--ui-scale, 1)); border-radius: 3px; background: rgba(34, 197, 94, 0.2); color: #22c55e; border: 1px solid rgba(34, 197, 94, 0.4); text-transform: uppercase;';
+    activeBadge.style.cssText = 'font-size: var(--text-2xs, 10px); font-weight: 700; padding: 1px calc(6px * var(--ui-scale, 1)); border-radius: 3px; background: var(--success-dim); color: var(--success); border: 1px solid var(--success-dim); text-transform: uppercase;';
     activeBadge.textContent = t('dependencies.active_badge');
     titleRow.appendChild(activeBadge);
   }
 
   if (entry.isCustom) {
     const customBadge = document.createElement('span');
-    customBadge.style.cssText = 'font-size: var(--text-2xs, 10px); padding: 1px calc(5px * var(--ui-scale, 1)); border-radius: 3px; background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);';
+    customBadge.style.cssText = 'font-size: var(--text-2xs, 10px); padding: 1px calc(5px * var(--ui-scale, 1)); border-radius: 3px; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-dim);';
     customBadge.textContent = t('dependencies.custom_badge');
     titleRow.appendChild(customBadge);
   }

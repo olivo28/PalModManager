@@ -70,6 +70,11 @@ export function renderModsView(): void {
       const isEndorsed = isNexusModEndorsed(m.nexusModId, state.currentSettings?.nexusEndorsementsCache);
       if (!isEndorsed) return false;
     }
+    if (state.statusFilter === 'unendorsed') {
+      if (!m.nexusModId) return false;
+      const isEndorsed = isNexusModEndorsed(m.nexusModId, state.currentSettings?.nexusEndorsementsCache);
+      if (isEndorsed) return false;
+    }
 
     const isUe4ssMod = m.type === 'ue4ss' || m.nexusAuthor === 'UE4SS Native Mod';
     if (isUe4ssMod && currentProfile && !currentProfile.ue4ss_enabled && state.statusFilter === 'enabled') {

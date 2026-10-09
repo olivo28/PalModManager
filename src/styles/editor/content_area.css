@@ -60,7 +60,7 @@
   min-height: 200px;
   position: relative;
   overflow: hidden;
-  background: #121418;
+  background: var(--bg-primary);
 }
 
 #editor-input-wrap {
@@ -270,8 +270,8 @@
 /* Monaco Custom Context Menu & Command Palette Suppression */
 .context-view.monaco-menu-container {
   border-radius: 8px !important;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1) !important;
-  background: #232730 !important;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--border) !important;
+  background: var(--bg-secondary) !important;
   padding: 5px !important;
 }
 
@@ -299,7 +299,7 @@
 
 .monaco-menu .action-item.focused,
 .monaco-menu .action-item:hover {
-  background: #007acc !important;
+  background: var(--accent) !important;
 }
 
 .monaco-menu .action-menu-item {
@@ -307,7 +307,7 @@
   font-size: 12px !important;
   font-weight: 500 !important;
   padding: 6px 14px !important;
-  color: #e2e8f0 !important;
+  color: var(--text-primary) !important;
 }
 
 .monaco-menu .action-item.focused .action-menu-item,
@@ -323,7 +323,7 @@
 }
 
 .monaco-menu .action-item.separator {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid var(--border) !important;
   margin: 4px 6px !important;
 }
 
@@ -337,9 +337,9 @@
 
 /* Monaco Suggest Widget & Details - Clean VS Code Native Aesthetic */
 .monaco-editor .suggest-widget {
-  border: 1px solid #3c3c3c !important;
-  background: #252526 !important;
-  background-color: #252526 !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg-secondary) !important;
+  background-color: var(--bg-secondary) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
   border-radius: 4px !important;
   overflow: hidden !important;
@@ -358,9 +358,9 @@
 
 .monaco-editor .suggest-details,
 .monaco-editor.vs-dark .suggest-details {
-  border: 1px solid #3c3c3c !important;
-  background: #252526 !important;
-  background-color: #252526 !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg-secondary) !important;
+  background-color: var(--bg-secondary) !important;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45) !important;
   border-radius: 4px !important;
   overflow: hidden !important;
@@ -424,13 +424,13 @@
 /* Details Flyout - VS Code Natural Polish */
 .monaco-editor .suggest-details > .monaco-scrollable-element > .body {
   padding: 12px 16px !important;
-  background: #252526 !important;
+  background: var(--bg-secondary) !important;
   min-height: 180px !important;
   box-sizing: border-box !important;
 }
 
 .monaco-editor .suggest-details > .monaco-scrollable-element > .body > .header {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08) !important;
+  border-bottom: 1px solid var(--border) !important;
   padding: 0 0 6px 0 !important;
   margin-bottom: 8px !important;
   display: flex !important;
@@ -472,9 +472,9 @@
 
 .monaco-editor .suggest-details .monaco-tokenized-source,
 .monaco-editor .suggest-details pre {
-  background: #1e1e1e !important;
-  border: 1px solid #333333 !important;
-  border-left: 1px solid #333333 !important;
+  background: var(--bg-primary) !important;
+  border: 1px solid var(--border) !important;
+  border-left: 1px solid var(--border) !important;
   border-radius: 3px !important;
   padding: 6px 10px !important;
   margin: 0 0 8px 0 !important;

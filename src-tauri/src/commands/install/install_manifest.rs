@@ -42,11 +42,31 @@ pub async fn install_mod_with_manifest(
         let target_nexus = manifest.nexus_mod_id;
         let target_name = &manifest.display_name;
         let target_folder = &manifest.folder_name;
+        let target_file_id = manifest.nexus_file_id.as_deref();
+        let target_phys = manifest.routes.iter()
+            .find(|r| r.dest_path.ends_with(".pak") || r.route_type == crate::models::RouteType::Pak || r.route_type == crate::models::RouteType::LogicMods)
+            .map(|r| crate::installer::helpers::get_physical_identity(&r.dest_path, ""))
+            .unwrap_or_default();
 
         let existing = data.mods.iter().find(|m| {
-            (target_nexus.is_some() && m.nexus_mod_id == target_nexus)
-                || m.name.eq_ignore_ascii_case(target_name)
-                || (!target_folder.is_empty() && crate::profiles::get_mod_folder_name(m).eq_ignore_ascii_case(target_folder))
+            let m_folder = crate::profiles::get_mod_folder_name(m);
+            let m_phys = crate::installer::helpers::get_physical_identity(&m.game_path, &m.disabled_path);
+
+            // 1. Same exact Nexus file ID
+            let same_file_id = target_file_id.is_some() && m.nexus_file_id.as_deref() == target_file_id;
+            // 2. Same display name
+            let same_name = m.name.eq_ignore_ascii_case(target_name);
+            // 3. Same physical file destination (e.g. same pak stem)
+            let same_phys = !target_phys.is_empty() && !m_phys.is_empty() && m_phys.eq_ignore_ascii_case(&target_phys);
+            // 4. Same target folder name (UE4SS / PalSchema root)
+            let same_folder = !target_folder.is_empty() && !m_folder.is_empty() && m_folder.eq_ignore_ascii_case(target_folder);
+
+            // 5. Fallback Nexus page match: only consider same mod if they do NOT have distinct physical identities or distinct folder names
+            let same_nexus = target_nexus.is_some() && m.nexus_mod_id == target_nexus;
+            let physically_distinct = (!target_phys.is_empty() && !m_phys.is_empty() && !m_phys.eq_ignore_ascii_case(&target_phys))
+                || (!target_folder.is_empty() && !m_folder.is_empty() && !m_folder.eq_ignore_ascii_case(target_folder));
+
+            same_file_id || same_name || same_phys || same_folder || (same_nexus && !physically_distinct)
         }).cloned();
 
         (data.settings.game_path.clone(), data.settings.program_path.clone(), existing)
@@ -302,10 +322,14 @@ pub async fn install_mod_with_manifest(
 
             data.mods.iter().any(|other| {
                 if other.id != final_mod.id && other.enabled && other.nexus_author.as_deref() != Some("UE4SS Native Mod") {
-                    let same_nexus = target_nexus_id.is_some() && other.nexus_mod_id == target_nexus_id && other.mod_type == target_type;
-                    let other_folder = crate::profiles::get_mod_folder_name(other);
-                    let same_folder = !target_folder.is_empty() && target_folder.eq_ignore_ascii_case(&other_folder) && other.mod_type == target_type;
                     let other_phys = crate::installer::helpers::get_physical_identity(&other.game_path, &other.disabled_path);
+                    let other_folder = crate::profiles::get_mod_folder_name(other);
+                    let same_nexus = target_nexus_id.is_some()
+                        && other.nexus_mod_id == target_nexus_id
+                        && other.mod_type == target_type
+                        && !target_phys.is_empty()
+                        && target_phys.eq_ignore_ascii_case(&other_phys);
+                    let same_folder = !target_folder.is_empty() && target_folder.eq_ignore_ascii_case(&other_folder) && other.mod_type == target_type;
                     let same_phys = !target_phys.is_empty() && target_phys.eq_ignore_ascii_case(&other_phys);
                     same_nexus || same_folder || same_phys
                 } else {

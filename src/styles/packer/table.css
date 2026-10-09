@@ -150,7 +150,7 @@
 
 .packer-table td {
   padding: calc(5px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid var(--border);
   color: var(--text-primary);
   vertical-align: middle;
   transition: background 0.15s ease;
@@ -161,26 +161,26 @@
 }
 
 .packer-table tr:hover {
-  background: rgba(255, 255, 255, 0.025);
+  background: var(--bg-hover);
 }
 
 .packer-table tr.skipped {
   opacity: 0.55;
-  background: rgba(0, 0, 0, 0.15);
+  background: var(--bg-secondary);
 }
 
 .packer-table-folder-row {
-  background: rgba(255, 255, 255, 0.02);
+  background: var(--bg-secondary);
   cursor: pointer;
   user-select: none;
 }
 
 .packer-table-folder-row:hover {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--bg-hover);
 }
 
 .packer-table-folder-row td {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+  border-bottom: 1px solid var(--border) !important;
   padding-top: calc(6px * var(--ui-scale, 1)) !important;
   padding-bottom: calc(6px * var(--ui-scale, 1)) !important;
   padding-right: calc(12px * var(--ui-scale, 1)) !important;
@@ -190,10 +190,10 @@
   width: 100%;
   height: calc(30px * var(--ui-scale, 1));
   box-sizing: border-box;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
   border-radius: 4px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));
   font-family: 'Fira Code', Consolas, Monaco, monospace;
   font-size: var(--text-sm, 12px);
@@ -202,7 +202,7 @@
 
 .packer-input-target:focus {
   border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--bg-hover);
   box-shadow: 0 0 0 1.5px var(--accent-dim);
   outline: none;
 }

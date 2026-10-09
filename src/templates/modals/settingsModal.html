@@ -243,12 +243,303 @@
               </div>
             </div>
 
-            <div class="settings-section-card">
-              <div class="settings-card-header">
-                <span class="settings-card-title" data-i18n="settings.theme_label">Theme</span>
+            <div class="settings-section-card" id="settings-theme-card">
+              <div class="settings-card-header" style="display:flex;justify-content:space-between;align-items:center;">
+                <span class="settings-card-title" data-i18n="settings.theme_label">Theme & Appearance</span>
+                <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));">
+                  <button type="button" id="theme-btn-import" class="btn-secondary" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Import .pmmtheme.json" data-i18n="theme.btn_import">📥 Import</button>
+                  <button type="button" id="theme-btn-export" class="btn-secondary" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Export active theme" data-i18n="theme.btn_export">📤 Export</button>
+                  <button type="button" id="theme-btn-new" class="btn-secondary" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Create new custom theme" data-i18n="theme.btn_new">➕ New</button>
+                </div>
               </div>
-              <div class="settings-hint" data-i18n="settings.theme_hint">Switch between dark and light appearance</div>
-              <button type="button" id="theme-toggle-btn" class="btn-secondary" style="width:100%; margin-top:4px;" data-i18n="settings.btn_theme_light">Switch to Light Theme</button>
+              <div class="settings-hint" data-i18n="settings.theme_hint">Select a base theme or customize your personal color scheme and background artwork</div>
+
+              <!-- Base Theme Selection & Actions Row -->
+              <div style="display:flex;gap:calc(8px * var(--ui-scale, 1));margin-top:calc(8px * var(--ui-scale, 1));align-items:center;">
+                <select id="settings-theme-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
+                </select>
+                <button type="button" id="theme-customize-toggle-btn" class="btn-secondary" style="white-space:nowrap;padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;" title="Customize colors and backgrounds" data-i18n="theme.btn_customize">🎨 Customize</button>
+                <button type="button" id="theme-delete-btn" class="btn-secondary" style="display:none;color:var(--danger);padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);" title="Delete custom theme">🗑️</button>
+              </div>
+
+              <!-- Collapsible Visual Customizer Panel -->
+              <div id="theme-customizer-panel" style="display:none;margin-top:calc(12px * var(--ui-scale, 1));padding:calc(12px * var(--ui-scale, 1));background:var(--bg-secondary);border:1px solid var(--border);border-radius:var(--radius);flex-direction:column;gap:calc(12px * var(--ui-scale, 1));">
+                <div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid var(--border);padding-bottom:calc(6px * var(--ui-scale, 1));">
+                  <span style="font-weight:700;font-size:var(--text-sm, 12px);" data-i18n="theme.customizer_title">Theme Editor & Background Artwork</span>
+                  <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));">
+                    <button type="button" id="theme-reset-btn" class="btn-secondary" style="font-size:var(--text-xs, 10.5px);padding:2px 8px;" data-i18n="theme.btn_reset">Reset</button>
+                    <button type="button" id="theme-save-btn" class="btn-secondary" style="background:var(--accent);color:#fff;border-color:var(--accent);font-size:var(--text-xs, 10.5px);padding:2px 10px;" data-i18n="common.save">Save Theme</button>
+                  </div>
+                </div>
+
+                <!-- Category Navigation Tabs -->
+                <div class="theme-color-nav">
+                  <button type="button" id="theme-cat-structure-btn" class="theme-color-nav-btn active" data-i18n="theme.cat_structure">🎨 Structure</button>
+                  <button type="button" id="theme-cat-status-btn" class="theme-color-nav-btn" data-i18n="theme.cat_status">🚦 Status & Health</button>
+                  <button type="button" id="theme-cat-badges-btn" class="theme-color-nav-btn" data-i18n="theme.cat_badges">🏷️ Mod Badges</button>
+                </div>
+
+                <!-- Group 1: Structure & Surfaces (8 Colors) -->
+                <div id="theme-group-structure" class="theme-color-group-pane">
+                  <!-- 1. Accent -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_accent">Accent Color</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_accent_hint">Buttons, highlights & badges</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-accent" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-accent" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 2. Primary Background -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_bg_primary">Primary Background</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_bg_primary_hint">Main window canvas & workspace</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-bg-primary" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-bg-primary" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 3. Secondary Background -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_bg_secondary">Secondary Background</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_bg_secondary_hint">Sidebar, header & modal overlays</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-bg-secondary" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-bg-secondary" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 4. Tertiary Background -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_bg_tertiary">Tertiary Background</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_bg_tertiary_hint">Input fields, dropdowns & code blocks</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-bg-tertiary" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-bg-tertiary" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 5. Card Surface -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_bg_card">Card Surface</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_bg_card_hint">Panels, mod cards & tiles</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-bg-card" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-bg-card" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 6. Borders -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_border">Borders</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_border_hint">Outlines, dividers & borders</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-border" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-border" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 7. Main Text -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_text_primary">Main Text</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_text_primary_hint">Titles, headings & primary copy</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-text-primary" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-text-primary" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- 8. Muted Text -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_text_muted">Muted Text</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_text_muted_hint">Hints, metadata & subtitles</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-text-muted" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-text-muted" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Group 2: Status & Health Colors (4 Colors) -->
+                <div id="theme-group-status" class="theme-color-group-pane" style="display:none;">
+                  <!-- Success -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_success">Success / Active</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_success_hint">Enabled mods, clean states & checks</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-success" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-success" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- Warning -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_warning">Warning / Notice</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_warning_hint">Conflicts, missing files & alerts</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-warning" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-warning" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- Danger -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_danger">Danger / Error</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_danger_hint">Crashes, failed ops & purges</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-danger" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-danger" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- Info -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_info">Info / Accent 2</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_info_hint">Informational badges & links</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-info" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-info" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Group 3: Mod Type Badges (4 Colors) -->
+                <div id="theme-group-badges" class="theme-color-group-pane" style="display:none;">
+                  <!-- PAK Mod -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_type_pak">PAK Mod</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_type_pak_hint">Unreal Pak archives (.pak)</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-type-pak" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-type-pak" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- UE4SS Mod -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_type_ue4ss">UE4SS Mod</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_type_ue4ss_hint">Lua & C++ scripts</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-type-ue4ss" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-type-ue4ss" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- PalSchema Mod -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_type_palschema">PalSchema Mod</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_type_palschema_hint">Data schema modifications</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-type-palschema" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-type-palschema" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+
+                  <!-- LogicMods -->
+                  <div class="theme-color-card">
+                    <span class="theme-color-card-label" data-i18n="theme.color_type_logicmods">LogicMods</span>
+                    <span class="theme-color-card-hint" data-i18n="theme.color_type_logicmods_hint">Blueprint logic mods</span>
+                    <div class="theme-color-card-row">
+                      <input type="color" id="theme-color-type-logicmods" class="theme-color-picker-input" />
+                      <input type="text" id="theme-hex-type-logicmods" class="theme-color-hex-input" maxlength="7" />
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Custom Images Section -->
+                <div style="border-top:1px solid var(--border);padding-top:calc(10px * var(--ui-scale, 1));display:flex;flex-direction:column;gap:calc(10px * var(--ui-scale, 1));">
+                  <span style="font-weight:700;font-size:var(--text-xs, 11px);color:var(--text-secondary);" data-i18n="theme.images_title">Background Images & Watermarks</span>
+
+                  <!-- App Background Image Card -->
+                  <div class="theme-image-card">
+                    <div class="theme-image-card-main">
+                      <div class="theme-image-thumb-box" id="theme-app-bg-thumb">
+                        <img id="theme-app-bg-thumb-img" class="theme-image-thumb-img" alt="App Background" />
+                        <span id="theme-app-bg-thumb-empty" class="theme-image-thumb-empty">🖼️</span>
+                      </div>
+                      <div class="theme-image-card-content">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                          <span style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-primary);" data-i18n="theme.img_app_bg">App Background Artwork</span>
+                          <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));align-items:center;">
+                            <span id="theme-app-bg-status" class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:var(--text-2xs, 9.5px);padding:2px 6px;border:1px solid var(--border);" data-i18n="theme.status_no_image">No image</span>
+                            <input type="file" id="theme-app-bg-file" accept="image/*" style="display:none;" />
+                            <button type="button" id="theme-app-bg-browse-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.browse">Choose Image...</button>
+                            <button type="button" id="theme-app-bg-adjust-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;" data-i18n="theme.btn_crop_adjust">✂️ Crop / Adjust</button>
+                            <button type="button" id="theme-app-bg-clear-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.clear">Clear</button>
+                          </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));margin-top:4px;">
+                          <span style="font-size:var(--text-2xs, 9.5px);color:var(--text-muted);min-width:40px;" data-i18n="theme.opacity">Opacity:</span>
+                          <input type="range" id="theme-app-bg-opacity" class="theme-range-slider" min="0.05" max="0.9" step="0.05" value="0.15" style="flex:1;" />
+                          <span id="theme-app-bg-opacity-val" class="theme-slider-val-badge">15%</span>
+                          <span style="font-size:var(--text-2xs, 9.5px);color:var(--text-muted);min-width:28px;margin-left:6px;" data-i18n="theme.blur">Blur:</span>
+                          <input type="range" id="theme-app-bg-blur" class="theme-range-slider" min="0" max="20" step="1" value="0" style="width:calc(70px * var(--ui-scale, 1));" />
+                          <span id="theme-app-bg-blur-val" class="theme-slider-val-badge">0px</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Sidebar Image Card -->
+                  <div class="theme-image-card">
+                    <div class="theme-image-card-main">
+                      <div class="theme-image-thumb-box" id="theme-sidebar-bg-thumb" style="cursor:pointer;" title="Click to crop / adjust image">
+                        <img id="theme-sidebar-bg-thumb-img" class="theme-image-thumb-img" alt="Sidebar Banner" />
+                        <span id="theme-sidebar-bg-thumb-empty" class="theme-image-thumb-empty">📋</span>
+                      </div>
+                      <div class="theme-image-card-content">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                          <span style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-primary);" data-i18n="theme.img_sidebar_bg">Sidebar Artwork / Banner</span>
+                          <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));align-items:center;">
+                            <span id="theme-sidebar-bg-status" class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:var(--text-2xs, 9.5px);padding:2px 6px;border:1px solid var(--border);" data-i18n="theme.status_no_image">No image</span>
+                            <input type="file" id="theme-sidebar-bg-file" accept="image/*" style="display:none;" />
+                            <button type="button" id="theme-sidebar-bg-browse-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.browse">Choose Image...</button>
+                            <button type="button" id="theme-sidebar-bg-adjust-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;" data-i18n="theme.btn_crop_adjust">✂️ Crop / Adjust</button>
+                            <button type="button" id="theme-sidebar-bg-clear-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.clear">Clear</button>
+                          </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));margin-top:4px;">
+                          <span style="font-size:var(--text-2xs, 9.5px);color:var(--text-muted);min-width:40px;" data-i18n="theme.opacity">Opacity:</span>
+                          <input type="range" id="theme-sidebar-bg-opacity" class="theme-range-slider" min="0.05" max="0.9" step="0.05" value="0.2" style="flex:1;" />
+                          <span id="theme-sidebar-bg-opacity-val" class="theme-slider-val-badge">20%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Monaco Editor Watermark Card -->
+                  <div class="theme-image-card">
+                    <div class="theme-image-card-main">
+                      <div class="theme-image-thumb-box" id="theme-editor-bg-thumb" style="cursor:pointer;" title="Click to crop / adjust image">
+                        <img id="theme-editor-bg-thumb-img" class="theme-image-thumb-img" alt="Editor Watermark" />
+                        <span id="theme-editor-bg-thumb-empty" class="theme-image-thumb-empty">💻</span>
+                      </div>
+                      <div class="theme-image-card-content">
+                        <div style="display:flex;justify-content:space-between;align-items:center;">
+                          <span style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-primary);" data-i18n="theme.img_editor_bg">Monaco Editor Watermark Artwork</span>
+                          <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));align-items:center;">
+                            <span id="theme-editor-bg-status" class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:var(--text-2xs, 9.5px);padding:2px 6px;border:1px solid var(--border);" data-i18n="theme.status_no_image">No image</span>
+                            <input type="file" id="theme-editor-bg-file" accept="image/*" style="display:none;" />
+                            <button type="button" id="theme-editor-bg-browse-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.browse">Choose Image...</button>
+                            <button type="button" id="theme-editor-bg-adjust-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;" data-i18n="theme.btn_crop_adjust">✂️ Crop / Adjust</button>
+                            <button type="button" id="theme-editor-bg-clear-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.clear">Clear</button>
+                          </div>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:calc(8px * var(--ui-scale, 1));margin-top:4px;">
+                          <span style="font-size:var(--text-2xs, 9.5px);color:var(--text-muted);min-width:40px;" data-i18n="theme.opacity">Opacity:</span>
+                          <input type="range" id="theme-editor-bg-opacity" class="theme-range-slider" min="0.05" max="0.8" step="0.05" value="0.15" style="flex:1;" />
+                          <span id="theme-editor-bg-opacity-val" class="theme-slider-val-badge">15%</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Hidden input for importing .pmmtheme.json -->
+              <input type="file" id="theme-import-file-input" accept=".json,.pmmtheme.json" style="display:none;" />
             </div>
 
             <div class="settings-section-card">
@@ -301,7 +592,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.image_cache_title">Offline Thumbnail Cache</span>
                 </div>
-                <span id="settings-image-cache-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
+                <span id="settings-image-cache-badge" class="badge" style="background:var(--info-dim); color:var(--info); border:1px solid var(--info-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
@@ -384,11 +675,11 @@
                 </div>
                 <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
                   <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_game_version">Target Game Version</div>
-                  <div id="settings-resources-game-ver" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:#22c55e; margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
+                  <div id="settings-resources-game-ver" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:var(--success); margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
                 </div>
                 <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
                   <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); text-transform:uppercase; font-weight:700;" data-i18n="settings.res_ue4ss_commit">UE4SS Engine Commit</div>
-                  <div id="settings-resources-ue4ss-commit" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:#eab308; margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
+                  <div id="settings-resources-ue4ss-commit" style="font-family:'JetBrains Mono',monospace; font-size:var(--text-sm, 12px); font-weight:700; color:var(--warning); margin-top:calc(2px * var(--ui-scale, 1));">Detecting...</div>
                 </div>
               </div>
             </div>
@@ -399,7 +690,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.usmap_title">Unreal Engine Schema Mappings (.usmap)</span>
                 </div>
-                <span id="settings-usmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-usmap-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.usmap_hint">Structural schema mappings used by PalModManager for deep cooked asset inspection, DataTable decoding, and mod compatibility verification. Synced directly from official GitHub repository.</div>
               
@@ -423,7 +714,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.sdk_title">C++ SDK Headers (Pal.hpp / CXXHeaderDump)</span>
                 </div>
-                <span id="settings-sdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-sdk-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.sdk_hint">C++ header definitions (Pal.hpp, Engine.hpp, BP_*.hpp) used by the Hook Diagnostic Engine to validate exact UE4SS functions, RPCs, and delegates with zero false positives.</div>
               
@@ -455,7 +746,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.jmap_title">JSON Property Mappings (.jmap)</span>
                 </div>
-                <span id="settings-jmap-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-jmap-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.jmap_hint">Complete JSON AST specification of all Unreal properties, enums, structs, and byte offsets. Powers enum validations, diffing, and AST tooling.</div>
               
@@ -485,7 +776,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.luatypes_title">Lua EmmyLua Types (shared/types)</span>
                 </div>
-                <span id="settings-luatypes-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-luatypes-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.luatypes_hint">1,712 EmmyLua definition files (Pal.lua, Engine.lua) providing rich method signatures, parameter info, and autocompletions in Monaco Editor.</div>
               
@@ -516,7 +807,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.uht_title">Unreal Header Tool (UHT) C++ Headers</span>
                 </div>
-                <span id="settings-uht-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-uht-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.uht_hint">24,076 Unreal Header Tool C++ headers with full UCLASS/UPROPERTY/UFUNCTION annotations for building native C++ plugins and RPC inspection.</div>
               
@@ -547,7 +838,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.bpsdk_title">Blueprint SDK Dummy Assets (UE4SS_SDK)</span>
                 </div>
-                <span id="settings-bpsdk-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-bpsdk-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.bpsdk_hint">14,090 dummy asset files replicating Palworld internal asset tree. Enables opening and creating cooked .pak mods inside Unreal Engine 5.1.1 Editor.</div>
               
@@ -578,7 +869,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.blueprints_title">Live Game Blueprints Catalog</span>
                 </div>
-                <span id="settings-blueprints-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-blueprints-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.blueprints_hint">Extracted game blueprint classes and cooked assets from Pal-Windows.pak used for rich IntelliSense and instant mod overriding. Synced from official GitHub repository.</div>
               
@@ -603,7 +894,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.datatables_title">PalSchema DataTables Catalog</span>
                 </div>
-                <span id="settings-datatables-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-datatables-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.datatables_hint">Decoded game row definitions (ItemData, PalData, CharacterData...) and schema templates used for DataTable autocompletion and conflict detection. Synced from official GitHub repository.</div>
               
@@ -629,7 +920,7 @@
                 <div class="settings-card-header" style="margin-bottom:0;">
                   <span class="settings-card-title" data-i18n="settings.schemas_title">PalSchema JSON Schemas Specification</span>
                 </div>
-                <span id="settings-schemas-badge" class="badge" style="background:rgba(34,197,94,0.15); color:#22c55e; border:1px solid rgba(34,197,94,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
+                <span id="settings-schemas-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">Checking...</span>
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.schemas_hint">Formal JSON Schema (Draft-07) specifications defining all 474 DataTables, Unreal property types, and high-level items/pals/buildings/skins schemas. Powers deep IDE IntelliSense, autocomplete, and real-time linter validation.</div>
               
@@ -644,7 +935,7 @@
               </div>
 
               <!-- Special Thanks to Okaetsu Acknowledgment Box -->
-              <div style="background:rgba(99,102,241,0.08); border:1px solid rgba(99,102,241,0.25); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); display:flex; align-items:center; justify-content:space-between; gap:calc(12px * var(--ui-scale, 1));">
+              <div style="background:var(--accent-dim); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); display:flex; align-items:center; justify-content:space-between; gap:calc(12px * var(--ui-scale, 1));">
                 <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
                   <span style="font-size:calc(16px * var(--ui-scale, 1));">✨</span>
                   <div style="font-size:var(--text-xs, 11px); line-height:1.4; color:var(--text-primary);">
@@ -675,7 +966,7 @@
               <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: calc(8px * var(--ui-scale, 1)); font-family: monospace; font-size: var(--text-xs, 11px);" data-i18n="settings.safety_checking">Checking backup status...</div>
               <div style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1));">
-                  <button type="button" id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1)); border-color: rgba(46, 213, 115, 0.4); color: #2ed573;" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
+                  <button type="button" id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1)); border-color: var(--success-dim); color: var(--success);" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
                   <button type="button" id="safety-backup-now-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
                 </div>
                 <button type="button" id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
@@ -696,7 +987,7 @@
                     <span style="font-size:calc(14px * var(--ui-scale, 1));">⚡</span>
                     <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_temp_title">Temporary Downloads Cache</span>
                   </div>
-                  <span id="storage-temp-badge" class="badge" style="background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
+                  <span id="storage-temp-badge" class="badge" style="background:var(--info-dim); color:var(--info); border:1px solid var(--info-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
                 <div id="storage-temp-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">0 temporary files in cache</div>
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
@@ -712,7 +1003,7 @@
                     <span style="font-size:calc(14px * var(--ui-scale, 1));">📦</span>
                     <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_library_title">Local Mod Library</span>
                   </div>
-                  <span id="storage-library-badge" class="badge" style="background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
+                  <span id="storage-library-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
                 <div id="storage-library-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">0 mods, 0 zip archives</div>
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
@@ -727,10 +1018,10 @@
                     <span style="font-size:calc(14px * var(--ui-scale, 1));">🖼️</span>
                     <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_image_cache_title">Thumbnail Image Cache</span>
                   </div>
-                  <span id="storage-images-badge" class="badge" style="background:rgba(155,89,182,0.15); color:#9b59b6; border:1px solid rgba(155,89,182,0.3); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
+                  <span id="storage-images-badge" class="badge" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
                 <div id="storage-images-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">WebP cached mod cover images</div>
-                <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
+                <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
                   <button type="button" id="storage-clear-images-btn" class="btn-secondary" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
                 </div>
               </div>

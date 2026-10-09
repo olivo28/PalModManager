@@ -121,24 +121,24 @@ export async function refreshUsmapStatus(): Promise<void> {
     if (badge) {
       if (status.isSynced && status.localUsmapExists) {
         badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-        badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        badge.style.background = 'var(--success-dim)';
+        badge.style.color = 'var(--success)';
+        badge.style.borderColor = 'var(--success-dim)';
       } else if (status.localUsmapExists && status.isBuildMatched === false) {
         badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
-        badge.style.background = 'rgba(245,158,11,0.15)';
-        badge.style.color = '#f59e0b';
-        badge.style.borderColor = 'rgba(245,158,11,0.3)';
+        badge.style.background = 'var(--warning-dim)';
+        badge.style.color = 'var(--warning)';
+        badge.style.borderColor = 'var(--warning-dim)';
       } else if (status.localUsmapExists) {
         badge.textContent = `📦 ${t('settings.usmap_status_available') || 'Available (Bundled)'}`;
-        badge.style.background = 'rgba(0,188,255,0.15)';
-        badge.style.color = '#00bcff';
-        badge.style.borderColor = 'rgba(0,188,255,0.3)';
+        badge.style.background = 'var(--info-dim)';
+        badge.style.color = 'var(--info)';
+        badge.style.borderColor = 'var(--info-dim)';
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
-        badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color = '#ef4444';
-        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        badge.style.background = 'var(--danger-dim)';
+        badge.style.color = 'var(--danger)';
+        badge.style.borderColor = 'var(--danger-dim)';
       }
     }
 
@@ -197,19 +197,19 @@ export async function refreshSdkStatus(): Promise<void> {
     if (badge) {
       if (status.installed && status.totalClasses > 0) {
         badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-        badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        badge.style.background = 'var(--success-dim)';
+        badge.style.color = 'var(--success)';
+        badge.style.borderColor = 'var(--success-dim)';
       } else if (status.localGameCxxFound) {
         badge.textContent = `📂 ${t('settings.sdk_status_local_found') || 'Local Folder Detected'}`;
-        badge.style.background = 'rgba(0,188,255,0.15)';
-        badge.style.color = '#00bcff';
-        badge.style.borderColor = 'rgba(0,188,255,0.3)';
+        badge.style.background = 'var(--info-dim)';
+        badge.style.color = 'var(--info)';
+        badge.style.borderColor = 'var(--info-dim)';
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
-        badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color = '#ef4444';
-        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        badge.style.background = 'var(--danger-dim)';
+        badge.style.color = 'var(--danger)';
+        badge.style.borderColor = 'var(--danger-dim)';
       }
     }
 
@@ -254,20 +254,20 @@ export async function refreshBlueprintsStatus(): Promise<void> {
       if (status.totalBlueprints > 0) {
         if (status.blueprintsIsBuildMatched === false) {
           badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
-          badge.style.background = 'rgba(234,179,8,0.15)';
-          badge.style.color = '#eab308';
-          badge.style.borderColor = 'rgba(234,179,8,0.3)';
+          badge.style.background = 'var(--warning-dim)';
+          badge.style.color = 'var(--warning)';
+          badge.style.borderColor = 'var(--warning-dim)';
         } else {
           badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-          badge.style.background = 'rgba(34,197,94,0.15)';
-          badge.style.color = '#22c55e';
-          badge.style.borderColor = 'rgba(34,197,94,0.3)';
+          badge.style.background = 'var(--success-dim)';
+          badge.style.color = 'var(--success)';
+          badge.style.borderColor = 'var(--success-dim)';
         }
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
-        badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color = '#ef4444';
-        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        badge.style.background = 'var(--danger-dim)';
+        badge.style.color = 'var(--danger)';
+        badge.style.borderColor = 'var(--danger-dim)';
       }
     }
 
@@ -324,20 +324,20 @@ export async function refreshDatatablesStatus(): Promise<void> {
       if (status.totalDatatables > 0) {
         if (status.datatablesIsBuildMatched === false) {
           badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
-          badge.style.background = 'rgba(234,179,8,0.15)';
-          badge.style.color = '#eab308';
-          badge.style.borderColor = 'rgba(234,179,8,0.3)';
+          badge.style.background = 'var(--warning-dim)';
+          badge.style.color = 'var(--warning)';
+          badge.style.borderColor = 'var(--warning-dim)';
         } else {
           badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-          badge.style.background = 'rgba(34,197,94,0.15)';
-          badge.style.color = '#22c55e';
-          badge.style.borderColor = 'rgba(34,197,94,0.3)';
+          badge.style.background = 'var(--success-dim)';
+          badge.style.color = 'var(--success)';
+          badge.style.borderColor = 'var(--success-dim)';
         }
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
-        badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color = '#ef4444';
-        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        badge.style.background = 'var(--danger-dim)';
+        badge.style.color = 'var(--danger)';
+        badge.style.borderColor = 'var(--danger-dim)';
       }
     }
 
@@ -397,14 +397,14 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
     if (badge) {
       if (catalog.is_available && catalog.total_raw_schemas > 0) {
         badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-        badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        badge.style.background = 'var(--success-dim)';
+        badge.style.color = 'var(--success)';
+        badge.style.borderColor = 'var(--success-dim)';
       } else {
         badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
-        badge.style.background = 'rgba(239,68,68,0.15)';
-        badge.style.color = '#ef4444';
-        badge.style.borderColor = 'rgba(239,68,68,0.3)';
+        badge.style.background = 'var(--danger-dim)';
+        badge.style.color = 'var(--danger)';
+        badge.style.borderColor = 'var(--danger-dim)';
       }
     }
 

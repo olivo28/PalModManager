@@ -28,6 +28,7 @@ pub mod worker;
 pub mod workshop_bridge;
 pub mod system_open;
 pub mod game_detector;
+pub mod diagnostics;
 
 use commands::mod_commands;
 use commands::settings_commands;
@@ -52,6 +53,7 @@ use commands::config_archive;
 use commands::resource_commands;
 use commands::pak_tweaker;
 use commands::fomod;
+use diagnostics::crash as crash_diagnostics;
 use state::AppState;
 
 use tauri::{Manager, Emitter};
@@ -223,6 +225,7 @@ pub fn run() {
             fomod::build_fomod_manifest,
             fomod::deduce_fomod_choices,
             install::diff::preview_config_diff,
+            install::orphans::inspect_upgrade_orphans,
             config_commands::read_config,
             config_commands::save_config,
             config_commands::set_mod_config,
@@ -407,6 +410,11 @@ pub fn run() {
             pak_tweaker::tweak_datatable_cell,
             pak_tweaker::revert_pak_to_backup,
             pak_tweaker::get_pak_backup_status,
+            crash_diagnostics::list_all_crashes,
+            crash_diagnostics::check_latest_crash,
+            crash_diagnostics::analyze_crash_folder,
+            crash_diagnostics::export_crash_support_bundle,
+            crash_diagnostics::toggle_crash_watcher,
         ])
         .setup(move |app| {
             let state = app.state::<AppState>();
@@ -623,6 +631,16 @@ pub fn run() {
             }
 
             watcher::start_fs_watcher(app.handle().clone(), watch_paths);
+
+            // Crash Doctor: Iniciar centinela reactivo de crashes
+            if !game_dir.is_empty() {
+                let crash_watcher_enabled = settings.enable_crash_watcher.unwrap_or(true);
+                crash_diagnostics::watcher::set_crash_watcher_enabled(crash_watcher_enabled);
+                crash_diagnostics::watcher::start_crash_watcher(
+                    app.handle().clone(),
+                    std::path::PathBuf::from(&game_dir),
+                );
+            }
 
             Ok(())
         })

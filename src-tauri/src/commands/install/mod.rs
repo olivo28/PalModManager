@@ -7,6 +7,7 @@ pub mod install_standard;
 pub mod install_manifest;
 pub mod update;
 pub mod diff;
+pub mod orphans;
 pub mod clean_slate;
 
 // Re-export utils
@@ -26,6 +27,9 @@ pub use update::update_mod_command;
 
 // Re-export diff preview & types
 pub use diff::{preview_config_diff, ConfigDiff};
+
+// Re-export orphan inspection
+pub use orphans::inspect_upgrade_orphans;
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]

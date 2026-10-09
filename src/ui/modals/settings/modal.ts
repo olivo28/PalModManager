@@ -7,9 +7,11 @@ import { refreshSafetyBackupStatus, refreshStorageUsageStatus, refreshImageCache
 import { initDevResources, refreshDevResourcesStatus } from './resources';
 import { formatBytes } from './helpers';
 import { settingsDom } from '../../../framework';
+import { setupThemeSettingsUI } from '../../settings/themeManager';
 
 export function openSettingsModal(): void {
   const modal = settingsDom.el('settings-modal');
+  setupThemeSettingsUI();
   const pathInput = settingsDom.el('settings-game-path');
   const hideNativeCheckbox = settingsDom.elMaybe('settings-hide-native-mods');
   const debugConsoleCheckbox = settingsDom.elMaybe('settings-debug-console');
@@ -425,6 +427,13 @@ export function closeSettingsModal(): void {
   }
   const savedScale = getState().currentSettings?.uiScale || getState().currentSettings?.toolbarScale || 1.0;
   document.documentElement.style.setProperty('--ui-scale', savedScale.toString());
+
+  const adjustModal = document.getElementById('theme-image-adjust-modal');
+  if (adjustModal?.classList.contains('visible')) {
+    import('../../settings/themeImageAdjuster')
+      .then(m => m.closeThemeImageAdjustModal(true))
+      .catch(() => {});
+  }
 }
 
 export function openSettingsToTab(tabName: string): void {

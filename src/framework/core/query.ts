@@ -9,8 +9,8 @@ export type BaseDomMap = {
 
 export interface ScopeAccessor<T extends object> {
   readonly scopeName: string;
-  el<K extends keyof T & string>(id: K): T[K] extends HTMLElement ? T[K] : HTMLElement;
-  elMaybe<K extends keyof T & string>(id: K): (T[K] extends HTMLElement ? T[K] : HTMLElement) | null;
+  el<K extends keyof T & string>(id: K): NonNullable<T[K]> extends HTMLElement ? NonNullable<T[K]> : HTMLElement;
+  elMaybe<K extends keyof T & string>(id: K): (NonNullable<T[K]> extends HTMLElement ? NonNullable<T[K]> : HTMLElement) | null;
   exists<K extends keyof T & string>(id: K): boolean;
   query<E extends HTMLElement = HTMLElement>(selector: string): E | null;
   queryAll<E extends HTMLElement = HTMLElement>(selector: string): E[];

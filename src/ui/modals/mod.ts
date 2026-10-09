@@ -102,6 +102,8 @@ export function setupModalListeners(): void {
         overlay.classList.remove('visible');
         if (overlay.id === 'install-modal') {
           closeInstallModal();
+        } else if (overlay.id === 'theme-image-adjust-modal') {
+          import('../settings/themeImageAdjuster').then((m) => m.closeThemeImageAdjustModal(true)).catch(() => {});
         }
       }
     });

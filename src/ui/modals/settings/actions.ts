@@ -249,6 +249,14 @@ export async function handleSaveSettings(): Promise<void> {
       updateState({ currentSettings: settings });
     }
 
+    // Persist any active theme customizer changes (colors, background images, fit/position)
+    try {
+      const { saveActiveThemeFromCustomizer } = await import('../../settings/themeManager');
+      saveActiveThemeFromCustomizer();
+    } catch (e) {
+      console.warn('Failed to persist theme customizer draft:', e);
+    }
+
     closeSettingsModal();
     showToast(t('toasts.settings_saved'), 'success');
 

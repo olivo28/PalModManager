@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import type { ModInfo, InstallManifest, ZipAnalysis, UpdateCheckResult, ConfigDiff, ArchivedConfigInfo, FomodConfig, BuildFomodManifestPayload } from './types';
+import type { ModInfo, InstallManifest, ZipAnalysis, UpdateCheckResult, ConfigDiff, ArchivedConfigInfo, FomodConfig, BuildFomodManifestPayload, UpgradeOrphansResult } from './types';
 
 export async function getMods(): Promise<ModInfo[]> {
   return invoke('get_mods');
@@ -141,8 +141,22 @@ export async function checkModExistsCommand(zipPath: string): Promise<{ exists: 
   return invoke('check_mod_exists_command', { zipPath });
 }
 
-export async function updateModCommand(zipPath: string, modId: string): Promise<ModInfo> {
-  return invoke('update_mod_command', { zipPath, modId });
+export async function updateModCommand(
+  zipPath: string,
+  modId: string,
+  filesToPreserve?: string[] | null,
+  filesToPurge?: string[] | null
+): Promise<ModInfo> {
+  return invoke('update_mod_command', {
+    zipPath,
+    modId,
+    filesToPreserve: filesToPreserve || null,
+    filesToPurge: filesToPurge || null,
+  });
+}
+
+export async function inspectUpgradeOrphans(zipPath: string, modId: string): Promise<UpgradeOrphansResult> {
+  return invoke('inspect_upgrade_orphans', { zipPath, modId });
 }
 
 export async function changePakDestination(modId: string, destination: string): Promise<ModInfo> {

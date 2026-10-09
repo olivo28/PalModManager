@@ -1,11 +1,13 @@
 import * as monaco from 'monaco-editor';
-import { editorDom } from '../../../framework';
+import { editorDom, bus } from '../../../framework';
 import { t } from '../../../utils/i18n';
 import { getState } from '../../../state';
 import { registerMonacoCompletionProviders } from './completion';
 import { registerMonacoLinter } from './linter';
 import { registerMonacoQuickFixProvider } from './quickfix';
 import { initializeMonacoPalSchemas } from './schemas';
+import { defineDefaultMonacoThemes, syncMonacoTheme } from './themes';
+import { getActiveThemeId, findThemeById } from '../../../app/theme/storage';
 import {
   isMonacoInitialized,
   getMonacoEditor,
@@ -15,7 +17,7 @@ import {
 } from './state';
 import { updateStatusBarCursor, updateStatusBarLanguage } from './statusBar';
 
-export { isMonacoInitialized, getMonacoEditor, getCurrentMonacoFilePath };
+export { isMonacoInitialized, getMonacoEditor, getCurrentMonacoFilePath, defineDefaultMonacoThemes, defineDefaultMonacoThemes as definePmmTheme, syncMonacoTheme };
 
 // Register and configure JSONC (JSON with Comments)
 export function configureMonacoLanguages(): void {
@@ -115,62 +117,7 @@ export function configureMonacoLanguages(): void {
 };
 
 let _providersRegistered = false;
-
-export function definePmmTheme(): void {
-  monaco.editor.defineTheme('pmm-dark', {
-    base: 'vs-dark',
-    inherit: true,
-    rules: [
-      { token: '', foreground: 'd4d4d4', background: '1e1e1e' },
-      { token: 'comment', foreground: '6a9955', fontStyle: 'italic' },
-      { token: 'keyword', foreground: '569cd6' },
-      { token: 'keyword.control', foreground: 'c586c0' },
-      { token: 'keyword.operator', foreground: 'd4d4d4' },
-      { token: 'string', foreground: 'ce9178' },
-      { token: 'string.escape', foreground: 'd7ba7d' },
-      { token: 'number', foreground: 'b5cea8' },
-      { token: 'type', foreground: '4ec9b0' },
-      { token: 'function', foreground: 'dcdcaa' },
-      { token: 'identifier', foreground: '9cdcfe' },
-      { token: 'delimiter', foreground: 'd4d4d4' },
-      { token: 'delimiter.bracket', foreground: 'ffd700' },
-      { token: 'delimiter.array', foreground: 'd4d4d4' },
-      { token: 'key', foreground: '9cdcfe' },
-      { token: 'string.key', foreground: '9cdcfe' },
-      { token: 'string.key.json', foreground: '9cdcfe' },
-      { token: 'string.value', foreground: 'ce9178' },
-      { token: 'string.value.json', foreground: 'ce9178' },
-      { token: 'keyword.boolean', foreground: '569cd6', fontStyle: 'bold' },
-      { token: 'keyword.null', foreground: '569cd6' },
-      { token: 'keyword.json', foreground: '569cd6', fontStyle: 'bold' },
-      { token: 'constant', foreground: '4fc1ff' },
-      { token: 'constant.language', foreground: '569cd6' },
-    ],
-    colors: {
-      'editor.background': '#1e1e1e',
-      'editor.foreground': '#d4d4d4',
-      'editor.lineHighlightBackground': '#282b30',
-      'editor.selectionBackground': '#264f7880',
-      'editorInactiveSelection.background': '#264f7840',
-      'editorCursor.foreground': '#00d2ff',
-      'editorLineNumber.foreground': '#6e7681',
-      'editorLineNumber.activeForeground': '#00d2ff',
-      'editorGutter.background': '#1e1e1e',
-      'editorWidget.background': '#252526',
-      'editorWidget.border': '#454545',
-      'editorSuggestWidget.background': '#252526',
-      'editorSuggestWidget.border': '#454545',
-      'editorSuggestWidget.foreground': '#cccccc',
-      'editorSuggestWidget.selectedBackground': '#04395e',
-      'editorSuggestWidget.highlightForeground': '#00d2ff',
-      'editorHoverWidget.background': '#252526',
-      'editorHoverWidget.border': '#454545',
-      'scrollbarSlider.background': '#79797933',
-      'scrollbarSlider.hoverBackground': '#79797966',
-      'scrollbarSlider.activeBackground': '#bfbfbf66',
-    },
-  });
-}
+let _themeListenerAttached = false;
 
 export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
   const existing = getMonacoEditor();
@@ -183,14 +130,26 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
     throw new Error('Monaco container #editor-monaco-container not found in DOM');
   }
 
-  definePmmTheme();
+  defineDefaultMonacoThemes();
   configureMonacoLanguages();
+
+  // Determine active theme on initialization
+  let initialTheme = 'pmm-dark';
+  try {
+    const activeTheme = findThemeById(getActiveThemeId());
+    if (activeTheme.isBuiltin) {
+      initialTheme = activeTheme.mode === 'light' ? 'pmm-light' : 'pmm-dark';
+    } else {
+      syncMonacoTheme(activeTheme);
+      initialTheme = 'pmm-custom';
+    }
+  } catch {}
 
   const currentScale = getState().currentSettings?.uiScale || getState().currentSettings?.toolbarScale || 1.0;
   const editorInstance = monaco.editor.create(container, {
     value: '',
     language: 'lua',
-    theme: 'pmm-dark',
+    theme: initialTheme,
     automaticLayout: true,
     fontSize: Math.round(13.5 * currentScale * 10) / 10,
     fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace",
@@ -261,6 +220,13 @@ export function initMonacoEditor(): monaco.editor.IStandaloneCodeEditor {
   }
 
   registerMonacoLinter(editorInstance);
+
+  if (!_themeListenerAttached) {
+    bus.on('theme:changed', ({ theme }) => {
+      syncMonacoTheme(theme);
+    });
+    _themeListenerAttached = true;
+  }
 
   // Custom Context Menu Actions
   editorInstance.addAction({

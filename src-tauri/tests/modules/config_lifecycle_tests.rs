@@ -377,6 +377,8 @@ fn test_ue4ss_scripts_config_lua_preserved_on_update_and_reinstall() {
         "2026-09-25T00:00:00Z",
         false,
         false,
+        None,
+        None,
     ).expect("update_mod should succeed");
 
     // 5. Verify config.lua was NOT deleted by update_mod
@@ -412,6 +414,8 @@ fn test_ue4ss_scripts_config_lua_preserved_on_update_and_reinstall() {
         "2026-09-25T00:00:00Z",
         false,
         false,
+        None,
+        None,
     ).expect("reinstall via update_mod should succeed");
 
     assert!(cfg_path.exists(), "Scripts/config.lua MUST NOT be deleted after reinstall");
@@ -419,4 +423,189 @@ fn test_ue4ss_scripts_config_lua_preserved_on_update_and_reinstall() {
     println!("  [CONFIG] UE4SS Scripts/config.lua Preservation & Merge on Reinstall: PASS");
     println!("           * Final merged content:\n{}", merged_content.trim());
 }
+
+#[test]
+fn test_antiphat_dynamic_settings_ini_retention_on_update() {
+    let env = TestEnv::new_steam_win64();
+
+    // 1. Initial installation of AntiPhat v1.0
+    let v1_zip = ZipBuilder::new("AntiPhat-1.0.0-3799-1-0-0-1600000000.zip")
+        .add_text_file("AntiPhat/Scripts/main.lua", "print('AntiPhat v1.0')\n")
+        .add_text_file("AntiPhat/Scripts/config.lua", "Config = { PalScale = 1.0 }\n")
+        .add_text_file("AntiPhat/enabled.txt", "")
+        .build_in(&env.temp_dir);
+
+    let mut mod_info = env.install_zip(&v1_zip).expect("Install v1 must succeed");
+    let mod_dir = env.game_root.join("Pal").join("Binaries").join("Win64").join("Mods").join("AntiPhat");
+
+    // 2. Mod runs in-game and dynamically generates Scripts/settings.ini on disk
+    let scripts_dir = mod_dir.join("Scripts");
+    let dyn_settings_ini = scripts_dir.join("settings.ini");
+    fs::write(&dyn_settings_ini, "[AntiPhatSettings]\nPalScale=0.3\nCustomHotkey=F8\n").unwrap();
+    assert!(dyn_settings_ini.exists(), "Dynamic settings.ini must exist before update");
+
+    // 3. Mod author releases v2.0 without settings.ini in the zip
+    let v2_zip = ZipBuilder::new("AntiPhat-2.0.0-3799-2-0-0-1700000000.zip")
+        .add_text_file("AntiPhat/Scripts/main.lua", "print('AntiPhat v2.0')\n")
+        .add_text_file("AntiPhat/Scripts/config.lua", "Config = { PalScale = 1.0, NewOption = true }\n")
+        .add_text_file("AntiPhat/enabled.txt", "")
+        .build_in(&env.temp_dir);
+
+    let v2_analysis = palmodmanager_lib::zip_handler::analyze_zip(v2_zip.to_str().unwrap()).unwrap();
+    let temp_extracted = env.temp_dir.join("extracted_antiphat_dyn_v2");
+    let extracted_dir = palmodmanager_lib::zip_handler::extract_zip_to_temp(v2_zip.to_str().unwrap(), &temp_extracted).unwrap();
+
+    // 4. Run update_mod without explicit preserve list (fallback heuristic must retain settings.ini)
+    palmodmanager_lib::installer::update_mod(
+        &mut mod_info,
+        env.game_root.to_str().unwrap(),
+        env.program_data.to_str().unwrap(),
+        "default",
+        &extracted_dir,
+        &v2_analysis,
+        "AntiPhat-2.0.0-3799-2-0-0-1700000000.zip",
+        "2026-09-28T00:00:00Z",
+        false,
+        false,
+        None,
+        None,
+    ).expect("update_mod should succeed");
+
+    // 5. Verify settings.ini was NOT purged
+    assert!(
+        dyn_settings_ini.exists(),
+        "Dynamically generated Scripts/settings.ini MUST be retained after update!"
+    );
+    let ini_content = fs::read_to_string(&dyn_settings_ini).unwrap();
+    assert!(ini_content.contains("PalScale=0.3"), "User settings in settings.ini must be intact");
+
+    println!("  [CONFIG] AntiPhat Dynamic settings.ini Retention: PASS");
+}
+
+#[test]
+fn test_smartpause_explicit_stale_file_purging() {
+    let env = TestEnv::new_steam_win64();
+
+    // 1. Initial installation of SmartPause v1.0 which had old_module.lua and obsolete_config.ini
+    let v1_zip = ZipBuilder::new("SmartPause-1.0.0-3799-1-0-0-1600000000.zip")
+        .add_text_file("SmartPause/Scripts/main.lua", "print('SmartPause v1.0')\n")
+        .add_text_file("SmartPause/Scripts/old_module.lua", "return {}\n")
+        .add_text_file("SmartPause/Scripts/obsolete_config.ini", "[General]\nOldKey=1\n")
+        .add_text_file("SmartPause/enabled.txt", "")
+        .build_in(&env.temp_dir);
+
+    let mut mod_info = env.install_zip(&v1_zip).expect("Install v1 must succeed");
+    let mod_dir = env.game_root.join("Pal").join("Binaries").join("Win64").join("Mods").join("SmartPause");
+    let old_module = mod_dir.join("Scripts").join("old_module.lua");
+    let obsolete_config = mod_dir.join("Scripts").join("obsolete_config.ini");
+
+    assert!(old_module.exists());
+    assert!(obsolete_config.exists());
+
+    // 2. Author releases v2.0 removing old_module.lua and user explicitly chooses to purge obsolete_config.ini
+    let v2_zip = ZipBuilder::new("SmartPause-2.0.0-3799-2-0-0-1700000000.zip")
+        .add_text_file("SmartPause/Scripts/main.lua", "print('SmartPause v2.0')\n")
+        .add_text_file("SmartPause/enabled.txt", "")
+        .build_in(&env.temp_dir);
+
+    let v2_analysis = palmodmanager_lib::zip_handler::analyze_zip(v2_zip.to_str().unwrap()).unwrap();
+    let temp_extracted = env.temp_dir.join("extracted_smartpause_v2");
+    let extracted_dir = palmodmanager_lib::zip_handler::extract_zip_to_temp(v2_zip.to_str().unwrap(), &temp_extracted).unwrap();
+
+    let files_to_purge = vec!["Scripts/obsolete_config.ini".to_string()];
+
+    palmodmanager_lib::installer::update_mod(
+        &mut mod_info,
+        env.game_root.to_str().unwrap(),
+        env.program_data.to_str().unwrap(),
+        "default",
+        &extracted_dir,
+        &v2_analysis,
+        "SmartPause-2.0.0-3799-2-0-0-1700000000.zip",
+        "2026-09-28T00:00:00Z",
+        false,
+        false,
+        None,
+        Some(&files_to_purge),
+    ).expect("update_mod should succeed");
+
+    // 3. Verify old_module.lua was purged automatically (not in zip, executable script)
+    assert!(!old_module.exists(), "old_module.lua must be purged");
+    // 4. Verify obsolete_config.ini was purged because it was in files_to_purge
+    assert!(!obsolete_config.exists(), "obsolete_config.ini must be purged when explicitly requested");
+
+    println!("  [CONFIG] SmartPause Explicit Stale File Purge: PASS");
+}
+
+#[test]
+fn test_db_atomic_write_and_rotating_backups() {
+    let env = TestEnv::new_steam_win64();
+    let db_dir = env.temp_dir.join("test_db_store");
+    fs::create_dir_all(&db_dir).unwrap();
+
+    let mut data = palmodmanager_lib::models::AppData::default();
+    data.settings.game_path = "C:/Games/Palworld".to_string();
+
+    // 1. Initial save
+    palmodmanager_lib::db::save_db(db_dir.to_str().unwrap(), &data)
+        .expect("Initial save_db must succeed");
+
+    let live_db = db_dir.join("pmm_database.db");
+    assert!(live_db.is_file(), "pmm_database.db must exist after save");
+
+    // 2. Second save with modified state (triggers .bak.1 rotation)
+    data.settings.game_path = "D:/Games/Palworld2".to_string();
+    palmodmanager_lib::db::save_db(db_dir.to_str().unwrap(), &data)
+        .expect("Second save_db must succeed");
+
+    let bak_1 = db_dir.join("pmm_database.db.bak.1");
+    assert!(bak_1.is_file(), "pmm_database.db.bak.1 must be created on second save");
+
+    // Verify .bak.1 can be loaded and read cleanly
+    let loaded_current = palmodmanager_lib::db::load_db(db_dir.to_str().unwrap());
+    assert_eq!(loaded_current.settings.game_path, "D:/Games/Palworld2");
+
+    println!("  [DB] Atomic write and rotating backups: PASS");
+}
+
+#[test]
+fn test_db_quarantine_and_backup_recovery() {
+    let env = TestEnv::new_steam_win64();
+    let db_dir = env.temp_dir.join("test_db_corrupt_recovery");
+    fs::create_dir_all(&db_dir).unwrap();
+
+    let mut data = palmodmanager_lib::models::AppData::default();
+    data.settings.game_path = "C:/SafeGames/Palworld".to_string();
+
+    // 1. Save valid initial database
+    palmodmanager_lib::db::save_db(db_dir.to_str().unwrap(), &data).unwrap();
+
+    // 2. Save second revision so that .bak.1 exists with the valid data
+    data.settings.custom_data_path = Some("custom_val".to_string());
+    palmodmanager_lib::db::save_db(db_dir.to_str().unwrap(), &data).unwrap();
+
+    let live_db = db_dir.join("pmm_database.db");
+    assert!(live_db.is_file());
+    assert!(db_dir.join("pmm_database.db.bak.1").is_file());
+
+    // 3. Simulate catastrophic power failure: live_db contains corrupted garbage bytes
+    fs::write(&live_db, "enc:CORRUPTED_GARBAGE_BYTES_MANGLED_DATA").unwrap();
+
+    // 4. load_db must detect corruption, isolate to .corrupt.<timestamp>, and recover from .bak.1
+    let recovered = palmodmanager_lib::db::load_db(db_dir.to_str().unwrap());
+
+    // Verify user's database was restored and not wiped to blank default
+    assert_eq!(recovered.settings.game_path, "C:/SafeGames/Palworld");
+
+    // Verify a quarantine file was generated
+    let has_corrupt_quarantine = fs::read_dir(&db_dir)
+        .unwrap()
+        .flatten()
+        .any(|entry| entry.file_name().to_string_lossy().contains(".corrupt."));
+    assert!(has_corrupt_quarantine, "Corrupted file must be preserved in quarantine (.corrupt.<timestamp>)");
+
+    println!("  [DB] Corruption quarantine and backup auto-recovery: PASS");
+}
+
+
 

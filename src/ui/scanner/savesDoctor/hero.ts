@@ -20,7 +20,7 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
       <div class="scanner-scroll-panel" style="padding: calc(24px * var(--ui-scale, 1)); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex: 1; overflow-y: auto;">
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: calc(12px * var(--ui-scale, 1)); padding: calc(32px * var(--ui-scale, 1)) calc(28px * var(--ui-scale, 1)); max-width: min(calc(680px * var(--ui-scale, 1)), 92vw); width: 100%; box-shadow: 0 16px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; text-align: center; gap: calc(20px * var(--ui-scale, 1));">
           
-          <div style="width: calc(64px * var(--ui-scale, 1)); height: calc(64px * var(--ui-scale, 1)); border-radius: calc(16px * var(--ui-scale, 1)); background: rgba(74, 246, 38, 0.1); border: 1px solid rgba(74, 246, 38, 0.25); display: flex; align-items: center; justify-content: center; font-size: calc(32px * var(--ui-scale, 1));">
+          <div style="width: calc(64px * var(--ui-scale, 1)); height: calc(64px * var(--ui-scale, 1)); border-radius: calc(16px * var(--ui-scale, 1)); background: var(--success-dim); border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: calc(32px * var(--ui-scale, 1));">
             🩺
           </div>
 
@@ -33,24 +33,24 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
 
           <!-- Feature Cards Preview Grid -->
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: calc(12px * var(--ui-scale, 1)); width: 100%; text-align: left; margin: calc(6px * var(--ui-scale, 1)) 0;">
-            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
-              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: #4af626; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
+              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--success); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                 <span>🛡️</span>
                 <span>${escapeHtml(t('scanner.saves_feature_rescue_title') || 'Rescue & Clean')}</span>
               </div>
               <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_rescue_desc') || 'Detect and sanitize orphaned classes from uninstalled mods.')}</span>
             </div>
 
-            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
-              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: #38bdf8; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
+              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--info); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                 <span>⚖️</span>
                 <span>${escapeHtml(t('scanner.saves_feature_diff_title') || 'Snapshot Comparison')}</span>
               </div>
               <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_diff_desc') || 'Inspect progression differences and rollback safely.')}</span>
             </div>
 
-            <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
-              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: #ffd166; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+            <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
+              <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--warning); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                 <span>👥</span>
                 <span>${escapeHtml(t('scanner.saves_feature_roster_title') || 'Player Roster & Rules')}</span>
               </div>
@@ -60,7 +60,7 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
 
           <!-- Action Buttons -->
           <div style="display: flex; gap: calc(12px * var(--ui-scale, 1)); align-items: center; margin-top: calc(6px * var(--ui-scale, 1)); flex-wrap: wrap; justify-content: center;">
-            <button id="btn-initial-scan-saves" class="btn-primary" ${isLoading ? 'disabled' : ''} style="padding: calc(10px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); font-weight: 700; display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); box-shadow: 0 4px 14px rgba(74, 246, 38, 0.25); ${isLoading ? 'opacity: 0.85; cursor: wait;' : ''}">
+            <button id="btn-initial-scan-saves" class="btn-primary" ${isLoading ? 'disabled' : ''} style="padding: calc(10px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); font-weight: 700; display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); box-shadow: 0 4px 14px var(--accent-dim); ${isLoading ? 'opacity: 0.85; cursor: wait;' : ''}">
               ${isLoading ? `
                 <span class="spinner" style="width: calc(16px * var(--ui-scale, 1)); height: calc(16px * var(--ui-scale, 1)); border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
                 <span>${escapeHtml(t('scanner.saves_doctor_scanning') || 'Scanning Palworld SaveGames...')}</span>

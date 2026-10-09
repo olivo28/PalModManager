@@ -82,9 +82,12 @@ export function setupEventListeners(): void {
   registerOpenFolderBtn('open-folder-appdata', 'app_data');
   registerOpenFolderBtn('open-folder-profile', 'profile');
 
-  mainDom.elMaybe('theme-toggle-btn')?.addEventListener('click', () => {
+  mainDom.elMaybe('theme-toggle-btn')?.addEventListener('click', async () => {
     const current = document.documentElement.dataset.theme || 'dark';
-    applyTheme(current === 'dark' ? 'light' : 'dark');
+    const next = current === 'dark' ? 'light' : 'dark';
+    applyTheme(next);
+    const { renderThemeSelectOptions } = await import('../ui/settings/themeManager');
+    renderThemeSelectOptions();
   });
   detailDom.elMaybe('detail-close')?.addEventListener('click', closeDetailPanel);
   detailDom.elMaybe('detail-overlay')?.addEventListener('click', (e) => {
@@ -477,6 +480,14 @@ export function setupEventListeners(): void {
   import('@tauri-apps/api/event').then(({ listen }) => {
     listen<string>('dns-fallback-triggered', (event) => {
       showToast(t('toasts.dns_fallback_recovered', { provider: event.payload }), 'info');
+    });
+
+    listen<{ crashFolder: string; artifact?: string }>('crash:detected', async (event) => {
+      showToast(t('crash_doctor.toast_crash_intercepted') || 'Game crash intercepted! Opening Crash Doctor...', 'warning');
+      const { setActiveSubTab, renderScannerView } = await import('../ui/scanner/mod');
+      setActiveSubTab('crash');
+      navigateTo('scanner');
+      await renderScannerView();
     });
   }).catch(err => console.error("Failed to register event listeners:", err));
 }

@@ -1,0 +1,77 @@
+/* ===== PMM THEME BACKGROUND OVERLAYS ===== */
+
+/* 1. Main App Background Overlay */
+#main-content {
+  position: relative;
+}
+
+#main-content::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--pmm-app-bg-image, none);
+  background-repeat: var(--pmm-app-bg-repeat, no-repeat);
+  background-position: var(--pmm-app-bg-pos, center center);
+  background-size: var(--pmm-app-bg-fit, cover);
+  opacity: var(--pmm-app-bg-opacity, 0.15);
+  filter: blur(var(--pmm-app-bg-blur, 0px));
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.3s ease, filter 0.3s ease;
+}
+
+/* Ensure tab contents stay elevated above background layer */
+.tab-content {
+  position: relative;
+  z-index: 1;
+}
+
+/* 2. Sidebar Custom Background / Banner */
+#sidebar {
+  position: relative;
+  overflow: hidden;
+}
+
+#sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--pmm-sidebar-bg-image, none);
+  background-repeat: var(--pmm-sidebar-bg-repeat, no-repeat);
+  background-position: var(--pmm-sidebar-bg-pos, center bottom);
+  background-size: var(--pmm-sidebar-bg-fit, cover);
+  opacity: var(--pmm-sidebar-bg-opacity, 0.2);
+  pointer-events: none;
+  z-index: 0;
+  transition: opacity 0.3s ease;
+}
+
+.sidebar-logo-container,
+.sidebar-tabs,
+.sidebar-footer {
+  position: relative;
+  z-index: 1;
+}
+
+/* 3. Monaco Editor Watermark / Background Art */
+#editor-content-area {
+  position: relative;
+}
+
+#editor-monaco-container {
+  position: relative;
+}
+
+#editor-monaco-container::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: var(--pmm-editor-bg-image, none);
+  background-repeat: var(--pmm-editor-bg-repeat, no-repeat);
+  background-position: var(--pmm-editor-bg-pos, right bottom);
+  background-size: var(--pmm-editor-bg-fit, contain);
+  opacity: var(--pmm-editor-bg-opacity, 0.15);
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.3s ease;
+}

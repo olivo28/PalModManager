@@ -432,8 +432,7 @@ pub fn build_manifest_from_files_with_folder(
 
                     if let (Some(root), Some(subpath)) = (matched_root, matched_subpath) {
                         let sub_lower = subpath.to_lowercase();
-                        let is_cfg = sub_lower.starts_with("config") || sub_lower.starts_with("setting") || sub_lower.contains("config");
-                        let final_sub = if sub_lower.ends_with(".lua") && !subpath.contains('/') && !is_cfg && !has_scripts_dir {
+                        let final_sub = if sub_lower.ends_with(".lua") && !subpath.contains('/') && !has_scripts_dir {
                             format!("Scripts/{}", subpath)
                         } else {
                             subpath
@@ -441,8 +440,7 @@ pub fn build_manifest_from_files_with_folder(
                         let target_root = if has_explicit_folder { &folder_name } else { &root };
                         ue4ss_mods_dest.join(target_root).join(final_sub)
                     } else {
-                        let is_cfg = rel_lower.starts_with("config") || rel_lower.starts_with("setting") || rel_lower.contains("config");
-                        let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') && !is_cfg && !has_scripts_dir {
+                        let final_rel = if rel_lower.ends_with(".lua") && !relative_path.contains('/') && !has_scripts_dir {
                             format!("Scripts/{}", relative_path)
                         } else {
                             relative_path.clone()

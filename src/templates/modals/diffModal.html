@@ -61,9 +61,9 @@
       <div id="diff-stats-badge"
         style="display: flex; align-items: center; gap: 8px; font-family: monospace; flex-shrink: 0;">
         <span id="diff-stat-additions"
-          style="color: #4af626; font-weight: 700; background: rgba(74, 246, 38, 0.1); border: 1px solid rgba(74, 246, 38, 0.25); border-radius: 4px; padding: 2px 6px;">+0</span>
+          style="color: var(--success); font-weight: 700; background: var(--success-dim); border: 1px solid var(--success-dim); border-radius: 4px; padding: 2px 6px;">+0</span>
         <span id="diff-stat-deletions"
-          style="color: #ff5f56; font-weight: 700; background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.25); border-radius: 4px; padding: 2px 6px;">-0</span>
+          style="color: var(--danger); font-weight: 700; background: var(--danger-dim); border: 1px solid var(--danger-dim); border-radius: 4px; padding: 2px 6px;">-0</span>
       </div>
     </div>
 
@@ -81,12 +81,12 @@
       style="display: flex; align-items: center; justify-content: space-between; padding: 12px 20px; border-top: 1px solid var(--border); background: var(--bg-secondary);">
       <div style="display: flex; align-items: center; gap: 10px;">
         <button id="diff-modal-restore-btn" class="btn-primary"
-          style="display: flex; align-items: center; gap: 6px; background: #ff9000; border-color: #ff9000; color: #000; font-weight: 700; cursor: pointer;">
+          style="display: flex; align-items: center; gap: 6px; background: var(--warning); border-color: var(--warning); color: #000; font-weight: 700; cursor: pointer;">
           <span>🔄</span>
           <span data-i18n="editor.btn_restore">Restore Backup</span>
         </button>
         <button id="diff-modal-merge-btn" class="btn-primary"
-          style="display: none; align-items: center; gap: 6px; background: #38bdf8; border-color: #38bdf8; color: #000; font-weight: 700; cursor: pointer;"
+          style="display: none; align-items: center; gap: 6px; background: var(--info); border-color: var(--info); color: #000; font-weight: 700; cursor: pointer;"
           title="Intelligently merge custom settings from backup into active file"
           data-i18n-title="editor.btn_merge_title">
           <span>🔀</span>

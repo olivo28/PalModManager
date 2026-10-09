@@ -129,7 +129,7 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                 } else if path.is_file() {
                     if let Some(ext) = path.extension().and_then(|e| e.to_str()) {
                         let ext_lower = ext.to_lowercase();
-                        if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" || ext_lower == "lua" {
+                        if ext_lower == "json" || ext_lower == "jsonc" || ext_lower == "ini" || ext_lower == "cfg" || ext_lower == "txt" || ext_lower == "lua" || ext_lower == "toml" || ext_lower == "yaml" || ext_lower == "yml" {
                             let fname_str = path.file_name().and_then(|s| s.to_str()).unwrap_or("");
                             let path_str_lower = path.to_string_lossy().to_lowercase();
                             let fname_lower = fname_str.to_lowercase();
@@ -158,10 +158,20 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
 
                             // Rule: .lua files merge if:
                             // 1. Explicitly configured as mod config, OR
-                            // 2. Located inside a shared/ folder
+                            // 2. Located inside a shared/ folder, OR
+                            // 3. Located inside a config/ or settings/ folder, OR
+                            // 4. Filename explicitly contains "config", "setting", "option", or "pref"
                             let is_lua_config = if ext_lower == "lua" {
                                 custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
                                     || path_str_lower.contains("shared")
+                                    || path_str_lower.contains("/config/")
+                                    || path_str_lower.contains("\\config\\")
+                                    || path_str_lower.contains("/settings/")
+                                    || path_str_lower.contains("\\settings\\")
+                                    || fname_lower.contains("config")
+                                    || fname_lower.contains("setting")
+                                    || fname_lower.contains("option")
+                                    || fname_lower.contains("pref")
                             } else {
                                 true
                             };
@@ -203,6 +213,22 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                                         && !fname_lower.contains("help")
                                         && !fname_lower.contains("notice"));
                                 if !is_txt_config {
+                                    continue;
+                                }
+                            }
+
+                            // Rule: .toml, .yaml, .yml files merge only if config/setting/option, or inside shared, or explicitly configured
+                            if ext_lower == "toml" || ext_lower == "yaml" || ext_lower == "yml" {
+                                let is_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
+                                    || path_str_lower.contains("shared")
+                                    || path_str_lower.contains("/config/")
+                                    || path_str_lower.contains("\\config\\")
+                                    || path_str_lower.contains("/settings/")
+                                    || path_str_lower.contains("\\settings\\")
+                                    || fname_lower.contains("config")
+                                    || fname_lower.contains("setting")
+                                    || fname_lower.contains("option");
+                                if !is_config {
                                     continue;
                                 }
                             }
@@ -296,10 +322,6 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_key
     for (rel_path, old_content) in &snapshot.entries {
         let fname_str = rel_path.file_name().and_then(|f| f.to_str()).unwrap_or("");
         let rel_path_str = rel_path.to_string_lossy();
-        if ignored_keys.iter().any(|k| k.eq_ignore_ascii_case(fname_str) || k.eq_ignore_ascii_case(&rel_path_str)) {
-            crate::logger::log(&format!("Config merge: Skipping explicitly ignored file {}", fname_str));
-            continue;
-        }
 
         let mut target_file: Option<PathBuf> = None;
 
@@ -374,13 +396,30 @@ pub fn apply_config_merge(mod_dir: &Path, snapshot: &ConfigSnapshot, ignored_key
 
         let new_file = match target_file {
             Some(f) => f,
-            None => continue,
+            None => {
+                let restore_path = mod_dir.join(rel_path);
+                if let Some(parent) = restore_path.parent() {
+                    let _ = fs::create_dir_all(parent);
+                }
+                let _ = fs::write(&restore_path, old_content);
+                let ext_str = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("lua");
+                let pre_update_bak = restore_path.with_extension(format!("{}.pre-update.bak", ext_str));
+                let _ = fs::write(&pre_update_bak, old_content);
+                crate::logger::log(&format!("Config merge: Restored missing user config and created backup at {:?}", restore_path));
+                continue;
+            }
         };
 
         // Always save a safe pre-update backup of the user's previous file so it can never be lost
         let ext_str = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("lua");
         let pre_update_bak = new_file.with_extension(format!("{}.pre-update.bak", ext_str));
         let _ = fs::write(&pre_update_bak, old_content);
+        crate::logger::log(&format!("Config merge: Saved pre-update safety backup to {:?}", pre_update_bak));
+
+        if ignored_keys.iter().any(|k| k.eq_ignore_ascii_case(fname_str) || k.eq_ignore_ascii_case(&rel_path_str)) {
+            crate::logger::log(&format!("Config merge: Skipping merge for explicitly ignored/clean file {}", fname_str));
+            continue;
+        }
 
         let ext = rel_path.extension().and_then(|e| e.to_str()).unwrap_or("").to_lowercase();
         if let Ok(new_content) = fs::read_to_string(&new_file) {
@@ -404,7 +443,7 @@ pub fn merge_file_contents(old_content: &str, new_content: &str, ext: &str, igno
 pub fn generate_config_diff(old_content: &str, new_content: &str, ext: &str) -> Option<(Vec<ChangedKeyDetail>, Vec<String>, Vec<String>)> {
     match ext.to_lowercase().as_str() {
         "json" | "jsonc" => diff_json(old_content, new_content),
-        "ini" | "cfg" | "txt" => Some(diff_kv(old_content, new_content)),
+        "ini" | "cfg" | "txt" | "toml" | "yaml" | "yml" => Some(diff_kv(old_content, new_content)),
         "lua" => Some(diff_lua(old_content, new_content)),
         _ => None,
     }

@@ -3,7 +3,7 @@ export const DEFAULT_AVATAR = 'data:image/svg+xml;utf8,<svg xmlns="http://www.w3
 export let isListening = false;
 export function setIsListening(val: boolean) { isListening = val; }
 
-export function isNexusModEndorsed(nexusModId: number | string | undefined | null, endorsementsCache?: Array<{ modId: number | string; status?: string }>): boolean {
+export function isNexusModEndorsed(nexusModId: number | string | undefined | null, endorsementsCache?: Array<{ modId: number | string; status?: string | null }> | null): boolean {
   if (!nexusModId || !endorsementsCache || !Array.isArray(endorsementsCache)) return false;
   const targetId = Number(nexusModId);
   if (!targetId) return false;
@@ -14,7 +14,7 @@ export function isNexusModEndorsed(nexusModId: number | string | undefined | nul
   });
 }
 
-export function isNexusModTracked(nexusModId: number | string | undefined | null, trackedCache?: Array<{ modId: number | string }>): boolean {
+export function isNexusModTracked(nexusModId: number | string | undefined | null, trackedCache?: Array<{ modId: number | string }> | null): boolean {
   if (!nexusModId || !trackedCache || !Array.isArray(trackedCache)) return false;
   const targetId = Number(nexusModId);
   if (!targetId) return false;

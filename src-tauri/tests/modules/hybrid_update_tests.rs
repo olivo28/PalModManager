@@ -72,6 +72,8 @@ fn test_hybrid_mod_update_preserves_profile_visibility_and_virtual_folders() {
         "2026-09-08T00:00:00Z",
         false,
         false,
+        None,
+        None,
     ).expect("installer::update_mod should succeed");
 
     let _ = std::fs::remove_dir_all(&extract_target);

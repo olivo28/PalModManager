@@ -129,7 +129,7 @@ export let lastScanResult: ScanResult | null = null;
 export let lastHotkeysResult: ModHotkey[] | null = null;
 export let isScanning = false;
 export let isScanningHotkeys = false;
-export let activeSubTab: 'conflicts' | 'hotkeys' | 'saves' = 'conflicts';
+export let activeSubTab: 'conflicts' | 'hotkeys' | 'saves' | 'crash' = 'conflicts';
 export let editingHotkeyKey: string | null = null;
 export let hotkeyFilter = '';
 export let registryFilterType: 'all' | 'pak' | 'ue4ss' | 'palschema' | 'hybrid' = 'all';
@@ -142,7 +142,7 @@ export function setLastHotkeysResult(val: ModHotkey[] | null): void { lastHotkey
 export function setIsScanning(val: boolean): void { isScanning = val; }
 export function setIsScanningHotkeys(val: boolean): void { isScanningHotkeys = val; }
 
-export function setActiveSubTab(val: 'conflicts' | 'hotkeys' | 'saves'): void { activeSubTab = val; }
+export function setActiveSubTab(val: 'conflicts' | 'hotkeys' | 'saves' | 'crash'): void { activeSubTab = val; }
 export function setEditingHotkeyKey(val: string | null): void { editingHotkeyKey = val; }
 export function setHotkeyFilter(val: string): void { hotkeyFilter = val; }
 export function setRegistryFilterType(val: 'all' | 'pak' | 'ue4ss' | 'palschema' | 'hybrid'): void { registryFilterType = val; }
@@ -175,9 +175,12 @@ export async function renderScannerView(): Promise<void> {
     await renderConflictsPanel(container);
   } else if (activeSubTab === 'hotkeys') {
     await renderHotkeysPanel(container);
-  } else {
+  } else if (activeSubTab === 'saves') {
     const { renderSavesDoctorPanel } = await import('./savesDoctor');
     await renderSavesDoctorPanel(container);
+  } else {
+    const { renderCrashDoctorPanel } = await import('./crashDoctor');
+    await renderCrashDoctorPanel(container);
   }
 
   const newScrollPanel = container.querySelector('.scanner-scroll-panel');
@@ -190,6 +193,7 @@ export function subTabHeader(): string {
   let title = t('scanner.title_conflicts');
   if (activeSubTab === 'hotkeys') title = t('scanner.title_hotkeys');
   if (activeSubTab === 'saves') title = t('scanner.title_saves_doctor') || 'Save Health Doctor';
+  if (activeSubTab === 'crash') title = t('scanner.title_crash_doctor') || 'Crash Doctor';
 
   return `
     ${customStyles}
@@ -201,13 +205,14 @@ export function subTabHeader(): string {
           <button class="scanner-sub-tab ${activeSubTab === 'conflicts' ? 'active' : ''}" data-subtab="conflicts">${escapeHtml(t('scanner.subtab_conflicts'))}</button>
           <button class="scanner-sub-tab ${activeSubTab === 'hotkeys' ? 'active' : ''}" data-subtab="hotkeys">${escapeHtml(t('scanner.subtab_hotkeys'))}</button>
           <button class="scanner-sub-tab ${activeSubTab === 'saves' ? 'active' : ''}" data-subtab="saves">${escapeHtml(t('scanner.subtab_saves') || 'Saves Doctor')}</button>
+          <button class="scanner-sub-tab ${activeSubTab === 'crash' ? 'active' : ''}" data-subtab="crash">${escapeHtml(t('scanner.subtab_crash') || 'Crash Doctor')}</button>
         </div>
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <button id="scanner-btn-ue4ss-log" class="scanner-sub-tab" style="display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,0.12);" title="${escapeHtml(t('ue4ss_log.btn_open_tooltip') || 'Open UE4SS Runtime Log & Diagnostics')}">
           <span>📜</span> <span>${escapeHtml(t('ue4ss_log.tab_title') || 'UE4SS Log')}</span>
         </button>
-        ${activeSubTab !== 'saves' ? `
+        ${activeSubTab !== 'saves' && activeSubTab !== 'crash' ? `
         <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px;">
           <span>↻ ${escapeHtml(t('common.refresh'))}</span>
         </button>
@@ -364,7 +369,7 @@ export function setupEventListeners(): void {
 
   document.querySelectorAll('.scanner-sub-tab[data-subtab]').forEach(btn => {
     btn.addEventListener('click', () => {
-      const sub = (btn as HTMLElement).dataset.subtab as 'conflicts' | 'hotkeys' | 'saves';
+      const sub = (btn as HTMLElement).dataset.subtab as 'conflicts' | 'hotkeys' | 'saves' | 'crash';
       if (sub && activeSubTab !== sub) {
         activeSubTab = sub;
         editingHotkeyKey = null;

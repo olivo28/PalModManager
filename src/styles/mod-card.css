@@ -2,8 +2,9 @@
 .mod-card {
   background: var(--bg-card);
   border: 1px solid var(--border);
+  box-shadow: var(--card-shadow, none);
   cursor: pointer;
-  transition: all 0.15s;
+  transition: all 0.15s ease, box-shadow 0.2s ease;
   display: flex;
   flex-direction: column;
   user-select: none;
@@ -14,6 +15,7 @@
 .mod-card:hover {
   border-color: var(--accent);
   background: var(--bg-hover);
+  box-shadow: var(--card-shadow-hover, none);
 }
 
 .mod-card.disabled {
@@ -118,6 +120,7 @@
   color: var(--text-primary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   flex: 1;

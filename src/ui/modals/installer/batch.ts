@@ -16,6 +16,7 @@ import {
 import { showInstallModal, closeInstallModal, setModalStatus, getCleanNameFromFilename } from './helpers';
 import { showFileTreeModal } from './fileTree';
 import { renderInstallPreview, delegateFomodInstallIfApplicable } from './single';
+import { getSelectedOrphanDecisions } from './orphanFiles';
 import { installerDom, discoveryDom } from '../../../framework';
 
 export async function renderBatchInstallPreview(paths: string[]): Promise<void> {
@@ -279,8 +280,8 @@ export async function handleInstallConfirm(): Promise<void> {
 
     const resultsHtml: string[] = [];
     contentEl.innerHTML = `
-      <div class="install-console-header" style="display:flex;align-items:center;background:#181818;padding:6px 12px;border-top-left-radius:6px;border-top-right-radius:6px;border-bottom:1px solid #282828;">
-        <span style="font-size:10px;font-family:monospace;color:#888;font-weight:600;">install_log.sh</span>
+      <div class="install-console-header" style="display:flex;align-items:center;background:var(--bg-tertiary);padding:6px 12px;border-top-left-radius:6px;border-top-right-radius:6px;border-bottom:1px solid var(--border);">
+        <span style="font-size:10px;font-family:monospace;color:var(--text-muted);font-weight:600;">install_log.sh</span>
         <div style="flex:1"></div>
         <div style="display:flex;gap:5px;">
           <span style="width:8px;height:8px;border-radius:50%;background:#ff5f56;display:inline-block;"></span>
@@ -288,7 +289,7 @@ export async function handleInstallConfirm(): Promise<void> {
           <span style="width:8px;height:8px;border-radius:50%;background:#27c93f;display:inline-block;"></span>
         </div>
       </div>
-      <div class="batch-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;min-height:220px;overflow-y:auto;background:#0d0d0d;padding:14px;font-family:monospace;font-size:11px;line-height:1.5;border-bottom-left-radius:6px;border-bottom-right-radius:6px;box-shadow:inset 0 0 10px rgba(0,0,0,0.8);color:#d0d0d0;border:1px solid #282828;border-top:none;"></div>
+      <div class="batch-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;min-height:220px;overflow-y:auto;background:var(--bg-code, #18191c);padding:14px;font-family:monospace;font-size:11px;line-height:1.5;border-bottom-left-radius:6px;border-bottom-right-radius:6px;color:var(--text-primary);border:1px solid var(--border);border-top:none;"></div>
     `;
     const resultsList = contentEl.querySelector('.batch-results-list')!;
 
@@ -306,17 +307,17 @@ export async function handleInstallConfirm(): Promise<void> {
           await withInstallProgress(() => updateModCommand(item.path, item.existingModId!), progressCb);
           updated++;
           resultsHtml.pop();
-          resultsHtml.push(`<div class="batch-result-item success" style="color:#00bcff;font-weight:bold;"><span style="color:#777;">[UP]</span> Updated successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
+          resultsHtml.push(`<div class="batch-result-item success" style="color:var(--info);font-weight:bold;"><span style="color:var(--text-muted);">[UP]</span> Updated successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
         } else {
           await withInstallProgress(() => installMod(item.path, item.customType, item.pakDestination, item.customName), progressCb);
           installed++;
           resultsHtml.pop();
-          resultsHtml.push(`<div class="batch-result-item success" style="color:#4af626;font-weight:bold;"><span style="color:#777;">[OK]</span> Installed successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
+          resultsHtml.push(`<div class="batch-result-item success" style="color:var(--success);font-weight:bold;"><span style="color:var(--text-muted);">[OK]</span> Installed successfully: ${escapeHtml(item.customName)} (${escapeHtml(item.customType)})</div>`);
         }
       } catch (e) {
         failed++;
         resultsHtml.pop();
-        resultsHtml.push(`<div class="batch-result-item error" style="color:#ff4a4a;font-weight:bold;"><span style="color:#777;">[ERR]</span> Failed: ${escapeHtml(item.filename)} - ${escapeHtml(String(e))}</div>`);
+        resultsHtml.push(`<div class="batch-result-item error" style="color:var(--danger);font-weight:bold;"><span style="color:var(--text-muted);">[ERR]</span> Failed: ${escapeHtml(item.filename)} - ${escapeHtml(String(e))}</div>`);
       }
 
       resultsList.innerHTML = resultsHtml.join('');
@@ -361,8 +362,8 @@ export async function handleInstallConfirm(): Promise<void> {
   }
 
   contentEl.innerHTML = `
-    <div class="install-console-header" style="display:flex;align-items:center;background:#181818;padding:6px 12px;border-top-left-radius:6px;border-top-right-radius:6px;border-bottom:1px solid #282828;">
-      <span style="font-size:10px;font-family:monospace;color:#888;font-weight:600;">install_log.sh</span>
+    <div class="install-console-header" style="display:flex;align-items:center;background:var(--bg-tertiary);padding:6px 12px;border-top-left-radius:6px;border-top-right-radius:6px;border-bottom:1px solid var(--border);">
+      <span style="font-size:10px;font-family:monospace;color:var(--text-muted);font-weight:600;">install_log.sh</span>
       <div style="flex:1"></div>
       <div style="display:flex;gap:5px;">
         <span style="width:8px;height:8px;border-radius:50%;background:#ff5f56;display:inline-block;"></span>
@@ -370,7 +371,7 @@ export async function handleInstallConfirm(): Promise<void> {
         <span style="width:8px;height:8px;border-radius:50%;background:#27c93f;display:inline-block;"></span>
       </div>
     </div>
-    <div class="batch-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;min-height:220px;overflow-y:auto;background:#0d0d0d;padding:14px;font-family:monospace;font-size:11px;line-height:1.5;border-bottom-left-radius:6px;border-bottom-right-radius:6px;box-shadow:inset 0 0 10px rgba(0,0,0,0.8);color:#d0d0d0;border:1px solid #282828;border-top:none;"></div>
+    <div class="batch-results-list" style="display:flex;flex-direction:column;gap:6px;max-height:280px;min-height:220px;overflow-y:auto;background:var(--bg-code, #18191c);padding:14px;font-family:monospace;font-size:11px;line-height:1.5;border-bottom-left-radius:6px;border-bottom-right-radius:6px;color:var(--text-primary);border:1px solid var(--border);border-top:none;"></div>
   `;
   confirmBtn.textContent = _pendingUpdateModId ? t('installer.status_updating_btn') : t('installer.status_installing_btn');
   statusEl.textContent = _pendingUpdateModId ? t('installer.status_updating') : t('installer.status_installing');
@@ -421,7 +422,7 @@ export async function handleInstallConfirm(): Promise<void> {
             resultsList.scrollTop = resultsList.scrollHeight;
             statusEl.textContent = t('installer.status_downloading_ue4ss');
             await installUe4ss();
-            logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] UE4SS installed successfully!</div>`);
+            logs.push(`<div style="color:var(--success);font-weight:bold;">[OK] UE4SS installed successfully!</div>`);
             resultsList.innerHTML = logs.join('');
             resultsList.scrollTop = resultsList.scrollHeight;
           }
@@ -431,7 +432,7 @@ export async function handleInstallConfirm(): Promise<void> {
             resultsList.scrollTop = resultsList.scrollHeight;
             statusEl.textContent = t('installer.status_downloading_palschema');
             await installPalschema();
-            logs.push(`<div style="color:#4af626;font-weight:bold;">[OK] PalSchema installed successfully!</div>`);
+            logs.push(`<div style="color:var(--success);font-weight:bold;">[OK] PalSchema installed successfully!</div>`);
             resultsList.innerHTML = logs.join('');
             resultsList.scrollTop = resultsList.scrollHeight;
           }
@@ -541,7 +542,11 @@ async function executeModInstallation(
     let installedMod: any = null;
     const progressCb = createProgressLogUpdater(resultsList, logs);
     if (_pendingUpdateModId) {
-      installedMod = await withInstallProgress(() => updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId!), progressCb);
+      const { filesToPreserve, filesToPurge } = getSelectedOrphanDecisions();
+      installedMod = await withInstallProgress(
+        () => updateModCommand(state.currentAnalysis.zipPath, _pendingUpdateModId!, filesToPreserve, filesToPurge),
+        progressCb
+      );
     } else {
       installedMod = await withInstallProgress(() => installModWithManifest(manifest, state.currentAnalysis.zipPath), progressCb);
     }

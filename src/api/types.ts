@@ -633,3 +633,19 @@ export type {
   FomodPattern,
   BuildFomodManifestPayload,
 } from '../ui/modals/fomod/types';
+
+export interface UpgradeOrphanFile {
+  relativePath: string;
+  absolutePath: string;
+  fileName: string;
+  isConfig: boolean;
+  defaultKeep: boolean;
+  sizeBytes: number;
+}
+
+export interface UpgradeOrphansResult {
+  modId: string;
+  modName: string;
+  orphanFiles: UpgradeOrphanFile[];
+}
+

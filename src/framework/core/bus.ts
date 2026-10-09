@@ -5,8 +5,12 @@
 
 import type { ModInfo } from '../../types';
 import type { AppState } from '../../state';
+import type { PmmTheme } from '../../app/theme/types';
 
 export interface AppEventMap {
+  // Eventos de Tema & Personalización
+  'theme:changed': { theme: PmmTheme };
+
   // Eventos de Mods
   'mods:refresh': void;
   'mods:loaded': ModInfo[];
@@ -55,6 +59,9 @@ export interface AppEventMap {
 
   // Eventos de Scanner & Conflictos
   'conflict:resolved': { modId: string; filePath: string; line?: number; target?: string };
+
+  // Eventos de Crash Doctor
+  'crash:detected': { crashFolder: string; artifact?: string };
 }
 
 export type BusHandler<T> = (payload: T) => void;

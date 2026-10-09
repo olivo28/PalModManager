@@ -1,7 +1,7 @@
 import { getState, updateState } from '../../../state';
 import { uninstallUe4ss, uninstallPalschema, openFolderByType } from '../../../api';
 import { showToast } from '../../toast';
-import { showConfirm } from '../../confirm';
+import { showConfirm, showPrompt } from '../../confirm';
 import { openWorkshopModal } from '../../modal';
 import { loadMods } from '../loader';
 import { loadDependencies, handleDepBadgeClick } from '../dependencies';
@@ -40,6 +40,10 @@ export function showGlobalContextMenu(x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="install">
       <span class="ctx-icon">+</span>
       ${escapeHtml(t('context.install_archive'))}
+    </button>
+    <button type="button" class="context-menu-item" data-action="install-nexus-id">
+      <span class="ctx-icon">🔗</span>
+      ${escapeHtml(t('context.install_nexus_id'))}
     </button>
     <button type="button" class="context-menu-item" data-action="rescan">
       <span class="ctx-icon">↻</span>
@@ -131,6 +135,27 @@ export function showGlobalContextMenu(x: number, y: number): void {
         case 'install':
           mainDom.elMaybe('install-btn')?.click();
           break;
+        case 'install-nexus-id': {
+          (async () => {
+            const input = await showPrompt(t('context.prompt_nexus_id_title'));
+            if (!input || !input.trim()) return;
+            const trimmed = input.trim();
+            let targetId: number | null = null;
+            if (/^\d+$/.test(trimmed)) {
+              targetId = parseInt(trimmed, 10);
+            } else if (trimmed.includes('/mods/')) {
+              const match = trimmed.match(/\/mods\/(\d+)/);
+              if (match) targetId = parseInt(match[1], 10);
+            }
+            if (targetId) {
+              const { openModDetails } = await import('../../discovery/detailsModal');
+              openModDetails(targetId);
+            } else {
+              showToast(t('context.prompt_nexus_id_invalid'), 'warning');
+            }
+          })();
+          break;
+        }
         case 'rescan':
           mainDom.elMaybe('scan-btn')?.click();
           break;

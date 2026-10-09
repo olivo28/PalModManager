@@ -17,10 +17,10 @@
 .packer-form-input,
 .packer-form-select,
 .packer-form-textarea {
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
   border-radius: 6px;
-  color: #f1f5f9;
+  color: var(--text-primary);
   padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));
   font-size: var(--text-sm, 12.5px);
   transition: all 0.2s ease;
@@ -37,7 +37,7 @@
 .packer-form-select:focus,
 .packer-form-textarea:focus {
   border-color: var(--accent);
-  background: rgba(0, 0, 0, 0.45);
+  background: var(--bg-hover);
   box-shadow: 0 0 0 2px var(--accent-dim);
   outline: none;
 }
@@ -48,7 +48,7 @@
   color: var(--text-primary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  border-bottom: 1px solid var(--border);
   padding-bottom: calc(5px * var(--ui-scale, 1));
   margin-bottom: calc(4px * var(--ui-scale, 1));
 }
@@ -58,7 +58,7 @@
   gap: calc(8px * var(--ui-scale, 1));
   align-items: center;
   margin-top: auto;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  border-top: 1px solid var(--border);
   padding-top: calc(12px * var(--ui-scale, 1));
 }
 
@@ -76,13 +76,13 @@
   justify-content: center;
   gap: calc(8px * var(--ui-scale, 1));
   font-size: var(--text-base, 13.5px);
-  box-shadow: 0 4px 14px rgba(0, 120, 212, 0.3);
+  box-shadow: 0 4px 14px var(--accent-dim);
   transition: all 0.2s ease;
 }
 
 .packer-btn-build:hover:not(:disabled) {
   background: var(--accent-hover);
-  box-shadow: 0 4px 18px rgba(0, 120, 212, 0.45);
+  box-shadow: 0 4px 18px var(--accent-dim);
   transform: translateY(-1px);
 }
 
@@ -91,7 +91,7 @@
 }
 
 .packer-btn-build:disabled {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--bg-tertiary);
   color: var(--text-muted);
   box-shadow: none;
   cursor: not-allowed;
@@ -100,8 +100,8 @@
 
 .packer-select-format {
   width: calc(95px * var(--ui-scale, 1));
-  background: rgba(0, 0, 0, 0.25);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
   color: var(--text-primary);
   border-radius: 6px;
   padding: calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));

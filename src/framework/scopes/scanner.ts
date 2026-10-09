@@ -41,6 +41,12 @@ export interface ScannerDomMap {
   'pmm-existing-patches-modal': HTMLElement;
   'btn-close-existing-patches': HTMLButtonElement;
   'btn-close-existing-patches-footer': HTMLButtonElement;
+
+  // Crash Doctor UI
+  'crash-doctor-panel': HTMLElement;
+  'btn-analyze-latest-crash': HTMLButtonElement;
+  'btn-export-crash-bundle': HTMLButtonElement;
+  'btn-open-crash-folder': HTMLButtonElement;
 }
 
 export const scannerDom = createScope<ScannerDomMap>('scanner');

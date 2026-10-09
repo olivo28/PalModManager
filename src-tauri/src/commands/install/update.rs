@@ -17,6 +17,8 @@ pub async fn update_mod_command(
     app: AppHandle,
     zip_path: String,
     mod_id: String,
+    files_to_preserve: Option<Vec<String>>,
+    files_to_purge: Option<Vec<String>>,
     state: State<'_, AppState>,
 ) -> Result<Value, String> {
     let (game_path, program_path, current_profile_id) = {
@@ -93,6 +95,9 @@ pub async fn update_mod_command(
     let analysis_clone = analysis.clone();
     let now_clone = now.clone();
 
+    let files_to_preserve_clone = files_to_preserve.clone();
+    let files_to_purge_clone = files_to_purge.clone();
+
     let mut updated_mod = tauri::async_runtime::spawn_blocking(move || -> Result<crate::models::ModInfo, String> {
         let _ = app_emit.emit("install-progress", InstallProgressPayload {
             stage: "extracting".to_string(),
@@ -123,6 +128,8 @@ pub async fn update_mod_command(
             &now_clone,
             force_load_order_ue4ss,
             force_load_order_palschema,
+            files_to_preserve_clone.as_deref(),
+            files_to_purge_clone.as_deref(),
         );
 
         let _ = fs::remove_dir_all(&temp_dir);

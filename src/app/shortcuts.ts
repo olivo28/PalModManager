@@ -155,6 +155,13 @@ export function setupGlobalShortcuts(): void {
         return;
       }
 
+      // 12.5 Theme Image Adjust Modal (Priority over Settings Modal)
+      const themeAdjustModal = document.getElementById('theme-image-adjust-modal');
+      if (themeAdjustModal && (themeAdjustModal.classList.contains('visible') || themeAdjustModal.style.display !== 'none')) {
+        import('../ui/settings/themeImageAdjuster').then((m) => m.closeThemeImageAdjustModal(true)).catch(() => {});
+        return;
+      }
+
       // 13. Settings Modal
       const settingsModal = settingsDom.elMaybe('settings-modal');
       if (settingsModal?.classList.contains('visible')) {

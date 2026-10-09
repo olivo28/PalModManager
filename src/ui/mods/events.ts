@@ -390,7 +390,7 @@ export function setupAdvancedFilterHandlers(): void {
 export function setupStatusFilterHandlers(): void {
   document.querySelectorAll('.status-filter-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const status = (btn as HTMLElement).dataset.status as 'all' | 'enabled' | 'disabled' | 'tracked' | 'endorsed';
+      const status = (btn as HTMLElement).dataset.status as 'all' | 'enabled' | 'disabled' | 'tracked' | 'endorsed' | 'unendorsed';
       document.querySelectorAll('.status-filter-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       updateState({ statusFilter: status });

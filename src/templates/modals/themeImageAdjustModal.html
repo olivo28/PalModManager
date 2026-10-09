@@ -1,0 +1,176 @@
+<!-- Interactive Background Image Adjust & Pan/Zoom Modal -->
+<div id="theme-image-adjust-modal" class="modal-overlay theme-adjust-modal" style="display:none;z-index:4000;">
+  <div class="modal theme-adjust-modal-content">
+    <div class="modal-header">
+      <h3 class="modal-title" id="theme-adjust-title" style="margin:0;font-size:var(--text-base, 14px);font-weight:700;" data-i18n="theme.adjust_title">Adjust Background Image</h3>
+      <button type="button" class="modal-close-btn" id="theme-adjust-close-x">✕</button>
+    </div>
+
+    <!-- Dual Mode Switcher (Visible only when adjusting Sidebar) -->
+    <div class="theme-adjust-mode-switcher" id="theme-adjust-mode-switcher" style="display:none;">
+      <button type="button" class="theme-adjust-mode-btn active" id="theme-adjust-mode-crop" data-mode="crop">
+        <span>🖼️</span> <span data-i18n="theme.adjust_mode_crop">Crop Guide</span>
+      </button>
+      <button type="button" class="theme-adjust-mode-btn" id="theme-adjust-mode-live" data-mode="live-sidebar">
+        <span>🎯</span> <span data-i18n="theme.adjust_mode_live">Live Sidebar</span>
+      </button>
+    </div>
+
+    <div class="modal-body theme-adjust-modal-body">
+      <!-- Live Sidebar Interactive Banner (Shown in Live Mode) -->
+      <div class="theme-adjust-live-banner" id="theme-adjust-live-banner" style="display:none;">
+        <div class="theme-adjust-live-badge"><span>●</span> LIVE WYSIWYG</div>
+        <span class="theme-adjust-live-text" data-i18n="theme.adjust_live_hint">Drag directly on the real sidebar or use the sliders</span>
+      </div>
+
+      <!-- Interactive Frame / Viewport (Shown in Crop Mode & App/Editor modes) -->
+      <div class="theme-adjust-viewport-wrapper" id="theme-adjust-viewport-wrapper">
+        <div class="theme-adjust-viewport" id="theme-adjust-viewport">
+          <img id="theme-adjust-img" class="theme-adjust-img" draggable="false" alt="Background Artwork" />
+          <div class="theme-adjust-grid-overlay" id="theme-adjust-grid-overlay"></div>
+          
+          <!-- Authentic PalModManager Sidebar Replica Overlay (Visible when adjusting sidebar banner) -->
+          <div class="theme-adjust-sidebar-overlay" id="theme-adjust-sidebar-overlay" style="display:none;">
+            <div class="mock-sidebar-header">
+              <img src="/src/assets/logo.png" alt="PalModManager Logo" class="mock-sidebar-logo-img" />
+            </div>
+            
+            <div class="mock-sidebar-tabs">
+              <div id="mock-tab-discovery" class="mock-sidebar-tab" style="display:none;">
+                <span class="mock-tab-icon">🌐</span>
+                <span class="mock-tab-label">DISCOVER</span>
+              </div>
+              <div class="mock-sidebar-tab active">
+                <span class="mock-tab-icon">⊞</span>
+                <span class="mock-tab-label">MODS</span>
+              </div>
+              <div class="mock-sidebar-tab">
+                <span class="mock-tab-icon">✎</span>
+                <span class="mock-tab-label">EDIT</span>
+              </div>
+              <div class="mock-sidebar-tab">
+                <span class="mock-tab-icon">📦</span>
+                <span class="mock-tab-label">LIBRARY</span>
+              </div>
+              <div class="mock-sidebar-tab">
+                <span class="mock-tab-icon">🛠</span>
+                <span class="mock-tab-label">BUILD</span>
+              </div>
+              <div class="mock-sidebar-tab">
+                <span class="mock-tab-icon">🛡</span>
+                <span class="mock-tab-label">SCAN</span>
+              </div>
+              <div class="mock-sidebar-tab">
+                <span class="mock-tab-icon">🗄</span>
+                <span class="mock-tab-label">DB</span>
+              </div>
+            </div>
+
+            <div class="mock-sidebar-footer">
+              <div id="mock-sidebar-nexus-widget" class="mock-sidebar-nexus-widget">
+                <div class="mock-nexus-avatar-wrap">
+                  <img id="mock-sidebar-nexus-avatar" src="" alt="Avatar" class="mock-nexus-avatar" />
+                  <span class="mock-nexus-dot"></span>
+                </div>
+                <div class="mock-nexus-info">
+                  <span id="mock-sidebar-nexus-name" class="mock-nexus-name">Olivo28</span>
+                  <span id="mock-sidebar-nexus-tier" class="mock-nexus-tier">MEMBER</span>
+                </div>
+              </div>
+
+              <div class="mock-sidebar-play-btn">
+                <span class="mock-play-icon">▶</span>
+                <span class="mock-play-label">PLAY</span>
+              </div>
+              <div id="mock-sidebar-version" class="mock-sidebar-version">V1.7.2</div>
+            </div>
+          </div>
+
+          <!-- Yellow Dashed Crop Framing Guide (Active Area Marker & Center Reticle) -->
+          <div class="theme-adjust-crop-frame-yellow" id="theme-adjust-crop-frame-yellow" style="display:none;">
+            <!-- Precision L-Bracket Corners -->
+            <div class="crop-corner crop-corner-tl"></div>
+            <div class="crop-corner crop-corner-tr"></div>
+            <div class="crop-corner crop-corner-bl"></div>
+            <div class="crop-corner crop-corner-br"></div>
+
+            <!-- Centering Reticle Crosshair -->
+            <div class="crop-reticle-h"></div>
+            <div class="crop-reticle-v"></div>
+            <div class="crop-reticle-center">
+              <span class="crop-center-plus">+</span>
+            </div>
+            <span class="crop-frame-badge" id="crop-frame-badge" data-i18n="theme.crop_guide_visible">Visible Area</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- External Instruction Hint (Outside image/sidebar) -->
+      <div class="theme-adjust-hint-bar" id="theme-adjust-hint-bar" data-i18n="theme.adjust_drag_hint">👆 Drag image to move • 🖱️ Mouse wheel to zoom</div>
+
+      <!-- Controls & Sliders -->
+      <div class="theme-adjust-controls">
+        <div class="theme-adjust-control-row">
+          <span class="theme-adjust-label" data-i18n="theme.adjust_zoom">Zoom:</span>
+          <input type="range" id="theme-adjust-zoom-slider" class="theme-range-slider" min="20" max="300" step="1" value="100" />
+          <div class="theme-adjust-val-box">
+            <input type="number" id="theme-adjust-zoom-input" class="theme-adjust-num-input" min="20" max="300" step="1" value="100" />
+            <span class="theme-adjust-unit">%</span>
+          </div>
+        </div>
+
+        <div class="theme-adjust-control-row">
+          <span class="theme-adjust-label" data-i18n="theme.adjust_pos_x">Position X:</span>
+          <input type="range" id="theme-adjust-posx-slider" class="theme-range-slider" min="0" max="100" step="1" value="50" />
+          <div class="theme-adjust-val-box">
+            <input type="number" id="theme-adjust-posx-input" class="theme-adjust-num-input" min="0" max="100" step="1" value="50" />
+            <span class="theme-adjust-unit">%</span>
+          </div>
+        </div>
+
+        <div class="theme-adjust-control-row">
+          <span class="theme-adjust-label" data-i18n="theme.adjust_pos_y">Position Y:</span>
+          <input type="range" id="theme-adjust-posy-slider" class="theme-range-slider" min="0" max="100" step="1" value="50" />
+          <div class="theme-adjust-val-box">
+            <input type="number" id="theme-adjust-posy-input" class="theme-adjust-num-input" min="0" max="100" step="1" value="50" />
+            <span class="theme-adjust-unit">%</span>
+          </div>
+        </div>
+
+        <div class="theme-adjust-control-row">
+          <span class="theme-adjust-label" data-i18n="theme.adjust_stretch_w">Width:</span>
+          <input type="range" id="theme-adjust-stretch-w-slider" class="theme-range-slider" min="20" max="400" step="1" value="100" />
+          <div class="theme-adjust-val-box">
+            <input type="number" id="theme-adjust-stretch-w-input" class="theme-adjust-num-input" min="20" max="400" step="1" value="100" />
+            <span class="theme-adjust-unit">%</span>
+          </div>
+        </div>
+
+        <div class="theme-adjust-control-row">
+          <span class="theme-adjust-label" data-i18n="theme.adjust_stretch_h">Height:</span>
+          <input type="range" id="theme-adjust-stretch-h-slider" class="theme-range-slider" min="20" max="400" step="1" value="100" />
+          <div class="theme-adjust-val-box">
+            <input type="number" id="theme-adjust-stretch-h-input" class="theme-adjust-num-input" min="20" max="400" step="1" value="100" />
+            <span class="theme-adjust-unit">%</span>
+          </div>
+        </div>
+
+        <!-- Real-Time Render Telemetry / Dimension Info -->
+        <div class="theme-adjust-telemetry" id="theme-adjust-telemetry">
+          <span class="theme-telemetry-badge" id="theme-telemetry-render">📐 Render: 1920 × 1080 px</span>
+          <span class="theme-telemetry-badge text-muted" id="theme-telemetry-original">Original: 1920 × 1080 px</span>
+        </div>
+
+        <!-- Quick Align Actions: ONLY Reset -->
+        <div class="theme-adjust-quick-actions">
+          <button type="button" id="theme-adjust-btn-reset" class="btn-secondary theme-adjust-btn-compact" data-i18n="theme.btn_reset">🔄 Reset</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer theme-adjust-modal-footer">
+      <button type="button" class="btn-secondary" id="theme-adjust-cancel-btn" data-i18n="common.cancel">Cancel</button>
+      <button type="button" class="btn-primary" id="theme-adjust-apply-btn" data-i18n="theme.btn_apply_adjust">Save & Apply</button>
+    </div>
+  </div>
+</div>

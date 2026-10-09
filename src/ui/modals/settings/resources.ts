@@ -132,25 +132,25 @@ function updateCardUi(
     if (isAvailable && fileSize > 0) {
       if (isBuildMatched) {
         badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
-        badge.style.background = 'rgba(34,197,94,0.15)';
-        badge.style.color = '#22c55e';
-        badge.style.borderColor = 'rgba(34,197,94,0.3)';
+        badge.style.background = 'var(--success-dim)';
+        badge.style.color = 'var(--success)';
+        badge.style.borderColor = 'var(--success-dim)';
       } else {
         badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
-        badge.style.background = 'rgba(245,158,11,0.15)';
-        badge.style.color = '#f59e0b';
-        badge.style.borderColor = 'rgba(245,158,11,0.3)';
+        badge.style.background = 'var(--warning-dim)';
+        badge.style.color = 'var(--warning)';
+        badge.style.borderColor = 'var(--warning-dim)';
       }
     } else if (hasLocalDump) {
       badge.textContent = `📂 ${t('settings.sdk_status_local_found') || 'Local Dump Found'}`;
-      badge.style.background = 'rgba(0,188,255,0.15)';
-      badge.style.color = '#00bcff';
-      badge.style.borderColor = 'rgba(0,188,255,0.3)';
+      badge.style.background = 'var(--info-dim)';
+      badge.style.color = 'var(--info)';
+      badge.style.borderColor = 'var(--info-dim)';
     } else {
       badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
-      badge.style.background = 'rgba(239,68,68,0.15)';
-      badge.style.color = '#ef4444';
-      badge.style.borderColor = 'rgba(239,68,68,0.3)';
+      badge.style.background = 'var(--danger-dim)';
+      badge.style.color = 'var(--danger)';
+      badge.style.borderColor = 'var(--danger-dim)';
     }
   }
 

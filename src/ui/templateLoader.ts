@@ -21,6 +21,7 @@ import dependencyModalHtml from '../templates/modals/dependencyModal.html?raw';
 import diffModalHtml from '../templates/modals/diffModal.html?raw';
 import ue4ssLogModalHtml from '../templates/modals/ue4ssLogModal.html?raw';
 import fomodModalHtml from '../templates/modals/fomodModal.html?raw';
+import themeImageAdjustModalHtml from '../templates/modals/themeImageAdjustModal.html?raw';
 import { mainDom } from '../framework';
 
 export function loadAppTemplates(): void {
@@ -55,6 +56,7 @@ export function loadAppTemplates(): void {
       diffModalHtml,
       ue4ssLogModalHtml,
       fomodModalHtml,
+      themeImageAdjustModalHtml,
     ].join('\n');
   }
 }

@@ -7,7 +7,7 @@ import { setupEditorFsWatcher } from '../ui/editorView';
 import { autoFetchNexusInfo } from '../features/nexus';
 import { initPackerView } from '../ui/packerView';
 import { mainDom, bus } from '../framework';
-import { getPreferredTheme, applyTheme } from './theme';
+import { initThemeEngine } from './theme';
 import { setupEventListeners } from './listeners';
 
 export function showApp(): void {
@@ -28,7 +28,7 @@ export function showApp(): void {
 export async function bootstrapApp(): Promise<void> {
   const startTime = Date.now();
   console.time('init');
-  applyTheme(getPreferredTheme());
+  initThemeEngine();
 
   try {
     await logFromJs("⚡ PMM-Core Reactive Engine: Frontend runtime initialized (Zero-VDOM, 11 scopes, Svelte-like)");

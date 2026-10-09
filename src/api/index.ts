@@ -9,3 +9,4 @@ export * from './nexus';
 export * from './workshop';
 export * from './saves';
 export * from './tools';
+export * from './crash';

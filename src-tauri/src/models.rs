@@ -224,6 +224,8 @@ pub struct AppSettings {
     pub ue4ss_control_mode: Option<String>,
     #[serde(default)]
     pub ue4ss_build_flavor: Option<String>,
+    #[serde(default)]
+    pub enable_crash_watcher: Option<bool>,
 }
 
 
@@ -341,6 +343,7 @@ impl Default for AppData {
                 folder_expand_mode: Some("always_expanded".to_string()),
                 ue4ss_control_mode: Some("enabled_txt".to_string()),
                 ue4ss_build_flavor: Some("standard".to_string()),
+                enable_crash_watcher: Some(true),
             },
             profiles: Vec::new(),
             current_profile_id: "default".to_string(),
@@ -526,5 +529,21 @@ pub struct DependencyVaultEntry {
     pub is_custom: bool,        // user custom zip
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UpgradeOrphanFile {
+    pub relative_path: String,
+    pub absolute_path: String,
+    pub file_name: String,
+    pub is_config: bool,
+    pub default_keep: bool,
+    pub size_bytes: u64,
+}
 
-
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+#[serde(rename_all = "camelCase")]
+pub struct UpgradeOrphansResult {
+    pub mod_id: String,
+    pub mod_name: String,
+    pub orphan_files: Vec<UpgradeOrphanFile>,
+}

@@ -88,29 +88,29 @@
       </div>
       <div id="ue4ss-pill-mods" class="stat-pill stat-pill-interactive ue4ss-pill-mods" title="Click to inspect all detected mods" data-i18n-title="ue4ss_log.click_to_view_mods">
         <span>📦</span>
-        <span style="color: #2ecc71;" data-i18n="ue4ss_log.stat_mods">Loaded Mods:</span>
-        <strong id="ue4ss-stat-mods" style="color: #2ecc71;">0</strong>
+        <span style="color: var(--success);" data-i18n="ue4ss_log.stat_mods">Loaded Mods:</span>
+        <strong id="ue4ss-stat-mods" style="color: var(--success);">0</strong>
         <span class="ue4ss-pill-chevron">▾</span>
       </div>
       <div id="ue4ss-pill-warnings" class="stat-pill stat-pill-interactive ue4ss-pill-warnings" title="Click to filter warnings">
         <span>⚠️</span>
-        <span style="color: #ffaa00;" data-i18n="ue4ss_log.stat_warnings">Warnings:</span>
-        <strong id="ue4ss-stat-warnings" style="color: #ffaa00;">0</strong>
+        <span style="color: var(--warning);" data-i18n="ue4ss_log.stat_warnings">Warnings:</span>
+        <strong id="ue4ss-stat-warnings" style="color: var(--warning);">0</strong>
       </div>
       <div id="ue4ss-pill-errors" class="stat-pill stat-pill-interactive ue4ss-pill-errors" title="Click to filter errors & crashes">
         <span>❌</span>
-        <span style="color: #ff5f56;" data-i18n="ue4ss_log.stat_errors">Errors &amp; Crashes:</span>
-        <strong id="ue4ss-stat-errors" style="color: #ff5f56;">0</strong>
+        <span style="color: var(--danger);" data-i18n="ue4ss_log.stat_errors">Errors &amp; Crashes:</span>
+        <strong id="ue4ss-stat-errors" style="color: var(--danger);">0</strong>
       </div>
     </div>
 
     <!-- Active Mod Filter Banner -->
     <div id="ue4ss-active-mod-banner" class="ue4ss-active-mod-banner" style="display: none;">
       <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-        <span style="color: var(--accent, #00bcff); font-size: calc(14px * var(--ui-scale, 1));">🔍</span>
+        <span style="color: var(--info); font-size: calc(14px * var(--ui-scale, 1));">🔍</span>
         <span style="font-size: var(--text-sm, 12px); color: var(--text-primary);">
           <span data-i18n="ue4ss_log.filter_active_mod">Filtering events for mod:</span>
-          <strong id="ue4ss-active-mod-name" style="color: #00bcff; margin-left: calc(4px * var(--ui-scale, 1));"></strong>
+          <strong id="ue4ss-active-mod-name" style="color: var(--info); margin-left: calc(4px * var(--ui-scale, 1));"></strong>
         </span>
       </div>
       <button id="ue4ss-clear-mod-filter-btn" class="ue4ss-clear-mod-filter-btn" data-i18n="ue4ss_log.clear_mod_filter">✕ Clear Mod Filter</button>
@@ -133,7 +133,7 @@
     </div>
 
     <!-- Log Entries List / Viewport -->
-    <div id="ue4ss-log-container" style="flex: 1; min-height: 0; overflow-y: auto; font-family: var(--font-mono, monospace); font-size: var(--text-xs, 11px); line-height: 1.5; padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: #0c0d10; color: #d1d5db;">
+    <div id="ue4ss-log-container" style="flex: 1; min-height: 0; overflow-y: auto; font-family: var(--font-mono, monospace); font-size: var(--text-xs, 11px); line-height: 1.5; padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: var(--bg-code, #0c0d10); color: var(--text-primary);">
       <!-- Populated dynamically with log rows -->
     </div>
 

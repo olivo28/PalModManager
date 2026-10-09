@@ -27,12 +27,12 @@ export function renderPropertyTweakerHtml(details: UAssetInspectionDetails): str
     <div class="uasset-tweaker-container" style="display:flex;flex-direction:column;gap:16px;">
       <!-- Backup Status Banner -->
       ${hasOriginalBackup ? `
-        <div style="display:flex;justify-content:space-between;align-items:center;background:rgba(34,197,94,0.1);border:1px solid rgba(34,197,94,0.3);border-radius:6px;padding:8px 12px;">
-          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:#22c55e;">
+        <div style="display:flex;justify-content:space-between;align-items:center;background:var(--success-dim);border:1px solid var(--success-dim);border-radius:6px;padding:8px 12px;">
+          <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--success);">
             <span>🛡️</span>
             <span><strong>${escapeHtml(t('editor.backup_active_label') || 'Original Backup Preserved:')}</strong> ${escapeHtml(t('editor.backup_active_desc') || 'A clean .original.bak copy is safely stored.')}</span>
           </div>
-          <button type="button" id="btn-revert-pak-backup" style="background:rgba(239,68,68,0.15);border:1px solid rgba(239,68,68,0.3);color:#ef4444;font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:6px;">
+          <button type="button" id="btn-revert-pak-backup" style="background:var(--danger-dim);border:1px solid var(--danger-dim);color:var(--danger);font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:6px;">
             <span>↺</span> <span>${escapeHtml(t('editor.btn_revert_backup') || 'Revert to Original')}</span>
           </button>
         </div>

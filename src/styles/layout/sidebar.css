@@ -27,14 +27,14 @@
   width: calc(36px * var(--ui-scale, 1));
   height: calc(36px * var(--ui-scale, 1));
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px rgba(0, 120, 212, 0.35));
+  filter: drop-shadow(0 2px 8px var(--accent-dim));
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.25s ease;
   cursor: pointer;
 }
 
 .sidebar-logo-img:hover {
   transform: scale(1.1) rotate(5deg);
-  filter: drop-shadow(0 4px 14px rgba(0, 120, 212, 0.6));
+  filter: drop-shadow(0 4px 14px var(--accent));
 }
 
 .sidebar-tabs {

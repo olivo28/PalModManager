@@ -59,7 +59,22 @@ pub async fn get_discovery_mods(
         "gameId": [{ "value": "6063" }]
     });
 
-    if let Some(ref q) = query {
+    let parsed_nexus_id: Option<u32> = query.as_deref().and_then(|q| {
+        let trimmed = q.trim();
+        if let Ok(id) = trimmed.parse::<u32>() {
+            Some(id)
+        } else if let Some(pos) = trimmed.find("/mods/") {
+            let after = &trimmed[pos + "/mods/".len()..];
+            let id_part = after.split(|c: char| !c.is_ascii_digit()).next().unwrap_or("");
+            id_part.parse::<u32>().ok()
+        } else {
+            None
+        }
+    });
+
+    if let Some(id) = parsed_nexus_id {
+        filter_obj["modId"] = serde_json::json!([{ "value": id.to_string() }]);
+    } else if let Some(ref q) = query {
         let trimmed = q.trim();
         if !trimmed.is_empty() {
             let clean_query = trimmed.split_whitespace().collect::<Vec<_>>().join(" ");
@@ -310,6 +325,34 @@ query GetPalworldDiscovery($filter: ModsFilter, $count: Int, $offset: Int) {{
                     }
                 }
             }
+        }
+    }
+
+    // Fallback if querying a specific Nexus ID directly
+    if let Some(id) = parsed_nexus_id {
+        if let Ok(det) = crate::commands::discovery::details::get_discovery_mod_details(id, state).await {
+            return Ok(DiscoveryResponse {
+                mods: vec![DiscoveryModItem {
+                    mod_id: det.mod_id,
+                    name: det.name,
+                    summary: det.summary,
+                    author: det.author,
+                    version: det.version,
+                    downloads: det.downloads,
+                    endorsements: det.endorsements,
+                    picture_url: det.picture_url,
+                    category_id: det.category_id,
+                    category_name: det.category_name,
+                    created_at: det.created_at,
+                    updated_at: det.updated_at,
+                    contains_adult_content: det.contains_adult_content,
+                    is_endorsed: det.is_endorsed,
+                    is_tracked: det.is_tracked,
+                }],
+                total_count: 1,
+                page: 1,
+                page_size: limit,
+            });
         }
     }
 

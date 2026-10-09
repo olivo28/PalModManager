@@ -14,6 +14,7 @@ import { getCleanNameFromFilename, closeInstallModal, setModalStatus } from './h
 import { showFileTreeModal } from './fileTree';
 import { setPendingUpdateModId, _onInstallCompleteCallback, setInstallModalCallback } from './state';
 import { showConfigDiffModal, showArchivedConfigDiffModal } from './diffModal';
+import { checkAndRenderUpgradeOrphans, clearOrphanFilesState } from './orphanFiles';
 import { installerDom } from '../../../framework';
 import { compareVersions } from '../../mods/library/helpers';
 
@@ -27,6 +28,7 @@ export function getArchivedIgnoredSettings(): { files: string[], keys: string[] 
 export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: { id: string; name: string, version: string } | null = null): Promise<void> {
   _archivedIgnoredFiles = [];
   _archivedIgnoredKeys = [];
+  clearOrphanFilesState();
   updateState({ currentAnalysis: analysis });
 
   if (analysis.hasFomod) {
@@ -355,6 +357,8 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
               <button id="view-config-diff-btn" class="btn btn-secondary" style="font-size: var(--text-2xs, 10px); padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); height: auto; line-height: 1; margin: 0;">${escapeHtml(t('installer.btn_show_details'))}</button>
            </div>
            
+           <div id="orphan-files-container" style="display: none;"></div>
+           
            <div style="display:flex;gap:calc(12px * var(--ui-scale, 1));">
              <div style="flex:1;display:flex;flex-direction:column;gap:calc(4px * var(--ui-scale, 1));">
                 <label style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-secondary);text-transform:uppercase;letter-spacing:0.5px;">${escapeHtml(t('installer.lbl_mod_name'))}</label>
@@ -513,6 +517,7 @@ export async function renderInstallPreview(analysis: ZipAnalysis, existingMod: {
   }
 
   if (existingMod) {
+    checkAndRenderUpgradeOrphans(analysis.zipPath, existingMod.id);
     previewConfigDiff(analysis.zipPath, existingMod.id).then(diffs => {
       const diffContainer = installerDom.elMaybe('config-diff-container');
       const summaryText = installerDom.elMaybe('config-diff-summary-text');

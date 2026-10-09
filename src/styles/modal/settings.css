@@ -61,7 +61,7 @@
   color: #ffffff;
   background: var(--accent);
   border-color: var(--accent);
-  box-shadow: 0 2px 8px rgba(0, 120, 212, 0.35);
+  box-shadow: 0 2px 10px var(--accent-dim);
 }
 
 .settings-tab-button .tab-icon {
@@ -216,5 +216,7 @@
   background: var(--bg-tertiary);
   border-color: var(--text-muted);
 }
+
+
 
 
