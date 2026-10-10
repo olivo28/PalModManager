@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
 import { formatDeathPenalty } from '../helpers';
+import { getIconSvg } from '../../../icons/mod';
 import type { WorldOptionSettings, WorldCustomMeta } from '../../../../api';
 
 export function renderWorldMetaFormHtml(
@@ -13,11 +14,11 @@ export function renderWorldMetaFormHtml(
     <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 8px; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(15px * var(--ui-scale, 1));">🏷️</span>
+          <span>${getIconSvg('tag', 'pmm-icon-sm')}</span>
           <span style="font-size: var(--text-base, 12.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.btn_save_meta') || 'World Profile Binding & Notes')}</span>
         </div>
         <button id="btn-save-meta" class="btn-primary" style="padding: calc(4px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));" ${curSaving ? 'disabled' : ''}>
-          <span>💾</span>
+          <span>${getIconSvg('save', 'pmm-icon-xs')}</span>
           <span>${curSaving ? 'Saving...' : escapeHtml(t('common.save') || 'Save')}</span>
         </button>
       </div>
@@ -54,7 +55,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
     <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1)); flex-shrink: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(16px * var(--ui-scale, 1));">⚙️</span>
+          <span>${getIconSvg('settings', 'pmm-icon-sm')}</span>
           <span style="font-size: var(--text-base, 13px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.world_options_title') || 'World Rules & Difficulty (WorldOption.sav)')}</span>
         </div>
         <span class="badge" style="font-size: var(--text-2xs, 10.5px); padding: 3px calc(10px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.15); color: #38bdf8; font-weight: 700; border: 1px solid rgba(56, 189, 248, 0.3);">
@@ -65,7 +66,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
       <!-- 1. General & Game Pace -->
       <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
         <div style="font-size: var(--text-sm, 11px); font-weight: 700; color: #60a5fa; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-          <span>🎯</span> ${escapeHtml(t('scanner.rules_cat_general') || 'General & Game Pace')}
+          <span>${getIconSvg('target', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.rules_cat_general') || 'General & Game Pace')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--ui-scale, 1)), 1fr)); gap: calc(6px * var(--ui-scale, 1));">
           <div style="background: rgba(0,0,0,0.18); padding: calc(5px * var(--ui-scale, 1)) calc(9px * var(--ui-scale, 1)); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">
@@ -90,7 +91,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
       <!-- 2. Pals & Capture -->
       <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
         <div style="font-size: var(--text-sm, 11px); font-weight: 700; color: #f59e0b; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-          <span>🐾</span> ${escapeHtml(t('scanner.rules_cat_pals') || 'Pals & Capturing')}
+          <span>${getIconSvg('paw', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.rules_cat_pals') || 'Pals & Capturing')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--ui-scale, 1)), 1fr)); gap: calc(6px * var(--ui-scale, 1));">
           <div style="background: rgba(0,0,0,0.18); padding: calc(5px * var(--ui-scale, 1)) calc(9px * var(--ui-scale, 1)); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">
@@ -127,7 +128,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
       <!-- 3. Player & Survival -->
       <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
         <div style="font-size: var(--text-sm, 11px); font-weight: 700; color: #ef4444; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-          <span>⚔️</span> ${escapeHtml(t('scanner.rules_cat_player') || 'Player & Survival')}
+          <span>${getIconSvg('swords', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.rules_cat_player') || 'Player & Survival')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--ui-scale, 1)), 1fr)); gap: calc(6px * var(--ui-scale, 1));">
           <div style="background: rgba(0,0,0,0.18); padding: calc(5px * var(--ui-scale, 1)) calc(9px * var(--ui-scale, 1)); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">
@@ -168,7 +169,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
       <!-- 4. Base & Guilds -->
       <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
         <div style="font-size: var(--text-sm, 11px); font-weight: 700; color: #10b981; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-          <span>🏰</span> ${escapeHtml(t('scanner.rules_cat_bases') || 'Base & Guilds')}
+          <span>${getIconSvg('castle', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.rules_cat_bases') || 'Base & Guilds')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--ui-scale, 1)), 1fr)); gap: calc(6px * var(--ui-scale, 1));">
           <div style="background: rgba(0,0,0,0.18); padding: calc(5px * var(--ui-scale, 1)) calc(9px * var(--ui-scale, 1)); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">
@@ -209,7 +210,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
       <!-- 5. Farming, Items & Drops -->
       <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
         <div style="font-size: var(--text-sm, 11px); font-weight: 700; color: #a855f7; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-          <span>🌾</span> ${escapeHtml(t('scanner.rules_cat_farming') || 'Farming, Items & Activities')}
+          <span>${getIconSvg('sprout', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.rules_cat_farming') || 'Farming, Items & Activities')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--ui-scale, 1)), 1fr)); gap: calc(6px * var(--ui-scale, 1));">
           <div style="background: rgba(0,0,0,0.18); padding: calc(5px * var(--ui-scale, 1)) calc(9px * var(--ui-scale, 1)); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">
@@ -254,7 +255,7 @@ export function renderWorldOptionsHtml(worldOptions: WorldOptionSettings | null)
       <!-- 6. Building & World Limits -->
       <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
         <div style="font-size: var(--text-sm, 11px); font-weight: 700; color: #38bdf8; text-transform: uppercase; letter-spacing: 0.5px; display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-          <span>🏗️</span> ${escapeHtml(t('scanner.rules_cat_limits') || 'Building & World Limits')}
+          <span>${getIconSvg('hammer', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.rules_cat_limits') || 'Building & World Limits')}
         </div>
         <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(calc(150px * var(--ui-scale, 1)), 1fr)); gap: calc(6px * var(--ui-scale, 1));">
           <div style="background: rgba(0,0,0,0.18); padding: calc(5px * var(--ui-scale, 1)) calc(9px * var(--ui-scale, 1)); border-radius: 5px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">

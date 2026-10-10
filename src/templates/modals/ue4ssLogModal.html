@@ -87,18 +87,18 @@
         <strong id="ue4ss-stat-lines" style="color: var(--text-primary);">0</strong>
       </div>
       <div id="ue4ss-pill-mods" class="stat-pill stat-pill-interactive ue4ss-pill-mods" title="Click to inspect all detected mods" data-i18n-title="ue4ss_log.click_to_view_mods">
-        <span>📦</span>
+        <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
         <span style="color: var(--success);" data-i18n="ue4ss_log.stat_mods">Loaded Mods:</span>
         <strong id="ue4ss-stat-mods" style="color: var(--success);">0</strong>
         <span class="ue4ss-pill-chevron">▾</span>
       </div>
       <div id="ue4ss-pill-warnings" class="stat-pill stat-pill-interactive ue4ss-pill-warnings" title="Click to filter warnings">
-        <span>⚠️</span>
+        <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <span style="color: var(--warning);" data-i18n="ue4ss_log.stat_warnings">Warnings:</span>
         <strong id="ue4ss-stat-warnings" style="color: var(--warning);">0</strong>
       </div>
       <div id="ue4ss-pill-errors" class="stat-pill stat-pill-interactive ue4ss-pill-errors" title="Click to filter errors & crashes">
-        <span>❌</span>
+        <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
         <span style="color: var(--danger);" data-i18n="ue4ss_log.stat_errors">Errors &amp; Crashes:</span>
         <strong id="ue4ss-stat-errors" style="color: var(--danger);">0</strong>
       </div>
@@ -107,13 +107,16 @@
     <!-- Active Mod Filter Banner -->
     <div id="ue4ss-active-mod-banner" class="ue4ss-active-mod-banner" style="display: none;">
       <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-        <span style="color: var(--info); font-size: calc(14px * var(--ui-scale, 1));">🔍</span>
+        <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color: var(--info);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <span style="font-size: var(--text-sm, 12px); color: var(--text-primary);">
           <span data-i18n="ue4ss_log.filter_active_mod">Filtering events for mod:</span>
           <strong id="ue4ss-active-mod-name" style="color: var(--info); margin-left: calc(4px * var(--ui-scale, 1));"></strong>
         </span>
       </div>
-      <button id="ue4ss-clear-mod-filter-btn" class="ue4ss-clear-mod-filter-btn" data-i18n="ue4ss_log.clear_mod_filter">✕ Clear Mod Filter</button>
+      <button id="ue4ss-clear-mod-filter-btn" class="ue4ss-clear-mod-filter-btn btn-with-icon">
+        <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+        <span data-i18n="ue4ss_log.clear_mod_filter">Clear Mod Filter</span>
+      </button>
     </div>
 
     <!-- Filter & Search Toolbar -->
@@ -127,7 +130,7 @@
       </div>
 
       <div class="ue4ss-search-wrap">
-        <span class="ue4ss-search-icon">🔍</span>
+        <span class="ue4ss-search-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
         <input type="text" id="ue4ss-log-search" class="ue4ss-search-input" placeholder="Search log entries..." data-i18n-placeholder="ue4ss_log.search_placeholder" />
       </div>
     </div>
@@ -149,16 +152,16 @@
     <div id="ue4ss-mods-drawer" class="ue4ss-mods-drawer" style="display: none;">
       <div class="ue4ss-drawer-header">
         <div class="ue4ss-drawer-title-group">
-          <span style="font-size: calc(15px * var(--ui-scale, 1));">📦</span>
+          <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
           <h4 class="ue4ss-drawer-title" data-i18n="ue4ss_log.mods_drawer_title">Detected Mods &amp; Plugins</h4>
           <span id="ue4ss-drawer-count" class="ue4ss-drawer-counter">0</span>
         </div>
-        <button id="ue4ss-mods-drawer-close" class="ue4ss-drawer-close-btn" title="Close Mods Drawer (Esc)">✕</button>
+        <button id="ue4ss-mods-drawer-close" class="ue4ss-drawer-close-btn" title="Close Mods Drawer (Esc)"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
 
       <div class="ue4ss-drawer-toolbar">
         <div class="ue4ss-drawer-search-wrap">
-          <span class="ue4ss-search-icon">🔍</span>
+          <span class="ue4ss-search-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
           <input type="text" id="ue4ss-drawer-search" class="ue4ss-drawer-search-input" placeholder="Search loaded mods..." data-i18n-placeholder="ue4ss_log.search_mods_placeholder" />
         </div>
         <div class="ue4ss-drawer-chips">
@@ -178,7 +181,7 @@
     <!-- Drag & Drop Overlay -->
     <div id="ue4ss-drag-overlay" class="ue4ss-drag-overlay" style="display: none;">
       <div class="ue4ss-drag-box">
-        <span style="font-size: calc(42px * var(--ui-scale, 1)); margin-bottom: calc(8px * var(--ui-scale, 1));">📥</span>
+        <svg class="pmm-icon pmm-icon-xl" viewBox="0 0 24 24" style="color:var(--accent); margin-bottom:calc(8px * var(--ui-scale, 1));"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         <span style="font-size: var(--text-md, 15px); font-weight: 700; color: #ffffff;" data-i18n="ue4ss_log.drop_hint">Drop UE4SS log file here to inspect</span>
         <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); margin-top: calc(4px * var(--ui-scale, 1));">Supports external .log and .txt files</span>
       </div>

@@ -2,6 +2,7 @@ import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
 import { formatBytes } from '../helpers';
 import { getHealthBadge } from './badges';
+import { getIconSvg } from '../../../icons/mod';
 import type { SaveWorldSummary, WorldCustomMeta } from '../../../../api';
 
 export function renderWorldHeaderAndActionsHtml(
@@ -17,7 +18,7 @@ export function renderWorldHeaderAndActionsHtml(
       <div style="display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1));">
         <div style="display: flex; flex-direction: column; gap: 4px;">
           <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1)); flex-wrap: wrap;">
-            <span style="font-size: calc(20px * var(--ui-scale, 1));">🌍</span>
+            <span class="icon-inline">${getIconSvg('globe', 'pmm-icon-md')}</span>
             <h3 style="margin: 0; font-size: var(--text-lg, 17px); font-weight: 700; color: var(--text-primary);">
               ${escapeHtml(customMeta?.nickname || selectedWorld.worldName)}
             </h3>
@@ -30,32 +31,32 @@ export function renderWorldHeaderAndActionsHtml(
         <!-- Quick Action Buttons Group -->
         <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-wrap: wrap;">
           <button id="btn-backup-world" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" ${curCreating ? 'disabled' : ''} title="${escapeHtml(t('scanner.btn_backup_now') || 'Create manual timestamped ZIP backup')}">
-            <span>🛡️</span>
+            <span>${getIconSvg('shield', 'pmm-icon-xs')}</span>
             <span>${curCreating ? 'Saving...' : escapeHtml(t('scanner.btn_backup_now') || 'Backup World Now')}</span>
           </button>
 
           <button id="btn-pmm-vault" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" title="${escapeHtml(t('scanner.btn_pmm_vault_title') || 'View, restore, or delete PMM manual ZIP backups')}">
-            <span>📦</span>
+            <span>${getIconSvg('package', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(t('scanner.btn_pmm_vault') || 'PMM Backups')} (${selectedWorld.pmmBackupCount || 0})</span>
           </button>
 
           <button id="btn-open-world-folder" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" title="${escapeHtml(t('scanner.btn_open_folder') || 'Open save folder in Explorer')}">
-            <span>📂</span>
+            <span>${getIconSvg('folderOpen', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(t('scanner.btn_open_folder') || 'Open in Explorer')}</span>
           </button>
 
           <button id="btn-export-world-zip" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" title="${escapeHtml(t('scanner.btn_export_zip') || 'Export save to ZIP')}">
-            <span>📤</span>
+            <span>${getIconSvg('upload', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(t('scanner.btn_export_zip') || 'Export Save')}</span>
           </button>
 
           <button id="btn-prune-backups" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" ${curPruning ? 'disabled' : ''} title="${escapeHtml(t('scanner.btn_prune_backups') || 'Prune old game auto-backups to free disk space')}">
-            <span>🧹</span>
+            <span>${getIconSvg('clean', 'pmm-icon-xs')}</span>
             <span>${curPruning ? 'Pruning...' : escapeHtml(t('scanner.btn_prune_backups') || 'Prune Backups')}</span>
           </button>
 
           <button id="btn-run-deep-scan" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" ${curDeep ? 'disabled' : ''}>
-            <span>${curDeep ? '⏳' : '🔬'}</span>
+            <span>${curDeep ? getIconSvg('scan', 'pmm-icon-xs pmm-icon-spin') : getIconSvg('scanner', 'pmm-icon-xs')}</span>
             <span>${curDeep ? escapeHtml(t('scanner.scanning_deep') || 'Scanning GVAS...') : escapeHtml(t('scanner.btn_deep_scan') || 'Deep Health Scan')}</span>
           </button>
         </div>
@@ -74,8 +75,10 @@ export function renderWorldQuickStatsHtml(selectedWorld: SaveWorldSummary): stri
       </div>
       <div class="premium-stat-card">
         <div style="font-size: var(--text-2xs, 10px); color: var(--text-muted); text-transform: uppercase;">${escapeHtml(t('scanner.stat_host_player') || 'Host Player')}</div>
-        <div class="premium-stat-value" style="color: #4af626; font-size: var(--text-md, 15px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-          👤 ${escapeHtml(selectedWorld.hostPlayerName || 'Host')} <span style="font-size: var(--text-sm, 13px);">(${selectedWorld.playerLevel ? `Lv. ${selectedWorld.playerLevel}` : 'Lv. ?'})</span>
+        <div class="premium-stat-value" style="color: #4af626; font-size: var(--text-md, 15px); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: flex; align-items: center; gap: 5px;">
+          <span>${getIconSvg('user', 'pmm-icon-xs')}</span>
+          <span>${escapeHtml(selectedWorld.hostPlayerName || 'Host')}</span>
+          <span style="font-size: var(--text-sm, 13px);">(${selectedWorld.playerLevel ? `Lv. ${selectedWorld.playerLevel}` : 'Lv. ?'})</span>
         </div>
       </div>
       <div class="premium-stat-card">
@@ -91,8 +94,9 @@ export function renderWorldQuickStatsHtml(selectedWorld: SaveWorldSummary): stri
           <span>${escapeHtml(t('scanner.stat_pmm_backups') || 'PMM Backups')}</span>
           <span style="font-size: var(--text-sm, 11px); opacity: 0.7;">↗</span>
         </div>
-        <div class="premium-stat-value" style="font-size: var(--text-md, 15px); color: #a855f7;">
-          📦 ${selectedWorld.pmmBackupCount || 0} ${escapeHtml(t('scanner.vault_count_label') || 'Backups')}
+        <div class="premium-stat-value" style="font-size: var(--text-md, 15px); color: #a855f7; display: flex; align-items: center; gap: 5px;">
+          <span>${getIconSvg('package', 'pmm-icon-xs')}</span>
+          <span>${selectedWorld.pmmBackupCount || 0} ${escapeHtml(t('scanner.vault_count_label') || 'Backups')}</span>
         </div>
       </div>
     </div>

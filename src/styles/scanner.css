@@ -101,7 +101,16 @@
 .scanner-hero-icon {
   font-size: calc(64px * var(--ui-scale, 1));
   color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   animation: float 4s ease-in-out infinite;
+}
+
+.scanner-hero-icon .pmm-icon {
+  width: calc(64px * var(--ui-scale, 1));
+  height: calc(64px * var(--ui-scale, 1));
+  stroke-width: 1.5;
 }
 
 @keyframes float {
@@ -302,6 +311,15 @@
 .scanner-clean-icon {
   font-size: calc(36px * var(--ui-scale, 1));
   color: var(--success);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.scanner-clean-icon .pmm-icon {
+  width: calc(36px * var(--ui-scale, 1));
+  height: calc(36px * var(--ui-scale, 1));
+  stroke-width: 1.75;
 }
 
 .scanner-clean-title {

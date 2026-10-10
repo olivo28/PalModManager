@@ -10,31 +10,31 @@
         <!-- Sidebar Navigation -->
         <nav class="settings-sidebar-nav">
           <button type="button" class="settings-tab-button active" data-settings-tab="game">
-            <span class="tab-icon">🎮</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect width="20" height="12" x="2" y="6" rx="6"/></svg></span>
             <span data-i18n="settings.tab_game">Game & Storage</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="nexus">
-            <span class="tab-icon">🔗</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></span>
             <span data-i18n="settings.tab_nexus">Nexus Mods</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="mods">
-            <span class="tab-icon">⚡</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
             <span data-i18n="settings.tab_mods">Mod Behavior</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="interface">
-            <span class="tab-icon">🎨</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/></svg></span>
             <span data-i18n="settings.tab_interface">Interface</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="network">
-            <span class="tab-icon">🌐</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"/><path d="M2 12h20"/></svg></span>
             <span data-i18n="settings.tab_network">Network & Sources</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="resources">
-            <span class="tab-icon">🛠️</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg></span>
             <span data-i18n="settings.tab_resources">Dev Resources</span>
           </button>
           <button type="button" class="settings-tab-button" data-settings-tab="safety">
-            <span class="tab-icon">🛡️</span>
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span>
             <span data-i18n="settings.tab_safety">Safety & Backup</span>
           </button>
         </nav>
@@ -50,13 +50,13 @@
               <div class="settings-hint" data-i18n="settings.game_path_hint">Path to your Palworld installation directory</div>
               <div class="settings-path-row">
                 <input type="text" id="settings-game-path" placeholder="C:\...\Palworld" data-i18n-placeholder="settings.game_path_placeholder" readonly />
-                <button type="button" id="settings-auto-detect-btn" class="btn-secondary" title="Automatically detect Palworld installation" data-i18n-title="settings.btn_auto_detect_title" data-i18n="settings.btn_auto_detect">🔍 Auto Detect</button>
+                <button type="button" id="settings-auto-detect-btn" class="btn-secondary btn-with-icon" title="Automatically detect Palworld installation" data-i18n-title="settings.btn_auto_detect_title"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><span data-i18n="settings.btn_auto_detect">Auto Detect</span></button>
                 <button type="button" id="settings-browse-btn" class="btn-secondary" data-i18n="common.browse">Browse</button>
               </div>
               <div id="settings-path-status" class="settings-path-status"></div>
               <div id="settings-steam-protocol-row" style="margin-top: calc(8px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: var(--radius); font-size: var(--text-xs, 11px);">
                 <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  <span>🎮</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><line x1="6" y1="12" x2="10" y2="12"/><line x1="8" y1="10" x2="8" y2="14"/><line x1="15" y1="13" x2="15.01" y2="13"/><line x1="18" y1="11" x2="18.01" y2="11"/><rect width="20" height="12" x="2" y="6" rx="6"/></svg>
                   <span data-i18n="settings.steam_proto_title" style="font-weight: 600; color: var(--text-primary);">Steam Launcher Protocol:</span>
                   <span id="settings-steam-proto-handler" style="color: var(--text-muted); font-family: monospace; font-size: var(--text-2xs, 10px);">checking...</span>
                 </div>
@@ -85,11 +85,11 @@
               </div>
               <div class="settings-hint font-size-11" data-i18n="settings.quick_access_hint">Open game or app data folders directly in system file explorer</div>
               <div style="display:grid;grid-template-columns:1fr 1fr;gap:calc(8px * var(--ui-scale, 1));margin-top:4px;">
-                <button type="button" id="open-folder-paks" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_paks">📂 Paks (~mods)</button>
-                <button type="button" id="open-folder-ue4ss" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_ue4ss">📂 UE4SS Mods</button>
-                <button type="button" id="open-folder-palschema" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_palschema">📂 PalSchema Mods</button>
-                <button type="button" id="open-folder-appdata" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.folder_appdata">📂 App Storage</button>
-                <button type="button" id="open-folder-profile" class="btn-secondary" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));grid-column: span 2;" data-i18n="settings.folder_profile">📂 Active Profile Folder</button>
+                <button type="button" id="open-folder-paks" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="settings.folder_paks">Paks (~mods)</span></button>
+                <button type="button" id="open-folder-ue4ss" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="settings.folder_ue4ss">UE4SS Mods</span></button>
+                <button type="button" id="open-folder-palschema" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="settings.folder_palschema">PalSchema Mods</span></button>
+                <button type="button" id="open-folder-appdata" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="settings.folder_appdata">App Storage</span></button>
+                <button type="button" id="open-folder-profile" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px);padding:calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));grid-column: span 2;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg><span data-i18n="settings.folder_profile">Active Profile Folder</span></button>
               </div>
             </div>
           </div>
@@ -107,7 +107,7 @@
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span style="font-size:calc(14px * var(--ui-scale, 1));">⚡</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                   <span class="settings-card-title" data-i18n="settings.nexus_nxm_title">1-Click Downloads (nxm://)</span>
                 </div>
                 <span id="nexus-nxm-status-badge" class="badge badge-secondary" style="font-size:var(--text-2xs, 10px);">Checking...</span>
@@ -121,7 +121,7 @@
             <div class="settings-section-card">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:4px;">
                 <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span style="font-size:calc(14px * var(--ui-scale, 1));">🔑</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
                   <span class="settings-card-title" data-i18n="settings.nexus_proto_title">Login Protocol (palmodmanager://)</span>
                 </div>
                 <span id="nexus-protocol-status-badge" class="badge badge-secondary" style="font-size:var(--text-2xs, 10px);">Checking...</span>
@@ -247,9 +247,9 @@
               <div class="settings-card-header" style="display:flex;justify-content:space-between;align-items:center;">
                 <span class="settings-card-title" data-i18n="settings.theme_label">Theme & Appearance</span>
                 <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));">
-                  <button type="button" id="theme-btn-import" class="btn-secondary" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Import .pmmtheme.json" data-i18n="theme.btn_import">📥 Import</button>
-                  <button type="button" id="theme-btn-export" class="btn-secondary" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Export active theme" data-i18n="theme.btn_export">📤 Export</button>
-                  <button type="button" id="theme-btn-new" class="btn-secondary" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Create new custom theme" data-i18n="theme.btn_new">➕ New</button>
+                  <button type="button" id="theme-btn-import" class="btn-secondary btn-with-icon" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Import .pmmtheme.json"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg><span data-i18n="theme.btn_import">Import</span></button>
+                  <button type="button" id="theme-btn-export" class="btn-secondary btn-with-icon" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Export active theme"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg><span data-i18n="theme.btn_export">Export</span></button>
+                  <button type="button" id="theme-btn-new" class="btn-secondary btn-with-icon" style="padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-xs, 10.5px);" title="Create new custom theme"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M5 12h14"/><path d="M12 5v14"/></svg><span data-i18n="theme.btn_new">New</span></button>
                 </div>
               </div>
               <div class="settings-hint" data-i18n="settings.theme_hint">Select a base theme or customize your personal color scheme and background artwork</div>
@@ -258,8 +258,8 @@
               <div style="display:flex;gap:calc(8px * var(--ui-scale, 1));margin-top:calc(8px * var(--ui-scale, 1));align-items:center;">
                 <select id="settings-theme-select" class="btn-secondary" style="flex:1;text-align:left;padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;border:1px solid var(--border);border-radius:var(--radius);background:var(--bg-tertiary);color:var(--text-primary);">
                 </select>
-                <button type="button" id="theme-customize-toggle-btn" class="btn-secondary" style="white-space:nowrap;padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;" title="Customize colors and backgrounds" data-i18n="theme.btn_customize">🎨 Customize</button>
-                <button type="button" id="theme-delete-btn" class="btn-secondary" style="display:none;color:var(--danger);padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);" title="Delete custom theme">🗑️</button>
+                <button type="button" id="theme-customize-toggle-btn" class="btn-secondary btn-with-icon" style="white-space:nowrap;padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);font-weight:600;" title="Customize colors and backgrounds"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.563-2.512 5.563-5.563C22 6.5 17.5 2 12 2Z"/></svg><span data-i18n="theme.btn_customize">Customize</span></button>
+                <button type="button" id="theme-delete-btn" class="btn-secondary" style="display:none;color:var(--danger);padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));min-height:calc(34px * var(--ui-scale, 1));font-size:var(--text-sm, 12px);" title="Delete custom theme"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/></svg></button>
               </div>
 
               <!-- Collapsible Visual Customizer Panel -->
@@ -274,9 +274,9 @@
 
                 <!-- Category Navigation Tabs -->
                 <div class="theme-color-nav">
-                  <button type="button" id="theme-cat-structure-btn" class="theme-color-nav-btn active" data-i18n="theme.cat_structure">🎨 Structure</button>
-                  <button type="button" id="theme-cat-status-btn" class="theme-color-nav-btn" data-i18n="theme.cat_status">🚦 Status & Health</button>
-                  <button type="button" id="theme-cat-badges-btn" class="theme-color-nav-btn" data-i18n="theme.cat_badges">🏷️ Mod Badges</button>
+                  <button type="button" id="theme-cat-structure-btn" class="theme-color-nav-btn active btn-with-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg><span data-i18n="theme.cat_structure">Structure</span></button>
+                  <button type="button" id="theme-cat-status-btn" class="theme-color-nav-btn btn-with-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg><span data-i18n="theme.cat_status">Status & Health</span></button>
+                  <button type="button" id="theme-cat-badges-btn" class="theme-color-nav-btn btn-with-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg><span data-i18n="theme.cat_badges">Mod Badges</span></button>
                 </div>
 
                 <!-- Group 1: Structure & Surfaces (8 Colors) -->
@@ -457,7 +457,7 @@
                     <div class="theme-image-card-main">
                       <div class="theme-image-thumb-box" id="theme-app-bg-thumb">
                         <img id="theme-app-bg-thumb-img" class="theme-image-thumb-img" alt="App Background" />
-                        <span id="theme-app-bg-thumb-empty" class="theme-image-thumb-empty">🖼️</span>
+                        <span id="theme-app-bg-thumb-empty" class="theme-image-thumb-empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="1.8"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></span>
                       </div>
                       <div class="theme-image-card-content">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -466,7 +466,7 @@
                             <span id="theme-app-bg-status" class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:var(--text-2xs, 9.5px);padding:2px 6px;border:1px solid var(--border);" data-i18n="theme.status_no_image">No image</span>
                             <input type="file" id="theme-app-bg-file" accept="image/*" style="display:none;" />
                             <button type="button" id="theme-app-bg-browse-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.browse">Choose Image...</button>
-                            <button type="button" id="theme-app-bg-adjust-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;" data-i18n="theme.btn_crop_adjust">✂️ Crop / Adjust</button>
+                            <button type="button" id="theme-app-bg-adjust-btn" class="btn-secondary btn-with-icon" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span data-i18n="theme.btn_crop_adjust">Crop / Adjust</span></button>
                             <button type="button" id="theme-app-bg-clear-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.clear">Clear</button>
                           </div>
                         </div>
@@ -487,7 +487,7 @@
                     <div class="theme-image-card-main">
                       <div class="theme-image-thumb-box" id="theme-sidebar-bg-thumb" style="cursor:pointer;" title="Click to crop / adjust image">
                         <img id="theme-sidebar-bg-thumb-img" class="theme-image-thumb-img" alt="Sidebar Banner" />
-                        <span id="theme-sidebar-bg-thumb-empty" class="theme-image-thumb-empty">📋</span>
+                        <span id="theme-sidebar-bg-thumb-empty" class="theme-image-thumb-empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="1.8"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></span>
                       </div>
                       <div class="theme-image-card-content">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -496,7 +496,7 @@
                             <span id="theme-sidebar-bg-status" class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:var(--text-2xs, 9.5px);padding:2px 6px;border:1px solid var(--border);" data-i18n="theme.status_no_image">No image</span>
                             <input type="file" id="theme-sidebar-bg-file" accept="image/*" style="display:none;" />
                             <button type="button" id="theme-sidebar-bg-browse-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.browse">Choose Image...</button>
-                            <button type="button" id="theme-sidebar-bg-adjust-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;" data-i18n="theme.btn_crop_adjust">✂️ Crop / Adjust</button>
+                            <button type="button" id="theme-sidebar-bg-adjust-btn" class="btn-secondary btn-with-icon" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span data-i18n="theme.btn_crop_adjust">Crop / Adjust</span></button>
                             <button type="button" id="theme-sidebar-bg-clear-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.clear">Clear</button>
                           </div>
                         </div>
@@ -514,7 +514,7 @@
                     <div class="theme-image-card-main">
                       <div class="theme-image-thumb-box" id="theme-editor-bg-thumb" style="cursor:pointer;" title="Click to crop / adjust image">
                         <img id="theme-editor-bg-thumb-img" class="theme-image-thumb-img" alt="Editor Watermark" />
-                        <span id="theme-editor-bg-thumb-empty" class="theme-image-thumb-empty">💻</span>
+                        <span id="theme-editor-bg-thumb-empty" class="theme-image-thumb-empty"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="1.8"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></svg></span>
                       </div>
                       <div class="theme-image-card-content">
                         <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -523,7 +523,7 @@
                             <span id="theme-editor-bg-status" class="badge" style="background:var(--bg-tertiary);color:var(--text-muted);font-size:var(--text-2xs, 9.5px);padding:2px 6px;border:1px solid var(--border);" data-i18n="theme.status_no_image">No image</span>
                             <input type="file" id="theme-editor-bg-file" accept="image/*" style="display:none;" />
                             <button type="button" id="theme-editor-bg-browse-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.browse">Choose Image...</button>
-                            <button type="button" id="theme-editor-bg-adjust-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;" data-i18n="theme.btn_crop_adjust">✂️ Crop / Adjust</button>
+                            <button type="button" id="theme-editor-bg-adjust-btn" class="btn-secondary btn-with-icon" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));display:none;"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/></svg><span data-i18n="theme.btn_crop_adjust">Crop / Adjust</span></button>
                             <button type="button" id="theme-editor-bg-clear-btn" class="btn-secondary" style="font-size:var(--text-2xs, 9.5px);padding:calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="common.clear">Clear</button>
                           </div>
                         </div>
@@ -596,7 +596,10 @@
               </div>
               <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.image_cache_hint">Images are saved locally in lightweight WebP format for fast offline loading.</div>
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
-                <button type="button" id="btn-purge-image-cache" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
+                <button type="button" id="btn-purge-image-cache" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_purge_image_cache">Clear Thumbnail Cache</span>
+                </button>
               </div>
             </div>
 
@@ -611,7 +614,10 @@
                 <!-- UE4SS -->
                 <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center;">
                   <div>
-                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">⚡ UE4SS (Palworld Experimental Fork)</div>
+                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                      <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color:var(--accent);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      <span>UE4SS (Palworld Experimental Fork)</span>
+                    </div>
                     <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));">Maintained by Okaetsu • GitHub Releases</div>
                   </div>
                   <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/Okaetsu/RE-UE4SS/releases/latest" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));" data-i18n="settings.btn_view_source">View Source ↗</button>
@@ -632,7 +638,10 @@
                 <!-- retoc (trumank) -->
                 <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center; gap:calc(12px * var(--ui-scale, 1));">
                   <div style="flex:1; min-width:0;">
-                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">⚡ retoc <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
+                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                      <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color:var(--accent);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+                      <span>retoc <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></span>
+                    </div>
                     <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));" data-i18n="settings.sources_retoc_desc">Converts legacy .pak archives into Zen IoStore containers (.utoc / .ucas) — required for mods to load on PC Game Pass (Xbox / WinGDK).</div>
                   </div>
                   <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/retoc" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
@@ -641,7 +650,10 @@
                 <!-- repak (trumank) -->
                 <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; justify-content:space-between; align-items:center; gap:calc(12px * var(--ui-scale, 1));">
                   <div style="flex:1; min-width:0;">
-                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);">📦 repak <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></div>
+                    <div style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                      <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color:var(--accent);"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
+                      <span>repak <span style="font-weight:400; color:var(--text-muted);">by Truman Kilen (trumank)</span></span>
+                    </div>
                     <div style="font-size:var(--text-2xs, 9.5px); color:var(--text-muted); margin-top:calc(2px * var(--ui-scale, 1));" data-i18n="settings.sources_repak_desc_short">Packs and unpacks Unreal Engine .pak archives — used internally to inspect and validate mod contents.</div>
                   </div>
                   <button type="button" class="btn-secondary open-external-link-btn" data-url="https://github.com/trumank/repak" style="font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); white-space:nowrap; flex-shrink:0;" data-i18n="settings.btn_view_source">View Source ↗</button>
@@ -656,14 +668,14 @@
             <div class="settings-section-card" style="background:linear-gradient(135deg, rgba(99,102,241,0.08) 0%, rgba(168,85,247,0.05) 100%); border-color:rgba(99,102,241,0.3);">
               <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:calc(6px * var(--ui-scale, 1));">
                 <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
-                  <span style="font-size:calc(18px * var(--ui-scale, 1));">🛠️</span>
+                  <svg class="pmm-icon" viewBox="0 0 24 24" style="color:var(--accent);"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/></svg>
                   <div>
                     <span class="settings-card-title" data-i18n="settings.resources_master_title">Palworld Engine & Dev Resources</span>
                     <div class="settings-hint" style="font-size:var(--text-xs, 11px);" data-i18n="settings.resources_master_hint">Centralized registry of UE5.1.1 reflection data, AST mappings, C++ headers, and EmmyLua types for mod development and IDE intelligence.</div>
                   </div>
                 </div>
-                <button type="button" id="btn-verify-all-resources" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1)); white-space:nowrap;">
-                  <span id="btn-verify-all-resources-icon">🔄</span>
+                <button type="button" id="btn-verify-all-resources" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); white-space:nowrap;">
+                  <span id="btn-verify-all-resources-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_verify_all_resources">Verify All Resources</span>
                 </button>
               </div>
@@ -701,8 +713,8 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
-                <button type="button" id="btn-sync-usmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-usmap-icon">🔄</span>
+                <button type="button" id="btn-sync-usmap" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-usmap-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_usmap">Sync Mappings from GitHub</span>
                 </button>
               </div>
@@ -728,15 +740,18 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
-                <button type="button" id="btn-sync-sdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-sdk-icon">🔄</span>
+                <button type="button" id="btn-sync-sdk" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-sdk-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_sdk">Sync SDK from GitHub</span>
                 </button>
-                <button type="button" id="btn-import-sdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span>📂</span>
+                <button type="button" id="btn-import-sdk" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
                   <span data-i18n="settings.btn_import_sdk">Import Local CXXHeaderDump</span>
                 </button>
-                <button type="button" id="btn-purge-sdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_sdk">🧹 Clear SDK</button>
+                <button type="button" id="btn-purge-sdk" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_purge_sdk">Clear SDK</span>
+                </button>
               </div>
             </div>
 
@@ -758,15 +773,18 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
-                <button type="button" id="btn-sync-jmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-jmap-icon">🔄</span>
+                <button type="button" id="btn-sync-jmap" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-jmap-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_jmap">Sync .jmap from Repo</span>
                 </button>
-                <button type="button" id="btn-export-jmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span>📂</span>
+                <button type="button" id="btn-export-jmap" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
                   <span data-i18n="settings.btn_export_jmap">Export .jmap</span>
                 </button>
-                <button type="button" id="btn-purge-jmap" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_jmap">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-jmap" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_purge_jmap">Clear Cache</span>
+                </button>
               </div>
             </div>
 
@@ -789,15 +807,18 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
-                <button type="button" id="btn-sync-luatypes" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-luatypes-icon">🔄</span>
+                <button type="button" id="btn-sync-luatypes" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-luatypes-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_luatypes">Sync Lua Types from Repo</span>
                 </button>
-                <button type="button" id="btn-export-luatypes" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span>📂</span>
+                <button type="button" id="btn-export-luatypes" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
                   <span data-i18n="settings.btn_export_luatypes">Export Lua Types</span>
                 </button>
-                <button type="button" id="btn-purge-luatypes" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_luatypes">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-luatypes" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_purge_luatypes">Clear Cache</span>
+                </button>
               </div>
             </div>
 
@@ -820,15 +841,18 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
-                <button type="button" id="btn-sync-uht" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-uht-icon">🔄</span>
+                <button type="button" id="btn-sync-uht" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-uht-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_uht">Sync UHT Headers from Repo</span>
                 </button>
-                <button type="button" id="btn-import-uht" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span>📂</span>
+                <button type="button" id="btn-import-uht" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
                   <span data-i18n="settings.btn_import_uht">Import Local CXXHeaderDump</span>
                 </button>
-                <button type="button" id="btn-purge-uht" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_uht">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-uht" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_purge_uht">Clear Cache</span>
+                </button>
               </div>
             </div>
 
@@ -851,15 +875,18 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
-                <button type="button" id="btn-sync-bpsdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-bpsdk-icon">🔄</span>
+                <button type="button" id="btn-sync-bpsdk" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-bpsdk-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_bpsdk">Sync BP SDK from Repo</span>
                 </button>
-                <button type="button" id="btn-export-bpsdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span>📂</span>
+                <button type="button" id="btn-export-bpsdk" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
                   <span data-i18n="settings.btn_export_bpsdk">Export to UE Project</span>
                 </button>
-                <button type="button" id="btn-purge-bpsdk" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_bpsdk">🧹 Clear Cache</button>
+                <button type="button" id="btn-purge-bpsdk" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_purge_bpsdk">Clear Cache</span>
+                </button>
               </div>
             </div>
 
@@ -881,8 +908,8 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
-                <button type="button" id="btn-sync-blueprints" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-blueprints-icon">🔄</span>
+                <button type="button" id="btn-sync-blueprints" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-blueprints-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_blueprints">Sync Blueprints from GitHub</span>
                 </button>
               </div>
@@ -907,8 +934,8 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
-                <button type="button" id="btn-sync-datatables" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-datatables-icon">🔄</span>
+                <button type="button" id="btn-sync-datatables" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-datatables-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_datatables">Sync DataTables from GitHub</span>
                 </button>
               </div>
@@ -937,7 +964,7 @@
               <!-- Special Thanks to Okaetsu Acknowledgment Box -->
               <div style="background:var(--accent-dim); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1)); display:flex; align-items:center; justify-content:space-between; gap:calc(12px * var(--ui-scale, 1));">
                 <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
-                  <span style="font-size:calc(16px * var(--ui-scale, 1));">✨</span>
+                  <svg class="pmm-icon pmm-icon-sm" viewBox="0 0 24 24" style="color:var(--accent);"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/></svg>
                   <div style="font-size:var(--text-xs, 11px); line-height:1.4; color:var(--text-primary);">
                     <span data-i18n="settings.schemas_okaetsu_credit_prefix">Special thanks to</span>
                     <strong style="color:var(--text-primary);">Okaetsu</strong>
@@ -948,8 +975,8 @@
               </div>
 
               <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
-                <button type="button" id="btn-sync-schemas" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                  <span id="btn-sync-schemas-icon">🔄</span>
+                <button type="button" id="btn-sync-schemas" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1));">
+                  <span id="btn-sync-schemas-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg></span>
                   <span data-i18n="settings.btn_sync_schemas">Sync Schemas from GitHub</span>
                 </button>
               </div>
@@ -960,23 +987,38 @@
           <div class="settings-tab-pane" id="settings-pane-safety">
             <div class="settings-section-card">
               <div class="settings-card-header">
-                <span class="settings-card-title" data-i18n="settings.safety_title">🛡️ Safety Backup & Troubleshooting</span>
+                <span class="settings-card-title" style="display:inline-flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-sm" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg>
+                  <span data-i18n="settings.safety_title">Safety Backup & Troubleshooting</span>
+                </span>
               </div>
               <div class="settings-hint" style="margin-bottom:calc(6px * var(--ui-scale, 1));" data-i18n="settings.safety_hint">Recover pre-PMM mod setup or repair corrupted workshop files:</div>
               <div id="safety-backup-status-text" class="settings-hint" style="margin-bottom: calc(8px * var(--ui-scale, 1)); font-family: monospace; font-size: var(--text-xs, 11px);" data-i18n="settings.safety_checking">Checking backup status...</div>
               <div style="display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1));">
-                  <button type="button" id="safety-restore-btn" class="btn-secondary" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1)); border-color: var(--success-dim); color: var(--success);" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title" data-i18n="settings.btn_restore_safety">🔄 Restore Pre-PMM Setup</button>
-                  <button type="button" id="safety-backup-now-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title" data-i18n="settings.btn_backup_now">📸 Backup Now</button>
+                  <button type="button" id="safety-restore-btn" class="btn-secondary btn-with-icon" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1)); border-color: var(--success-dim); color: var(--success);" title="Restore original pre-PMM mod files, mods.txt and configs" data-i18n-title="settings.btn_restore_safety_title">
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+                    <span data-i18n="settings.btn_restore_safety">Restore Pre-PMM Setup</span>
+                  </button>
+                  <button type="button" id="safety-backup-now-btn" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Create a fresh snapshot of current game mod files" data-i18n-title="settings.btn_backup_now_title">
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+                    <span data-i18n="settings.btn_backup_now">Backup Now</span>
+                  </button>
                 </div>
-                <button type="button" id="reset-workshop-cache-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title" data-i18n="settings.btn_reset_workshop">🧹 Reset Workshop UE4SS Cache</button>
+                <button type="button" id="reset-workshop-cache-btn" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(8px * var(--ui-scale, 1));" title="Delete ManagedMods\UE4SSExperimentalPW to fix corrupted workshop updates" data-i18n-title="settings.btn_reset_workshop_title">
+                  <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                  <span data-i18n="settings.btn_reset_workshop">Reset Workshop UE4SS Cache</span>
+                </button>
               </div>
             </div>
 
             <!-- STORAGE & CACHE MANAGEMENT -->
             <div class="settings-section-card">
               <div class="settings-card-header">
-                <span class="settings-card-title" data-i18n="settings.storage_title">💾 Storage & Cache Management</span>
+                <span class="settings-card-title" style="display:inline-flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
+                  <svg class="pmm-icon pmm-icon-sm" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                  <span data-i18n="settings.storage_title">Storage & Cache Management</span>
+                </span>
               </div>
               <div class="settings-hint" style="margin-bottom:calc(10px * var(--ui-scale, 1));" data-i18n="settings.storage_hint">Inspect and manage disk space used by temporary downloads and local mod libraries:</div>
               
@@ -984,15 +1026,21 @@
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-bottom:calc(10px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                    <span style="font-size:calc(14px * var(--ui-scale, 1));">⚡</span>
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color:var(--accent);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
                     <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_temp_title">Temporary Downloads Cache</span>
                   </div>
                   <span id="storage-temp-badge" class="badge" style="background:var(--info-dim); color:var(--info); border:1px solid var(--info-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
                 <div id="storage-temp-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">0 temporary files in cache</div>
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
-                  <button type="button" id="storage-clear-temp-btn" class="btn-secondary" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Clean orphaned or cancelled zip downloads" data-i18n-title="settings.btn_clear_temp_title" data-i18n="settings.btn_clear_temp">🧹 Clear Temporary Downloads</button>
-                  <button type="button" id="storage-open-temp-btn" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open temporary downloads folder in explorer" data-i18n-title="settings.btn_open_temp_title" data-i18n="settings.btn_open_temp">📂 Open Temp Folder</button>
+                  <button type="button" id="storage-clear-temp-btn" class="btn-secondary btn-with-icon" style="flex:1; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Clean orphaned or cancelled zip downloads" data-i18n-title="settings.btn_clear_temp_title">
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                    <span data-i18n="settings.btn_clear_temp">Clear Temporary Downloads</span>
+                  </button>
+                  <button type="button" id="storage-open-temp-btn" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open temporary downloads folder in explorer" data-i18n-title="settings.btn_open_temp_title">
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
+                    <span data-i18n="settings.btn_open_temp">Open Temp Folder</span>
+                  </button>
                 </div>
               </div>
 
@@ -1000,14 +1048,17 @@
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-bottom:calc(10px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                    <span style="font-size:calc(14px * var(--ui-scale, 1));">📦</span>
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color:var(--accent);"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg>
                     <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_library_title">Local Mod Library</span>
                   </div>
                   <span id="storage-library-badge" class="badge" style="background:var(--success-dim); color:var(--success); border:1px solid var(--success-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
                 <div id="storage-library-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">0 mods, 0 zip archives</div>
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
-                  <button type="button" id="storage-open-library-btn" class="btn-secondary" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open local mod library folder in explorer" data-i18n-title="settings.btn_open_library_title" data-i18n="settings.btn_open_library">📂 Open Library Folder</button>
+                  <button type="button" id="storage-open-library-btn" class="btn-secondary btn-with-icon" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open local mod library folder in explorer" data-i18n-title="settings.btn_open_library_title">
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m6 14 1.45-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.55 6a2 2 0 0 1-1.94 1.5H4a2 2 0 0 1-2-2V5c0-1.1.9-2 2-2h3.93a2 2 0 0 1 1.66.9l.82 1.2a2 2 0 0 0 1.66.9H18a2 2 0 0 1 2 2v2"/></svg>
+                    <span data-i18n="settings.btn_open_library">Open Library Folder</span>
+                  </button>
                 </div>
               </div>
 
@@ -1015,14 +1066,17 @@
               <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:calc(6px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(8px * var(--ui-scale, 1));">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
                   <div style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-                    <span style="font-size:calc(14px * var(--ui-scale, 1));">🖼️</span>
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24" style="color:var(--accent);"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
                     <span style="font-size:var(--text-sm, 12px); font-weight:700; color:var(--text-primary);" data-i18n="settings.storage_image_cache_title">Thumbnail Image Cache</span>
                   </div>
                   <span id="storage-images-badge" class="badge" style="background:var(--accent-dim); color:var(--accent); border:1px solid var(--accent-dim); font-size:var(--text-xs, 11px); font-weight:700; padding:calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius:calc(4px * var(--ui-scale, 1));">0 B</span>
                 </div>
                 <div id="storage-images-details" class="settings-hint" style="font-size:var(--text-xs, 11px);">WebP cached mod cover images</div>
                 <div style="display:flex; gap:calc(8px * var(--ui-scale, 1)); margin-top:calc(8px * var(--ui-scale, 1));">
-                  <button type="button" id="storage-clear-images-btn" class="btn-secondary" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" data-i18n="settings.btn_purge_image_cache">🧹 Clear Thumbnail Cache</button>
+                  <button type="button" id="storage-clear-images-btn" class="btn-secondary btn-with-icon" style="width:100%; font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
+                    <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m18 15-6-6"/><path d="M14 9l2-2a2.83 2.83 0 0 1 4 4l-2 2"/><path d="m14 17-5-5-4 4a2 2 0 0 0 0 2.83l2.17 2.17a2 2 0 0 0 2.83 0l4-4Z"/></svg>
+                    <span data-i18n="settings.btn_purge_image_cache">Clear Thumbnail Cache</span>
+                  </button>
                 </div>
               </div>
             </div>

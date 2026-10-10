@@ -2,6 +2,7 @@ import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
 import { formatBytes } from '../helpers';
 import type { SaveWorldSummary, SaveHealthReport } from '../../../../api';
+import { getIconSvg } from '../../../icons/mod';
 
 export function renderStorageBreakdownHtml(curHealth: SaveHealthReport | null): string {
   if (!curHealth?.storageBreakdown) return '';
@@ -9,7 +10,7 @@ export function renderStorageBreakdownHtml(curHealth: SaveHealthReport | null): 
     <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 8px; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(16px * var(--ui-scale, 1));">📊</span>
+          <span style="display: flex; align-items: center;">${getIconSvg('barChart', 'pmm-icon-md')}</span>
           <span style="font-size: var(--text-base, 12.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.storage_title') || 'Storage & Compression Breakdown')}</span>
         </div>
         <span class="badge" style="font-size: var(--text-2xs, 10px); padding: 2px calc(8px * var(--ui-scale, 1)); background: rgba(74, 246, 38, 0.15); color: #4af626;">
@@ -45,7 +46,7 @@ export function renderPlayerRosterHtml(curHealth: SaveHealthReport | null): stri
     <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(16px * var(--ui-scale, 1));">👥</span>
+          <span style="display: flex; align-items: center;">${getIconSvg('user', 'pmm-icon-md')}</span>
           <span style="font-size: var(--text-base, 12.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.players_title') || 'Players & Character Saves')} (${curHealth.playerRoster.length})</span>
         </div>
       </div>
@@ -54,7 +55,7 @@ export function renderPlayerRosterHtml(curHealth: SaveHealthReport | null): stri
         ${curHealth.playerRoster.map(p => `
           <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 6px; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-sm, 11px);">
             <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1)); overflow: hidden;">
-              <span style="font-size: calc(16px * var(--ui-scale, 1));">${p.isHost ? '👑' : '👤'}</span>
+              <span style="display: flex; align-items: center; color: ${p.isHost ? '#4af626' : 'var(--text-muted)'};">${p.isHost ? getIconSvg('star', 'pmm-icon-sm') : getIconSvg('user', 'pmm-icon-sm')}</span>
               <div style="display: flex; flex-direction: column; gap: 2px; overflow: hidden;">
                 <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                   <span style="font-weight: 700; color: ${p.isHost ? '#4af626' : 'var(--text-primary)'};">
@@ -75,9 +76,9 @@ export function renderPlayerRosterHtml(curHealth: SaveHealthReport | null): stri
                 <span>${p.lastPlayedDate || ''}</span>
               </div>
               ${p.isCorrupt ? `
-                <span style="font-size: var(--text-2xs, 9.5px); font-weight: 700; color: #ff5f56; background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); border-radius: 10px; padding: 2px calc(6px * var(--ui-scale, 1));">🔴 ${escapeHtml(t('scanner.player_corrupt_badge') || 'Corrupt')}</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 9.5px); font-weight: 700; color: #ff5f56; background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); border-radius: 10px; padding: 2px calc(6px * var(--ui-scale, 1));">${getIconSvg('xCircle', 'pmm-icon-xs')} ${escapeHtml(t('scanner.player_corrupt_badge') || 'Corrupt')}</span>
               ` : `
-                <span style="font-size: var(--text-2xs, 9.5px); font-weight: 700; color: #4af626; background: rgba(74, 246, 38, 0.15); border: 1px solid rgba(74, 246, 38, 0.3); border-radius: 10px; padding: 2px calc(6px * var(--ui-scale, 1));">🟢 ${escapeHtml(t('scanner.player_healthy_badge') || 'Healthy')}</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 9.5px); font-weight: 700; color: #4af626; background: rgba(74, 246, 38, 0.15); border: 1px solid rgba(74, 246, 38, 0.3); border-radius: 10px; padding: 2px calc(6px * var(--ui-scale, 1));">${getIconSvg('checkCircle', 'pmm-icon-xs')} ${escapeHtml(t('scanner.player_healthy_badge') || 'Healthy')}</span>
               `}
             </div>
           </div>
@@ -111,7 +112,7 @@ export function renderDeepScanResultsHtml(
   if (!curHealth || curHealth.worldId !== selectedWorld.worldId) {
     return `
       <div style="background: rgba(255, 255, 255, 0.02); border: 1px dashed var(--border); border-radius: 8px; padding: calc(28px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)); text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(10px * var(--ui-scale, 1)); flex: 1;">
-        <span style="font-size: calc(32px * var(--ui-scale, 1));">🔬</span>
+        <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('scan', 'pmm-icon-xl')}</span>
         <span style="font-size: var(--text-base, 13.5px); font-weight: 600; color: var(--text-primary);">${escapeHtml(t('scanner.deep_scan_prompt_title') || 'Deep Health Scan Ready')}</span>
         <span style="font-size: var(--text-sm, 11px); color: var(--text-muted); max-width: 480px; line-height: 1.5;">
           ${escapeHtml(t('scanner.deep_scan_prompt_desc') || 'Click "Deep Health Scan" above to decompress Level.sav and check for missing classes from removed mods that cause loading crashes.')}
@@ -126,19 +127,19 @@ export function renderDeepScanResultsHtml(
     <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
       <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1));">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex: 1; min-width: 200px;">
-          <span style="font-size: calc(16px * var(--ui-scale, 1));">${curHealth.healthStatus === 'healthy' ? '✅' : '⚠️'}</span>
+          <span style="display: flex; align-items: center; color: ${curHealth.healthStatus === 'healthy' ? '#4af626' : '#ffaa00'};">${curHealth.healthStatus === 'healthy' ? getIconSvg('checkCircle', 'pmm-icon-md') : getIconSvg('alertTriangle', 'pmm-icon-md')}</span>
           <span style="font-size: var(--text-base, 13px); font-weight: 700; color: var(--text-primary);">${escapeHtml(curHealth.summaryMessage)}</span>
         </div>
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex-wrap: wrap;">
           ${curHealth.canRepair ? `
             <button id="btn-repair-save" class="btn-primary" style="background: #2ed573; border-color: #2ed573; color: #000; font-weight: 700; padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));" ${curRepairing ? 'disabled' : ''}>
-              <span>🛠️</span>
+              <span style="display: flex; align-items: center;">${getIconSvg('hammer', 'pmm-icon-xs')}</span>
               <span>${curRepairing ? escapeHtml(t('scanner.repairing') || 'Sanitizing...') : escapeHtml(t('scanner.btn_sanitize_save') || '1-Click Rescue & Clean Save')}</span>
             </button>
           ` : ''}
           ${cleanSnapshot && (curHealth.healthStatus !== 'healthy' || curHealth.orphanedModRefs.length > 0) ? `
             <button class="btn-secondary btn-restore-snap" data-slot="${escapeHtml(cleanSnapshot.slotName || (cleanSnapshot as any).slot_name)}" data-time="${escapeHtml(cleanSnapshot.timestamp)}" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); display: flex; align-items: center; gap: calc(5px * var(--ui-scale, 1)); border-color: rgba(56, 189, 248, 0.4); background: rgba(56, 189, 248, 0.1); color: #38bdf8; font-weight: 600;" ${curRestoring ? 'disabled' : ''}>
-              <span>🔄</span>
+              <span style="display: flex; align-items: center;">${getIconSvg('scan', 'pmm-icon-xs')}</span>
               <span>${escapeHtml(t('scanner.btn_restore_clean_snapshot') || 'Restore Clean Snapshot')} (${escapeHtml(cleanSnapshot.timestamp)})</span>
             </button>
           ` : ''}
@@ -147,7 +148,7 @@ export function renderDeepScanResultsHtml(
 
       ${(curHealth.baseDeteriorationRate !== undefined && curHealth.baseDeteriorationRate !== null && curHealth.baseDeteriorationRate > 0) ? `
         <div style="background: rgba(56, 189, 248, 0.08); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 8px; padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; align-items: flex-start; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(16px * var(--ui-scale, 1)); flex-shrink: 0; margin-top: 1px;">🏰</span>
+          <span style="display: flex; align-items: center; color: #38bdf8; flex-shrink: 0; margin-top: 1px;">${getIconSvg('castle', 'pmm-icon-md')}</span>
           <div style="display: flex; flex-direction: column; gap: 3px; font-size: var(--text-sm, 11px); line-height: 1.45;">
             <span style="font-weight: 700; color: #38bdf8;">${escapeHtml(t('scanner.save_base_deterioration_tip_title') || 'Base Camp Deterioration Active')} (${curHealth.baseDeteriorationRate}x)</span>
             <span style="color: var(--text-secondary);">${escapeHtml(t('scanner.save_base_deterioration_tip', { rate: `${curHealth.baseDeteriorationRate}x` }) || `Outer structures built with expanded base radius mods will slowly decay because structure deterioration is set to ${curHealth.baseDeteriorationRate}x. To preserve outer buildings without the mod, set deterioration rate to 0 in World Settings.`)}</span>
@@ -159,23 +160,23 @@ export function renderDeepScanResultsHtml(
         <div style="background: linear-gradient(135deg, rgba(255, 170, 0, 0.12) 0%, rgba(255, 100, 0, 0.06) 100%); border: 1px solid rgba(255, 170, 0, 0.35); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
           <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
             <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-weight: 700; color: #ffd166; font-size: var(--text-base, 12.5px);">
-              <span style="font-size: calc(16px * var(--ui-scale, 1));">⚠️</span>
+              <span style="display: flex; align-items: center; color: #ffd166;">${getIconSvg('alertTriangle', 'pmm-icon-md')}</span>
               <span>${escapeHtml(t('scanner.anomaly_editor_title') || 'External Modification & State Desync')}</span>
             </div>
             <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-wrap: wrap;">
               ${curHealth.externalEditDetails?.toolName ? `
-                <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: #ffd166; background: rgba(255, 209, 102, 0.15); border: 1px solid rgba(255, 209, 102, 0.3); border-radius: 10px; padding: 2px calc(8px * var(--ui-scale, 1));">
-                  🛠️ ${escapeHtml(curHealth.externalEditDetails.toolName)}
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: #ffd166; background: rgba(255, 209, 102, 0.15); border: 1px solid rgba(255, 209, 102, 0.3); border-radius: 10px; padding: 2px calc(8px * var(--ui-scale, 1));">
+                  ${getIconSvg('hammer', 'pmm-icon-xs')} ${escapeHtml(curHealth.externalEditDetails.toolName)}
                 </span>
               ` : ''}
               ${curHealth.externalEditDetails?.editorBackupCount ? `
-                <span style="font-size: var(--text-2xs, 10px); font-weight: 600; color: #ffaa00; background: rgba(255, 170, 0, 0.15); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 10px; padding: 2px calc(8px * var(--ui-scale, 1));">
-                  📦 ${curHealth.externalEditDetails.editorBackupCount} Editor Backups
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 600; color: #ffaa00; background: rgba(255, 170, 0, 0.15); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 10px; padding: 2px calc(8px * var(--ui-scale, 1));">
+                  ${getIconSvg('package', 'pmm-icon-xs')} ${curHealth.externalEditDetails.editorBackupCount} Editor Backups
                 </span>
               ` : ''}
               ${curHealth.externalEditDetails?.sizeReductionPct ? `
-                <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: #ff5f56; background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); border-radius: 10px; padding: 2px calc(8px * var(--ui-scale, 1));">
-                  📉 -${curHealth.externalEditDetails.sizeReductionPct}% File Size Loss
+                <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: #ff5f56; background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); border-radius: 10px; padding: 2px calc(8px * var(--ui-scale, 1));">
+                  ${getIconSvg('trendingDown', 'pmm-icon-xs')} -${curHealth.externalEditDetails.sizeReductionPct}% File Size Loss
                 </span>
               ` : ''}
             </div>
@@ -186,7 +187,7 @@ export function renderDeepScanResultsHtml(
           </div>
 
           <div style="font-size: var(--text-sm, 11px); color: #ffd166; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); padding-top: 4px; border-top: 1px solid rgba(255, 170, 0, 0.2);">
-            <span>💡</span>
+            <span style="display: flex; align-items: center;">${getIconSvg('lightbulb', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(t('scanner.anomaly_solution_tip') || 'To fix crash-on-load, restore one of the intact Palworld automatic snapshots below.')}</span>
           </div>
         </div>
@@ -196,7 +197,7 @@ export function renderDeepScanResultsHtml(
       <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 8px; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
           <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-            <span style="font-size: calc(16px * var(--ui-scale, 1));">📦</span>
+            <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('package', 'pmm-icon-md')}</span>
             <span style="font-size: var(--text-base, 12.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.mod_data_title') || 'Mod Data & Custom Classes')}</span>
           </div>
           <span class="badge" style="font-size: var(--text-2xs, 10px); padding: 2px calc(8px * var(--ui-scale, 1)); background: ${(curHealth.totalModReferences || 0) > 0 ? (curHealth.orphanedModRefs.length > 0 ? 'rgba(255, 170, 0, 0.15)' : 'rgba(74, 246, 38, 0.15)') : 'rgba(255,255,255,0.06)'}; color: ${(curHealth.totalModReferences || 0) > 0 ? (curHealth.orphanedModRefs.length > 0 ? '#ffaa00' : '#4af626') : 'var(--text-muted)'};">
@@ -206,7 +207,7 @@ export function renderDeepScanResultsHtml(
 
         ${(curHealth.totalModReferences || 0) === 0 ? `
           <div style="font-size: var(--text-sm, 11px); color: var(--text-muted); line-height: 1.5; background: rgba(255,255,255,0.02); border: 1px dashed var(--border); border-radius: 6px; padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-            <span style="font-size: calc(14px * var(--ui-scale, 1));">ℹ️</span>
+            <span style="display: flex; align-items: center;">${getIconSvg('info', 'pmm-icon-sm')}</span>
             <span>${escapeHtml(t('scanner.mod_data_clean_desc') || 'Level.sav contains only official vanilla Palworld classes. No third-party UE4SS, Lua, or Pak mod classes are embedded in this save.')}</span>
           </div>
         ` : `
@@ -244,7 +245,7 @@ export function renderDeepScanResultsHtml(
         <div style="display: flex; justify-content: space-between; align-items: center; flex-shrink: 0;">
           <div style="display: flex; flex-direction: column; gap: 2px;">
             <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-              <span style="font-size: calc(16px * var(--ui-scale, 1));">💾</span>
+              <span style="display: flex; align-items: center;">${getIconSvg('save', 'pmm-icon-md')}</span>
               <span style="font-size: var(--text-base, 13.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.backups_section_title') || 'Game Auto-Backup Snapshots')} (${curHealth.availableBackups.length})</span>
             </div>
             <span style="font-size: var(--text-2xs, 10.5px); color: var(--text-muted);">${escapeHtml(t('scanner.backups_section_desc') || 'Palworld creates snapshot backups every 10 minutes. If your world crashes, restoring a snapshot is the safest recovery method.')}</span>
@@ -265,15 +266,15 @@ export function renderDeepScanResultsHtml(
 
             let cleanTag = '';
             if (snap.isCleanVanilla === true) {
-              cleanTag = `<span style="font-size: var(--text-2xs, 9.5px); color: #4af626; background: rgba(74, 246, 38, 0.12); border: 1px solid rgba(74, 246, 38, 0.3); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1)); font-weight: 600;">✓ ${escapeHtml(t('scanner.snap_clean_vanilla') || 'Clean (Pre-Mod)')}</span>`;
+              cleanTag = `<span style="display: inline-flex; align-items: center; gap: 3px; font-size: var(--text-2xs, 9.5px); color: #4af626; background: rgba(74, 246, 38, 0.12); border: 1px solid rgba(74, 246, 38, 0.3); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1)); font-weight: 600;">${getIconSvg('check', 'pmm-icon-xs')} ${escapeHtml(t('scanner.snap_clean_vanilla') || 'Clean (Pre-Mod)')}</span>`;
             } else if (snap.isCleanVanilla === false || (snap.modRefsCount !== undefined && snap.modRefsCount !== null && snap.modRefsCount > 0)) {
-              cleanTag = `<span style="font-size: var(--text-2xs, 9.5px); color: #ffaa00; background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1)); font-weight: 600;">⚠️ ${escapeHtml(t('scanner.snap_has_mods') || 'Has Mod Data')}</span>`;
+              cleanTag = `<span style="display: inline-flex; align-items: center; gap: 3px; font-size: var(--text-2xs, 9.5px); color: #ffaa00; background: rgba(255, 170, 0, 0.12); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; padding: 1px calc(6px * var(--ui-scale, 1)); font-weight: 600;">${getIconSvg('alertTriangle', 'pmm-icon-xs')} ${escapeHtml(t('scanner.snap_has_mods') || 'Has Mod Data')}</span>`;
             }
 
             return `
               <div style="background: rgba(0,0,0,0.18); border: 1px solid var(--border); border-radius: 6px; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; gap: calc(10px * var(--ui-scale, 1)); transition: background 0.15s ease;">
                 <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
-                  <span style="font-size: calc(15px * var(--ui-scale, 1));">📦</span>
+                  <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('package', 'pmm-icon-sm')}</span>
                   <div style="display: flex; flex-direction: column; gap: 2px;">
                     <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); flex-wrap: wrap;">
                       <span style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--text-primary); font-family: monospace;">${escapeHtml(snap.timestamp)}</span>
@@ -286,11 +287,11 @@ export function renderDeepScanResultsHtml(
 
                 <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
                   <button class="btn-secondary btn-compare-snap" data-slot="${escapeHtml(snap.slotName || (snap as any).slot_name)}" data-time="${escapeHtml(snap.timestamp)}" data-size="${snap.levelSizeBytes}" data-local="${snap.localDataExists ? 'true' : 'false'}" data-day="${snap.inGameDay || ''}" data-level="${snap.playerLevel || ''}" data-host="${escapeHtml(snap.hostPlayerName || '')}" style="padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); display: flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
-                    <span>🔍</span>
+                    <span style="display: flex; align-items: center;">${getIconSvg('search', 'pmm-icon-xs')}</span>
                     <span>${escapeHtml(t('scanner.btn_compare_snapshot') || 'Compare')}</span>
                   </button>
                   <button class="btn-secondary btn-restore-snap" data-slot="${escapeHtml(snap.slotName || (snap as any).slot_name)}" data-time="${escapeHtml(snap.timestamp)}" style="padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); display: flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));" ${curRestoring ? 'disabled' : ''}>
-                    <span>🔄</span>
+                    <span style="display: flex; align-items: center;">${getIconSvg('scan', 'pmm-icon-xs')}</span>
                     <span>${escapeHtml(t('scanner.btn_restore_snapshot') || 'Restore')}</span>
                   </button>
                 </div>

@@ -11,6 +11,7 @@ import { escapeHtml } from '../../utils/helpers';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
+import { getIconSvg } from '../icons/mod';
 
 let _cachedDiagnostics: Ue4ssLogDiagnostics | null = null;
 let _activeFilter: 'all' | 'errors' | 'warnings' | 'mods' | 'lua' = 'all';
@@ -67,7 +68,7 @@ export async function refreshUe4ssLogData(): Promise<void> {
     if (container) {
       container.innerHTML = `
         <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#ff5f56;gap:8px;padding:24px;text-align:center;">
-          <span style="font-size:28px;">⚠️</span>
+          <span class="icon-inline">${getIconSvg('alertTriangle', 'pmm-icon-lg')}</span>
           <span style="font-weight:700;">${escapeHtml(t('ue4ss_log.error_reading') || 'Failed to read UE4SS log')}</span>
           <span style="font-size:11px;color:var(--text-muted);">${escapeHtml(String(err))}</span>
         </div>
@@ -189,7 +190,7 @@ function renderLogEntries(): void {
   if (!_cachedDiagnostics.exists || _cachedDiagnostics.entries.length === 0) {
     container.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-muted);gap:8px;padding:24px;text-align:center;">
-        <span style="font-size:32px;opacity:0.4;">📜</span>
+        <span class="icon-inline" style="opacity:0.4;">${getIconSvg('fileText', 'pmm-icon-xl')}</span>
         <span style="font-weight:600;">${escapeHtml(t('ue4ss_log.empty_title') || 'No log entries found')}</span>
         <span style="font-size:11px;max-width:400px;opacity:0.8;">${escapeHtml(t('ue4ss_log.empty_desc') || 'The UE4SS log file is either empty or the game has not been run with UE4SS installed yet.')}</span>
       </div>
@@ -288,7 +289,7 @@ function renderLogEntries(): void {
     if (entry.script_file && entry.script_line && entry.mod_name) {
       jumpLinkHtml = `
         <button class="ue4ss-jump-btn" data-mod="${escapeHtml(entry.mod_name)}" data-file="${escapeHtml(entry.script_file)}" data-line="${entry.script_line}" style="margin-left:calc(8px * var(--ui-scale, 1));display:inline-flex;align-items:center;gap:3px;padding:calc(1px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));font-size:var(--text-2xs, 10px);font-weight:600;background:rgba(0,188,255,0.12);color:#00bcff;border:1px solid rgba(0,188,255,0.3);border-radius:4px;cursor:pointer;white-space:nowrap;" title="Open in PalModManager Script Editor">
-          <span>📝</span> <span>${escapeHtml(entry.script_file)}:${entry.script_line}</span>
+          <span>${getIconSvg('fileText', 'pmm-icon-xs')}</span> <span>${escapeHtml(entry.script_file)}:${entry.script_line}</span>
         </button>
       `;
     }

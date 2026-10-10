@@ -21,6 +21,7 @@ import {
   availableProfiles,
 } from '../state';
 import { getHealthBadge } from './badges';
+import { getIconSvg } from '../../../icons/mod';
 import { renderWorldsListHtml } from './world_list';
 import { renderWorldHeaderAndActionsHtml, renderWorldQuickStatsHtml } from './world_header';
 import { renderWorldOptionsHtml, renderWorldMetaFormHtml } from './world_options';
@@ -100,7 +101,7 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); padding: calc(10px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
           <div style="display: flex; flex-direction: column; gap: 3px;">
             <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-              <span style="font-size: calc(17px * var(--ui-scale, 1));">💾</span>
+              <span class="icon-inline">${getIconSvg('save', 'pmm-icon-sm')}</span>
               <span style="font-size: var(--text-md, 14.5px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.saves_doctor_title') || 'Save Health Doctor & World Hub')}</span>
             </div>
             <span style="font-size: var(--text-sm, 11px); color: var(--text-muted);">${escapeHtml(t('scanner.saves_doctor_desc') || 'Inspect world options, players roster, storage health, safety snapshots, and 1-click rescue.')}</span>
@@ -108,10 +109,10 @@ export async function renderSavesDoctorPanel(container: HTMLElement): Promise<vo
 
           <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
             <button id="doctor-custom-folder-btn" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-              <span>📁</span> <span>${escapeHtml(t('scanner.btn_choose_saves_folder') || 'Choose Saves Folder')}</span>
+              <span>${getIconSvg('folderOpen', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_choose_saves_folder') || 'Choose Saves Folder')}</span>
             </button>
             <button id="doctor-refresh-btn" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-              <span>↻</span> <span>${escapeHtml(t('common.refresh') || 'Refresh')}</span>
+              <span>${getIconSvg('scan', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('common.refresh') || 'Refresh')}</span>
             </button>
           </div>
         </div>

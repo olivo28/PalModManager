@@ -3,10 +3,10 @@
   <div class="modal" style="max-width: min(calc(620px * var(--ui-scale, 1)), 94vw); width: 94vw;">
     <div class="modal-header">
       <div style="display:flex; align-items:center; gap:calc(10px * var(--ui-scale, 1));">
-        <span id="dep-modal-icon" style="font-size:calc(18px * var(--ui-scale, 1));">⚡</span>
+        <span id="dep-modal-icon"><svg class="pmm-icon pmm-icon-sm" viewBox="0 0 24 24" style="color:var(--accent);"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
         <h3 id="dep-modal-title" style="margin:0; font-size:var(--text-lg, 16px); font-weight:700;">Dependency Manager</h3>
       </div>
-      <button class="modal-close-btn" id="dependency-modal-close-x">✕</button>
+      <button class="modal-close-btn" id="dependency-modal-close-x"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <div class="modal-body" style="padding:calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(14px * var(--ui-scale, 1));">
       
@@ -29,14 +29,14 @@
         <!-- Quick Action Bar -->
         <div style="display:flex; align-items:center; justify-content:space-between; gap:calc(10px * var(--ui-scale, 1)); border-top:1px solid var(--border); padding-top:calc(10px * var(--ui-scale, 1)); margin-top:2px;">
           <button id="dep-btn-download-latest" class="btn-primary" style="font-size:var(--text-sm, 12px); padding:calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1));">
-            <span>⬇</span> <span data-i18n="dependencies.download_latest">Download Latest</span>
+            <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> <span data-i18n="dependencies.download_latest">Download Latest</span>
           </button>
           <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
-            <button id="dep-btn-custom-zip" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center; gap:calc(5px * var(--ui-scale, 1));" title="Install directly from a custom local ZIP file">
-              <span>📦</span> <span data-i18n="dependencies.install_custom_zip">Install from ZIP...</span>
+            <button id="dep-btn-custom-zip" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:flex; align-items:center;" title="Install directly from a custom local ZIP file">
+              <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg> <span data-i18n="dependencies.install_custom_zip">Install from ZIP...</span>
             </button>
-            <button id="dep-btn-open-vault" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));" title="Open Vault folder in Explorer">
-              <span>📁</span>
+            <button id="dep-btn-open-vault" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display:flex; align-items:center; justify-content:center;" title="Open Vault folder in Explorer">
+              <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg>
             </button>
           </div>
         </div>
@@ -60,8 +60,8 @@
     <div class="modal-footer" style="display:flex; justify-content:space-between; align-items:center;">
       <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1));">
         <button id="dep-btn-uninstall" class="btn-danger-subtle" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); color:var(--danger); background:transparent; border:1px solid var(--danger-dim); border-radius:4px; cursor:pointer;" data-i18n="common.uninstall">Uninstall</button>
-        <button id="dep-btn-view-log" class="btn-secondary" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:none; align-items:center; gap:calc(5px * var(--ui-scale, 1));" title="View UE4SS Runtime Log" data-i18n-title="ue4ss_log.btn_open_tooltip">
-          <span>📜</span> <span data-i18n="ue4ss_log.btn_open">UE4SS Log</span>
+        <button id="dep-btn-view-log" class="btn-secondary btn-with-icon" style="font-size:var(--text-xs, 11px); padding:calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display:none; align-items:center;" title="View UE4SS Runtime Log" data-i18n-title="ue4ss_log.btn_open_tooltip">
+          <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg> <span data-i18n="ue4ss_log.btn_open">UE4SS Log</span>
         </button>
       </div>
       <button id="dependency-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>

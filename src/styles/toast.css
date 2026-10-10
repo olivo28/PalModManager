@@ -11,15 +11,29 @@
 }
 
 .toast {
-  padding: calc(10px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1));
+  display: flex;
+  align-items: center;
+  gap: calc(10px * var(--ui-scale, 1));
+  padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1));
   font-size: var(--text-base, 13px);
   font-weight: 500;
   transform: translateY(-20px);
   opacity: 0;
   transition: all 0.3s ease;
   pointer-events: auto;
-  border-radius: calc(4px * var(--ui-scale, 1));
-  box-shadow: 0 calc(4px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) rgba(0,0,0,0.2);
+  border-radius: calc(6px * var(--ui-scale, 1));
+  box-shadow: 0 calc(4px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)) rgba(0,0,0,0.25);
+}
+
+.toast-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.toast-text {
+  flex: 1;
 }
 
 .toast.show { transform: translateY(0); opacity: 1; }

@@ -2,6 +2,7 @@ import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import type { UnifiedCrashReport, RawDmpModule } from '../../../api';
 import { showToast } from '../../toast';
+import { getIconSvg } from '../../icons/mod';
 
 interface CallstackFrame {
   index: number;
@@ -82,7 +83,7 @@ export function renderRawDumpViewerHtml(report: UnifiedCrashReport | null): stri
         <!-- Copy Forensics Action -->
         <div style="display: flex; align-items: center; gap: 8px;">
           <button type="button" id="btn-copy-raw-forensics" class="btn-secondary" style="padding: 4px 10px; font-size: var(--text-xs, 11px); font-weight: 600; border: 1px solid var(--border); border-radius: 6px; background: var(--bg-tertiary); color: var(--text-primary); cursor: pointer; display: flex; align-items: center; gap: 5px;">
-            <span>📋</span>
+            <span>${getIconSvg('copy', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(t('crash_doctor.btn_copy_raw_dump') || 'Copy Forensics')}</span>
           </button>
         </div>
@@ -97,7 +98,7 @@ export function renderRawDumpViewerHtml(report: UnifiedCrashReport | null): stri
       <div id="raw-panel-callstack" class="raw-tab-panel" style="display: none; flex-direction: column; flex: 1; height: 100%; min-height: 0; overflow: hidden; gap: 8px;">
         <div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-shrink: 0;">
           <div style="font-size: 11.5px; color: var(--text-secondary); display: flex; align-items: center; gap: 6px;">
-            <span>🧵</span>
+            <span>${getIconSvg('layers', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(xml?.crashedThreadName ? `Crashed Thread: ${xml.crashedThreadName}` : 'Execution Callstack')}</span>
             <span style="color: var(--text-muted);">(${parsedFrames.length} frames)</span>
           </div>
@@ -188,7 +189,7 @@ function renderCallstackFramesTable(frames: CallstackFrame[]): string {
                 #${String(f.index).padStart(2, '0')}
               </td>
               <td style="padding: 6px 12px; color: ${modColor}; font-weight: 600;">
-                ${isTop ? '💥 ' : ''}${escapeHtml(f.module)}
+                ${isTop ? `<span class="icon-inline" style="color: #ef5350; vertical-align: middle; margin-right: 4px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')}</span>` : ''}${escapeHtml(f.module)}
               </td>
               <td style="padding: 6px 12px; color: #ffab91;">
                 ${f.offset ? `+0x${escapeHtml(f.offset)}` : '—'}
@@ -219,7 +220,7 @@ function renderRawModulesRows(modules: RawDmpModule[]): string {
     return `
       <tr class="raw-module-row" data-name="${escapeHtml(m.name.toLowerCase())}" style="background: ${rowBg}; border-left: ${borderLeft}; border-bottom: 1px solid rgba(255,255,255,0.04);">
         <td style="padding: 6px 12px; color: ${nameColor}; font-weight: ${isFaulting ? '700' : '500'};" title="${escapeHtml(m.fullPath)}">
-          ${isFaulting ? '💥 ' : ''}${escapeHtml(m.name)}
+          ${isFaulting ? `<span class="icon-inline" style="color: #ef5350; vertical-align: middle; margin-right: 4px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')}</span>` : ''}${escapeHtml(m.name)}
         </td>
         <td style="padding: 6px 12px; color: #90caf9;">${escapeHtml(m.baseAddressHex)}</td>
         <td style="padding: 6px 12px; color: var(--text-secondary);">${sizeKb} KB</td>

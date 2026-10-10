@@ -276,7 +276,7 @@ export function attachSavesDoctorListeners(
             if (textSpan) {
               textSpan.textContent = `${stageLabel} (${event.payload.percent}%)`;
             } else {
-              btn.textContent = `⏳ ${stageLabel} (${event.payload.percent}%)`;
+              btn.textContent = `${stageLabel} (${event.payload.percent}%)`;
             }
           }
         });
@@ -328,7 +328,7 @@ export function attachSavesDoctorListeners(
             if (textSpan) {
               textSpan.textContent = `${stageLabel} (${event.payload.percent}%)`;
             } else {
-              btn.textContent = `🔧 ${stageLabel} (${event.payload.percent}%)`;
+              btn.textContent = `${stageLabel} (${event.payload.percent}%)`;
             }
           }
         });

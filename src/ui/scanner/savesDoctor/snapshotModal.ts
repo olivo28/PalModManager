@@ -22,6 +22,7 @@ import {
   setIsRestoringBackup,
 } from './state';
 import { scannerDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 export function showSnapshotComparisonModal(
   world: SaveWorldSummary,
@@ -37,11 +38,11 @@ export function showSnapshotComparisonModal(
 
   let diffDescription = '';
   if (Math.abs(diffBytes) < 512) {
-    diffDescription = `<span style="color: #38bdf8;">🟢 ${escapeHtml(t('scanner.snap_diff_same') || 'The active world and this snapshot are virtually identical in size.')}</span>`;
+    diffDescription = `<span style="color: #38bdf8; display: inline-flex; align-items: center; gap: 6px;"><span class="status-dot online"></span> <span>${escapeHtml(t('scanner.snap_diff_same') || 'The active world and this snapshot are virtually identical in size.')}</span></span>`;
   } else if (diffBytes > 0) {
-    diffDescription = `<span style="color: #4af626;">📈 ${escapeHtml(t('scanner.snap_diff_growth_desc') || 'The current active save has grown by')} <strong>+${formatBytes(diffBytes)} (+${diffPct}%)</strong> ${escapeHtml(t('scanner.snap_diff_since_snap') || 'since this snapshot was taken.')}</span>`;
+    diffDescription = `<span style="color: #4af626; display: inline-flex; align-items: center; gap: 6px;">${getIconSvg('trendingUp', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.snap_diff_growth_desc') || 'The current active save has grown by')} <strong>+${formatBytes(diffBytes)} (+${diffPct}%)</strong> ${escapeHtml(t('scanner.snap_diff_since_snap') || 'since this snapshot was taken.')}</span></span>`;
   } else {
-    diffDescription = `<span style="color: #ff5f56;">📉 ${escapeHtml(t('scanner.snap_diff_loss_desc') || 'The current active save is smaller by')} <strong>-${formatBytes(Math.abs(diffBytes))} (-${diffPct}%)</strong>. ${escapeHtml(t('scanner.snap_diff_loss_warn') || 'If you experience crashes, this snapshot has more complete world data.')}</span>`;
+    diffDescription = `<span style="color: #ff5f56; display: inline-flex; align-items: center; gap: 6px;">${getIconSvg('trendingDown', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.snap_diff_loss_desc') || 'The current active save is smaller by')} <strong>-${formatBytes(Math.abs(diffBytes))} (-${diffPct}%)</strong>. ${escapeHtml(t('scanner.snap_diff_loss_warn') || 'If you experience crashes, this snapshot has more complete world data.')}</span></span>`;
   }
 
   const modalHtml = `
@@ -51,13 +52,15 @@ export function showSnapshotComparisonModal(
         <!-- Header -->
         <div style="background: var(--bg-secondary); padding: calc(12px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
-            <span style="font-size: calc(20px * var(--ui-scale, 1));">⚖️</span>
+            <span class="icon-inline">${getIconSvg('scale', 'pmm-icon-md')}</span>
             <div>
               <div style="font-size: var(--text-md, 14px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.snap_diff_modal_title') || 'Save vs Snapshot Comparison & Diff')}</div>
               <div style="font-size: var(--text-sm, 11px); color: var(--text-muted);">${escapeHtml(world.worldName || world.worldId)}</div>
             </div>
           </div>
-          <button id="btn-close-compare-modal" style="background: none; border: none; font-size: calc(18px * var(--ui-scale, 1)); color: var(--text-muted); cursor: pointer; padding: 4px;">✕</button>
+          <button id="btn-close-compare-modal" class="modal-close-icon-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 4px; display: flex; align-items: center;">
+            ${getIconSvg('x', 'pmm-icon-sm')}
+          </button>
         </div>
 
         <!-- Body -->
@@ -67,7 +70,10 @@ export function showSnapshotComparisonModal(
           <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 8px; padding: calc(10px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); line-height: 1.5; display: flex; flex-direction: column; gap: 4px;">
             <div>${diffDescription}</div>
             <div id="snap-internal-deltas-container" style="display: flex; gap: calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 11px); color: var(--text-secondary); margin-top: 4px; padding-top: 4px; border-top: 1px dashed rgba(255,255,255,0.08); flex-wrap: wrap;">
-              <span id="snap-deltas-status" style="color: var(--text-muted);">⏳ Reading snapshot details...</span>
+              <span id="snap-deltas-status" style="color: var(--text-muted); display: inline-flex; align-items: center; gap: 5px;">
+                <span>${getIconSvg('scan', 'pmm-icon-xs pmm-icon-spin')}</span>
+                <span>Reading snapshot details...</span>
+              </span>
             </div>
           </div>
 
@@ -78,7 +84,7 @@ export function showSnapshotComparisonModal(
             <div style="background: rgba(74, 246, 38, 0.04); border: 1px solid rgba(74, 246, 38, 0.2); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
               <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(74, 246, 38, 0.15); padding-bottom: calc(6px * var(--ui-scale, 1));">
                 <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #4af626; font-size: var(--text-sm, 12.5px);">
-                  <span>🟢</span>
+                  <span class="status-dot online"></span>
                   <span>${escapeHtml(t('scanner.snap_diff_active_save') || 'Current Active Save')}</span>
                 </div>
                 <span class="badge" style="font-size: var(--text-2xs, 9.5px); background: rgba(74, 246, 38, 0.15); color: #4af626;">Live Data</span>
@@ -103,11 +109,16 @@ export function showSnapshotComparisonModal(
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">Host Player:</span>
-                  <strong style="color: #4af626;">👤 ${escapeHtml(world.hostPlayerName || 'Host')} ${world.playerLevel ? `(Lv. ${world.playerLevel})` : ''}</strong>
+                  <strong style="color: #4af626; display: inline-flex; align-items: center; gap: 4px;">
+                    <span>${getIconSvg('user', 'pmm-icon-xs')}</span>
+                    <span>${escapeHtml(world.hostPlayerName || 'Host')} ${world.playerLevel ? `(Lv. ${world.playerLevel})` : ''}</span>
+                  </strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">${escapeHtml(t('scanner.snap_diff_mod_data') || 'Mod Data:')}</span>
-                  <strong style="color: ${(currentHealthReport || doctorState.currentHealthReport)?.orphanedModRefs && (currentHealthReport || doctorState.currentHealthReport)!.orphanedModRefs.length > 0 ? '#ff5f56' : '#4af626'};">${(currentHealthReport || doctorState.currentHealthReport)?.orphanedModRefs && (currentHealthReport || doctorState.currentHealthReport)!.orphanedModRefs.length > 0 ? `⚠️ ${(currentHealthReport || doctorState.currentHealthReport)!.orphanedModRefs.length} Mod Issues` : '🟢 Clean (0 Issues)'}</strong>
+                  <strong style="color: ${(currentHealthReport || doctorState.currentHealthReport)?.orphanedModRefs && (currentHealthReport || doctorState.currentHealthReport)!.orphanedModRefs.length > 0 ? '#ff5f56' : '#4af626'}; display: inline-flex; align-items: center; gap: 4px;">
+                    ${(currentHealthReport || doctorState.currentHealthReport)?.orphanedModRefs && (currentHealthReport || doctorState.currentHealthReport)!.orphanedModRefs.length > 0 ? `<span>${getIconSvg('alertTriangle', 'pmm-icon-xs')}</span> <span>${(currentHealthReport || doctorState.currentHealthReport)!.orphanedModRefs.length} Mod Issues</span>` : `<span>${getIconSvg('checkCircle', 'pmm-icon-xs')}</span> <span>Clean (0 Issues)</span>`}
+                  </strong>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">Health Status:</span>
@@ -120,7 +131,7 @@ export function showSnapshotComparisonModal(
             <div style="background: rgba(56, 189, 248, 0.04); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 8px; padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
               <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid rgba(56, 189, 248, 0.15); padding-bottom: calc(6px * var(--ui-scale, 1));">
                 <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; color: #38bdf8; font-size: var(--text-sm, 12.5px);">
-                  <span>📦</span>
+                  <span>${getIconSvg('package', 'pmm-icon-xs')}</span>
                   <span>${escapeHtml(t('scanner.snap_diff_target_snap') || 'Selected Snapshot')}</span>
                 </div>
                 <span class="badge" style="font-size: var(--text-2xs, 9.5px); background: rgba(56, 189, 248, 0.15); color: #38bdf8;">Auto-Backup</span>
@@ -137,7 +148,7 @@ export function showSnapshotComparisonModal(
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">${escapeHtml(t('scanner.snap_diff_ram_size') || 'RAM Memory:')}</span>
-                  <span id="snap-inspect-ram"><strong style="color: var(--text-primary); font-family: monospace;">⏳ ...</strong></span>
+                  <span id="snap-inspect-ram"><strong style="color: var(--text-primary); font-family: monospace;">...</strong></span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">In-Game Day:</span>
@@ -145,11 +156,11 @@ export function showSnapshotComparisonModal(
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">Host Player:</span>
-                  <span id="snap-inspect-host"><strong style="color: #38bdf8;">👤 ${escapeHtml(snap.hostPlayerName || world.hostPlayerName || 'Host')} ${snap.playerLevel ? `(Lv. ${snap.playerLevel})` : (world.playerLevel ? `(Lv. ${world.playerLevel})` : '')}</strong></span>
+                  <span id="snap-inspect-host"><strong style="color: #38bdf8; display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('user', 'pmm-icon-xs')}</span> <span>${escapeHtml(snap.hostPlayerName || world.hostPlayerName || 'Host')} ${snap.playerLevel ? `(Lv. ${snap.playerLevel})` : (world.playerLevel ? `(Lv. ${world.playerLevel})` : '')}</span></strong></span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">${escapeHtml(t('scanner.snap_diff_mod_data') || 'Mod Data:')}</span>
-                  <span id="snap-inspect-mod-cleanliness"><strong style="color: var(--text-muted);">⏳ Analyzing...</strong></span>
+                  <span id="snap-inspect-mod-cleanliness"><strong style="color: var(--text-muted);">Analyzing...</strong></span>
                 </div>
                 <div style="display: flex; justify-content: space-between;">
                   <span style="color: var(--text-muted);">LocalData.sav:</span>
@@ -169,7 +180,7 @@ export function showSnapshotComparisonModal(
           <div style="display: flex; gap: calc(10px * var(--ui-scale, 1));">
             <button id="btn-modal-close-action" class="btn-secondary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-xs, 12px);">${escapeHtml(t('common.close') || 'Close')}</button>
             <button id="btn-modal-restore-action" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); font-size: var(--text-xs, 12px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-              <span>🔄</span>
+              <span>${getIconSvg('scan', 'pmm-icon-xs')}</span>
               <span>${escapeHtml(t('scanner.btn_restore_snapshot') || 'Restore This Snapshot')}</span>
             </button>
           </div>
@@ -200,18 +211,18 @@ export function showSnapshotComparisonModal(
       if (hostEl) {
         const hostName = details.hostPlayerName || world.hostPlayerName || 'Host';
         const level = details.playerLevel || world.playerLevel;
-        hostEl.innerHTML = `<strong style="color: #38bdf8;">👤 ${escapeHtml(hostName)} ${level ? `(Lv. ${level})` : ''}</strong>`;
+        hostEl.innerHTML = `<strong style="color: #38bdf8; display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('user', 'pmm-icon-xs')}</span> <span>${escapeHtml(hostName)} ${level ? `(Lv. ${level})` : ''}</span></strong>`;
       }
       if (ramEl && details.uncompressedSizeBytes) {
         ramEl.innerHTML = `<strong style="color: var(--text-primary); font-family: monospace;">${formatBytes(details.uncompressedSizeBytes)}</strong>`;
       }
       if (modCleanlinessEl) {
         if (details.isCleanVanilla) {
-          modCleanlinessEl.innerHTML = `<strong style="color: #4af626;">🟢 ${escapeHtml(t('scanner.snap_diff_clean_vanilla') || 'Pure Vanilla (0 Mod Refs)')}</strong>`;
+          modCleanlinessEl.innerHTML = `<strong style="color: #4af626; display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('checkCircle', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.snap_diff_clean_vanilla') || 'Pure Vanilla (0 Mod Refs)')}</span></strong>`;
         } else if (details.modRefsCount) {
-          modCleanlinessEl.innerHTML = `<strong style="color: #ffd166;">📦 ${(t('scanner.snap_diff_mod_refs') || '{count} Mod References').replace('{count}', String(details.modRefsCount))}</strong>`;
+          modCleanlinessEl.innerHTML = `<strong style="color: #ffd166; display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('package', 'pmm-icon-xs')}</span> <span>${(t('scanner.snap_diff_mod_refs') || '{count} Mod References').replace('{count}', String(details.modRefsCount))}</span></strong>`;
         } else {
-          modCleanlinessEl.innerHTML = `<strong style="color: #4af626;">🟢 ${escapeHtml(t('scanner.snap_diff_clean_vanilla') || 'Clean (0 Mod Refs)')}</strong>`;
+          modCleanlinessEl.innerHTML = `<strong style="color: #4af626; display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('checkCircle', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.snap_diff_clean_vanilla') || 'Clean (0 Mod Refs)')}</span></strong>`;
         }
       }
 
@@ -222,37 +233,37 @@ export function showSnapshotComparisonModal(
 
         if (world.inGameDay && sDay) {
           if (world.inGameDay > sDay) {
-            internalDeltas.push(`📅 <strong>+${world.inGameDay - sDay} Days progressed</strong> (Day ${sDay} ➔ Day ${world.inGameDay})`);
+            internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('calendar', 'pmm-icon-xs')}</span> <span><strong>+${world.inGameDay - sDay} Days progressed</strong> (Day ${sDay} → Day ${world.inGameDay})</span></span>`);
           } else if (world.inGameDay === sDay) {
-            internalDeltas.push(`📅 Same in-game day (Day ${world.inGameDay})`);
+            internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('calendar', 'pmm-icon-xs')}</span> <span>Same in-game day (Day ${world.inGameDay})</span></span>`);
           } else {
-            internalDeltas.push(`📅 Snapshot was at Day ${sDay} (Current: Day ${world.inGameDay})`);
+            internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('calendar', 'pmm-icon-xs')}</span> <span>Snapshot was at Day ${sDay} (Current: Day ${world.inGameDay})</span></span>`);
           }
         }
         if (world.playerLevel && sLevel) {
           if (world.playerLevel > sLevel) {
-            internalDeltas.push(`⭐ <strong>+${world.playerLevel - sLevel} Levels gained</strong> (Lv. ${sLevel} ➔ Lv. ${world.playerLevel})`);
+            internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('star', 'pmm-icon-xs')}</span> <span><strong>+${world.playerLevel - sLevel} Levels gained</strong> (Lv. ${sLevel} → Lv. ${world.playerLevel})</span></span>`);
           } else if (world.playerLevel === sLevel) {
-            internalDeltas.push(`⭐ Same character level (Lv. ${world.playerLevel})`);
+            internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('star', 'pmm-icon-xs')}</span> <span>Same character level (Lv. ${world.playerLevel})</span></span>`);
           }
         }
         if (details.isCleanVanilla) {
-          internalDeltas.push(`🛡️ <span style="color: #4af626;"><strong>Vanilla Snapshot:</strong> 0 custom mod classes found in snapshot.</span>`);
+          internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('shieldCheck', 'pmm-icon-xs')}</span> <span style="color: #4af626;"><strong>Vanilla Snapshot:</strong> 0 custom mod classes found in snapshot.</span></span>`);
         } else if (details.modRefsCount) {
-          internalDeltas.push(`📦 <span>Snapshot contains ${details.modRefsCount} custom mod classes.</span>`);
+          internalDeltas.push(`<span style="display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('package', 'pmm-icon-xs')}</span> <span>Snapshot contains ${details.modRefsCount} custom mod classes.</span></span>`);
         }
 
         if (internalDeltas.length > 0) {
           deltasContainer.innerHTML = internalDeltas.map(d => `<span>${d}</span>`).join('');
         } else {
-          deltasContainer.innerHTML = `<span style="color: #38bdf8;">🛡️ Intact Palworld auto-backup snapshot</span>`;
+          deltasContainer.innerHTML = `<span style="color: #38bdf8; display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('shield', 'pmm-icon-xs')}</span> <span>Intact Palworld auto-backup snapshot</span></span>`;
         }
       }
     })
     .catch((err) => {
       console.warn('Failed to inspect snapshot on demand:', err);
       if (deltasContainer) {
-        deltasContainer.innerHTML = `<span style="color: var(--text-muted);">🛡️ Palworld auto-backup snapshot</span>`;
+        deltasContainer.innerHTML = `<span style="color: var(--text-muted); display: inline-flex; align-items: center; gap: 4px;"><span>${getIconSvg('shield', 'pmm-icon-xs')}</span> <span>Palworld auto-backup snapshot</span></span>`;
       }
     });
 

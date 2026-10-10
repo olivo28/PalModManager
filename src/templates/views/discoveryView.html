@@ -31,7 +31,7 @@
         </svg>
       </div>
       <button id="discovery-toggle-filters-btn" class="discovery-filters-toggle-btn" title="Toggle Filters Sidebar">
-        <span id="discovery-toggle-filters-icon">📑</span>
+        <span id="discovery-toggle-filters-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></span>
         <span data-i18n="discovery.filters_btn">Filters</span>
       </button>
     </div>
@@ -78,17 +78,17 @@
       <div class="discovery-select-wrap">
         <label for="discovery-nsfw-select" data-i18n="discovery.nsfw_label">NSFW:</label>
         <select id="discovery-nsfw-select" class="discovery-select">
-          <option value="hide" data-i18n="discovery.nsfw_hide">🚫 Hide NSFW</option>
-          <option value="blur" data-i18n="discovery.nsfw_blur">🔞 Blur NSFW</option>
-          <option value="show" data-i18n="discovery.nsfw_show">👀 Show NSFW</option>
+          <option value="hide" data-i18n="discovery.nsfw_hide">Hide NSFW</option>
+          <option value="blur" data-i18n="discovery.nsfw_blur">Blur NSFW</option>
+          <option value="show" data-i18n="discovery.nsfw_show">Show NSFW</option>
         </select>
       </div>
 
       <!-- Search Input -->
       <div class="discovery-search-wrap">
-        <span class="discovery-search-icon">🔍</span>
+        <span class="discovery-search-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
         <input type="text" id="discovery-search-input" placeholder="Search Nexus Mods..." data-i18n-placeholder="discovery.search_placeholder" />
-        <button id="discovery-search-clear" class="discovery-search-clear" style="display:none">✕</button>
+        <button id="discovery-search-clear" class="discovery-search-clear" style="display:none"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
 
       <!-- Refresh Button -->
@@ -102,7 +102,7 @@
     <aside id="discovery-filters-sidebar" class="discovery-filters-sidebar" style="display:none">
       <div class="discovery-sidebar-header">
         <h4 data-i18n="discovery.filter_panel_title">Filter Mods</h4>
-        <button id="discovery-sidebar-close-btn" class="discovery-sidebar-close-btn">✕</button>
+        <button id="discovery-sidebar-close-btn" class="discovery-sidebar-close-btn"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
       </div>
 
       <div class="discovery-sidebar-content">
@@ -246,7 +246,7 @@
 
       <!-- EMPTY & ERROR STATES -->
       <div id="discovery-empty" class="discovery-empty-state" style="display:none">
-        <div class="discovery-empty-icon">🧭</div>
+        <div class="discovery-empty-icon"><svg class="pmm-icon pmm-icon-xl" viewBox="0 0 24 24" style="color:var(--text-muted);"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg></div>
         <h3 data-i18n="discovery.empty_title">No mods found</h3>
         <p data-i18n="discovery.empty_desc">Try adjusting your search terms or category filters.</p>
       </div>

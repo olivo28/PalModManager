@@ -12,6 +12,7 @@ import {
   type CrashHistoryItem,
 } from '../../../api';
 import { renderRawDumpViewerHtml, attachRawViewerListeners } from './rawViewer';
+import { getIconSvg } from '../../icons/mod';
 
 let lastCrashReport: UnifiedCrashReport | null = null;
 let cachedCrashHistory: CrashHistoryItem[] = [];
@@ -107,7 +108,7 @@ export async function renderCrashDoctorPanel(container: HTMLElement): Promise<vo
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); padding: calc(10px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: calc(10px * var(--ui-scale, 1)); flex-shrink: 0;">
           <div style="display: flex; flex-direction: column; gap: 3px;">
             <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-              <span style="font-size: calc(17px * var(--ui-scale, 1));">🩺</span>
+              <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('shieldCheck', 'pmm-icon-md')}</span>
               <span style="font-size: var(--text-md, 14.5px); font-weight: 700; color: var(--text-primary);">
                 ${escapeHtml(t('scanner.title_crash_doctor') || 'Crash Doctor')}
               </span>
@@ -119,7 +120,7 @@ export async function renderCrashDoctorPanel(container: HTMLElement): Promise<vo
 
           <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
             <button id="btn-analyze-latest-crash" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 11.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-              <span>↻</span> <span>${escapeHtml(t('crash_doctor.btn_check_again') || 'Check for Crashes Now')}</span>
+              <span style="display: flex; align-items: center;">${getIconSvg('scan', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.btn_check_again') || 'Check for Crashes Now')}</span>
             </button>
           </div>
         </div>
@@ -178,8 +179,9 @@ function renderCrashMasterListHtml(
 
       <div class="scanner-master-items" style="padding: calc(8px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1)); flex: 1; min-height: 0; overflow-y: auto;">
         ${loading ? `
-          <div style="padding: calc(24px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); text-align: center; color: var(--text-muted); font-size: var(--text-sm, 12px);">
-            ⏳ ${escapeHtml(t('crash_doctor.scanning_dumps') || 'Inspecting crash dumps and engine logs...')}
+          <div style="padding: calc(24px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); text-align: center; color: var(--text-muted); font-size: var(--text-sm, 12px); display: flex; align-items: center; justify-content: center; gap: 6px;">
+            <span>${getIconSvg('scan', 'pmm-icon-xs pmm-icon-spin')}</span>
+            <span>${escapeHtml(t('crash_doctor.scanning_dumps') || 'Inspecting crash dumps and engine logs...')}</span>
           </div>
         ` : history.length > 0 ? history.map(item => {
           const isActive = item.id === activeId;
@@ -187,8 +189,9 @@ function renderCrashMasterListHtml(
           return `
             <div class="scanner-mod-list-item crash-list-card ${isActive ? 'active' : ''}" data-crash-id="${escapeHtml(item.id)}" data-folder-path="${escapeHtml(item.folderPath)}" style="padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); cursor: pointer; border-radius: 6px; display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
               <div style="display: flex; justify-content: space-between; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-                <span style="font-size: var(--text-base, 12.5px); font-weight: 700; color: ${isActive ? 'var(--accent)' : 'var(--text-primary)'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                  💥 ${escapeHtml(item.folderName)}
+                <span style="font-size: var(--text-base, 12.5px); font-weight: 700; color: ${isActive ? 'var(--accent)' : 'var(--text-primary)'}; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;">
+                  <span>${getIconSvg('alertTriangle', 'pmm-icon-xs')}</span>
+                  <span>${escapeHtml(item.folderName)}</span>
                 </span>
                 <div style="display: flex; align-items: center; gap: 4px; flex-shrink: 0;">
                   <span style="font-size: 9.5px; font-weight: 700; background: ${badge.bg}; color: ${badge.color}; padding: 1px 5px; border-radius: 4px; border: 1px solid ${badge.color}33;">
@@ -199,7 +202,10 @@ function renderCrashMasterListHtml(
               </div>
 
               <div style="display: flex; align-items: center; justify-content: space-between; font-size: var(--text-2xs, 10.5px); color: var(--text-secondary);">
-                <span>🕒 ${escapeHtml(item.timestamp)}</span>
+                <span style="display: inline-flex; align-items: center; gap: 4px;">
+                  <span>${getIconSvg('clock', 'pmm-icon-xs')}</span>
+                  <span>${escapeHtml(item.timestamp)}</span>
+                </span>
               </div>
             </div>
           `;
@@ -217,7 +223,7 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
   if (!report) {
     return `
       <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; min-height: 350px; text-align: center; gap: 14px; padding: 24px;">
-        <div style="font-size: 42px;">🛡️</div>
+        <div class="icon-inline" style="color: var(--accent);">${getIconSvg('shieldCheck', 'pmm-icon-xl')}</div>
         <div style="font-size: 16px; font-weight: 700; color: var(--text-primary);">
           ${escapeHtml(t('crash_doctor.no_crashes_title') || 'No Recent Crashes Detected')}
         </div>
@@ -237,7 +243,7 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
     <!-- Incident Alert Header -->
     <div style="background: rgba(239, 83, 80, 0.08); border: 1px solid rgba(239, 83, 80, 0.3); border-radius: 8px; padding: 14px 18px; display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; flex-shrink: 0;">
       <div style="display: flex; gap: 14px; align-items: flex-start;">
-        <div style="font-size: 30px; line-height: 1;">⚠️</div>
+        <div class="icon-inline" style="color: #ef5350;">${getIconSvg('alertTriangle', 'pmm-icon-lg')}</div>
         <div>
           <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px; flex-wrap: wrap;">
             <span style="font-size: 15px; font-weight: 700; color: var(--text-primary);">
@@ -270,20 +276,20 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
       <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 8px; flex-shrink: 0;">
         <div style="display: flex; gap: 6px;">
           <button id="btn-export-crash-bundle" class="scanner-btn-run" style="padding: 6px 12px; font-size: 11.5px; display: flex; align-items: center; gap: 6px; background: var(--accent); color: #fff; font-weight: 700; border: none; border-radius: 6px; cursor: pointer;">
-            <span>📦</span> <span>${escapeHtml(t('crash_doctor.btn_export_bundle') || 'Export ZIP')}</span>
+            <span>${getIconSvg('package', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.btn_export_bundle') || 'Export ZIP')}</span>
           </button>
-          <button id="btn-open-crash-folder" class="scanner-sub-tab" style="padding: 5px 10px; font-size: 11px; border: 1px solid var(--border); text-align: center; cursor: pointer; border-radius: 6px;">
-            <span>📂</span>
+          <button id="btn-open-crash-folder" class="scanner-sub-tab" style="padding: 5px 10px; font-size: 11px; border: 1px solid var(--border); text-align: center; cursor: pointer; border-radius: 6px; display: flex; align-items: center;">
+            <span>${getIconSvg('folderOpen', 'pmm-icon-xs')}</span>
           </button>
         </div>
 
         <!-- Mode Switcher -->
         <div style="display: inline-flex; background: var(--bg-tertiary); border: 1px solid var(--border); border-radius: 6px; padding: 2px; gap: 2px;">
           <button type="button" id="btn-mode-summary" class="inspector-mode-btn ${activeInspectorMode === 'summary' ? 'active' : ''}" style="padding: 4px 10px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; background: ${activeInspectorMode === 'summary' ? 'var(--accent)' : 'transparent'}; color: ${activeInspectorMode === 'summary' ? '#fff' : 'var(--text-secondary)'}; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-            <span>📊</span> <span>${escapeHtml(t('crash_doctor.btn_mode_summary') || 'Summary')}</span>
+            <span>${getIconSvg('barChart', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.btn_mode_summary') || 'Summary')}</span>
           </button>
           <button type="button" id="btn-mode-raw" class="inspector-mode-btn ${activeInspectorMode === 'raw' ? 'active' : ''}" style="padding: 4px 10px; font-size: 11px; font-weight: 600; border: none; border-radius: 4px; background: ${activeInspectorMode === 'raw' ? 'var(--accent)' : 'transparent'}; color: ${activeInspectorMode === 'raw' ? '#fff' : 'var(--text-secondary)'}; cursor: pointer; display: flex; align-items: center; gap: 5px;">
-            <span>💻</span> <span>${escapeHtml(t('crash_doctor.btn_mode_raw') || 'Raw Dump')}</span>
+            <span>${getIconSvg('terminal', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.btn_mode_raw') || 'Raw Dump')}</span>
           </button>
         </div>
       </div>
@@ -301,7 +307,7 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
         <!-- Technical Forensics -->
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
           <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-            <span>🔬</span> <span>${escapeHtml(t('crash_doctor.sec_forensics') || 'System & Memory Forensics')}</span>
+            <span>${getIconSvg('search', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.sec_forensics') || 'System & Memory Forensics')}</span>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 8px; font-size: 11.5px;">
@@ -351,7 +357,7 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
         <!-- Solutions -->
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px; display: flex; flex-direction: column;">
           <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 12px; display: flex; align-items: center; gap: 6px;">
-            <span>💡</span> <span>${escapeHtml(t('crash_doctor.sec_suggestions') || 'Recommended Solutions')}</span>
+            <span>${getIconSvg('sparkles', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.sec_suggestions') || 'Recommended Solutions')}</span>
           </div>
 
           <div style="display: flex; flex-direction: column; gap: 8px; flex: 1;">
@@ -359,7 +365,7 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
               <div class="crash-suggestion-card" data-action="${escapeHtml(sug.actionType)}" data-target-path="${escapeHtml(sug.targetPath || '')}" style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 6px; padding: 10px; ${sug.actionType === 'open_folder' ? 'cursor: pointer; transition: background 0.2s;' : ''}">
                 <div style="font-size: 12.5px; font-weight: 700; color: var(--success); margin-bottom: 2px; display: flex; align-items: center; justify-content: space-between;">
                   <span>${escapeHtml(t(sug.labelKey) || sug.id)}</span>
-                  ${sug.actionType === 'open_folder' ? '<span style="font-size: 11px; color: var(--text-muted);">↗</span>' : ''}
+                  ${sug.actionType === 'open_folder' ? `<span style="display: inline-flex; align-items: center; color: var(--text-muted);">${getIconSvg('externalLink', 'pmm-icon-xs')}</span>` : ''}
                 </div>
                 <div style="font-size: 11.5px; color: var(--text-secondary); line-height: 1.35;">
                   ${escapeHtml(t(sug.descriptionKey) || '')}
@@ -374,10 +380,11 @@ function renderCrashInspectorHtml(report: UnifiedCrashReport | null): string {
       <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 14px;">
         <div style="font-size: 13px; font-weight: 700; color: var(--text-primary); margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
           <div style="display: flex; align-items: center; gap: 6px;">
-            <span>🧩</span> <span>${escapeHtml(t('crash_doctor.sec_active_mods') || 'Active Installed Mods at Crash Time')} (${report.activeMods.length})</span>
+            <span>${getIconSvg('mods', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('crash_doctor.sec_active_mods') || 'Active Installed Mods at Crash Time')} (${report.activeMods.length})</span>
           </div>
-          <button type="button" id="btn-switch-to-raw" style="font-size: 11px; color: var(--accent); background: none; border: none; cursor: pointer; text-decoration: underline;">
-            ${escapeHtml(t('crash_doctor.btn_view_full_raw') || 'View Raw Dump')} ↗
+          <button type="button" id="btn-switch-to-raw" style="font-size: 11px; color: var(--accent); background: none; border: none; cursor: pointer; text-decoration: underline; display: inline-flex; align-items: center; gap: 4px;">
+            <span>${escapeHtml(t('crash_doctor.btn_view_full_raw') || 'View Raw Dump')}</span>
+            <span>${getIconSvg('externalLink', 'pmm-icon-xs')}</span>
           </button>
         </div>
 

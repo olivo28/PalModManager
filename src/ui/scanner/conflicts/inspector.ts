@@ -1,6 +1,7 @@
 import { escapeHtml } from '../rendering';
 import { t } from '../../../utils/i18n';
 import { scannerDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 import {
   lastScanResult,
   registryFilterType,
@@ -16,7 +17,7 @@ export function buildInspectorContent(activeMod: ModSummary | null): string {
   if (!activeMod) {
     return `
       <div style="flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--text-muted); font-size: 13px; padding: 40px; gap: 8px;">
-        <span style="font-size: 32px;">🔍</span>
+        <span style="color: var(--text-muted); display: inline-flex; align-items: center;">${getIconSvg('search', 'pmm-icon-xl')}</span>
         <span>${escapeHtml(t('scanner.no_registries_match'))}</span>
       </div>
     `;
@@ -44,7 +45,7 @@ export function buildInspectorContent(activeMod: ModSummary | null): string {
     sectionsHtml.push(`
       <div class="scanner-inspector-card">
         <div style="font-size: 12px; font-weight: 700; color: var(--warning); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-          <span>📜 ${escapeHtml(t('scanner.palschema_edits_label'))}</span>
+          <span style="display: flex; align-items: center; gap: 6px;">${getIconSvg('fileText', 'pmm-icon-xs')} ${escapeHtml(t('scanner.palschema_edits_label'))}</span>
           <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">${activeMod.palschemaRows.length} ${escapeHtml(t('scanner.row_count', { count: activeMod.palschemaRows.length }))}</span>
         </div>
         <ul class="scanner-detail-list" style="margin: 0; padding-left: 16px; font-size: 11px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; word-break: break-word; white-space: normal; max-height: 240px; overflow-y: auto;">
@@ -58,7 +59,7 @@ export function buildInspectorContent(activeMod: ModSummary | null): string {
     sectionsHtml.push(`
       <div class="scanner-inspector-card">
         <div style="font-size: 12px; font-weight: 700; color: var(--accent); text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-          <span>⚡ ${escapeHtml(t('scanner.ue4ss_hooks_label'))}</span>
+          <span style="display: flex; align-items: center; gap: 6px;">${getIconSvg('zap', 'pmm-icon-xs')} ${escapeHtml(t('scanner.ue4ss_hooks_label'))}</span>
           <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">${activeMod.ue4ssHooks.length} ${escapeHtml(t('scanner.hook_count', { count: activeMod.ue4ssHooks.length }))}</span>
         </div>
         <ul class="scanner-detail-list" style="margin: 0; padding-left: 16px; font-size: 11px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; word-break: break-word; white-space: normal; max-height: 240px; overflow-y: auto;">
@@ -72,7 +73,7 @@ export function buildInspectorContent(activeMod: ModSummary | null): string {
     sectionsHtml.push(`
       <div class="scanner-inspector-card">
         <div style="font-size: 12px; font-weight: 700; color: #81c784; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; justify-content: space-between;">
-          <span>📦 ${escapeHtml(t('scanner.pak_assets_label'))}</span>
+          <span style="display: flex; align-items: center; gap: 6px;">${getIconSvg('package', 'pmm-icon-xs')} ${escapeHtml(t('scanner.pak_assets_label'))}</span>
           <span style="font-size: 11px; font-weight: normal; color: var(--text-muted);">${activeMod.pakFiles.length} ${escapeHtml(t('scanner.pak_asset_count', { count: activeMod.pakFiles.length }))}</span>
         </div>
         <ul class="scanner-detail-list" style="margin: 0; padding: 0; list-style: none; font-size: 11px; color: var(--text-secondary); font-family: monospace; display: flex; flex-direction: column; gap: 6px; overflow-wrap: anywhere; word-break: break-word; white-space: normal; max-height: 280px; overflow-y: auto;">
@@ -84,7 +85,7 @@ export function buildInspectorContent(activeMod: ModSummary | null): string {
                   <span style="overflow: hidden; text-overflow: ellipsis; color: var(--text-primary);">${escapeHtml(p)}</span>
                   ${isUasset ? `
                     <button class="btn-secondary btn-sm inspect-uasset-btn" data-mod-id="${escapeHtml(activeMod.modId)}" data-asset-path="${escapeHtml(p)}" data-drawer-id="drawer-${idx}" style="font-size: 10px; padding: 2px 8px; flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;">
-                      <span>🔍</span> <span>${escapeHtml(t('scanner.btn_inspect_uasset'))}</span>
+                      ${getIconSvg('search', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_inspect_uasset'))}</span>
                     </button>
                   ` : ''}
                 </div>
@@ -110,10 +111,10 @@ export function buildInspectorContent(activeMod: ModSummary | null): string {
         ${isGpNotice ? `
           <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
             <div style="padding: 4px 8px; background: rgba(255, 170, 0, 0.1); border: 1px solid rgba(255, 170, 0, 0.3); border-radius: 4px; color: #ffaa00; font-size: 10.5px; display: inline-flex; align-items: center; gap: 6px; font-weight: 600; width: fit-content;">
-              <span>⚠️</span> <span>${escapeHtml(t('scanner.gamepass_missing_badge'))}</span>
+              ${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.gamepass_missing_badge'))}</span>
             </div>
             <button class="btn-primary btn-sm convert-single-gamepass-btn" data-mod-id="${escapeHtml(activeMod.modId)}" style="font-size: 10.5px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 4px;">
-              <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>
+              ${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>
             </button>
           </div>
         ` : ''}

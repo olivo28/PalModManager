@@ -4,6 +4,7 @@ import type { ModHotkey } from '../../api';
 import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
 import { scannerDom, bus } from '../../framework';
+import { getIconSvg } from '../icons/mod';
 
 export interface ConflictingMod {
   modId: string;
@@ -210,11 +211,11 @@ export function subTabHeader(): string {
       </div>
       <div style="display:flex;align-items:center;gap:10px;">
         <button id="scanner-btn-ue4ss-log" class="scanner-sub-tab" style="display:flex;align-items:center;gap:5px;border:1px solid rgba(255,255,255,0.12);" title="${escapeHtml(t('ue4ss_log.btn_open_tooltip') || 'Open UE4SS Runtime Log & Diagnostics')}">
-          <span>📜</span> <span>${escapeHtml(t('ue4ss_log.tab_title') || 'UE4SS Log')}</span>
+          <span style="display:flex;align-items:center;">${getIconSvg('fileText', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('ue4ss_log.tab_title') || 'UE4SS Log')}</span>
         </button>
         ${activeSubTab !== 'saves' && activeSubTab !== 'crash' ? `
-        <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px;">
-          <span>↻ ${escapeHtml(t('common.refresh'))}</span>
+        <button id="scanner-re-run-btn" class="scanner-btn-run" style="padding: 6px 14px; font-size:12px; display:inline-flex; align-items:center; gap:6px;">
+          <span style="display:flex;align-items:center;">${getIconSvg('scan', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('common.refresh'))}</span>
         </button>
         ` : ''}
       </div>
@@ -308,7 +309,7 @@ export function attachGamePassConversionListeners(): void {
 
       try {
         btn.disabled = true;
-        btn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
+        btn.innerHTML = `<span style="display:flex;align-items:center;">${getIconSvg('clock', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
         const { convertModToGamepass } = await import('../../api');
         const { showToast } = await import('../toast');
         const result = await convertModToGamepass(modId);
@@ -319,7 +320,7 @@ export function attachGamePassConversionListeners(): void {
         const { showToast } = await import('../toast');
         showToast(String(err), 'error');
         btn.disabled = false;
-        btn.innerHTML = `<span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>`;
+        btn.innerHTML = `<span style="display:flex;align-items:center;">${getIconSvg('zap', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>`;
       }
     };
   });
@@ -329,7 +330,7 @@ export function attachGamePassConversionListeners(): void {
     convertAllBtn.onclick = async () => {
       try {
         convertAllBtn.disabled = true;
-        convertAllBtn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
+        convertAllBtn.innerHTML = `<span style="display:flex;align-items:center;">${getIconSvg('clock', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.converting_gamepass'))}</span>`;
         const { convertAllGamepassMods } = await import('../../api');
         const { showToast } = await import('../toast');
         const count = await convertAllGamepassMods();
@@ -340,7 +341,7 @@ export function attachGamePassConversionListeners(): void {
         const { showToast } = await import('../toast');
         showToast(String(err), 'error');
         convertAllBtn.disabled = false;
-        convertAllBtn.innerHTML = `<span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: '' }))}</span>`;
+        convertAllBtn.innerHTML = `<span style="display:flex;align-items:center;">${getIconSvg('zap', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: '' }))}</span>`;
       }
     };
   }

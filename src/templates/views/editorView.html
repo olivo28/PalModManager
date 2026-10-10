@@ -18,11 +18,11 @@
       <div id="editor-preview" style="display:none"></div>
       <div class="editor-floating-actions">
         <button id="editor-revert-btn" class="editor-floating-revert-btn" style="display:none;" title="Discard Changes">
-          <span class="revert-icon">↺</span>
+          <span class="revert-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/></svg></span>
           <span id="editor-revert-btn-text" data-i18n="editor.btn_revert">Revert</span>
         </button>
         <button id="editor-save-btn" class="editor-floating-save-btn" style="display:none;" title="Save (Ctrl+S)">
-          <span class="save-icon">💾</span>
+          <span class="save-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg></span>
           <span id="editor-save-btn-text" data-i18n="editor.btn_save">Save</span>
           <kbd class="editor-kbd-hint">Ctrl+S</kbd>
         </button>
@@ -33,19 +33,22 @@
         <div class="editor-problems-header">
           <div class="editor-problems-title-group">
             <button id="editor-problems-tab-file" class="editor-problems-tab active">
-              <span class="editor-problems-icon">📄</span>
+              <span class="editor-problems-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><line x1="10" y1="9" x2="8" y2="9"/></svg></span>
               <span data-i18n="editor.problems_tab_file">Current File</span>
               <span id="editor-problems-count-badge" class="editor-problems-count-badge clean">0</span>
             </button>
             <button id="editor-problems-tab-workspace" class="editor-problems-tab">
-              <span class="editor-problems-icon">📁</span>
+              <span class="editor-problems-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M4 20h16a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.93a2 2 0 0 1-1.66-.9l-.82-1.2A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13c0 1.1.9 2 2 2Z"/></svg></span>
               <span data-i18n="editor.problems_tab_workspace">Workspace</span>
               <span id="editor-problems-workspace-count-badge" class="editor-problems-count-badge clean">0</span>
             </button>
           </div>
           <div class="editor-problems-actions">
-            <button id="editor-problems-scan-btn" class="editor-problems-action-btn" title="Scan entire workspace" data-i18n-title="editor.problems_scan_btn_title" style="display:none">🔄 <span data-i18n="editor.problems_scan_btn">Scan Mod</span></button>
-            <button id="editor-problems-close" class="editor-problems-close-btn" title="Close Panel" data-i18n-title="common.close">✕</button>
+            <button id="editor-problems-scan-btn" class="editor-problems-action-btn btn-with-icon" title="Scan entire workspace" data-i18n-title="editor.problems_scan_btn_title" style="display:none">
+              <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
+              <span data-i18n="editor.problems_scan_btn">Scan Mod</span>
+            </button>
+            <button id="editor-problems-close" class="editor-problems-close-btn" title="Close Panel" data-i18n-title="common.close"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
           </div>
         </div>
         <div id="editor-problems-list" class="editor-problems-list">
@@ -59,12 +62,12 @@
       <div id="editor-status-bar" class="editor-status-bar">
         <div class="editor-status-bar-left">
           <button id="editor-status-problems-btn" class="editor-status-btn" title="Toggle Problems Panel" data-i18n-title="editor.status_problems_title">
-            <span class="editor-status-icon">⚠️</span>
+            <span class="editor-status-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></span>
             <span id="editor-status-error-count">0 Problems</span>
           </button>
           <span class="editor-status-sep"></span>
           <span id="editor-status-mod-info" class="editor-status-item">
-            <span class="editor-status-icon">📦</span>
+            <span class="editor-status-icon"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="m7.5 4.27 9 5.15"/><path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"/><path d="m3.3 7 8.7 5 8.7-5"/><path d="M12 22V12"/></svg></span>
             <span id="editor-status-mod-name">Mod</span>
           </span>
         </div>

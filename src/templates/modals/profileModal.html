@@ -3,7 +3,7 @@
   <div class="modal" style="max-width: min(calc(680px * var(--ui-scale, 1)), 92vw); width: 100%;">
     <div class="modal-header">
       <h3 data-i18n="profiles.title">Manage Profiles</h3>
-      <button class="modal-close-btn" id="profile-modal-close-x">✕</button>
+      <button class="modal-close-btn" id="profile-modal-close-x"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
     <div class="modal-body">
       <div id="profile-list"></div>
@@ -13,7 +13,10 @@
       </div>
     </div>
     <div class="modal-footer" style="display:flex;justify-content:space-between;align-items:center;">
-      <button id="profile-import-btn" class="btn-secondary" style="display:inline-flex;align-items:center;gap:calc(6px * var(--ui-scale, 1));padding:calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));font-weight:600;" data-i18n="profiles.btn_import_pack">📥 Import Co-op Pack</button>
+      <button id="profile-import-btn" class="btn-secondary btn-with-icon" style="display:inline-flex;align-items:center;padding:calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1));font-weight:600;">
+        <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        <span data-i18n="profiles.btn_import_pack">Import Co-op Pack</span>
+      </button>
       <button id="profile-modal-close" class="btn-secondary" data-i18n="common.close">Close</button>
     </div>
   </div>

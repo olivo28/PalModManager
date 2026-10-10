@@ -1,5 +1,6 @@
 import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
+import { getIconSvg } from '../../../icons/mod';
 import {
   registryFilterType,
   registrySearchQuery,
@@ -69,10 +70,10 @@ export function buildRegistriesSectionHtml(res: ScanResult): string {
 
         <div class="scanner-filter-chips" style="display: inline-flex; gap: calc(2px * var(--ui-scale, 1)); background: rgba(255, 255, 255, 0.03); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: calc(20px * var(--ui-scale, 1)); padding: calc(2px * var(--ui-scale, 1)); flex-shrink: 0;">
           <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'all' ? 'active' : ''}" data-type="all">${escapeHtml(t('scanner.filter_all'))} (${totalCount})</button>
-          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'pak' ? 'active' : ''}" data-type="pak">📦 ${escapeHtml(t('scanner.filter_pak'))} (${pakCount})</button>
-          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'ue4ss' ? 'active' : ''}" data-type="ue4ss">⚡ ${escapeHtml(t('scanner.filter_ue4ss'))} (${ue4ssCount})</button>
-          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'palschema' ? 'active' : ''}" data-type="palschema">📜 ${escapeHtml(t('scanner.filter_palschema'))} (${palschemaCount})</button>
-          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'hybrid' ? 'active' : ''}" data-type="hybrid">🔮 ${escapeHtml(t('scanner.filter_hybrid'))} (${hybridCount})</button>
+          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'pak' ? 'active' : ''}" data-type="pak" style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.filter_pak'))} (${pakCount})</span></button>
+          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'ue4ss' ? 'active' : ''}" data-type="ue4ss" style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.filter_ue4ss'))} (${ue4ssCount})</span></button>
+          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'palschema' ? 'active' : ''}" data-type="palschema" style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.filter_palschema'))} (${palschemaCount})</span></button>
+          <button class="scanner-filter-chip registry-filter-btn ${registryFilterType === 'hybrid' ? 'active' : ''}" data-type="hybrid" style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('sparkles', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.filter_hybrid'))} (${hybridCount})</span></button>
         </div>
       </div>
 
@@ -80,7 +81,7 @@ export function buildRegistriesSectionHtml(res: ScanResult): string {
         <div class="scanner-master-list">
           <div class="scanner-master-search-header" style="padding: calc(10px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: rgba(0, 0, 0, 0.2);">
             <div class="search-wrapper" style="width: 100%; max-width: 100%;">
-              <span class="search-icon" style="left: calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px);">🔍</span>
+              <span class="search-icon" style="left: calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); display: flex; align-items: center;">${getIconSvg('search', 'pmm-icon-xs')}</span>
               <input type="text" id="registry-search-input" class="premium-search-input" value="${escapeHtml(registrySearchQuery)}" placeholder="${escapeHtml(t('scanner.search_registry_placeholder'))}" style="width: 100%; box-sizing: border-box; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) calc(28px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); border-radius: calc(6px * var(--ui-scale, 1));" />
             </div>
           </div>

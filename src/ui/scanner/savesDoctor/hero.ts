@@ -3,6 +3,7 @@ import { subTabHeader } from '../mod';
 import { escapeHtml } from '../rendering';
 import { showToast } from '../../toast';
 import { t } from '../../../utils/i18n';
+import { getIconSvg } from '../../icons/mod';
 import {
   doctorState,
   customSavesPath,
@@ -20,8 +21,8 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
       <div class="scanner-scroll-panel" style="padding: calc(24px * var(--ui-scale, 1)); display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; flex: 1; overflow-y: auto;">
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-radius: calc(12px * var(--ui-scale, 1)); padding: calc(32px * var(--ui-scale, 1)) calc(28px * var(--ui-scale, 1)); max-width: min(calc(680px * var(--ui-scale, 1)), 92vw); width: 100%; box-shadow: 0 16px 40px rgba(0,0,0,0.3); display: flex; flex-direction: column; align-items: center; text-align: center; gap: calc(20px * var(--ui-scale, 1));">
           
-          <div style="width: calc(64px * var(--ui-scale, 1)); height: calc(64px * var(--ui-scale, 1)); border-radius: calc(16px * var(--ui-scale, 1)); background: var(--success-dim); border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; font-size: calc(32px * var(--ui-scale, 1));">
-            🩺
+          <div style="width: calc(64px * var(--ui-scale, 1)); height: calc(64px * var(--ui-scale, 1)); border-radius: calc(16px * var(--ui-scale, 1)); background: var(--success-dim); border: 1px solid var(--success); display: flex; align-items: center; justify-content: center; color: var(--success);">
+            ${getIconSvg('shieldCheck', 'pmm-icon-xl')}
           </div>
 
           <div style="display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
@@ -35,7 +36,7 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
           <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: calc(12px * var(--ui-scale, 1)); width: 100%; text-align: left; margin: calc(6px * var(--ui-scale, 1)) 0;">
             <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
               <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--success); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-                <span>🛡️</span>
+                <span style="display: flex; align-items: center;">${getIconSvg('shieldCheck', 'pmm-icon-sm')}</span>
                 <span>${escapeHtml(t('scanner.saves_feature_rescue_title') || 'Rescue & Clean')}</span>
               </div>
               <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_rescue_desc') || 'Detect and sanitize orphaned classes from uninstalled mods.')}</span>
@@ -43,7 +44,7 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
 
             <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
               <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--info); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-                <span>⚖️</span>
+                <span style="display: flex; align-items: center;">${getIconSvg('scale', 'pmm-icon-sm')}</span>
                 <span>${escapeHtml(t('scanner.saves_feature_diff_title') || 'Snapshot Comparison')}</span>
               </div>
               <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_diff_desc') || 'Inspect progression differences and rollback safely.')}</span>
@@ -51,7 +52,7 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
 
             <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1));">
               <div style="font-size: var(--text-sm, 12px); font-weight: 700; color: var(--warning); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-                <span>👥</span>
+                <span style="display: flex; align-items: center;">${getIconSvg('user', 'pmm-icon-sm')}</span>
                 <span>${escapeHtml(t('scanner.saves_feature_roster_title') || 'Player Roster & Rules')}</span>
               </div>
               <span style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); line-height: 1.4;">${escapeHtml(t('scanner.saves_feature_roster_desc') || 'View players, levels, and WorldOption multipliers.')}</span>
@@ -65,12 +66,12 @@ export function renderHeroLandingHtml(isLoading: boolean = false): string {
                 <span class="spinner" style="width: calc(16px * var(--ui-scale, 1)); height: calc(16px * var(--ui-scale, 1)); border: 2px solid rgba(0,0,0,0.3); border-top-color: #000; border-radius: 50%; animation: spin 0.8s linear infinite;"></span>
                 <span>${escapeHtml(t('scanner.saves_doctor_scanning') || 'Scanning Palworld SaveGames...')}</span>
               ` : `
-                <span>🩺</span>
+                <span style="display: flex; align-items: center;">${getIconSvg('scan', 'pmm-icon-xs')}</span>
                 <span>${escapeHtml(t('scanner.btn_scan_saves_now') || 'Scan Savegames Now')}</span>
               `}
             </button>
             <button id="btn-initial-custom-folder" class="btn-secondary" ${isLoading ? 'disabled' : ''} style="padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-              <span>📁</span>
+              <span style="display: flex; align-items: center;">${getIconSvg('folder', 'pmm-icon-xs')}</span>
               <span>${escapeHtml(t('scanner.btn_custom_folder') || 'Choose Custom Folder')}</span>
             </button>
           </div>

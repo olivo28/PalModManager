@@ -6,7 +6,7 @@
     <div class="modal-header"
       style="display: flex; align-items: center; justify-content: space-between; padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border);">
       <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1)); min-width: 0;">
-        <span style="font-size: calc(20px * var(--ui-scale, 1)); line-height: 1;">🔍</span>
+        <svg class="pmm-icon pmm-icon-md" viewBox="0 0 24 24" style="color:var(--accent);"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
         <div style="display: flex; flex-direction: column; min-width: 0; gap: 2px;">
           <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
             <h3 id="diff-modal-title"
@@ -20,7 +20,7 @@
             vs config.jsonc.bak</span>
         </div>
       </div>
-      <button class="modal-close-btn" id="diff-modal-close-x">✕</button>
+      <button class="modal-close-btn" id="diff-modal-close-x"><svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button>
     </div>
 
     <!-- Diff Metrics & File Comparison Headers with Timestamps -->
@@ -82,14 +82,14 @@
       <div style="display: flex; align-items: center; gap: 10px;">
         <button id="diff-modal-restore-btn" class="btn-primary"
           style="display: flex; align-items: center; gap: 6px; background: var(--warning); border-color: var(--warning); color: #000; font-weight: 700; cursor: pointer;">
-          <span>🔄</span>
+          <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/></svg>
           <span data-i18n="editor.btn_restore">Restore Backup</span>
         </button>
         <button id="diff-modal-merge-btn" class="btn-primary"
           style="display: none; align-items: center; gap: 6px; background: var(--info); border-color: var(--info); color: #000; font-weight: 700; cursor: pointer;"
           title="Intelligently merge custom settings from backup into active file"
           data-i18n-title="editor.btn_merge_title">
-          <span>🔀</span>
+          <svg class="pmm-icon pmm-icon-xs" viewBox="0 0 24 24"><circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M6 21V9a9 9 0 0 0 9 9"/></svg>
           <span data-i18n="editor.btn_merge">Merge Config</span>
         </button>
       </div>

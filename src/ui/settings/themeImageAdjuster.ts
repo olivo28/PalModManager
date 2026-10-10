@@ -363,7 +363,7 @@ function renderViewport(): void {
   const telemetryRender = document.getElementById('theme-telemetry-render');
   const telemetryOriginal = document.getElementById('theme-telemetry-original');
   if (telemetryRender) {
-    telemetryRender.textContent = `📐 Render: ${realRenderW} × ${realRenderH} px`;
+    telemetryRender.textContent = `Render: ${realRenderW} × ${realRenderH} px`;
   }
   if (telemetryOriginal) {
     telemetryOriginal.textContent = `Original: ${_imgNaturalW} × ${_imgNaturalH} px`;

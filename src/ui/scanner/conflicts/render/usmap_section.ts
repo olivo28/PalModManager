@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
 import type { ScanResult, UsmapHookDiagnostic } from '../../mod';
+import { getIconSvg } from '../../../icons/mod';
 
 export function isItemBroken(diag: UsmapHookDiagnostic): boolean {
   if (diag.resolved) return false;
@@ -20,83 +21,83 @@ export function renderHookItem(diag: UsmapHookDiagnostic): string {
   let categoryBadge = '';
   if (diag.category === 'palschema') {
     categoryBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--accent); background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        📊 ${escapeHtml(t('scanner.usmap_category_palschema') || 'PalSchema')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--accent); background: rgba(0,210,255,0.1); border: 1px solid rgba(0,210,255,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('barChart', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_category_palschema') || 'PalSchema')}</span>
       </span>
     `;
   } else if (diag.category === 'pak') {
     categoryBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--warning); background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        📦 ${escapeHtml(t('scanner.usmap_category_pak') || 'Pak Asset')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--warning); background: rgba(255,170,0,0.1); border: 1px solid rgba(255,170,0,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_category_pak') || 'Pak Asset')}</span>
       </span>
     `;
   } else if (diag.category === 'anti_pattern' || diag.status === 'blind_pcall') {
     categoryBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        🛡️ ${escapeHtml(t('scanner.usmap_category_antipattern') || 'Anti-Pattern')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: #f87171; background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('shield', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_category_antipattern') || 'Anti-Pattern')}</span>
       </span>
     `;
   } else {
     categoryBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: #a78bfa; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ⚡ ${escapeHtml(t('scanner.usmap_category_ue4ss') || 'Lua Hook')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: #a78bfa; background: rgba(167,139,250,0.1); border: 1px solid rgba(167,139,250,0.25); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_category_ue4ss') || 'Lua Hook')}</span>
       </span>
     `;
   }
 
   if (diag.resolved) {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('checkCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>
       </span>
     `;
     borderCol = 'var(--success)';
   } else if (diag.status === 'broken_class') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ❌ ${escapeHtml(t('scanner.usmap_status_broken_class') || 'Missing Class')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('xCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_broken_class') || 'Missing Class')}</span>
       </span>
     `;
     borderCol = 'var(--danger)';
   } else if (diag.status === 'broken_function') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--warning); background: rgba(255,170,0,0.15); border: 1px solid rgba(255,170,0,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ⚠️ ${escapeHtml(t('scanner.usmap_status_broken_function') || 'Missing Function')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--warning); background: rgba(255,170,0,0.15); border: 1px solid rgba(255,170,0,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_broken_function') || 'Missing Function')}</span>
       </span>
     `;
     borderCol = 'var(--warning)';
   } else if (diag.status === 'broken_table') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ❌ ${escapeHtml(t('scanner.usmap_status_broken_table') || 'Missing DataTable')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('xCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_broken_table') || 'Missing DataTable')}</span>
       </span>
     `;
     borderCol = 'var(--danger)';
   } else if (diag.status === 'broken_struct') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ❌ ${escapeHtml(t('scanner.usmap_status_broken_struct') || 'Unmapped Engine Struct')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--danger); background: rgba(255,75,75,0.15); border: 1px solid rgba(255,75,75,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('xCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_broken_struct') || 'Unmapped Engine Struct')}</span>
       </span>
     `;
     borderCol = 'var(--danger)';
   } else if (diag.status === 'deprecated_api') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ⚠️ ${escapeHtml(t('scanner.usmap_status_deprecated_api') || 'Deprecated UE4SS API')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: #fbbf24; background: rgba(251,191,36,0.15); border: 1px solid rgba(251,191,36,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_deprecated_api') || 'Deprecated UE4SS API')}</span>
       </span>
     `;
     borderCol = '#fbbf24';
   } else if (diag.status === 'blind_pcall') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: #f87171; background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        🛡️ ${escapeHtml(t('scanner.usmap_status_blind_pcall') || 'Blind pcall / Silent Error')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: #f87171; background: rgba(248,113,113,0.15); border: 1px solid rgba(248,113,113,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('shield', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_blind_pcall') || 'Blind pcall / Silent Error')}</span>
       </span>
     `;
     borderCol = '#f87171';
   } else if (diag.status === 'blueprint_asset') {
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--accent); background: rgba(0,210,255,0.12); border: 1px solid rgba(0,210,255,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        🔷 ${escapeHtml(t('scanner.usmap_status_blueprint') || 'Dynamic Blueprint Hook')}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--accent); background: rgba(0,210,255,0.12); border: 1px solid rgba(0,210,255,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('sparkles', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_status_blueprint') || 'Dynamic Blueprint Hook')}</span>
       </span>
     `;
     borderCol = 'var(--accent)';
@@ -108,8 +109,8 @@ export function renderHookItem(diag: UsmapHookDiagnostic): string {
       : (t('scanner.usmap_status_valid') || 'Valid Native Class');
 
     statusBadge = `
-      <span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-        ✓ ${escapeHtml(validLabel)}
+      <span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+        ${getIconSvg('check', 'pmm-icon-xs')} <span>${escapeHtml(validLabel)}</span>
       </span>
     `;
     borderCol = 'var(--success)';
@@ -124,23 +125,23 @@ export function renderHookItem(diag: UsmapHookDiagnostic): string {
           ${statusBadge}
         </div>
         ${!diag.suggestion ? `
-          <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(diag.modId)}" data-file-path="${escapeHtml(diag.filePath)}" data-line="${diag.lineNumber}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
-            📝 ${escapeHtml(t('common.edit') || 'Edit in Code')}
+          <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(diag.modId)}" data-file-path="${escapeHtml(diag.filePath)}" data-line="${diag.lineNumber}" style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
+            ${getIconSvg('editor', 'pmm-icon-xs')} <span>${escapeHtml(t('common.edit') || 'Edit in Code')}</span>
           </button>
         ` : ''}
       </div>
       <div style="display: flex; justify-content: space-between; align-items: center; font-size: var(--text-xs, 11px); margin-top: 4px; flex-wrap: wrap; gap: 4px;">
-        <span style="color: var(--text-primary); font-weight: 600;">📦 ${escapeHtml(diag.modName)} <span style="font-family: monospace; font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-weight: normal;">(${escapeHtml(diag.filePath)}:L${diag.lineNumber})</span></span>
+        <span style="color: var(--text-primary); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(diag.modName)}</span> <span style="font-family: monospace; font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-weight: normal;">(${escapeHtml(diag.filePath)}:L${diag.lineNumber})</span></span>
         <span style="font-size: var(--text-xs, 10.5px); color: ${isBroken ? 'var(--danger)' : 'var(--text-muted)'};">${escapeHtml(diag.reason)}</span>
       </div>
       ${diag.suggestion ? `
         <div style="background: rgba(0, 210, 255, 0.08); border: 1px solid rgba(0, 210, 255, 0.25); border-radius: 6px; padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); margin-top: 8px; display: flex; align-items: center; justify-content: space-between; gap: calc(10px * var(--ui-scale, 1)); flex-wrap: wrap;">
           <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px);">
-            <span style="color: var(--accent); font-weight: 700;">💡 ${escapeHtml(t('scanner.usmap_suggested_fix') || 'Suggested Fix')}:</span>
+            <span style="color: var(--accent); font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('lightbulb', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_suggested_fix') || 'Suggested Fix')}:</span></span>
             <code style="font-family: monospace; color: var(--accent); font-weight: 600; background: rgba(0,0,0,0.25); padding: 2px 8px; border-radius: 4px; border: 1px solid rgba(0,210,255,0.2);">${escapeHtml(diag.suggestion)}</code>
           </div>
-          <button class="btn btn-primary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(diag.modId)}" data-file-path="${escapeHtml(diag.filePath)}" data-line="${diag.lineNumber}" style="font-size: var(--text-xs, 10.5px); padding: calc(3px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-weight: 700;">
-            📝 ${escapeHtml(t('scanner.usmap_open_and_fix') || 'Open & Fix')}
+          <button class="btn btn-primary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(diag.modId)}" data-file-path="${escapeHtml(diag.filePath)}" data-line="${diag.lineNumber}" style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs, 10.5px); padding: calc(3px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-weight: 700;">
+            ${getIconSvg('editor', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.usmap_open_and_fix') || 'Open & Fix')}</span>
           </button>
         </div>
       ` : ''}
@@ -160,7 +161,7 @@ export function buildUsmapSectionHtml(res: ScanResult): string {
     <details class="scanner-card-section" style="width: 100%; margin-bottom: calc(20px * var(--ui-scale, 1)); border-color: ${isClean ? 'rgba(76, 175, 80, 0.3)' : 'rgba(255, 75, 75, 0.3)'};" open>
       <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: ${isClean ? 'rgba(76, 175, 80, 0.04)' : 'rgba(255, 75, 75, 0.04)'};">
         <span style="color: ${isClean ? 'var(--success)' : 'var(--danger)'}; font-weight: 700; font-size: var(--text-base, 13.5px); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span>⚡</span>
+          <span style="display: flex; align-items: center;">${getIconSvg('zap', 'pmm-icon-sm')}</span>
           <span>${escapeHtml(t('scanner.usmap_section_title') || 'Unreal Engine Schema & Hook Diagnostics (USMAP)')}</span>
         </span>
         <span style="font-size: var(--text-xs, 11px); color: var(--text-muted);">
@@ -169,12 +170,12 @@ export function buildUsmapSectionHtml(res: ScanResult): string {
       </summary>
       <div class="scanner-card-body" style="gap: calc(12px * var(--ui-scale, 1)); padding: calc(14px * var(--ui-scale, 1));">
         <div style="display: flex; gap: calc(12px * var(--ui-scale, 1)); align-items: center; flex-wrap: wrap;">
-          <div style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.25); border-radius: 4px; font-size: var(--text-xs, 11px); font-weight: 700; color: var(--success);">
-            ✅ ${d.validHooks} ${escapeHtml(t('scanner.usmap_valid_hooks') || 'Valid Hooks')}
+          <div style="display: inline-flex; align-items: center; gap: 4px; padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: rgba(76, 175, 80, 0.1); border: 1px solid rgba(76, 175, 80, 0.25); border-radius: 4px; font-size: var(--text-xs, 11px); font-weight: 700; color: var(--success);">
+            ${getIconSvg('checkCircle', 'pmm-icon-xs')} <span>${d.validHooks} ${escapeHtml(t('scanner.usmap_valid_hooks') || 'Valid Hooks')}</span>
           </div>
           ${d.brokenHooks > 0 ? `
-            <div style="padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: rgba(255, 75, 75, 0.12); border: 1px solid rgba(255, 75, 75, 0.3); border-radius: 4px; font-size: var(--text-xs, 11px); font-weight: 700; color: var(--danger);">
-              ⚠️ ${d.brokenHooks} ${escapeHtml(t('scanner.usmap_broken_hooks') || 'Broken / Obsolete Hooks Detected')}
+            <div style="display: inline-flex; align-items: center; gap: 4px; padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); background: rgba(255, 75, 75, 0.12); border: 1px solid rgba(255, 75, 75, 0.3); border-radius: 4px; font-size: var(--text-xs, 11px); font-weight: 700; color: var(--danger);">
+              ${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${d.brokenHooks} ${escapeHtml(t('scanner.usmap_broken_hooks') || 'Broken / Obsolete Hooks Detected')}</span>
             </div>
           ` : ''}
           <div style="font-size: var(--text-xs, 11px); color: var(--text-muted); margin-left: auto;">
@@ -188,7 +189,7 @@ export function buildUsmapSectionHtml(res: ScanResult): string {
           </div>
         ` : `
           <div style="display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--success); background: rgba(76, 175, 80, 0.08); padding: 10px 14px; border-radius: var(--radius); border: 1px solid rgba(76, 175, 80, 0.2); margin-top: 4px;">
-            <span style="font-size: 15px;">✅</span>
+            <span style="display: flex; align-items: center;">${getIconSvg('checkCircle', 'pmm-icon-md')}</span>
             <span>${escapeHtml(t('scanner.usmap_all_hooks_verified', { count: d.validHooks }) || `All ${d.validHooks} hooks verified against Palworld reflection schema and C++ SDK.`)}</span>
           </div>
         `}
@@ -197,7 +198,7 @@ export function buildUsmapSectionHtml(res: ScanResult): string {
           <details class="scanner-card-section" style="margin-top: 10px; border-color: rgba(76, 175, 80, 0.25);">
             <summary class="scanner-card-header" style="cursor: pointer; outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(76, 175, 80, 0.04); border-bottom: 1px solid rgba(76, 175, 80, 0.1);">
               <span style="color: var(--success); font-weight: 700; display: flex; align-items: center; gap: 6px; font-size: 11.5px;">
-                <span>✓</span>
+                <span style="display: flex; align-items: center;">${getIconSvg('check', 'pmm-icon-xs')}</span>
                 <span>${escapeHtml(t('scanner.usmap_verified_working_hooks', { count: validDiags.length }) || `Verified & Working Hooks (${validDiags.length})`)}</span>
               </span>
               <span style="font-size: 10px; color: var(--text-muted);">${escapeHtml(t('scanner.usmap_click_to_expand') || 'Click to expand')}</span>

@@ -3,6 +3,7 @@ import { t } from '../../../../utils/i18n';
 import { getState } from '../../../../state';
 import type { ModInfo } from '../../../../types';
 import type { ScanResult } from '../../mod';
+import { getIconSvg } from '../../../icons/mod';
 
 export function buildStatCardsHtml(res: ScanResult, activeConflictsCount: number, resolvedPakCount: number, hasConflicts: boolean): string {
   return `
@@ -26,7 +27,7 @@ export function buildStatCardsHtml(res: ScanResult, activeConflictsCount: number
       </div>
       <div class="premium-stat-card">
         <div style="font-size:var(--text-xs, 11px);font-weight:700;color:var(--text-muted);letter-spacing:calc(0.5px * var(--ui-scale, 1));text-transform:uppercase;">${escapeHtml(t('scanner.stat_conflicts'))}</div>
-        <div class="premium-stat-value ${hasConflicts ? 'danger' : 'success'}">${hasConflicts ? activeConflictsCount : (resolvedPakCount > 0 ? `0 (✓${resolvedPakCount})` : '0')}</div>
+        <div class="premium-stat-value ${hasConflicts ? 'danger' : 'success'}">${hasConflicts ? activeConflictsCount : (resolvedPakCount > 0 ? `0 (<span style="display: inline-flex; align-items: center; gap: 2px;">${getIconSvg('check', 'pmm-icon-xs')}${resolvedPakCount}</span>)` : '0')}</div>
       </div>
     </div>
   `;
@@ -37,7 +38,7 @@ export function buildInfoBannerHtml(): string {
     <!-- Info notice banner -->
     <div class="scanner-info-banner" style="margin-bottom: calc(20px * var(--ui-scale, 1)); padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--card-radius); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-base, 13.5px); line-height: 1.5;">
       <div style="font-weight: 700; color: var(--accent); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-md, 15px);">
-        <span style="font-size: calc(16px * var(--ui-scale, 1));">ℹ</span>
+        <span style="display: flex; align-items: center;">${getIconSvg('info', 'pmm-icon-sm')}</span>
         <span>${escapeHtml(t('scanner.info_title'))}</span>
       </div>
       <div style="color: var(--text-secondary);">
@@ -60,12 +61,12 @@ export function buildGamepassNoticeHtml(res: ScanResult): string {
     <div class="scanner-card-section" style="border-color: var(--border); background: var(--bg-card); margin-bottom: calc(20px * var(--ui-scale, 1));">
       <div class="scanner-card-header" style="background: var(--bg-primary); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
         <span style="color: var(--accent); display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-weight: 700; font-size: var(--text-base, 13.5px);">
-          <span>🎮</span> ${escapeHtml(t('scanner.gamepass_notice_title'))} (${gpCount})
+          <span style="display: flex; align-items: center;">${getIconSvg('gamepad', 'pmm-icon-xs')}</span> ${escapeHtml(t('scanner.gamepass_notice_title'))} (${gpCount})
         </span>
         <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
           <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-weight: 600;">PC Game Pass (WinGDK)</span>
           <button id="btn-convert-all-gamepass" class="btn btn-primary btn-sm" style="font-size: var(--text-xs, 11px); padding: calc(4px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
-            <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: gpCount }))}</span>
+            <span style="display: flex; align-items: center;">${getIconSvg('zap', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_convert_all_gamepass', { count: gpCount }))}</span>
           </button>
         </div>
       </div>
@@ -85,7 +86,7 @@ export function buildGamepassNoticeHtml(res: ScanResult): string {
                   ${escapeHtml(t('scanner.gamepass_missing_badge'))} (${n.missingContainers.join(', ')})
                 </span>
                 <button class="btn btn-secondary btn-sm convert-single-gamepass-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
-                  <span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>
+                  <span style="display: flex; align-items: center;">${getIconSvg('zap', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>
                 </button>
               </div>
             </div>
@@ -104,7 +105,7 @@ export function buildSchemaNoticesHtml(res: ScanResult): string {
       <details class="scanner-card-section" style="flex: 1; min-width: 340px; cursor: pointer; border-color: rgba(56, 189, 248, 0.3);" open>
         <summary class="scanner-card-header" style="outline: none; display: flex; align-items: center; justify-content: space-between; background: rgba(56, 189, 248, 0.05); border-bottom: 1px solid rgba(56, 189, 248, 0.15);">
           <span style="color: #38bdf8; display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); font-weight: 700; font-size: var(--text-base, 13.5px);">
-            <span>⚡</span> <span>${escapeHtml(t('scanner.schema_notices_title', { count: schemaNoticeCount }) || `Engine Schema Compatibility (${schemaNoticeCount})`)}</span>
+            ${getIconSvg('zap', 'pmm-icon-sm')} <span>${escapeHtml(t('scanner.schema_notices_title', { count: schemaNoticeCount }) || `Engine Schema Compatibility (${schemaNoticeCount})`)}</span>
           </span>
           <span style="font-size: var(--text-xs, 11px); color: var(--text-muted);">${escapeHtml(t('scanner.schema_notices_desc') || 'Verified against Palworld v1.0.3 USMAP Schema')}</span>
         </summary>
@@ -115,8 +116,8 @@ export function buildSchemaNoticesHtml(res: ScanResult): string {
                 <span class="scanner-conflict-title" style="font-size: var(--text-sm, 12.5px);">${escapeHtml(n.modName)}</span>
                 <span class="badge" style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.12); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.25); white-space: nowrap;">${escapeHtml(n.structName)}</span>
               </div>
-              <div class="scanner-conflict-path" style="font-size: var(--text-xs, 11px); color: var(--text-secondary); margin-top: 3px;">
-                <span>📄</span> <span>${escapeHtml(n.assetPath)}</span>
+              <div class="scanner-conflict-path" style="font-size: var(--text-xs, 11px); color: var(--text-secondary); margin-top: 3px; display: flex; align-items: center; gap: 4px;">
+                ${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(n.assetPath)}</span>
               </div>
               <div style="font-size: var(--text-xs, 11px); color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
                 ${escapeHtml(n.message)}
@@ -139,10 +140,10 @@ export function buildPatchRiskNoticesHtml(res: ScanResult): string {
     <div class="scanner-card-section" style="border-color: rgba(239, 68, 68, 0.45); background: var(--bg-card); margin-bottom: calc(20px * var(--ui-scale, 1));">
       <div class="scanner-card-header" style="background: rgba(239, 68, 68, 0.08); border-bottom: 1px solid rgba(239, 68, 68, 0.25); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: calc(8px * var(--ui-scale, 1));">
         <span style="color: #ef4444; display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-weight: 700; font-size: var(--text-base, 13.5px);">
-          <span>🚨</span> <span>${escapeHtml(t('scanner.patch_risk_title', { count: riskNotices.length }) || `Core Game Overwrites / Update Crash Risk (${riskNotices.length})`)}</span>
+          ${getIconSvg('alertTriangle', 'pmm-icon-sm')} <span>${escapeHtml(t('scanner.patch_risk_title', { count: riskNotices.length }) || `Core Game Overwrites / Update Crash Risk (${riskNotices.length})`)}</span>
         </span>
-        <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-weight: 600;">
-          ${criticalCount > 0 ? `<span style="color: #ef4444; font-weight: 700;">⚠ ${criticalCount} Critical</span> · ` : ''}${escapeHtml(t('scanner.patch_risk_version_tag') || 'Palworld Update Compatibility')}
+        <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-weight: 600; display: flex; align-items: center; gap: 4px;">
+          ${criticalCount > 0 ? `<span style="color: #ef4444; font-weight: 700; display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')} ${criticalCount} Critical</span> · ` : ''}${escapeHtml(t('scanner.patch_risk_version_tag') || 'Palworld Update Compatibility')}
         </span>
       </div>
       <div class="scanner-card-body" style="gap: calc(10px * var(--ui-scale, 1)); padding: calc(14px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1));">
@@ -170,11 +171,11 @@ export function buildPatchRiskNoticesHtml(res: ScanResult): string {
                     </span>
                   </div>
                   <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(n.modId)}" style="font-size: var(--text-xs, 11px); padding: calc(3px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(5px * var(--ui-scale, 1));">
-                    <span>🚫</span> <span>${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}</span>
+                    ${getIconSvg('xCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}</span>
                   </button>
                 </div>
-                <div style="font-size: var(--text-xs, 11px); color: var(--text-secondary); font-family: monospace; margin-top: 5px;">
-                  <span>📄</span> <span>${escapeHtml(n.assetPath)}</span>
+                <div style="font-size: var(--text-xs, 11px); color: var(--text-secondary); font-family: monospace; margin-top: 5px; display: flex; align-items: center; gap: 4px;">
+                  ${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(n.assetPath)}</span>
                 </div>
                 <div style="font-size: var(--text-xs, 11.5px); color: var(--text-muted); margin-top: 4px; line-height: 1.4;">
                   ${escapeHtml(n.reason)}
@@ -202,14 +203,14 @@ export function buildFrameworkMissingHtml(): string {
   return `
     <div style="width: 100%; margin-bottom: calc(20px * var(--ui-scale, 1)); background: rgba(255, 118, 117, 0.12); border: 1px solid rgba(255, 118, 117, 0.35); border-radius: var(--card-radius); padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; gap: calc(16px * var(--ui-scale, 1)); flex-wrap: wrap;">
       <div style="display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
-        <span style="font-size: calc(22px * var(--ui-scale, 1));">⚠️</span>
+        <span style="color: var(--type-altermatic); display: inline-flex; align-items: center;">${getIconSvg('alertTriangle', 'pmm-icon-xl')}</span>
         <div style="display: flex; flex-direction: column; gap: 2px;">
           <span style="font-size: var(--text-base, 13.5px); font-weight: 700; color: var(--type-altermatic);">${escapeHtml(t('installer.altermatic_missing_title') || 'Altermatic Framework Required')}</span>
           <span style="font-size: var(--text-xs, 11.5px); color: var(--text-secondary);">${escapeHtml(t('scanner.altermatic_missing_body', { count: altermaticMods.length, names: altermaticMods.map(m => m.name).slice(0, 3).join(', ') }) || `You have ${altermaticMods.length} active Altermatic replacer mod(s) (${altermaticMods.map(m => m.name).slice(0, 3).join(', ')}), but the base Altermatic framework is not installed.`)}</span>
         </div>
       </div>
-      <button id="btn-scanner-download-altermatic" class="btn btn-secondary" style="font-size: var(--text-xs, 11px); font-weight: 700; padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap;">
-        <span>📦</span> <span>${escapeHtml(t('installer.btn_get_altermatic') || 'Get Altermatic (#1626)')}</span>
+      <button id="btn-scanner-download-altermatic" class="btn btn-secondary" style="font-size: var(--text-xs, 11px); font-weight: 700; padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-color: var(--type-altermatic); color: var(--type-altermatic); white-space: nowrap; display: inline-flex; align-items: center; gap: 6px;">
+        ${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.btn_get_altermatic') || 'Get Altermatic (#1626)')}</span>
       </button>
     </div>
   `;
@@ -226,7 +227,7 @@ export function buildWarningsHtml(res: ScanResult): string {
       <div class="scanner-card-body" style="cursor: default; background: rgba(0,0,0,0.15);">
         ${res.warnings.map(w => `
           <div class="scanner-warning-row" style="display: flex; gap: calc(8px * var(--ui-scale, 1)); align-items: center; font-size: var(--text-xs, 11.5px); padding: calc(4px * var(--ui-scale, 1)) 0;">
-            <span class="scanner-warning-icon" style="color: var(--warning);">⚠</span>
+            <span class="scanner-warning-icon" style="color: var(--warning); display: inline-flex; align-items: center;">${getIconSvg('alertTriangle', 'pmm-icon-xs')}</span>
             <span>${escapeHtml(w)}</span>
           </div>
         `).join('')}

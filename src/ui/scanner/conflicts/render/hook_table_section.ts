@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
 import type { ScanResult } from '../../mod';
+import { getIconSvg } from '../../../icons/mod';
 
 export function buildHookAndTableConflictsHtml(
   res: ScanResult,
@@ -14,7 +15,7 @@ export function buildHookAndTableConflictsHtml(
       ${pakConflictsHtml}
       ${!pakConflictsHtml ? `
         <div class="scanner-clean-state" style="margin-bottom: 20px;">
-          <div class="scanner-clean-icon">✅</div>
+          <div class="scanner-clean-icon" style="display:flex;align-items:center;justify-content:center;color:var(--success);">${getIconSvg('checkCircle', 'pmm-icon-xl')}</div>
           <div class="scanner-clean-title">${escapeHtml(t('scanner.no_conflicts_title'))}</div>
           <div class="scanner-clean-desc">${escapeHtml(t('scanner.no_conflicts_desc'))}</div>
         </div>
@@ -44,16 +45,16 @@ export function buildHookAndTableConflictsHtml(
                       <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
                         <span class="scanner-conflict-mod-name" style="font-size: var(--text-sm, 12px);">${escapeHtml(m.modName)}</span>
                         <span class="scanner-conflict-mod-file" style="font-size: var(--text-xs, 10.5px);">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
-                        ${m.resolved ? `<span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
+                        ${m.resolved ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));">${getIconSvg('checkCircle', 'pmm-icon-xs')} ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
                       </div>
                       <div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-family: monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
                     </div>
                     <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
-                        📝 ${escapeHtml(t('common.edit') || 'Edit')}
+                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
+                        ${getIconSvg('editor', 'pmm-icon-xs')} <span>${escapeHtml(t('common.edit') || 'Edit')}</span>
                       </button>
-                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
-                        🚫 ${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}
+                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
+                        ${getIconSvg('xCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}</span>
                       </button>
                     </div>
                   </div>
@@ -83,16 +84,16 @@ export function buildHookAndTableConflictsHtml(
                       <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
                         <span class="scanner-conflict-mod-name" style="font-size: var(--text-sm, 12px);">${escapeHtml(m.modName)}</span>
                         <span class="scanner-conflict-mod-file" style="font-size: var(--text-xs, 10.5px);">(${escapeHtml(m.filePath)}:L${m.lineNumber})</span>
-                        ${m.resolved ? `<span style="font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));">✅ ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
+                        ${m.resolved ? `<span style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-2xs, 10px); font-weight: 700; color: var(--success); background: rgba(76,175,80,0.15); border: 1px solid rgba(76,175,80,0.3); border-radius: 4px; padding: calc(1px * var(--ui-scale, 1)) calc(5px * var(--ui-scale, 1));">${getIconSvg('checkCircle', 'pmm-icon-xs')} ${escapeHtml(t('scanner.conflict_resolved_badge') || 'Fixed in Editor')}</span>` : ''}
                       </div>
                       <div style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); font-family: monospace; padding-left: 8px;">↳ ${escapeHtml(m.detail)}</div>
                     </div>
                     <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
-                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
-                        📝 ${escapeHtml(t('common.edit') || 'Edit')}
+                      <button class="btn btn-secondary btn-xs scan-code-jump-btn" data-mod-id="${escapeHtml(m.modId)}" data-file-path="${escapeHtml(m.filePath)}" data-line="${m.lineNumber}" style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
+                        ${getIconSvg('editor', 'pmm-icon-xs')} <span>${escapeHtml(t('common.edit') || 'Edit')}</span>
                       </button>
-                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
-                        🚫 ${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}
+                      <button class="btn btn-danger-subtle btn-xs scan-disable-mod-btn" data-mod-id="${escapeHtml(m.modId)}" style="display: inline-flex; align-items: center; gap: 4px; font-size: var(--text-xs, 10.5px); padding: calc(2px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));">
+                        ${getIconSvg('xCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_disable_mod') || 'Disable')}</span>
                       </button>
                     </div>
                   </div>

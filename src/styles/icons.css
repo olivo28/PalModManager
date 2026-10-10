@@ -1,0 +1,111 @@
+/* PalModManager Vector Icon System & Status Dot Tokens */
+
+.pmm-icon {
+  display: inline-block;
+  width: calc(16px * var(--ui-scale, 1));
+  height: calc(16px * var(--ui-scale, 1));
+  vertical-align: middle;
+  flex-shrink: 0;
+  stroke: currentColor;
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.pmm-icon-fill {
+  fill: currentColor;
+  stroke: none;
+}
+
+.pmm-icon-xs {
+  width: calc(12px * var(--ui-scale, 1));
+  height: calc(12px * var(--ui-scale, 1));
+}
+
+.pmm-icon-sm {
+  width: calc(14px * var(--ui-scale, 1));
+  height: calc(14px * var(--ui-scale, 1));
+}
+
+.pmm-icon-md {
+  width: calc(18px * var(--ui-scale, 1));
+  height: calc(18px * var(--ui-scale, 1));
+}
+
+.pmm-icon-lg {
+  width: calc(22px * var(--ui-scale, 1));
+  height: calc(22px * var(--ui-scale, 1));
+}
+
+.pmm-icon-xl {
+  width: calc(32px * var(--ui-scale, 1));
+  height: calc(32px * var(--ui-scale, 1));
+}
+
+.pmm-icon-2xl {
+  width: calc(48px * var(--ui-scale, 1));
+  height: calc(48px * var(--ui-scale, 1));
+}
+
+.pmm-icon-hero {
+  width: calc(64px * var(--ui-scale, 1));
+  height: calc(64px * var(--ui-scale, 1));
+  stroke-width: 1.5;
+}
+
+/* Sidebar Specific Icon Scaling */
+.sidebar-tab .pmm-icon {
+  width: calc(18px * var(--ui-scale, 1));
+  height: calc(18px * var(--ui-scale, 1));
+}
+
+.sidebar-play-btn .pmm-icon {
+  width: calc(14px * var(--ui-scale, 1));
+  height: calc(14px * var(--ui-scale, 1));
+}
+
+.sidebar-btn .pmm-icon {
+  width: calc(16px * var(--ui-scale, 1));
+  height: calc(16px * var(--ui-scale, 1));
+}
+
+/* Button & Badge Alignment Helpers */
+.btn-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: calc(6px * var(--ui-scale, 1));
+}
+
+/* Unified Semantic Status Dots */
+.status-dot {
+  display: inline-block;
+  width: calc(8px * var(--ui-scale, 1));
+  height: calc(8px * var(--ui-scale, 1));
+  border-radius: 50%;
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.status-dot.success {
+  background-color: var(--success);
+  box-shadow: 0 0 6px var(--success-dim, rgba(74, 246, 38, 0.4));
+}
+
+.status-dot.warning {
+  background-color: var(--warning);
+  box-shadow: 0 0 6px var(--warning-dim, rgba(253, 224, 71, 0.4));
+}
+
+.status-dot.danger {
+  background-color: var(--danger);
+  box-shadow: 0 0 6px var(--danger-dim, rgba(255, 95, 86, 0.4));
+}
+
+.status-dot.info {
+  background-color: var(--info);
+  box-shadow: 0 0 6px var(--info-dim, rgba(56, 189, 248, 0.4));
+}
+
+.status-dot.muted {
+  background-color: var(--text-muted);
+}

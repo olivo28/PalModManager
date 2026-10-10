@@ -11,6 +11,7 @@ import {
 } from '../../../api';
 import { getState } from '../../../state';
 import { scannerDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 interface ConflictingModEntry {
   modName: string;
@@ -88,13 +89,13 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
       <!-- Header -->
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 20px;">🛠️</span>
+          <span style="color: var(--accent); display: inline-flex; align-items: center;">${getIconSvg('hammer', 'pmm-icon-lg')}</span>
           <div>
             <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.patch_builder_title') || 'Manual Pak Compatibility Patch Builder')}</h3>
             <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 1px;">${escapeHtml(t('scanner.patch_builder_subtitle', { count: pakConflicts.length }) || `Resolve ${pakConflicts.length} asset collision(s) with a dedicated compatibility patch`)}</div>
           </div>
         </div>
-        <button id="btn-close-patch-builder" class="modal-close-btn" title="Close (Esc)">✕</button>
+        <button id="btn-close-patch-builder" class="modal-close-btn" title="Close (Esc)">${getIconSvg('x', 'pmm-icon-sm')}</button>
       </div>
 
       <!-- Body -->
@@ -102,7 +103,7 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
         
         <!-- Explanation Info Callout -->
         <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 3px solid var(--accent); border-radius: var(--card-radius); padding: 12px 14px; font-size: 12px; color: var(--text-secondary); line-height: 1.5; display: flex; gap: 10px; align-items: center;">
-          <span style="font-size: 18px; flex-shrink: 0;">💡</span>
+          <span style="color: var(--accent); display: inline-flex; align-items: center; flex-shrink: 0;">${getIconSvg('lightbulb', 'pmm-icon-md')}</span>
           <div>
             <span>${escapeHtml(t('scanner.patch_builder_info') || 'Choose which mod wins for each conflicting asset. PalModManager will extract the selected files and assemble a unified priority patch')}</span>
             <code style="background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); padding: 1px 6px; border-radius: var(--radius); font-family: monospace; font-weight: 700; font-size: 11px; margin: 0 4px;">zzz_PMM_Patch_*_P.pak</code>
@@ -141,7 +142,7 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
               <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600;">${escapeHtml(t('scanner.patch_quick_select') || 'Quick Winner Selection:')}</span>
               ${uniqueMods.map(([mName, mPakPath]) => `
                 <button class="btn btn-secondary btn-sm btn-bulk-select" data-pakpath="${escapeHtml(mPakPath)}" style="font-size: 11px; font-weight: 600; padding: 4px 10px; display: inline-flex; align-items: center; gap: 5px;">
-                  <span>🏆</span> <span>${escapeHtml(t('scanner.patch_all_from', { mod: mName }) || `All from ${mName}`)}</span>
+                  ${getIconSvg('star', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.patch_all_from', { mod: mName }) || `All from ${mName}`)}</span>
                 </button>
               `).join('')}
             </div>
@@ -173,7 +174,7 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
                   </div>
 
                   <div style="font-size: 10.5px; color: var(--text-secondary); font-family: monospace; background: var(--bg-primary); padding: 4px 8px; border-radius: var(--radius); border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; word-break: break-all;">
-                    <span>📄</span> <span>${escapeHtml(conflict.internalPath)}</span>
+                    ${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(conflict.internalPath)}</span>
                   </div>
 
                   <!-- Selectable Choice Pills -->
@@ -214,7 +215,7 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
       <!-- Footer -->
       <div class="modal-footer" style="display: flex; justify-content: space-between; align-items: center;">
         <button id="btn-view-managed-patches" class="btn btn-secondary" style="display: flex; align-items: center; gap: 6px; font-size: 11.5px; font-weight: 600;">
-          <span>📋</span> <span>${escapeHtml(t('scanner.btn_view_existing_patches') || 'Existing Patches')}</span>
+          ${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_view_existing_patches') || 'Existing Patches')}</span>
         </button>
 
         <div style="display: flex; align-items: center; gap: 8px;">
@@ -222,7 +223,7 @@ export async function openPatchBuilderModal(pakConflicts: PakConflictItem[]): Pr
             ${escapeHtml(t('common.cancel') || 'Cancel')}
           </button>
           <button id="btn-build-patch-confirm" class="btn btn-primary" style="display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 700;">
-            <span>🔨</span> <span>${escapeHtml(t('scanner.btn_build_patch_now') || 'Build Compatibility Patch')}</span>
+            ${getIconSvg('hammer', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_build_patch_now') || 'Build Compatibility Patch')}</span>
           </button>
         </div>
       </div>
@@ -395,26 +396,26 @@ export async function openExistingPatchesModal(): Promise<void> {
       
       <div class="modal-header">
         <div style="display: flex; align-items: center; gap: 10px;">
-          <span style="font-size: 18px;">📋</span>
+          <span style="color: var(--accent); display: inline-flex; align-items: center;">${getIconSvg('fileText', 'pmm-icon-md')}</span>
           <div>
             <h3 style="margin: 0; font-size: 15px; font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.existing_patches_title') || 'Managed Compatibility Patches')}</h3>
             <div style="font-size: 11.5px; color: var(--text-secondary); margin-top: 1px;">${escapeHtml(t('scanner.existing_patches_subtitle') || 'Active custom patches in Pal/Content/Paks')}</div>
           </div>
         </div>
-        <button id="btn-close-existing-patches" class="modal-close-btn" title="Close (Esc)">✕</button>
+        <button id="btn-close-existing-patches" class="modal-close-btn" title="Close (Esc)">${getIconSvg('x', 'pmm-icon-sm')}</button>
       </div>
 
       <div class="modal-body" style="padding: 16px 20px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 10px;">
         ${patches.length === 0 ? `
           <div style="text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 12px; display: flex; flex-direction: column; align-items: center; gap: 10px; background: var(--bg-card); border: 1px dashed var(--border); border-radius: var(--card-radius);">
-            <div style="font-size: 28px;">📭</div>
+            <div style="color: var(--text-muted); display: inline-flex; align-items: center;">${getIconSvg('package', 'pmm-icon-xl')}</div>
             <div style="font-weight: 600; color: var(--text-primary); font-size: 13px;">${escapeHtml(t('scanner.no_existing_patches') || 'No generated compatibility patches found in Paks folder.')}</div>
             <div style="font-size: 11px; color: var(--text-muted); max-width: 360px;">${escapeHtml(t('scanner.no_existing_patches_hint') || 'Use the Compatibility Patch Builder to generate unified overrides for conflicting assets.')}</div>
           </div>
         ` : patches.map(p => `
           <div class="existing-patch-card" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--card-radius); gap: 12px;">
             <div style="display: flex; align-items: center; gap: 10px; min-width: 0;">
-              <span style="font-size: 20px; flex-shrink: 0;">📦</span>
+              <span style="color: var(--accent); display: inline-flex; align-items: center; flex-shrink: 0;">${getIconSvg('package', 'pmm-icon-md')}</span>
               <div style="min-width: 0; display: flex; flex-direction: column; gap: 2px;">
                 ${p.displayName && p.displayName !== p.fileName ? `
                   <span style="font-size: 13px; font-weight: 700; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
@@ -429,12 +430,12 @@ export async function openExistingPatchesModal(): Promise<void> {
                   </span>
                 `}
                 <div style="display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--text-secondary); margin-top: 2px;">
-                  <span>🕒 ${escapeHtml(p.createdAt)}</span>
+                  <span style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('clock', 'pmm-icon-xs')} ${escapeHtml(p.createdAt)}</span>
                   <span>•</span>
-                  <span style="color: var(--text-primary); font-weight: 600;">📁 ${formatBytes(p.fileSizeBytes)}</span>
+                  <span style="color: var(--text-primary); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('folder', 'pmm-icon-xs')} ${formatBytes(p.fileSizeBytes)}</span>
                   ${p.resolvedAssetsCount && p.resolvedAssetsCount > 0 ? `
                     <span>•</span>
-                    <span style="color: var(--success); font-weight: 600;">✓ ${p.resolvedAssetsCount} asset(s)</span>
+                    <span style="color: var(--success); font-weight: 600; display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('check', 'pmm-icon-xs')} ${p.resolvedAssetsCount} asset(s)</span>
                   ` : ''}
                   ${p.isGamepass ? '<span style="color: var(--accent); font-weight: 700; background: var(--accent-dim); padding: 1px 6px; border-radius: var(--radius); font-size: 10px;">IoStore WinGDK</span>' : ''}
                 </div>
@@ -442,7 +443,7 @@ export async function openExistingPatchesModal(): Promise<void> {
             </div>
 
             <button class="btn btn-danger btn-sm btn-delete-patch" data-patch-path="${escapeHtml(p.filePath)}" data-patch-name="${escapeHtml(p.displayName || p.fileName)}" style="padding: 5px 12px; font-size: 11px; font-weight: 600; display: flex; align-items: center; gap: 5px;">
-              <span>🗑️</span> <span>${escapeHtml(t('common.delete') || 'Delete')}</span>
+              ${getIconSvg('trash', 'pmm-icon-xs')} <span>${escapeHtml(t('common.delete') || 'Delete')}</span>
             </button>
           </div>
         `).join('')}

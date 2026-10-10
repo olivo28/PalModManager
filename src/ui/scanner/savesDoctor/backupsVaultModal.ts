@@ -14,6 +14,7 @@ import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
 import { scannerDom } from '../../../framework';
 import { formatBytes } from './helpers';
+import { getIconSvg } from '../../icons/mod';
 import {
   doctorState,
   setCachedWorlds,
@@ -45,7 +46,7 @@ export async function showPmmBackupsVaultModal(
         <!-- Header -->
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.2);">
           <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
-            <span style="font-size: calc(20px * var(--ui-scale, 1));">📦</span>
+            <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('package', 'pmm-icon-lg')}</span>
             <div>
               <h3 style="margin: 0; font-size: var(--text-md, 15px); font-weight: 700; color: var(--text-primary);">
                 ${escapeHtml(t('scanner.vault_title') || 'PMM World Backups Vault')}
@@ -55,7 +56,7 @@ export async function showPmmBackupsVaultModal(
               </span>
             </div>
           </div>
-          <button class="modal-close-btn" id="pmm-vault-close-x" style="background: none; border: none; font-size: calc(16px * var(--ui-scale, 1)); color: var(--text-muted); cursor: pointer;">✕</button>
+          <button class="modal-close-btn" id="pmm-vault-close-x" style="background: none; border: none; display: flex; align-items: center; color: var(--text-muted); cursor: pointer;">${getIconSvg('x', 'pmm-icon-sm')}</button>
         </div>
 
         <!-- Body / Content -->
@@ -63,46 +64,46 @@ export async function showPmmBackupsVaultModal(
           
           <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.15); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)); border: 1px solid var(--border); gap: calc(12px * var(--ui-scale, 1));">
             <div style="font-size: var(--text-xs, 11.5px); color: var(--text-secondary); display: flex; flex-direction: column; gap: calc(4px * var(--ui-scale, 1)); min-width: 0;">
-              <span>💡 ${escapeHtml(t('scanner.vault_desc') || 'Manual and pre-repair ZIP archives managed by PalModManager.')}</span>
+              <span style="display: flex; align-items: center; gap: 6px;">${getIconSvg('lightbulb', 'pmm-icon-xs')} ${escapeHtml(t('scanner.vault_desc') || 'Manual and pre-repair ZIP archives managed by PalModManager.')}</span>
               <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); font-size: var(--text-2xs, 10.5px); color: var(--text-muted); font-family: monospace;">
-                <span>📍 ${escapeHtml(t('scanner.vault_location_label') || 'Saved in:')}</span>
+                <span style="display: flex; align-items: center; gap: 4px;">${getIconSvg('tag', 'pmm-icon-xs')} ${escapeHtml(t('scanner.vault_location_label') || 'Saved in:')}</span>
                 <span style="color: #38bdf8; background: rgba(56, 189, 248, 0.08); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); border-radius: calc(4px * var(--ui-scale, 1)); border: 1px solid rgba(56, 189, 248, 0.2);">AppData/Local/PalModManager/backups/worlds/</span>
               </div>
             </div>
             <button id="btn-open-vault-folder" class="btn-secondary btn-sm" style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); padding: calc(6px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); white-space: nowrap; flex-shrink: 0;">
-              <span>📁</span> <span>${escapeHtml(t('scanner.btn_open_folder') || 'Open in Explorer')}</span>
+              <span style="display: flex; align-items: center;">${getIconSvg('folderOpen', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_open_folder') || 'Open in Explorer')}</span>
             </button>
           </div>
 
           <div id="pmm-vault-items-list" style="display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
             ${backups.length === 0 ? `
-              <div style="text-align: center; padding: calc(36px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); color: var(--text-muted); font-size: var(--text-xs, 12px); display: flex; flex-direction: column; gap: calc(8px * var(--ui-scale, 1));">
-                <span style="font-size: calc(28px * var(--ui-scale, 1));">📭</span>
+              <div style="text-align: center; padding: calc(36px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); color: var(--text-muted); font-size: var(--text-xs, 12px); display: flex; flex-direction: column; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
+                <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('package', 'pmm-icon-xl')}</span>
                 <span>${escapeHtml(t('scanner.vault_empty') || 'No PMM backups found for this world.')}</span>
                 <span style="font-size: var(--text-xs, 11px); opacity: 0.8;">${escapeHtml(t('scanner.vault_empty_hint') || 'Click "Backup World Now" in the Save Doctor panel to create your first safety backup.')}</span>
               </div>
             ` : backups.map(b => `
               <div class="pmm-backup-item-card" data-filepath="${escapeHtml(b.filePath)}" style="display: flex; justify-content: space-between; align-items: center; padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); background: var(--bg-card); border: 1px solid var(--border); border-radius: calc(6px * var(--ui-scale, 1)); gap: calc(12px * var(--ui-scale, 1));">
                 <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1)); min-width: 0; flex: 1;">
-                  <span style="font-size: calc(18px * var(--ui-scale, 1));">🗜️</span>
+                  <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('package', 'pmm-icon-md')}</span>
                   <div style="min-width: 0; display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
                     <span style="font-size: var(--text-sm, 12.5px); font-weight: 600; color: var(--text-primary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${escapeHtml(b.fileName)}">
                       ${escapeHtml(b.fileName)}
                     </span>
                     <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); font-size: var(--text-2xs, 10.5px); color: var(--text-muted);">
-                      <span>🕒 ${escapeHtml(b.createdAt)}</span>
+                      <span style="display: flex; align-items: center; gap: 4px;">${getIconSvg('clock', 'pmm-icon-xs')} ${escapeHtml(b.createdAt)}</span>
                       <span>•</span>
-                      <span style="color: #38bdf8; font-weight: 600;">📁 ${formatBytes(b.fileSizeBytes)}</span>
+                      <span style="display: flex; align-items: center; gap: 4px; color: #38bdf8; font-weight: 600;">${getIconSvg('folder', 'pmm-icon-xs')} ${formatBytes(b.fileSizeBytes)}</span>
                     </div>
                   </div>
                 </div>
 
                 <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-shrink: 0;">
                   <button class="btn-primary btn-sm btn-vault-restore" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); display: flex; align-items: center; gap: calc(4px * var(--ui-scale, 1));">
-                    <span>🔄</span> <span>${escapeHtml(t('scanner.btn_restore') || 'Restore')}</span>
+                    <span style="display: flex; align-items: center;">${getIconSvg('scan', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_restore') || 'Restore')}</span>
                   </button>
-                  <button class="btn-danger btn-sm btn-vault-delete" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); color: #ff5f56; border-radius: var(--radius); cursor: pointer;" title="${escapeHtml(t('common.delete') || 'Delete')}">
-                    <span>🗑️</span>
+                  <button class="btn-danger btn-sm btn-vault-delete" data-filepath="${escapeHtml(b.filePath)}" data-filename="${escapeHtml(b.fileName)}" style="padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 11px); background: rgba(255, 95, 86, 0.15); border: 1px solid rgba(255, 95, 86, 0.3); color: #ff5f56; border-radius: var(--radius); cursor: pointer; display: flex; align-items: center;" title="${escapeHtml(t('common.delete') || 'Delete')}">
+                    <span>${getIconSvg('trash', 'pmm-icon-xs')}</span>
                   </button>
                 </div>
               </div>

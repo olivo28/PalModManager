@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../rendering';
 import { t } from '../../../../utils/i18n';
 import { scannerDom } from '../../../../framework';
+import { getIconSvg } from '../../../icons/mod';
 import {
   lastScanResult,
   subTabHeader,
@@ -31,7 +32,7 @@ export async function renderConflictsPanel(container: HTMLElement): Promise<void
       ${subTabHeader()}
       <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:24px;">
         <div class="scanner-hero">
-          <div class="scanner-hero-icon">🛡</div>
+          <div class="scanner-hero-icon">${getIconSvg('shield', 'pmm-icon-hero')}</div>
           <div class="scanner-hero-title">${escapeHtml(t('scanner.hero_initial_title'))}</div>
           <div class="scanner-hero-desc">
             ${escapeHtml(t('scanner.hero_initial_desc'))}

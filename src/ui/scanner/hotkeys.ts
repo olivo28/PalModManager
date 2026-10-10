@@ -4,6 +4,7 @@ import { showToast } from '../toast';
 import { t } from '../../utils/i18n';
 import { lastHotkeysResult, setLastHotkeysResult, setIsScanningHotkeys, editingHotkeyKey, setEditingHotkeyKey, hotkeyFilter, isScanningHotkeys, renderScannerView, subTabHeader } from './mod';
 import { escapeHtml, formatKeyboardBadge } from './rendering';
+import { getIconSvg } from '../icons/mod';
 
 function normalizeKeyString(keys: string): string {
   return (keys || '')
@@ -59,7 +60,7 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
       ${subTabHeader()}
       <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:24px;">
         <div class="scanner-hero">
-          <div class="scanner-hero-icon">⌨️</div>
+          <div class="scanner-hero-icon">${getIconSvg('gamepad', 'pmm-icon-hero')}</div>
           <div class="scanner-hero-title">${escapeHtml(t('scanner.hero_hotkeys_initial_title'))}</div>
           <div class="scanner-hero-desc">
             ${escapeHtml(t('scanner.hero_hotkeys_initial_desc'))}
@@ -80,7 +81,7 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
       ${subTabHeader()}
       <div style="flex:1; display:flex; align-items:center; justify-content:center; padding:24px;">
         <div class="scanner-hero">
-          <div class="scanner-hero-icon">⌨️</div>
+          <div class="scanner-hero-icon">${getIconSvg('gamepad', 'pmm-icon-hero')}</div>
           <div class="scanner-hero-title">${escapeHtml(t('scanner.hero_no_hotkeys_title'))}</div>
           <div class="scanner-hero-desc">
             ${escapeHtml(t('scanner.hero_no_hotkeys_desc'))}
@@ -139,11 +140,11 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
       <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1)); flex-wrap:wrap;">
         ${formatKeyboardBadge(hk.keys)}
         ${isConflicting ? `
-          <span style="font-size:var(--text-2xs, 10px); font-weight:700; color:var(--danger); background:rgba(255,75,75,0.15); border:1px solid rgba(255,75,75,0.3); border-radius:calc(4px * var(--ui-scale, 1)); padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
-            ⚠️ ${escapeHtml(t('scanner.hotkey_conflict_tag') || 'Conflict')}
+          <span style="display:inline-flex; align-items:center; gap:3px; font-size:var(--text-2xs, 10px); font-weight:700; color:var(--danger); background:rgba(255,75,75,0.15); border:1px solid rgba(255,75,75,0.3); border-radius:calc(4px * var(--ui-scale, 1)); padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1));">
+            ${getIconSvg('alertTriangle', 'pmm-icon-xs')} ${escapeHtml(t('scanner.hotkey_conflict_tag') || 'Conflict')}
           </span>
-          <button class="hk-quick-rebind-btn" data-idx="${idx}" data-suggest="${escapeHtml(suggestedKey)}" style="font-size:var(--text-2xs, 9.5px); font-weight:600; background:none; border:1px dashed var(--accent); color:var(--accent); border-radius:calc(4px * var(--ui-scale, 1)); padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); cursor:pointer;" title="${escapeHtml(t('scanner.btn_quick_rebind_tooltip') || 'Quickly reassign to free function key')}">
-            ⚡ ${escapeHtml(t('scanner.btn_quick_rebind', { key: suggestedKey }) || `Rebind to ${suggestedKey}`)}
+          <button class="hk-quick-rebind-btn" data-idx="${idx}" data-suggest="${escapeHtml(suggestedKey)}" style="display:inline-flex; align-items:center; gap:3px; font-size:var(--text-2xs, 9.5px); font-weight:600; background:none; border:1px dashed var(--accent); color:var(--accent); border-radius:calc(4px * var(--ui-scale, 1)); padding:calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); cursor:pointer;" title="${escapeHtml(t('scanner.btn_quick_rebind_tooltip') || 'Quickly reassign to free function key')}">
+            ${getIconSvg('zap', 'pmm-icon-xs')} ${escapeHtml(t('scanner.btn_quick_rebind', { key: suggestedKey }) || `Rebind to ${suggestedKey}`)}
           </button>
         ` : ''}
       </div>
@@ -153,7 +154,7 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
       <div>
         <div style="font-family:monospace; font-size:var(--text-xs, 11px); color:var(--text-primary);">${escapeHtml(hk.definitionFilePath || hk.filePath)}:L${hk.definitionLineNumber || hk.lineNumber}</div>
         <div style="font-size:var(--text-2xs, 9.5px); color:var(--accent); display:flex; align-items:center; gap:calc(4px * var(--ui-scale, 1)); margin-top:calc(2px * var(--ui-scale, 1));">
-          <span>⚙</span>
+          <span style="display:flex; align-items:center;">${getIconSvg('settings', 'pmm-icon-xs')}</span>
           <span><code>${escapeHtml(hk.variableName || 'Variable')}</code></span>
           <span style="opacity:0.6; font-size:var(--text-2xs, 9px);">(${escapeHtml(hk.filePath)}:L${hk.lineNumber})</span>
         </div>
@@ -181,7 +182,7 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
   const conflictBanner = totalConflicts > 0 ? `
     <div style="margin-bottom:calc(16px * var(--ui-scale, 1)); padding:calc(10px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); background:rgba(255,75,75,0.08); border:1px solid rgba(255,75,75,0.3); border-radius:var(--card-radius); display:flex; align-items:center; justify-content:space-between; gap:calc(12px * var(--ui-scale, 1));">
       <div style="display:flex; align-items:center; gap:calc(8px * var(--ui-scale, 1)); font-size:var(--text-xs, 12px); color:var(--text-primary);">
-        <span style="font-size:calc(16px * var(--ui-scale, 1));">⚠️</span>
+        <span style="display:flex; align-items:center; color:var(--danger);">${getIconSvg('alertTriangle', 'pmm-icon-md')}</span>
         <span><b>${totalConflicts}</b> ${escapeHtml(t('scanner.hotkey_conflicts_detected_banner') || 'hotkey conflicts detected between active mods.')}</span>
       </div>
       <div style="font-size:var(--text-xs, 11px); color:var(--text-muted);">
@@ -211,12 +212,12 @@ export async function renderHotkeysPanel(container: HTMLElement): Promise<void> 
     <!-- Top Filter Bar -->
     <div style="display:flex; align-items:center; justify-content:space-between; padding: calc(12px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.15); flex-shrink: 0;">
       <div class="search-wrapper">
-        <span class="search-icon">🔍</span>
+        <span class="search-icon" style="display:flex; align-items:center;">${getIconSvg('search', 'pmm-icon-xs')}</span>
         <input type="text" id="hk-search-input" class="premium-search-input" placeholder="${escapeHtml(t('scanner.hotkeys_search_placeholder'))}" value="${escapeHtml(hotkeyFilter)}" />
       </div>
       <div style="display:flex; align-items:center; gap:calc(12px * var(--ui-scale, 1));">
         <button id="scanner-rescan-hotkeys-btn" class="btn btn-secondary btn-sm" style="display:flex; align-items:center; gap:calc(6px * var(--ui-scale, 1)); font-size:var(--text-xs, 11px); padding:calc(4px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1));">
-          <span>🔄</span> <span>${escapeHtml(t('scanner.btn_rescan_hotkeys'))}</span>
+          <span style="display:flex; align-items:center;">${getIconSvg('scan', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.btn_rescan_hotkeys'))}</span>
         </button>
         <div style="font-size:var(--text-2xs, 10px); color:var(--text-muted); font-weight:600; letter-spacing:0.5px;">${escapeHtml(t('common.selected_count', { count: filtered.length }))}</div>
       </div>
