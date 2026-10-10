@@ -156,18 +156,32 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                                 continue;
                             }
 
+                            let is_runtime_folder = path_str_lower.contains("/config/")
+                                || path_str_lower.contains("\\config\\")
+                                || path_str_lower.contains("/settings/")
+                                || path_str_lower.contains("\\settings\\")
+                                || path_str_lower.contains("/data/")
+                                || path_str_lower.contains("\\data\\")
+                                || path_str_lower.contains("/saved/")
+                                || path_str_lower.contains("\\saved\\")
+                                || path_str_lower.contains("/saves/")
+                                || path_str_lower.contains("\\saves\\")
+                                || path_str_lower.contains("/storage/")
+                                || path_str_lower.contains("\\storage\\")
+                                || path_str_lower.contains("/state/")
+                                || path_str_lower.contains("\\state\\")
+                                || path_str_lower.contains("/userdata/")
+                                || path_str_lower.contains("\\userdata\\");
+
                             // Rule: .lua files merge if:
                             // 1. Explicitly configured as mod config, OR
                             // 2. Located inside a shared/ folder, OR
-                            // 3. Located inside a config/ or settings/ folder, OR
+                            // 3. Located inside a config/, settings/, or runtime data folder, OR
                             // 4. Filename explicitly contains "config", "setting", "option", or "pref"
                             let is_lua_config = if ext_lower == "lua" {
                                 custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
                                     || path_str_lower.contains("shared")
-                                    || path_str_lower.contains("/config/")
-                                    || path_str_lower.contains("\\config\\")
-                                    || path_str_lower.contains("/settings/")
-                                    || path_str_lower.contains("\\settings\\")
+                                    || is_runtime_folder
                                     || fname_lower.contains("config")
                                     || fname_lower.contains("setting")
                                     || fname_lower.contains("option")
@@ -183,15 +197,12 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                             // Rule: .json and .jsonc files merge only if:
                             // 1. Explicitly configured as mod config, OR
                             // 2. Located inside a shared/ folder, OR
-                            // 3. Located inside a config/ or settings/ folder, OR
+                            // 3. Located inside a config/, settings/, or runtime data folder, OR
                             // 4. Filename explicitly contains "config", "setting", or "option"
                             if ext_lower == "json" || ext_lower == "jsonc" {
                                 let is_json_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
                                     || path_str_lower.contains("shared")
-                                    || path_str_lower.contains("/config/")
-                                    || path_str_lower.contains("\\config\\")
-                                    || path_str_lower.contains("/settings/")
-                                    || path_str_lower.contains("\\settings\\")
+                                    || is_runtime_folder
                                     || fname_lower.contains("config")
                                     || fname_lower.contains("setting")
                                     || fname_lower.contains("option");
@@ -221,10 +232,7 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                             if ext_lower == "toml" || ext_lower == "yaml" || ext_lower == "yml" {
                                 let is_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
                                     || path_str_lower.contains("shared")
-                                    || path_str_lower.contains("/config/")
-                                    || path_str_lower.contains("\\config\\")
-                                    || path_str_lower.contains("/settings/")
-                                    || path_str_lower.contains("\\settings\\")
+                                    || is_runtime_folder
                                     || fname_lower.contains("config")
                                     || fname_lower.contains("setting")
                                     || fname_lower.contains("option");

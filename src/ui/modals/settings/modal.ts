@@ -398,6 +398,11 @@ export function setupSettingsTabs(): void {
         refreshImageCacheStatus();
       } else if (targetTab === 'resources') {
         refreshDevResourcesStatus();
+      } else if (targetTab === 'shortcuts') {
+        import('./shortcuts').then(({ setupShortcutsTab, renderShortcutsTab }) => {
+          setupShortcutsTab();
+          renderShortcutsTab();
+        }).catch(() => {});
       }
     };
   });
@@ -457,4 +462,11 @@ export function openSettingsToTab(tabName: string): void {
       p.classList.remove('active');
     }
   });
+
+  if (tabName === 'shortcuts') {
+    import('./shortcuts').then(({ setupShortcutsTab, renderShortcutsTab }) => {
+      setupShortcutsTab();
+      renderShortcutsTab();
+    }).catch(() => {});
+  }
 }

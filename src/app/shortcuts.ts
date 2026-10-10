@@ -4,10 +4,13 @@ import { mainDom, detailDom, discoveryDom, settingsDom, scannerDom, installerDom
 import { showToast } from '../ui/toast';
 import { t } from '../utils/i18n';
 import { updateState } from '../state';
+import { initShortcutsHub } from '../features/shortcuts';
 
 let _scaleSaveTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function setupGlobalShortcuts(): void {
+  initShortcutsHub();
+
   document.addEventListener('keydown', (e) => {
     // UI Scaling shortcuts (Ctrl + / Ctrl - / Ctrl 0)
     if (e.ctrlKey && (e.key === '+' || e.key === '=' || e.key === '-' || e.key === '_' || e.key === '0')) {

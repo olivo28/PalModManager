@@ -14,6 +14,7 @@ import { getContextOverlay, hideContextMenu, positionContextMenu } from './menuD
 import { mainDom, detailDom } from '../../../framework';
 import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
 import { getIconSvg } from '../../icons/mod';
+import { getShortcutBadgeHtml } from '../../../features/shortcuts';
 
 export function runContextAction(action: string, modId: string): void {
   const mod = getState().allMods.find(m => m.id === modId);
@@ -337,14 +338,11 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   if (!isWorkshop) {
     html += `
       <button type="button" class="context-menu-item" data-action="check-updates">
-        <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span>
-        ${escapeHtml(t('context.check_updates'))}
+        <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span> ${escapeHtml(t('context.check_updates'))} ${getShortcutBadgeHtml('mod.check_updates')}
       </button>
       <button type="button" class="context-menu-item" data-action="reinstall-mod">
-        <span class="ctx-icon">${getIconSvg('refreshCw', 'pmm-icon-sm')}</span>
-        ${escapeHtml(t('context.reinstall_mod'))}
-      </button>
-    `;
+        <span class="ctx-icon">${getIconSvg('refreshCw', 'pmm-icon-sm')}</span> ${escapeHtml(t('context.reinstall_mod'))}
+      </button>`;
   }
 
   const hasUpdate = getState().availableUpdates?.has(modId);
@@ -352,22 +350,17 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     if (isWorkshop) {
       html += `
         <button type="button" class="context-menu-item" data-action="update-workshop-mod" style="font-weight: bold; color: #ff9d00;">
-          <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span>
-          ${escapeHtml(t('context.update_mod'))}
-        </button>
-      `;
+          <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span> ${escapeHtml(t('context.update_mod'))}
+        </button>`;
     } else {
       const updateVer = getState().availableUpdates.get(modId)!;
       html += `
         <button type="button" class="context-menu-item" data-action="update-local-mod" style="font-weight: bold; color: #00bcff;">
-          <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span>
-          ${escapeHtml(t('context.update_mod_ver', { version: updateVer }))}
+          <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span> ${escapeHtml(t('context.update_mod_ver', { version: updateVer }))}
         </button>
         <button type="button" class="context-menu-item" data-action="ignore-update">
-          <span class="ctx-icon">${getIconSvg('x', 'pmm-icon-sm')}</span>
-          ${escapeHtml(t('context.ignore_update', { version: updateVer }))}
-        </button>
-      `;
+          <span class="ctx-icon">${getIconSvg('x', 'pmm-icon-sm')}</span> ${escapeHtml(t('context.ignore_update', { version: updateVer }))}
+        </button>`;
     }
   }
   html += `
@@ -375,6 +368,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="toggle">
       <span class="ctx-icon">${mod.enabled ? getIconSvg('eyeOff', 'pmm-icon-sm') : getIconSvg('eye', 'pmm-icon-sm')}</span>
       ${escapeHtml(mod.enabled ? t('context.disable_mod') : t('context.enable_mod'))}
+      ${getShortcutBadgeHtml('mod.toggle')}
     </button>`;
 
   const compFolders = getModComponentFolders(mod);
@@ -391,6 +385,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="open-folder">
       <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.open_folder'))}
+      ${getShortcutBadgeHtml('mod.open_folder')}
     </button>`;
   }
 
@@ -398,6 +393,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="edit-config">
       <span class="ctx-icon">${getIconSvg('settings', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.edit_config'))}
+      ${getShortcutBadgeHtml('mod.edit_config')}
     </button>
     <button type="button" class="context-menu-item" data-action="edit-notes">
       <span class="ctx-icon">${getIconSvg('fileText', 'pmm-icon-sm')}</span>
@@ -406,6 +402,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="detail">
       <span class="ctx-icon">${getIconSvg('info', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.view_details'))}
+      ${getShortcutBadgeHtml('mod.details')}
     </button>
   `;
 
@@ -505,6 +502,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       <button type="button" class="context-menu-item danger" data-action="remove">
         <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.remove_mod'))}
+        ${getShortcutBadgeHtml('mod.remove')}
       </button>`;
   }
 

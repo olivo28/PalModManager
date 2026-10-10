@@ -14,6 +14,7 @@ import { showFolderContextMenu } from './folders';
 import { showBulkContextMenu } from './batchSelection';
 import { mainDom, editorDom } from '../../../framework';
 import { getIconSvg } from '../../icons/mod';
+import { getShortcutBadgeHtml } from '../../../features/shortcuts';
 
 export function showGlobalContextMenu(x: number, y: number): void {
   const menu = mainDom.el('context-menu');
@@ -36,27 +37,33 @@ export function showGlobalContextMenu(x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="new-folder">
       <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.new_mod_folder'))}
+      ${getShortcutBadgeHtml('mods.new_folder')}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="install">
       <span class="ctx-icon">${getIconSvg('plus', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.install_archive'))}
+      ${getShortcutBadgeHtml('mods.install')}
     </button>
     <button type="button" class="context-menu-item" data-action="install-nexus-id">
       <span class="ctx-icon">${getIconSvg('link', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.install_nexus_id'))}
+      ${getShortcutBadgeHtml('mods.install_nexus_id')}
     </button>
     <button type="button" class="context-menu-item" data-action="rescan">
       <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.rescan_mods'))}
+      ${getShortcutBadgeHtml('mods.rescan')}
     </button>
     <button type="button" class="context-menu-item" data-action="check-updates-global">
       <span class="ctx-icon">${getIconSvg('arrowUp', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.check_updates'))}
+      ${getShortcutBadgeHtml('mods.check_updates_all')}
     </button>
     <button type="button" class="context-menu-item" data-action="export-json">
       <span class="ctx-icon">${getIconSvg('upload', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.export_json'))}
+      ${getShortcutBadgeHtml('mods.export_json')}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="check-deps">
@@ -117,6 +124,7 @@ export function showGlobalContextMenu(x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="settings">
       <span class="ctx-icon">${getIconSvg('settings', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.settings'))}
+      ${getShortcutBadgeHtml('general.settings')}
     </button>
   `;
 
@@ -291,24 +299,24 @@ export function showEditorContextMenu(x: number, y: number): void {
 
   menu.innerHTML = `
     <button type="button" class="context-menu-item" id="editor-ctx-save" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">${getIconSvg('save', 'pmm-icon-sm')}</span> Save <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+S</span>
+      <span class="ctx-icon">${getIconSvg('save', 'pmm-icon-sm')}</span> Save ${getShortcutBadgeHtml('editor.save')}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" id="editor-ctx-cut" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">${getIconSvg('crop', 'pmm-icon-sm')}</span> Cut <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+X</span>
+      <span class="ctx-icon">${getIconSvg('crop', 'pmm-icon-sm')}</span> Cut <span class="ctx-shortcut">Ctrl+X</span>
     </button>
     <button type="button" class="context-menu-item" id="editor-ctx-copy" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">${getIconSvg('copy', 'pmm-icon-sm')}</span> Copy <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+C</span>
+      <span class="ctx-icon">${getIconSvg('copy', 'pmm-icon-sm')}</span> Copy <span class="ctx-shortcut">Ctrl+C</span>
     </button>
     <button type="button" class="context-menu-item" id="editor-ctx-paste" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span> Paste <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+V</span>
+      <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span> Paste <span class="ctx-shortcut">Ctrl+V</span>
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" id="editor-ctx-find" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">${getIconSvg('search', 'pmm-icon-sm')}</span> Find <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+F</span>
+      <span class="ctx-icon">${getIconSvg('search', 'pmm-icon-sm')}</span> Find ${getShortcutBadgeHtml('editor.find')}
     </button>
     <button type="button" class="context-menu-item" id="editor-ctx-selectall" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">${getIconSvg('check', 'pmm-icon-sm')}</span> Select All <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+A</span>
+      <span class="ctx-icon">${getIconSvg('check', 'pmm-icon-sm')}</span> Select All <span class="ctx-shortcut">Ctrl+A</span>
     </button>
   `;
 

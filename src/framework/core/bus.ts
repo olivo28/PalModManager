@@ -55,6 +55,7 @@ export interface AppEventMap {
 
   // Eventos de Configuración y Biblioteca
   'settings:changed': { key: string; value: any };
+  'shortcuts:changed': void;
   'library:refreshed': void;
 
   // Eventos de Scanner & Conflictos

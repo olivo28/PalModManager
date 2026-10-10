@@ -269,6 +269,10 @@ export interface SettingsDomMap {
   'storage-images-badge': HTMLElement;
   'storage-images-details': HTMLElement;
   'storage-clear-images-btn': HTMLButtonElement;
+  'settings-pane-shortcuts': HTMLElement;
+  'settings-shortcuts-search': HTMLInputElement;
+  'settings-shortcuts-list': HTMLElement;
+  'settings-shortcuts-reset-all': HTMLButtonElement;
   'settings-cancel': HTMLButtonElement;
   'settings-save': HTMLButtonElement;
 }

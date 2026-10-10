@@ -1,7 +1,7 @@
 # PalModManager (PMM) — Palworld Mod Manager & Modding Toolkit
 
 ---
-Latest version: **1.7.2**
+Latest version: **1.7.3**
 
 Changelog: Latest notes in the pinned comments · Full history on [GitHub](https://github.com/olivo28/PalModManager)
 

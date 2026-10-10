@@ -595,10 +595,18 @@ fn purge_stale_files_in_mod_dir(
             let path_str_lower = file_path.to_string_lossy().to_lowercase();
             let is_runtime_data = path_str_lower.contains("/saved/")
                 || path_str_lower.contains("\\saved\\")
+                || path_str_lower.contains("/saves/")
+                || path_str_lower.contains("\\saves\\")
                 || path_str_lower.contains("/storage/")
                 || path_str_lower.contains("\\storage\\")
                 || path_str_lower.contains("/data/")
                 || path_str_lower.contains("\\data\\")
+                || path_str_lower.contains("/state/")
+                || path_str_lower.contains("\\state\\")
+                || path_str_lower.contains("/userdata/")
+                || path_str_lower.contains("\\userdata\\")
+                || path_str_lower.contains("/database/")
+                || path_str_lower.contains("\\database\\")
                 || path_str_lower.contains("/cache/")
                 || path_str_lower.contains("\\cache\\");
 

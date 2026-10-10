@@ -3,3 +3,4 @@ export * from './helpers';
 export * from './status';
 export * from './actions';
 export * from './modal';
+export * from './shortcuts';

@@ -1,3 +1,29 @@
+PalModManager - Version 1.7.3 Changelog (2026-10-10)
+
+Added
+- Crash Doctor Forensic Diagnostic Suite: Integrated diagnostic tab in the Scanner suite featuring real-time crash interception, a pure-Rust binary minidump (.dmp) parser, Unreal Engine assertion extraction, crashed callstack frame tokenization, loaded modules memory inspection, and high-level incident origin classification (pak_mod, ue4ss, game_engine, out_of_memory, directx, overlay).
+- Centralized Keyboard Shortcuts Hub: Modular, single-source-of-truth shortcuts subsystem (src/features/shortcuts/) with an interactive configuration hub in Settings, key combination recording, conflict detection, single and global resets, and dynamic shortcut badges reflected across all right-click context menus.
+- Theme Studio & Dynamic Custom Theming: 16-color theme palette customization suite with live real-time CSS reflection, custom .pmmtheme.json import/export, automatic Monaco Code Editor theme synchronization (pmm-dark, pmm-light, pmm-custom), and an interactive visual framing adjuster for app, sidebar, and editor watermark artwork.
+- Multi-Drive Game Path Auto-Detection: Reactive scanner detecting Palworld installations across all drive letters (Steam libraryfolders.vdf and Xbox Game Pass) with real-time path validation and 1-click auto-detect in Settings.
+- Save Health Doctor Clean Snapshot Quick Recovery: Automatic detection of pre-mod clean snapshots with a 1-click restore action directly in the hazard inspector.
+- Nexus ID & URL Direct Jump: Direct installation and discovery by pasting numeric Nexus Mod IDs or mod URLs into Discover search or the main Mods right-click context menu.
+
+Changed
+- Vector Icon Modernization: Replaced all raw unicode emojis and placeholder symbols across views, navigation bars, modals, status bars, and context menus with clean SVG vector icons inheriting theme typography colors.
+- FOMOD Installation Wizard Overhaul: Redesigned wizard with theme design tokens, top-aligned option inputs, 110x75px variant preview cards with an interactive lightbox viewer, and an interactive sidebar timeline stepper.
+- Runtime User Config Preservation: Mod updates now automatically recognize, snapshot, and retain runtime-generated user settings files (.ini, .cfg, .toml, .yaml, .lua, and persistent storage folders) instead of purging them as stale files.
+- Light Theme Contrast & Surfaces: Overhauled light mode styling with elevated card surfaces, high-contrast borders, WCAG-compliant typography, and early splash screen theme injection to prevent startup flickering.
+
+Fixed
+- Download Queue False "CANCELLED" Status: Resolved callback clobbering in installer modals and FOMOD completion handshakes that previously marked successful downloads as cancelled.
+- Nexus Multi-File Coexistence: Fixed collisions when installing multiple optional downloads from the same Nexus mod page, ensuring files coexist independently without overwriting siblings.
+- Save Health Doctor Snapshot Restoration: Snapshot rollback now comprehensively restores Level.sav, LocalData.sav, LevelMeta.sav, and the complete Players/ character directory, preventing player inventory and guild desynchronization.
+- MapObject Polymorphic Struct Safety: Guarded Unreal Engine 5 level actor models against invalid byte patches, preventing corrupted world errors on uninstalled mod structures.
+- Detail Panel State Preservation: Toggling a mod's enabled state or individual .pak components in the Technical tab preserves the active tab and scroll position instead of resetting to the Info tab.
+- Config Editor Find Widget: Fixed Ctrl+F and context menu Find functionality within the Monaco script and configuration editor.
+
+------------------------------------
+
 PalModManager - Version 1.7.2 Changelog (2026-09-22)
 
 Added

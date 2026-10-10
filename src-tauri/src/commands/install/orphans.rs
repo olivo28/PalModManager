@@ -206,10 +206,18 @@ pub async fn inspect_upgrade_orphans(
 
             let is_runtime_data = path_str_lower.contains("/saved/")
                 || path_str_lower.contains("\\saved\\")
+                || path_str_lower.contains("/saves/")
+                || path_str_lower.contains("\\saves\\")
                 || path_str_lower.contains("/storage/")
                 || path_str_lower.contains("\\storage\\")
                 || path_str_lower.contains("/data/")
                 || path_str_lower.contains("\\data\\")
+                || path_str_lower.contains("/state/")
+                || path_str_lower.contains("\\state\\")
+                || path_str_lower.contains("/userdata/")
+                || path_str_lower.contains("\\userdata\\")
+                || path_str_lower.contains("/database/")
+                || path_str_lower.contains("\\database\\")
                 || path_str_lower.contains("/cache/")
                 || path_str_lower.contains("\\cache\\");
 

@@ -3,22 +3,24 @@ import { handleEditorSave, handleEditorPreview, handleEditorFormat, loadEditorDa
 import { switchEditorMod, renderEditorModTree, revealAndSelectFile } from './tree';
 import { confirmDiscardOrSave } from './unsaved';
 import { editorDom, mainDom } from '../../framework';
+import { bus } from '../../framework/core/bus';
 import { getMonacoEditor } from './monaco/instance';
 import { openFind } from './search';
 
-export function setupEditorKeybindings(): void {
-  document.addEventListener('keydown', (e: KeyboardEvent) => {
-    const editorView = editorDom.elMaybe('editor-view');
-    if (!editorView || editorView.style.display === 'none') return;
+function updateEditorKbdHint(): void {
+  const kbd = document.querySelector('.editor-kbd-hint[data-shortcut-id="editor.save"]');
+  if (kbd) {
+    import('../../features/shortcuts').then(({ getShortcutDisplay }) => {
+      const display = getShortcutDisplay('editor.save');
+      kbd.textContent = display;
+      (kbd as HTMLElement).style.display = display ? '' : 'none';
+    }).catch(() => {});
+  }
+}
 
-    if ((e.ctrlKey || e.metaKey) && (e.key === 's' || e.key === 'S')) {
-      e.preventDefault();
-      handleEditorSave();
-    } else if ((e.ctrlKey || e.metaKey) && (e.key === 'f' || e.key === 'F')) {
-      e.preventDefault();
-      openFind();
-    }
-  });
+export function setupEditorKeybindings(): void {
+  updateEditorKbdHint();
+  bus.on('shortcuts:changed', () => updateEditorKbdHint());
 
   const saveBtn = editorDom.elMaybe('editor-save-btn');
   if (saveBtn) {

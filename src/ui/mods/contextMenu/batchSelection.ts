@@ -7,6 +7,7 @@ import { t } from '../../../utils/i18n';
 import { hideContextMenu, positionContextMenu } from './menuDom';
 import { mainDom } from '../../../framework';
 import { getIconSvg } from '../../icons/mod';
+import { getShortcutBadgeHtml } from '../../../features/shortcuts';
 
 export function showBulkContextMenu(x: number, y: number): void {
   const menu = mainDom.el('context-menu');
@@ -28,6 +29,7 @@ export function showBulkContextMenu(x: number, y: number): void {
     <button type="button" class="context-menu-item" data-action="bulk-enable">
       <span class="ctx-icon">${getIconSvg('eye', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('bulk.enable_selected'))}
+      ${getShortcutBadgeHtml('mod.toggle')}
     </button>
     <button type="button" class="context-menu-item" data-action="bulk-disable">
       <span class="ctx-icon">${getIconSvg('eyeOff', 'pmm-icon-sm')}</span>
@@ -61,6 +63,7 @@ export function showBulkContextMenu(x: number, y: number): void {
     <button type="button" class="context-menu-item danger" data-action="bulk-remove">
       <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('bulk.delete_selected'))}
+      ${getShortcutBadgeHtml('mod.remove')}
     </button>
   `;
 

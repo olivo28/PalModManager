@@ -1,3 +1,35 @@
+[size=5][b]PalModManager - Changelog v1.7.3 (2026-10-10)[/b][/size]
+
+[size=4][b]Added[/b][/size]
+[list]
+[*] [b]Crash Doctor Forensic Diagnostic Suite:[/b] Integrated diagnostic tab in the Scanner suite featuring real-time crash interception, a pure-Rust binary minidump ([font=monospace].dmp[/font]) parser, Unreal Engine assertion extraction, crashed callstack frame tokenization, loaded modules memory inspection, and high-level incident origin classification ([font=monospace]pak_mod[/font], [font=monospace]ue4ss[/font], [font=monospace]game_engine[/font], [font=monospace]out_of_memory[/font], [font=monospace]directx[/font], [font=monospace]overlay[/font]).
+[*] [b]Centralized Keyboard Shortcuts Hub:[/b] Modular, single-source-of-truth shortcuts subsystem ([font=monospace]src/features/shortcuts/[/font]) with an interactive configuration hub in Settings, key combination recording, conflict detection, single and global resets, and dynamic shortcut badges reflected across all right-click context menus.
+[*] [b]Theme Studio & Dynamic Custom Theming:[/b] 16-color theme palette customization suite with live real-time CSS reflection, custom [font=monospace].pmmtheme.json[/font] import/export, automatic Monaco Code Editor theme synchronization ([font=monospace]pmm-dark[/font], [font=monospace]pmm-light[/font], [font=monospace]pmm-custom[/font]), and an interactive visual framing adjuster for app, sidebar, and editor watermark artwork.
+[*] [b]Multi-Drive Game Path Auto-Detection:[/b] Reactive scanner detecting Palworld installations across all drive letters (Steam [font=monospace]libraryfolders.vdf[/font] and Xbox Game Pass) with real-time path validation and 1-click auto-detect in Settings.
+[*] [b]Save Health Doctor Clean Snapshot Quick Recovery:[/b] Automatic detection of pre-mod clean snapshots with a 1-click restore action directly in the hazard inspector.
+[*] [b]Nexus ID & URL Direct Jump:[/b] Direct installation and discovery by pasting numeric Nexus Mod IDs or mod URLs into Discover search or the main Mods right-click context menu.
+[/list]
+
+[size=4][b]Changed[/b][/size]
+[list]
+[*] [b]Vector Icon Modernization:[/b] Replaced all raw unicode emojis and placeholder symbols across views, navigation bars, modals, status bars, and context menus with clean SVG vector icons inheriting theme typography colors.
+[*] [b]FOMOD Installation Wizard Overhaul:[/b] Redesigned wizard with theme design tokens, top-aligned option inputs, 110×75px variant preview cards with an interactive lightbox viewer, and an interactive sidebar timeline stepper.
+[*] [b]Runtime User Config Preservation:[/b] Mod updates now automatically recognize, snapshot, and retain runtime-generated user settings files ([font=monospace].ini[/font], [font=monospace].cfg[/font], [font=monospace].toml[/font], [font=monospace].yaml[/font], [font=monospace].lua[/font], and persistent storage folders) instead of purging them as stale files.
+[*] [b]Light Theme Contrast & Surfaces:[/b] Overhauled light mode styling with elevated card surfaces, high-contrast borders, WCAG-compliant typography, and early splash screen theme injection to prevent startup flickering.
+[/list]
+
+[size=4][b]Fixed[/b][/size]
+[list]
+[*] [b]Download Queue False "CANCELLED" Status:[/b] Resolved callback clobbering in installer modals and FOMOD completion handshakes that previously marked successful downloads as cancelled.
+[*] [b]Nexus Multi-File Coexistence:[/b] Fixed collisions when installing multiple optional downloads from the same Nexus mod page, ensuring files coexist independently without overwriting siblings.
+[*] [b]Save Health Doctor Snapshot Restoration:[/b] Snapshot rollback now comprehensively restores [font=monospace]Level.sav[/font], [font=monospace]LocalData.sav[/font], [font=monospace]LevelMeta.sav[/font], and the complete [font=monospace]Players/[/font] character directory, preventing player inventory and guild desynchronization.
+[*] [b]MapObject Polymorphic Struct Safety:[/b] Guarded Unreal Engine 5 level actor models against invalid byte patches, preventing corrupted world errors on uninstalled mod structures.
+[*] [b]Detail Panel State Preservation:[/b] Toggling a mod's enabled state or individual [font=monospace].pak[/font] components in the Technical tab preserves the active tab and scroll position instead of resetting to the Info tab.
+[*] [b]Config Editor Find Widget:[/b] Fixed [font=monospace]Ctrl+F[/font] and context menu Find functionality within the Monaco script and configuration editor.
+[/list]
+
+[hr]
+
 [size=5][b]PalModManager - Changelog v1.7.2 (2026-09-22)[/b][/size]
 
 [size=4][b]Added[/b][/size]
@@ -147,5 +179,5 @@ You can choose between the portable version or the full installer:
 
 [list]
 [*] [b]Portable Version:[/b] Download [font=monospace]palmodmanager.exe[/font]. You can place it in any folder and run it directly without installation.
-[*] [b]Installer Version:[/b] Download [font=monospace]PalModManager_1.7.2_x64-setup.exe[/font] and follow the setup wizard to install the application on your system.
+[*] [b]Installer Version:[/b] Download [font=monospace]PalModManager_1.7.3_x64-setup.exe[/font] and follow the setup wizard to install the application on your system.
 [/list]

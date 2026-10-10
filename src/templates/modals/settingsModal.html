@@ -37,6 +37,10 @@
             <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.8 17 5 19 5a1 1 0 0 1 1 1z"/></svg></span>
             <span data-i18n="settings.tab_safety">Safety & Backup</span>
           </button>
+          <button type="button" class="settings-tab-button" data-settings-tab="shortcuts">
+            <span class="tab-icon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon" stroke-width="2"><rect width="20" height="14" x="2" y="4" rx="2"/><line x1="6" x2="6.01" y1="8" y2="8"/><line x1="10" x2="10.01" y1="8" y2="8"/><line x1="14" x2="14.01" y1="8" y2="8"/><line x1="18" x2="18.01" y1="8" y2="8"/><line x1="6" x2="6.01" y1="12" y2="12"/><line x1="18" x2="18.01" y1="12" y2="12"/><line x1="10" x2="14" y1="16" y2="16"/></svg></span>
+            <span data-i18n="settings.tab_shortcuts">Keyboard Shortcuts</span>
+          </button>
         </nav>
 
         <!-- Content Viewport -->
@@ -1079,6 +1083,26 @@
                   </button>
                 </div>
               </div>
+            </div>
+          </div>
+
+          <!-- TAB: KEYBOARD SHORTCUTS HUB -->
+          <div class="settings-tab-pane" id="settings-pane-shortcuts">
+            <div class="settings-section-card">
+              <div class="settings-card-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:calc(8px * var(--ui-scale, 1));">
+                <div>
+                  <span class="settings-card-title" data-i18n="settings.tab_shortcuts">Keyboard Shortcuts</span>
+                  <div class="settings-hint" data-i18n="shortcuts.hub_hint">Customize hotkeys and keyboard shortcuts. Changes take effect across context menus and toolbars immediately.</div>
+                </div>
+                <button type="button" id="settings-shortcuts-reset-all" class="btn-secondary btn-with-icon" data-i18n-title="shortcuts.btn_reset_all">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="pmm-icon pmm-icon-xs" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+                  <span data-i18n="shortcuts.btn_reset_all">Reset All to Defaults</span>
+                </button>
+              </div>
+              <div class="settings-path-row" style="margin-top:calc(10px * var(--ui-scale, 1)); margin-bottom:calc(12px * var(--ui-scale, 1));">
+                <input type="text" id="settings-shortcuts-search" placeholder="Search shortcuts..." data-i18n-placeholder="shortcuts.search_placeholder" />
+              </div>
+              <div id="settings-shortcuts-list" class="shortcuts-hub-list"></div>
             </div>
           </div>
         </div>
