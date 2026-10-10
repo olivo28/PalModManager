@@ -9,6 +9,7 @@ import {
 } from '../mods/library/workshop';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
+import { getIconSvg } from '../icons/mod';
 import { t } from '../../utils/i18n';
 import { mainDom } from '../../framework';
 
@@ -53,7 +54,7 @@ export async function refreshWorkshopUI(): Promise<void> {
     }
 
     listContainer.innerHTML = wState.mods.map((m: any) => {
-      const thumb = m.thumbnailPath ? `<img src="${convertFileSrc(m.thumbnailPath)}" style="width:calc(36px * var(--ui-scale, 1)); height:calc(36px * var(--ui-scale, 1)); border-radius:4px; object-fit:cover;" />` : `<div style="width:calc(36px * var(--ui-scale, 1)); height:calc(36px * var(--ui-scale, 1)); border-radius:4px; background:var(--bg-tertiary); display:flex; align-items:center; justify-content:center; font-size:calc(16px * var(--ui-scale, 1));">📦</div>`;
+      const thumb = m.thumbnailPath ? `<img src="${convertFileSrc(m.thumbnailPath)}" style="width:calc(36px * var(--ui-scale, 1)); height:calc(36px * var(--ui-scale, 1)); border-radius:4px; object-fit:cover;" />` : `<div style="width:calc(36px * var(--ui-scale, 1)); height:calc(36px * var(--ui-scale, 1)); border-radius:4px; background:var(--bg-tertiary); display:flex; align-items:center; justify-content:center; color:var(--text-muted);">${getIconSvg('package', 'pmm-icon-sm')}</div>`;
       const { isMissing, missingDeps } = checkWorkshopDependencies(m.dependencies, wState.activeModList);
       const depWarning = isMissing ? `<div style="color:#ff4a4a; font-size:var(--text-2xs, 10px); margin-top:2px;">${escapeHtml(t('library.missing_deps_warning', { deps: missingDeps.join(', ') }))}</div>` : '';
 
@@ -72,7 +73,7 @@ export async function refreshWorkshopUI(): Promise<void> {
       const toggleDisabled = isManagedByPmm || m.isFramework ? 'disabled' : '';
       const toggleChecked = (isWorkshopMode ? m.isActive : isEnabledNormal) ? 'checked' : '';
       const toggleSwitch = isManagedByPmm
-        ? `<span style="font-size: var(--text-2xs, 10px); color: #38ef7d; font-weight: 600; padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); background: rgba(56, 239, 125, 0.1); border: 1px solid rgba(56, 239, 125, 0.25); border-radius: 4px; white-space: nowrap;">✓ ${escapeHtml(t('library.managed_by_pmm', { version: managedVersion ? `v${managedVersion}` : '' }))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 10px); color: #38ef7d; font-weight: 600; padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); background: rgba(56, 239, 125, 0.1); border: 1px solid rgba(56, 239, 125, 0.25); border-radius: 4px; white-space: nowrap; display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('check', 'pmm-icon-xs')} <span>${escapeHtml(t('library.managed_by_pmm', { version: managedVersion ? `v${managedVersion}` : '' }))}</span></span>`
         : `<label class="toggle-switch ${toggleDisabled}">
           <input type="checkbox" class="workshop-item-toggle" data-package="${escapeHtml(m.packageName)}" ${toggleChecked} ${toggleDisabled} />
           <span class="toggle-slider"></span>

@@ -4,6 +4,7 @@ import { escapeHtml, formatBytes } from '../../../utils/helpers';
 import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
+import { getIconSvg } from '../../icons/mod';
 
 export interface PropertyTweakerOptions {
   details: UAssetInspectionDetails;
@@ -29,7 +30,7 @@ export function renderPropertyTweakerHtml(details: UAssetInspectionDetails): str
       ${hasOriginalBackup ? `
         <div style="display:flex;justify-content:space-between;align-items:center;background:var(--success-dim);border:1px solid var(--success-dim);border-radius:6px;padding:8px 12px;">
           <div style="display:flex;align-items:center;gap:8px;font-size:12px;color:var(--success);">
-            <span>🛡️</span>
+            <span>${getIconSvg('shieldCheck', 'pmm-icon-xs')}</span>
             <span><strong>${escapeHtml(t('editor.backup_active_label') || 'Original Backup Preserved:')}</strong> ${escapeHtml(t('editor.backup_active_desc') || 'A clean .original.bak copy is safely stored.')}</span>
           </div>
           <button type="button" id="btn-revert-pak-backup" style="background:var(--danger-dim);border:1px solid var(--danger-dim);color:var(--danger);font-size:11px;font-weight:600;padding:4px 10px;border-radius:4px;cursor:pointer;display:flex;align-items:center;gap:6px;">
@@ -65,7 +66,7 @@ export function renderPropertyTweakerHtml(details: UAssetInspectionDetails): str
           <div style="display:flex;flex-direction:column;gap:10px;">
             ${!hasDeltas && instantiatedProperties.length > 0 ? `
               <div style="display:flex;align-items:center;gap:8px;background:rgba(56,189,248,0.08);border:1px solid rgba(56,189,248,0.25);border-radius:6px;padding:8px 12px;font-size:11.5px;color:#38bdf8;">
-                <span style="font-size:13px;">ℹ️</span>
+                <span>${getIconSvg('info', 'pmm-icon-xs')}</span>
                 <span>${escapeHtml(t('editor.banner_all_vanilla_matching') || 'All properties in this asset match the official Palworld defaults (0 deltas detected).')}</span>
               </div>
             ` : ''}
@@ -76,14 +77,14 @@ export function renderPropertyTweakerHtml(details: UAssetInspectionDetails): str
                   <span><strong>${escapeHtml(t('editor.live_properties_count') || 'Properties:')}</strong> ${instantiatedProperties.length}</span>
                 </div>
                 <div class="prop-filter-group" style="display:flex;background:var(--bg-secondary);border:1px solid var(--border);border-radius:4px;overflow:hidden;padding:2px;gap:2px;">
-                  <button type="button" id="prop-filter-editable" class="prop-filter-btn active" style="background:rgba(0,188,255,0.15);border:1px solid rgba(0,188,255,0.3);color:#00bcff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:3px;cursor:pointer;">
-                    🎯 ${escapeHtml(t('editor.filter_editable_tweaks') || 'Editable Properties')} (${editablePropsCount})
+                  <button type="button" id="prop-filter-editable" class="prop-filter-btn active" style="background:rgba(0,188,255,0.15);border:1px solid rgba(0,188,255,0.3);color:#00bcff;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                    ${getIconSvg('target', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.filter_editable_tweaks') || 'Editable Properties')} (${editablePropsCount})</span>
                   </button>
-                  <button type="button" id="prop-filter-deltas" class="prop-filter-btn" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:3px;cursor:pointer;">
-                    ⚡ ${escapeHtml(t('editor.filter_only_deltas') || 'Only Deltas')} (${allDeltasCount})
+                  <button type="button" id="prop-filter-deltas" class="prop-filter-btn" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                    ${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.filter_only_deltas') || 'Only Deltas')} (${allDeltasCount})</span>
                   </button>
-                  <button type="button" id="prop-filter-all" class="prop-filter-btn" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:3px;cursor:pointer;">
-                    📋 ${escapeHtml(t('editor.filter_all_properties') || 'All Properties')} (${instantiatedProperties.length})
+                  <button type="button" id="prop-filter-all" class="prop-filter-btn" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:3px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;">
+                    ${getIconSvg('copy', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.filter_all_properties') || 'All Properties')} (${instantiatedProperties.length})</span>
                   </button>
                 </div>
               </div>
@@ -124,8 +125,8 @@ export function renderPropertyTweakerHtml(details: UAssetInspectionDetails): str
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                       <span>${escapeHtml(prop.name)}</span>
                       ${isDelta ? `
-                        <span class="badge" style="background:rgba(255,209,102,0.15);color:#ffd166;border:1px solid rgba(255,209,102,0.3);font-size:9px;padding:1px 5px;font-weight:700;">
-                          ⚡ ${escapeHtml(t('editor.badge_delta') || 'Delta')}
+                        <span class="badge" style="background:rgba(255,209,102,0.15);color:#ffd166;border:1px solid rgba(255,209,102,0.3);font-size:9px;padding:1px 5px;font-weight:700;display:inline-flex;align-items:center;gap:3px;">
+                          ${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.badge_delta') || 'Delta')}</span>
                         </span>
                       ` : ''}
                     </div>

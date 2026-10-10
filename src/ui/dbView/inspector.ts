@@ -1,6 +1,8 @@
 import { invoke } from '@tauri-apps/api/core';
 import { dbDom } from '../../framework';
 import { showToast } from '../toast';
+import { getIconSvg } from '../icons/mod';
+import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { dbState } from './state';
 import { maskSensitiveData } from './tables';
@@ -71,15 +73,15 @@ export function updateJsonStatus(valid: boolean | null): void {
   if (!status) return;
 
   if (valid === null) {
-    status.textContent = '';
+    status.innerHTML = '';
     status.className = 'db-json-status';
     if (saveBtn) saveBtn.disabled = true;
   } else if (valid) {
-    status.textContent = t('db.valid_json') || '✓ Valid JSON';
+    status.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('check', 'pmm-icon-xs')} <span>${escapeHtml(t('db.valid_json') || 'Valid JSON')}</span></span>`;
     status.className = 'db-json-status valid';
     if (saveBtn) saveBtn.disabled = dbState.selectedRecordType === null;
   } else {
-    status.textContent = t('db.invalid_json') || '✗ Invalid JSON';
+    status.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('x', 'pmm-icon-xs')} <span>${escapeHtml(t('db.invalid_json') || 'Invalid JSON')}</span></span>`;
     status.className = 'db-json-status invalid';
     if (saveBtn) saveBtn.disabled = true;
   }

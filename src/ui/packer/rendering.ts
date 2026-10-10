@@ -4,6 +4,7 @@ import { getState } from '../../state';
 import { showPrompt, showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
 import { packerDom } from '../../framework';
+import { getIconSvg } from '../icons/mod';
 
 export async function renderWorkspace(): Promise<void> {
   const ws = packerDom.elMaybe('packer-workspace-view');
@@ -78,8 +79,8 @@ function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boole
         <tr class="packer-table-folder-row" data-folder-path="${escapeHtml(child.path)}">
           <td style="padding-left: calc(${indent}px * var(--ui-scale, 1)) !important;">
             <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); cursor: pointer; user-select: none;">
-              <span class="editor-tree-chevron" style="display: inline-block; font-size: var(--text-2xs, 9.5px); transition: transform 0.15s ease; ${isCollapsed ? 'transform: rotate(-90deg);' : ''}">▾</span>
-              <span style="font-size: var(--text-base, 13.5px);">📁</span>
+              <span class="editor-tree-chevron" style="display: inline-flex; align-items: center; font-size: var(--text-2xs, 9.5px); transition: transform 0.15s ease; ${isCollapsed ? 'transform: rotate(-90deg);' : ''}">${getIconSvg('chevronDown', 'pmm-icon-xs')}</span>
+              <span style="display: inline-flex; align-items: center;">${getIconSvg('folder', 'pmm-icon-sm')}</span>
               <strong style="color: var(--text-primary); font-size: var(--text-sm, 12.5px);">${escapeHtml(child.name)}</strong>
               <span style="font-size: var(--text-xs, 11px); color: var(--text-muted); opacity: 0.7;">(${child.totalSize > 0 ? formatBytes(child.totalSize) : ''})</span>
             </div>
@@ -155,13 +156,13 @@ function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boole
         destPreview = `Pal/Content/Paks/~mods/${fn}`;
       }
 
-      let fileIcon = '📄';
+      let fileIcon = getIconSvg('fileText', 'pmm-icon-sm');
       const ext = child.name.split('.').pop()?.toLowerCase();
-      if (ext === 'lua') fileIcon = '📜';
-      else if (ext === 'json' || ext === 'jsonc') fileIcon = '⚙️';
-      else if (ext === 'pak' || ext === 'ucas' || ext === 'utoc') fileIcon = '📦';
-      else if (ext === 'dll') fileIcon = '🧩';
-      else if (ext === 'txt' || ext === 'ini' || ext === 'cfg') fileIcon = '📝';
+      if (ext === 'lua') fileIcon = getIconSvg('fileText', 'pmm-icon-sm');
+      else if (ext === 'json' || ext === 'jsonc') fileIcon = getIconSvg('settings', 'pmm-icon-sm');
+      else if (ext === 'pak' || ext === 'ucas' || ext === 'utoc') fileIcon = getIconSvg('package', 'pmm-icon-sm');
+      else if (ext === 'dll') fileIcon = getIconSvg('package', 'pmm-icon-sm');
+      else if (ext === 'txt' || ext === 'ini' || ext === 'cfg') fileIcon = getIconSvg('fileText', 'pmm-icon-sm');
 
       const indent = depth * 20 + 12;
 
@@ -189,10 +190,10 @@ function renderListTreeRows(node: ListTreeNode, depth: number, isWorkshop: boole
           <td style="text-align: right; width: calc(75px * var(--ui-scale, 1));">
             <div style="display: flex; align-items: center; justify-content: flex-end; gap: calc(6px * var(--ui-scale, 1));">
               <button class="packer-table-action-btn packer-skip-file-btn skip ${isSkipped ? 'active' : ''}" data-index="${index}" title="${isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">
-                ${isSkipped ? '↩️' : '🚫'}
+                ${isSkipped ? getIconSvg('refreshCw', 'pmm-icon-xs') : getIconSvg('xCircle', 'pmm-icon-xs')}
               </button>
               <button class="packer-table-action-btn packer-remove-file-btn remove" data-index="${index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">
-                ✕
+                ${getIconSvg('x', 'pmm-icon-xs')}
               </button>
             </div>
           </td>
@@ -517,12 +518,12 @@ export function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
       const nextPath = currentPath ? `${currentPath}/${key}` : key;
       html += `
         <div class="packer-tree-node packer-tree-dir" style="padding-left: calc(${depth * 16}px * var(--ui-scale, 1));" data-path="${escapeHtml(nextPath)}">
-          <span class="packer-tree-icon">📁</span>
+          <span class="packer-tree-icon">${getIconSvg('folder', 'pmm-icon-xs')}</span>
           <span class="packer-tree-name">${escapeHtml(child.name)}</span>
           <div class="packer-tree-actions">
-            <button class="packer-tree-action-btn packer-rename-dir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_rename_folder_title'))}">✏️</button>
-            <button class="packer-tree-action-btn packer-add-subdir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_add_subfolder_title'))}">➕</button>
-            <button class="packer-tree-action-btn danger packer-remove-dir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_remove_folder_title'))}">✕</button>
+            <button class="packer-tree-action-btn packer-rename-dir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_rename_folder_title'))}">${getIconSvg('editor', 'pmm-icon-xs')}</button>
+            <button class="packer-tree-action-btn packer-add-subdir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_add_subfolder_title'))}">${getIconSvg('plus', 'pmm-icon-xs')}</button>
+            <button class="packer-tree-action-btn danger packer-remove-dir-btn" data-path="${escapeHtml(nextPath)}" title="${escapeHtml(t('packer.btn_remove_folder_title'))}">${getIconSvg('x', 'pmm-icon-xs')}</button>
           </div>
         </div>
       `;
@@ -531,13 +532,13 @@ export function renderTreeHtml(node: any, depth = 0, currentPath = ''): string {
       const sizeStr = formatBytes(child.file.size);
       html += `
         <div class="packer-tree-node packer-tree-file ${child.isSkipped ? 'skipped' : ''}" style="padding-left: calc(${depth * 16}px * var(--ui-scale, 1));" data-index="${child.index}">
-          <span class="packer-tree-icon">📄</span>
+          <span class="packer-tree-icon">${getIconSvg('fileText', 'pmm-icon-xs')}</span>
           <span class="packer-tree-name" title="${escapeHtml(t('packer.source_prefix_label', { path: child.file.sourcePath }))}" style="${child.isSkipped ? 'text-decoration: line-through;' : ''}">${escapeHtml(child.name)}</span>
           <span class="packer-tree-size">${sizeStr}</span>
           <div class="packer-tree-actions">
-            <button class="packer-tree-action-btn packer-rename-file-btn" data-index="${child.index}" title="${escapeHtml(t('packer.btn_rename_file_title'))}">✏️</button>
-            <button class="packer-tree-action-btn packer-skip-file-btn" data-index="${child.index}" title="${child.isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">${child.isSkipped ? '↩️' : '🚫'}</button>
-            <button class="packer-tree-action-btn danger packer-remove-file-btn" data-index="${child.index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">✕</button>
+            <button class="packer-tree-action-btn packer-rename-file-btn" data-index="${child.index}" title="${escapeHtml(t('packer.btn_rename_file_title'))}">${getIconSvg('editor', 'pmm-icon-xs')}</button>
+            <button class="packer-tree-action-btn packer-skip-file-btn" data-index="${child.index}" title="${child.isSkipped ? escapeHtml(t('packer.btn_include_file_title')) : escapeHtml(t('packer.btn_skip_file_title'))}">${child.isSkipped ? getIconSvg('refreshCw', 'pmm-icon-xs') : getIconSvg('xCircle', 'pmm-icon-xs')}</button>
+            <button class="packer-tree-action-btn danger packer-remove-file-btn" data-index="${child.index}" title="${escapeHtml(t('packer.btn_remove_file_title'))}">${getIconSvg('x', 'pmm-icon-xs')}</button>
           </div>
         </div>
       `;

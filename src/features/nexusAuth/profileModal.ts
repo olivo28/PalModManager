@@ -17,6 +17,7 @@ import { settingsDom } from '../../framework';
 import { DEFAULT_AVATAR } from './state';
 import { formatDate } from './helpers';
 import { triggerLogout } from './oauth';
+import { getIconSvg } from '../../ui/icons/mod';
 
 export function openNexusProfileModal(): void {
   const modal = settingsDom.elMaybe('nexus-profile-modal');
@@ -207,8 +208,8 @@ export function openNexusProfileModal(): void {
               <span>${formattedDate}</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
-            🔗 Nexus
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;" onclick="window.__openNexusModUrl('${url}')">
+            ${getIconSvg('externalLink', 'pmm-icon-xs')} <span>Nexus</span>
           </button>
         </div>
       `;
@@ -291,8 +292,8 @@ export function openNexusProfileModal(): void {
               <span>ID: #${item.modId}</span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
-            🔗 Nexus
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;" onclick="window.__openNexusModUrl('${url}')">
+            ${getIconSvg('externalLink', 'pmm-icon-xs')} <span>Nexus</span>
           </button>
         </div>
       `;
@@ -374,12 +375,12 @@ export function openNexusProfileModal(): void {
             <div style="font-size: var(--text-xs, 10px); color: var(--text-muted); display: flex; gap: calc(8px * var(--ui-scale, 1));">
               <span>ID: #${item.modId}</span>
               ${item.version ? `<span>v${item.version}</span>` : ''}
-              <span>👍 ${item.endorsements || 0}</span>
-              <span>📥 ${(item.downloads ?? item.totalDownloads ?? 0).toLocaleString()}</span>
+              <span style="display: inline-flex; align-items: center; gap: 3px;">${getIconSvg('thumbsUp', 'pmm-icon-xs')} <span>${item.endorsements || 0}</span></span>
+              <span style="display: inline-flex; align-items: center; gap: 3px;">${getIconSvg('download', 'pmm-icon-xs')} <span>${(item.downloads ?? item.totalDownloads ?? 0).toLocaleString()}</span></span>
             </div>
           </div>
-          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0;" onclick="window.__openNexusModUrl('${url}')">
-            🔗 Nexus
+          <button type="button" class="btn btn-secondary btn-sm" style="padding: calc(3px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); font-size: var(--text-xs, 10.5px); flex-shrink: 0; display: inline-flex; align-items: center; gap: 4px;" onclick="window.__openNexusModUrl('${url}')">
+            ${getIconSvg('externalLink', 'pmm-icon-xs')} <span>Nexus</span>
           </button>
         </div>
       `;

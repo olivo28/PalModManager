@@ -6,6 +6,7 @@ import { loadLibrary } from './library';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { escapeHtml } from '../../utils/helpers';
+import { getIconSvg } from '../icons/mod';
 import { t } from '../../utils/i18n';
 import { switchProfile, clearProfile, getProfiles, getCurrentProfile, getSettings } from '../../api';
 import { suppressWatcherRefresh } from '../editor/watcher';
@@ -88,11 +89,11 @@ export function renderProfileList(): void {
     const uniVer = p.unipalui_version;
     const altVerStr = altVer && altVer !== 'Installed' && altVer !== 'None' ? ` v${altVer}` : '';
     const uniVerStr = uniVer && uniVer !== 'Installed' && uniVer !== 'None' ? ` v${uniVer}` : '';
-    const altBadge = altVer ? `<span class="profile-badge altermatic">⚡ Altermatic${escapeHtml(altVerStr)}</span>` : '';
-    const uniBadge = uniVer ? `<span class="profile-badge unipalui">🎨 UniPalUI${escapeHtml(uniVerStr)}</span>` : '';
+    const altBadge = altVer ? `<span class="profile-badge altermatic" style="display:inline-flex;align-items:center;gap:3px;">${getIconSvg('zap', 'pmm-icon-xs')} <span>Altermatic${escapeHtml(altVerStr)}</span></span>` : '';
+    const uniBadge = uniVer ? `<span class="profile-badge unipalui" style="display:inline-flex;align-items:center;gap:3px;">${getIconSvg('palette', 'pmm-icon-xs')} <span>UniPalUI${escapeHtml(uniVerStr)}</span></span>` : '';
 
     const patchCount = p.compatibility_patches ? p.compatibility_patches.length : 0;
-    const patchBadge = patchCount > 0 ? `<span class="profile-badge patches">📦 ${patchCount} ${patchCount === 1 ? 'patch' : 'patches'}</span>` : '';
+    const patchBadge = patchCount > 0 ? `<span class="profile-badge patches" style="display:inline-flex;align-items:center;gap:3px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${patchCount} ${patchCount === 1 ? 'patch' : 'patches'}</span></span>` : '';
 
     return `
     <div class="profile-item ${isActive ? 'active' : ''}" data-id="${p.id}">
@@ -111,12 +112,12 @@ export function renderProfileList(): void {
         </div>
       </div>
       <div class="profile-actions">
-        <button class="btn-primary btn-sm profile-share-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_share_manifest_title'))}">🔗 ${escapeHtml(t('profiles.btn_share_manifest'))}</button>
-        <button class="btn-secondary btn-sm profile-export-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_export_pack_title'))}">💾 ${escapeHtml(t('profiles.btn_backup_pack'))}</button>
+        <button class="btn-primary btn-sm profile-share-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_share_manifest_title'))}" style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('link', 'pmm-icon-xs')} <span>${escapeHtml(t('profiles.btn_share_manifest'))}</span></button>
+        <button class="btn-secondary btn-sm profile-export-btn" data-id="${p.id}" title="${escapeHtml(t('profiles.btn_export_pack_title'))}" style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('save', 'pmm-icon-xs')} <span>${escapeHtml(t('profiles.btn_backup_pack'))}</span></button>
         <button class="btn-secondary btn-sm profile-clone-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clone'))}</button>
         <button class="btn-secondary btn-sm profile-clear-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_clear'))}</button>
         ${p.id !== currentProfileId ? `<button class="btn-secondary btn-sm profile-switch-btn" data-id="${p.id}">${escapeHtml(t('profiles.btn_switch'))}</button>` : ''}
-        <button class="profile-item-delete ${p.id === 'default' ? 'disabled' : ''}" data-id="${p.id}" ${p.id === 'default' ? 'disabled' : ''}>✕</button>
+        <button class="profile-item-delete ${p.id === 'default' ? 'disabled' : ''}" data-id="${p.id}" ${p.id === 'default' ? 'disabled' : ''} style="display:inline-flex;align-items:center;justify-content:center;">${getIconSvg('x', 'pmm-icon-xs')}</button>
       </div>
     </div>`;
   }).join('');
@@ -242,7 +243,7 @@ export function showInputModal(title: string, message: string, defaultValue: str
       <div class="modal" style="width: 420px; max-width: 90vw; background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 16px 40px rgba(0,0,0,0.6);">
         <div class="modal-header" style="padding: 14px 18px; border-bottom: 1px solid var(--border); background: var(--bg-primary); display: flex; align-items: center; justify-content: space-between;">
           <h3 style="margin: 0; font-size: 14px; font-weight: 700; color: var(--text-primary);">${escapeHtml(title)}</h3>
-          <button class="modal-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 15px; padding: 2px 6px; border-radius: 4px; transition: color 0.15s;">✕</button>
+          <button class="modal-close-btn" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: 2px 6px; border-radius: 4px; display: inline-flex; align-items: center;">${getIconSvg('x', 'pmm-icon-sm')}</button>
         </div>
         <div class="modal-body" style="gap: 8px; padding: 18px; display: flex; flex-direction: column;">
           <label style="font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted);">${escapeHtml(message)}</label>

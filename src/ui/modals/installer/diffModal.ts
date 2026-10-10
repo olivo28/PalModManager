@@ -2,6 +2,7 @@ import { getState } from '../../../state';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { setModIgnoredKeys } from '../../../api';
+import { getIconSvg } from '../../icons/mod';
 
 export function showConfigDiffModal(diffs: any[], modId: string): void {
   const overlay = document.createElement('div');
@@ -16,8 +17,8 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
   let html = `
     <div class="modal" style="max-width:min(calc(850px * var(--ui-scale, 1)), 94vw); width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
       <div class="modal-header" style="padding:calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
-        <h3 style="margin:0; font-size:var(--text-lg, 16px); font-weight:700; color:var(--text-primary);">⚙ ${escapeHtml(t('installer.diff_modal_title') || 'Config Settings Merge Preview')}</h3>
-        <button class="modal-close-btn" id="config-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:var(--text-base, 16px);">✕</button>
+        <h3 style="margin:0; font-size:var(--text-lg, 16px); font-weight:700; color:var(--text-primary); display:flex; align-items:center; gap:6px;">${getIconSvg('settings', 'pmm-icon-md')} <span>${escapeHtml(t('installer.diff_modal_title') || 'Config Settings Merge Preview')}</span></h3>
+        <button class="modal-close-btn" id="config-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center;">${getIconSvg('x', 'pmm-icon-sm')}</button>
       </div>
       <div class="modal-body" style="flex:1; overflow-y:auto; padding:calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display:flex; flex-direction:column; gap:calc(14px * var(--ui-scale, 1)); background:var(--bg-primary);">
   `;
@@ -31,16 +32,16 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       <div class="config-diff-card" id="config-diff-card-${i}" style="background:var(--bg-secondary); border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.3)' : 'var(--border)'}; border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:4px;">
         <div class="config-diff-file-header" data-index="${i}" style="cursor:pointer; font-weight:700; font-family:monospace; font-size:12px; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between; padding:2px 0; user-select:none; word-break:break-all;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span>📄 ${escapeHtml(diff.file_name)}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px;">${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(diff.file_name)}</span></span>
             <span id="diff-file-badge-${i}" style="font-size:9px; padding:1px 6px; border-radius:8px; font-weight:600; text-transform:uppercase; ${isFileIgnored ? 'background:rgba(255,80,0,0.15); color:#ff5000; border:1px solid rgba(255,80,0,0.3);' : 'background:rgba(0,188,255,0.15); color:var(--accent); border:1px solid rgba(0,188,255,0.3);'}">
               ${isFileIgnored ? escapeHtml(t('installer.diff_file_ignored_badge')) : escapeHtml(t('installer.diff_merge_file'))}
             </span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="btn ignore-file-btn" data-index="${i}" data-file="${escapeHtml(diff.file_name)}" style="font-size:10px; padding:3px 8px; height:auto; line-height:1; margin:0; border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(0,188,255,0.4)'}; background:${isFileIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)'}; color:${isFileIgnored ? '#ff5000' : 'var(--text-primary)'}; border-radius:4px; cursor:pointer;">
-              ${isFileIgnored ? `<span>✕</span> ${escapeHtml(t('installer.diff_use_clean_file'))}` : `<span>✓</span> ${escapeHtml(t('installer.diff_merge_file'))}`}
+            <button type="button" class="btn ignore-file-btn" data-index="${i}" data-file="${escapeHtml(diff.file_name)}" style="font-size:10px; padding:3px 8px; height:auto; line-height:1; margin:0; border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(0,188,255,0.4)'}; background:${isFileIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)'}; color:${isFileIgnored ? '#ff5000' : 'var(--text-primary)'}; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+              ${isFileIgnored ? `<span>${getIconSvg('x', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.diff_use_clean_file'))}</span>` : `<span>${getIconSvg('check', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.diff_merge_file'))}</span>`}
             </button>
-            <span class="toggle-icon" style="font-size:10px; color:var(--text-muted); padding-left:4px;">${collapseByDefault ? '▲' : '▼'}</span>
+            <span class="toggle-icon" style="display:inline-flex; align-items:center; color:var(--text-muted); padding-left:4px;">${collapseByDefault ? getIconSvg('chevronUp', 'pmm-icon-xs') : getIconSvg('chevronDown', 'pmm-icon-xs')}</span>
           </div>
         </div>
         <div class="config-diff-file-content" id="config-diff-file-content-${i}" style="display: ${collapseByDefault ? 'none' : 'flex'}; flex-direction:column; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.03); padding-top:8px; opacity:${isFileIgnored ? '0.4' : '1'};">
@@ -50,7 +51,7 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       html += `
         <div>
           <div style="color:#ff9000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🟢 ${escapeHtml(t('installer.diff_user_changes_title') || 'Your changes to preserve')}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; color:#2ecc71;">${getIconSvg('checkCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.diff_user_changes_title') || 'Your changes to preserve')}</span></span>
             <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,144,0,0.15); border:1px solid rgba(255,144,0,0.25);">${diff.keys_user_changed.length}</span>
           </div>
           <div style="overflow-x:auto; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:4px;">
@@ -88,7 +89,7 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       html += `
         <div>
           <div style="color:#00bcff; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🔵 ${escapeHtml(t('installer.diff_new_settings_title'))}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; color:#00bcff;">${getIconSvg('plus', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.diff_new_settings_title'))}</span></span>
             <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.25);">${diff.keys_added_by_author.length}</span>
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
@@ -104,7 +105,7 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       html += `
         <div>
           <div style="color:#ff5000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🔴 ${escapeHtml(t('installer.diff_author_removed_title'))}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; color:#ff7675;">${getIconSvg('trash', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.diff_author_removed_title'))}</span></span>
             <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,80,0,0.15); border:1px solid rgba(255,80,0,0.25);">${diff.keys_removed_by_author.length}</span>
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
@@ -193,8 +194,8 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       targetBtn.style.background = isNowIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(0,188,255,0.05)';
       targetBtn.style.color = isNowIgnored ? '#ff5000' : 'var(--text-primary)';
       targetBtn.innerHTML = isNowIgnored
-        ? `<span>✕</span> ${escapeHtml(t('installer.diff_use_clean_file'))}`
-        : `<span>✓</span> ${escapeHtml(t('installer.diff_merge_file'))}`;
+        ? `<span>${getIconSvg('x', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.diff_use_clean_file'))}</span>`
+        : `<span>${getIconSvg('check', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.diff_merge_file'))}</span>`;
 
       setModIgnoredKeys(modId, localIgnoredKeys).then(() => {
         const modInState = state.allMods.find(m => m.id === modId);
@@ -215,10 +216,10 @@ export function showConfigDiffModal(diffs: any[], modId: string): void {
       if (content && icon) {
         if (content.style.display === 'none') {
           content.style.display = 'flex';
-          icon.textContent = '▼';
+          icon.innerHTML = getIconSvg('chevronDown', 'pmm-icon-xs');
         } else {
           content.style.display = 'none';
-          icon.textContent = '▲';
+          icon.innerHTML = getIconSvg('chevronUp', 'pmm-icon-xs');
         }
       }
     });
@@ -251,10 +252,10 @@ export function showArchivedConfigDiffModal(
     <div class="modal" style="max-width:850px; width:100%; max-height:85vh; display:flex; flex-direction:column; background:var(--bg-secondary); border:1px solid var(--border); border-radius:8px; box-shadow:0 12px 36px rgba(0,0,0,0.5);">
       <div class="modal-header" style="padding:16px 20px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between;">
         <div style="display:flex; align-items:center; gap:8px;">
-          <span style="font-size:18px;">💾</span>
+          <span style="display:inline-flex; align-items:center; color:#2ecc71;">${getIconSvg('save', 'pmm-icon-md')}</span>
           <h3 style="margin:0; font-size:16px; font-weight:700; color:var(--text-primary);">${escapeHtml(t('installer.archived_diff_modal_title') || 'Archived Configs Merge Preview')}</h3>
         </div>
-        <button class="modal-close-btn" id="archived-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:16px;">✕</button>
+        <button class="modal-close-btn" id="archived-diff-modal-close-x" style="background:none; border:none; color:var(--text-muted); cursor:pointer; display:flex; align-items:center;">${getIconSvg('x', 'pmm-icon-sm')}</button>
       </div>
       <div class="modal-body" style="flex:1; overflow-y:auto; padding:20px; display:flex; flex-direction:column; gap:16px; background:var(--bg-primary);">
   `;
@@ -268,16 +269,16 @@ export function showArchivedConfigDiffModal(
       <div class="config-diff-card" id="archived-diff-card-${i}" style="background:var(--bg-secondary); border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.3)' : 'rgba(46,204,113,0.3)'}; border-radius:6px; padding:12px; display:flex; flex-direction:column; gap:4px;">
         <div class="config-diff-file-header" data-index="${i}" style="cursor:pointer; font-weight:700; font-family:monospace; font-size:12px; color:var(--text-primary); display:flex; align-items:center; justify-content:space-between; padding:2px 0; user-select:none; word-break:break-all;">
           <div style="display:flex; align-items:center; gap:8px;">
-            <span>📄 ${escapeHtml(diff.file_name)}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px;">${getIconSvg('fileText', 'pmm-icon-xs')} <span>${escapeHtml(diff.file_name)}</span></span>
             <span id="archived-diff-file-badge-${i}" style="font-size:9px; padding:1px 6px; border-radius:8px; font-weight:600; text-transform:uppercase; ${isFileIgnored ? 'background:rgba(255,80,0,0.15); color:#ff5000; border:1px solid rgba(255,80,0,0.3);' : 'background:rgba(46,204,113,0.15); color:#2ecc71; border:1px solid rgba(46,204,113,0.3);'}">
               ${isFileIgnored ? escapeHtml(t('installer.archived_file_skipped_badge')) : escapeHtml(t('installer.archived_file_restore_badge'))}
             </span>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <button type="button" class="btn ignore-archived-file-btn" data-index="${i}" data-file="${escapeHtml(diff.file_name)}" style="font-size:10px; padding:3px 8px; height:auto; line-height:1; margin:0; border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(46,204,113,0.4)'}; background:${isFileIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(46,204,113,0.08)'}; color:${isFileIgnored ? '#ff5000' : '#2ecc71'}; border-radius:4px; cursor:pointer;">
-              ${isFileIgnored ? `<span>✕</span> ${escapeHtml(t('installer.archived_file_skip'))}` : `<span>✓</span> ${escapeHtml(t('installer.archived_file_restore'))}`}
+            <button type="button" class="btn ignore-archived-file-btn" data-index="${i}" data-file="${escapeHtml(diff.file_name)}" style="font-size:10px; padding:3px 8px; height:auto; line-height:1; margin:0; border:1px solid ${isFileIgnored ? 'rgba(255,80,0,0.5)' : 'rgba(46,204,113,0.4)'}; background:${isFileIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(46,204,113,0.08)'}; color:${isFileIgnored ? '#ff5000' : '#2ecc71'}; border-radius:4px; cursor:pointer; display:inline-flex; align-items:center; gap:4px;">
+              ${isFileIgnored ? `<span>${getIconSvg('x', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.archived_file_skip'))}</span>` : `<span>${getIconSvg('check', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.archived_file_restore'))}</span>`}
             </button>
-            <span class="toggle-icon" style="font-size:10px; color:var(--text-muted); padding-left:4px;">${collapseByDefault ? '▲' : '▼'}</span>
+            <span class="toggle-icon" style="display:inline-flex; align-items:center; color:var(--text-muted); padding-left:4px;">${collapseByDefault ? getIconSvg('chevronUp', 'pmm-icon-xs') : getIconSvg('chevronDown', 'pmm-icon-xs')}</span>
           </div>
         </div>
         <div class="config-diff-file-content" id="archived-diff-file-content-${i}" style="display: ${collapseByDefault ? 'none' : 'flex'}; flex-direction:column; gap:12px; margin-top:8px; border-top:1px solid rgba(255,255,255,0.03); padding-top:8px; opacity:${isFileIgnored ? '0.4' : '1'};">
@@ -287,7 +288,7 @@ export function showArchivedConfigDiffModal(
       html += `
         <div>
           <div style="color:#2ecc71; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🟢 ${escapeHtml(t('installer.archived_custom_keys_title'))}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; color:#2ecc71;">${getIconSvg('checkCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.archived_custom_keys_title'))}</span></span>
             <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(46,204,113,0.15); border:1px solid rgba(46,204,113,0.25);">${diff.keys_user_changed.length}</span>
           </div>
           <div style="overflow-x:auto; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:4px;">
@@ -331,7 +332,7 @@ export function showArchivedConfigDiffModal(
       html += `
         <div>
           <div style="color:#00bcff; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🔵 ${escapeHtml(t('installer.archived_new_keys_title'))}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; color:#00bcff;">${getIconSvg('plus', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.archived_new_keys_title'))}</span></span>
             <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.25);">${diff.keys_added_by_author.length}</span>
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
@@ -347,7 +348,7 @@ export function showArchivedConfigDiffModal(
       html += `
         <div>
           <div style="color:#ff5000; font-size:11px; font-weight:700; margin-bottom:6px; display:flex; align-items:center; gap:6px;">
-            <span>🔴 ${escapeHtml(t('installer.diff_author_removed_title'))}</span>
+            <span style="display:inline-flex; align-items:center; gap:4px; color:#ff7675;">${getIconSvg('trash', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.diff_author_removed_title'))}</span></span>
             <span style="font-size:9px; padding:1px 5px; border-radius:10px; background:rgba(255,80,0,0.15); border:1px solid rgba(255,80,0,0.25);">${diff.keys_removed_by_author.length}</span>
           </div>
           <div style="display:flex; flex-wrap:wrap; gap:6px; background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:10px;">
@@ -427,8 +428,8 @@ export function showArchivedConfigDiffModal(
       targetBtn.style.background = isNowIgnored ? 'rgba(255,80,0,0.1)' : 'rgba(46,204,113,0.08)';
       targetBtn.style.color = isNowIgnored ? '#ff5000' : '#2ecc71';
       targetBtn.innerHTML = isNowIgnored
-        ? `<span>✕</span> ${escapeHtml(t('installer.archived_file_skip'))}`
-        : `<span>✓</span> ${escapeHtml(t('installer.archived_file_restore'))}`;
+        ? `<span>${getIconSvg('x', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.archived_file_skip'))}</span>`
+        : `<span>${getIconSvg('check', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.archived_file_restore'))}</span>`;
 
       onUpdate(localIgnoredFiles, localIgnoredKeys);
     });
@@ -442,10 +443,10 @@ export function showArchivedConfigDiffModal(
       if (content && icon) {
         if (content.style.display === 'none') {
           content.style.display = 'flex';
-          icon.textContent = '▼';
+          icon.innerHTML = getIconSvg('chevronDown', 'pmm-icon-xs');
         } else {
           content.style.display = 'none';
-          icon.textContent = '▲';
+          icon.innerHTML = getIconSvg('chevronUp', 'pmm-icon-xs');
         }
       }
     });

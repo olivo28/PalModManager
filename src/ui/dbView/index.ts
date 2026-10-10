@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { dbDom } from '../../framework';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
+import { getIconSvg } from '../icons/mod';
 import { t } from '../../utils/i18n';
 import type { DbSnapshot, DbTable } from './types';
 import { dbState } from './state';
@@ -27,7 +28,7 @@ export async function renderDbView(): Promise<void> {
           <button class="db-tab-btn active" data-dbtab="mods">${escapeHtml(t('db.tab_mods'))}</button>
           <button class="db-tab-btn" data-dbtab="profiles">${escapeHtml(t('db.tab_profiles'))}</button>
           <button class="db-tab-btn" data-dbtab="settings">${escapeHtml(t('db.tab_settings'))}</button>
-          <button class="db-tab-btn" data-dbtab="usmap">⚡ ${escapeHtml(t('db.tab_usmap') || 'USMAP Schema')}</button>
+          <button class="db-tab-btn" data-dbtab="usmap" style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('db.tab_usmap') || 'USMAP Schema')}</span></button>
         </div>
         <button id="db-refresh-btn" class="db-action-btn" title="${escapeHtml(t('db.btn_refresh_title'))}">${escapeHtml(t('db.btn_refresh'))}</button>
       </div>
@@ -92,7 +93,7 @@ export async function loadSnapshot(): Promise<void> {
     renderCurrentTable();
   } catch (e) {
     showToast(t('toasts.export_failed', { error: String(e) }), 'error');
-    if (panel) panel.innerHTML = `<div class="db-error">❌ ${escapeHtml(t('toasts.export_failed', { error: String(e) }))}</div>`;
+    if (panel) panel.innerHTML = `<div class="db-error" style="display:flex;align-items:center;gap:6px;">${getIconSvg('xCircle', 'pmm-icon-sm')} <span>${escapeHtml(t('toasts.export_failed', { error: String(e) }))}</span></div>`;
   }
 }
 

@@ -343,7 +343,9 @@
     "btn_remove": "Eliminar",
     "dialog_select_config_title": "Seleccionar archivo de configuración para \"{name}\"",
     "pak_contents_title": "Contenido Interno del .pak",
-    "btn_load_pak_contents": "Inspeccionar Assets del .pak"
+    "btn_load_pak_contents": "Inspeccionar Assets del .pak",
+    "comp_disabled_tooltip": "Componente deshabilitado. Haz clic para habilitar en el juego.",
+    "comp_enabled_tooltip": "Componente habilitado. Haz clic para deshabilitar en el juego."
   },
   "installer": {
     "log_merged_hybrid": "[MERGE] Componentes combinados con el mod existente: {name}",
@@ -457,7 +459,12 @@
     "orphans_summary_mixed": "{configs} ajuste(s) de usuario (conservados) y {stale} archivo(s) obsoleto(s) (purgados).",
     "orphans_instructions": "Los archivos desmarcados se eliminarán limpiamente durante la actualización. Marca los que desees conservar.",
     "orphans_badge_config": "Config (Conservar)",
-    "orphans_badge_stale": "Obsoleto (Eliminar)"
+    "orphans_badge_stale": "Obsoleto (Eliminar)",
+    "variant_detected_title": "Variante detectada",
+    "variant_detected_desc": "Ya hay otra variante de este mod instalada ({name})",
+    "mode_separate": "Instalar por separado",
+    "mode_merge": "Fusionar como híbrido",
+    "btn_merge_install": "Fusionar e instalar"
   },
   "editor": {
     "completions": {
@@ -1718,7 +1725,8 @@
     "untracked_success": "Mod eliminado de tu lista de seguimiento en Nexus Mods",
     "mod_conflict_active": "No se puede activar '{name}' porque tiene conflicto con el mod activo '{conflicting}'. Desactiva '{conflicting}' primero.",
     "bridging_workshop": "Registrando \"{name}\" en el menú Workshop de Palworld...",
-    "bridge_workshop_success": "Registrado con éxito \"{name}\" en el menú Workshop (ID: {id})"
+    "bridge_workshop_success": "Registrado con éxito \"{name}\" en el menú Workshop (ID: {id})",
+    "component_toggled_success": "Componente del mod alternado correctamente"
   },
   "dialogs": {
     "confirm_remove_mod": "¿Eliminar \"{name}\" permanentemente?",
@@ -1999,7 +2007,14 @@
     "badge_single_choice": "Elige uno",
     "badge_at_most_one": "Opcional",
     "badge_all_required": "Todos obligatorios",
-    "badge_optional": "Cualquiera"
+    "badge_optional": "Cualquiera",
+    "sidebar_status_title": "Estado",
+    "sidebar_selected_title": "Opciones",
+    "status_ready": "Listo",
+    "status_pending": "Pendiente",
+    "option_selected_single": "{count} seleccionada",
+    "options_selected_count": "{count} seleccionadas",
+    "click_to_zoom": "Clic para ampliar vista previa"
   },
   "crash_doctor": {
     "scanning_dumps": "Inspeccionando volcados de caídas y logs del motor...",

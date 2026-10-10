@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { bus } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 import { getState, updateState } from '../../../state';
 import { applyProfileManifest, getMods, getProfiles } from '../../../api';
 import { showToast } from '../../toast';
@@ -33,8 +34,8 @@ export function ensureFloatingSyncPill(): HTMLElement {
   pill.style.transition = 'all 0.25s ease';
 
   pill.innerHTML = `
-    <div style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(0, 180, 216, 0.2); color: #00b4d8; font-size: 12px; animation: pmmPulse 2s infinite;">
-      ⏳
+    <div style="display: flex; align-items: center; justify-content: center; width: 22px; height: 22px; border-radius: 50%; background: rgba(0, 180, 216, 0.2); color: #00b4d8;">
+      ${getIconSvg('refreshCw', 'pmm-icon-xs spin')}
     </div>
     <div style="display: flex; flex-direction: column; gap: 2px;">
       <span id="profile-sync-pill-title" style="font-size: 12px; font-weight: 700; color: #ffffff;">
@@ -44,7 +45,7 @@ export function ensureFloatingSyncPill(): HTMLElement {
         0 mods remaining
       </span>
     </div>
-    <button id="profile-sync-pill-close" style="background: none; border: none; color: #718096; font-size: 14px; cursor: pointer; padding: 2px 4px; margin-left: 4px;" title="${escapeHtml(t('common.close'))}">✕</button>
+    <button id="profile-sync-pill-close" style="background: none; border: none; color: #718096; cursor: pointer; padding: 2px 4px; margin-left: 4px; display: inline-flex; align-items: center;" title="${escapeHtml(t('common.close'))}">${getIconSvg('x', 'pmm-icon-xs')}</button>
   `;
 
   document.body.appendChild(pill);

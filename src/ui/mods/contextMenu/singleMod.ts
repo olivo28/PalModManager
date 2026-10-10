@@ -13,6 +13,7 @@ import { t } from '../../../utils/i18n';
 import { getContextOverlay, hideContextMenu, positionContextMenu } from './menuDom';
 import { mainDom, detailDom } from '../../../framework';
 import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
+import { getIconSvg } from '../../icons/mod';
 
 export function runContextAction(action: string, modId: string): void {
   const mod = getState().allMods.find(m => m.id === modId);
@@ -336,11 +337,11 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   if (!isWorkshop) {
     html += `
       <button type="button" class="context-menu-item" data-action="check-updates">
-        <span class="ctx-icon">&#8634;</span>
+        <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.check_updates'))}
       </button>
       <button type="button" class="context-menu-item" data-action="reinstall-mod">
-        <span class="ctx-icon">🔄</span>
+        <span class="ctx-icon">${getIconSvg('refreshCw', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.reinstall_mod'))}
       </button>
     `;
@@ -351,7 +352,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     if (isWorkshop) {
       html += `
         <button type="button" class="context-menu-item" data-action="update-workshop-mod" style="font-weight: bold; color: #ff9d00;">
-          <span class="ctx-icon">⚡</span>
+          <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.update_mod'))}
         </button>
       `;
@@ -359,11 +360,11 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       const updateVer = getState().availableUpdates.get(modId)!;
       html += `
         <button type="button" class="context-menu-item" data-action="update-local-mod" style="font-weight: bold; color: #00bcff;">
-          <span class="ctx-icon">⚡</span>
+          <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.update_mod_ver', { version: updateVer }))}
         </button>
         <button type="button" class="context-menu-item" data-action="ignore-update">
-          <span class="ctx-icon">✕</span>
+          <span class="ctx-icon">${getIconSvg('x', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.ignore_update', { version: updateVer }))}
         </button>
       `;
@@ -372,7 +373,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   html += `
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="toggle">
-      <span class="ctx-icon">${mod.enabled ? '◌' : '●'}</span>
+      <span class="ctx-icon">${mod.enabled ? getIconSvg('eyeOff', 'pmm-icon-sm') : getIconSvg('eye', 'pmm-icon-sm')}</span>
       ${escapeHtml(mod.enabled ? t('context.disable_mod') : t('context.enable_mod'))}
     </button>`;
 
@@ -381,29 +382,29 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     for (const comp of compFolders) {
       html += `
       <button type="button" class="context-menu-item" data-action="open-comp-path" data-path="${escapeHtml(comp.path)}">
-        <span class="ctx-icon">📁</span>
+        <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
         ${escapeHtml(comp.buttonLabel)}
       </button>`;
     }
   } else {
     html += `
     <button type="button" class="context-menu-item" data-action="open-folder">
-      <span class="ctx-icon">📁</span>
+      <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.open_folder'))}
     </button>`;
   }
 
   html += `
     <button type="button" class="context-menu-item" data-action="edit-config">
-      <span class="ctx-icon">⚙</span>
+      <span class="ctx-icon">${getIconSvg('settings', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.edit_config'))}
     </button>
     <button type="button" class="context-menu-item" data-action="edit-notes">
-      <span class="ctx-icon">📝</span>
+      <span class="ctx-icon">${getIconSvg('fileText', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.edit_notes'))}
     </button>
     <button type="button" class="context-menu-item" data-action="detail">
-      <span class="ctx-icon">ℹ</span>
+      <span class="ctx-icon">${getIconSvg('info', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.view_details'))}
     </button>
   `;
@@ -411,7 +412,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   if (!isXbox && !isWorkshop) {
     html += `
     <button type="button" class="context-menu-item" data-action="bridge-workshop">
-      <span class="ctx-icon">♨️</span>
+      <span class="ctx-icon">${getIconSvg('package', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.bridge_to_workshop'))}
     </button>`;
   }
@@ -420,7 +421,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   if (isXbox && isPakMod) {
     html += `
     <button type="button" class="context-menu-item" data-action="convert-gamepass" style="color: #ffaa00;">
-      <span class="ctx-icon">⚡</span>
+      <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.convert_gamepass'))}
     </button>`;
   }
@@ -430,25 +431,25 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   const isInFolder = folders.some(f => f.mod_ids.includes(modId));
   const foldersHtml = folders.map(f => `
     <button type="button" class="context-submenu-item" data-action="move-to-folder" data-folder-id="${f.id}" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-      <span>📁</span> ${escapeHtml(f.name)}
+      <span style="display:inline-flex;align-items:center;">${getIconSvg('folder', 'pmm-icon-xs')}</span> ${escapeHtml(f.name)}
     </button>
   `).join('');
 
   html += `
     <div class="context-menu-sep"></div>
     <div class="context-menu-item has-submenu" style="position:relative;display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">📁</span>
+      <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.move_to_folder'))}
-      <span style="margin-left:auto;font-size:9px;color:var(--text-muted);pointer-events:none;">▶</span>
+      <span style="margin-left:auto;display:inline-flex;align-items:center;color:var(--text-muted);pointer-events:none;">${getIconSvg('chevronRight', 'pmm-icon-xs')}</span>
       <div class="context-submenu" style="display:none;position:absolute;top:-4px;left:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;z-index:4000;padding:4px 0;">
         ${foldersHtml}
         ${(folders.length > 0 && isInFolder) ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         ${isInFolder ? `<button type="button" class="context-submenu-item" data-action="move-to-folder" data-folder-id="none" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>❌</span> ${escapeHtml(t('context.folder_none'))}
+          <span style="display:inline-flex;align-items:center;">${getIconSvg('xCircle', 'pmm-icon-xs')}</span> ${escapeHtml(t('context.folder_none'))}
         </button>` : ''}
         ${folders.length > 0 ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         <button type="button" class="context-submenu-item" data-action="move-to-new-folder" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>➕</span> ${escapeHtml(t('mods.btn_new_folder'))}...
+          <span style="display:inline-flex;align-items:center;">${getIconSvg('plus', 'pmm-icon-xs')}</span> ${escapeHtml(t('mods.btn_new_folder'))}...
         </button>
       </div>
     </div>
@@ -461,23 +462,23 @@ export function showContextMenu(modId: string, x: number, y: number): void {
       const isTracked = isNexusModTracked(mod.nexusModId, getState().currentSettings?.nexusTrackedCache);
 
       html += `<button type="button" class="context-menu-item" data-action="toggle-endorse">
-        <span class="ctx-icon">${isEndorsed ? '👎' : '👍'}</span>
+        <span class="ctx-icon">${getIconSvg('thumbsUp', 'pmm-icon-sm')}</span>
         ${escapeHtml(isEndorsed ? t('context.unendorse_mod') : t('context.endorse_mod'))}
       </button>`;
 
       html += `<button type="button" class="context-menu-item" data-action="toggle-track">
-        <span class="ctx-icon">${isTracked ? '✖️' : '📌'}</span>
+        <span class="ctx-icon">${getIconSvg('target', 'pmm-icon-sm')}</span>
         ${escapeHtml(isTracked ? t('context.untrack_mod') : t('context.track_mod'))}
       </button>`;
 
       html += `<button type="button" class="context-menu-item" data-action="visit-nexus">
-        <span class="ctx-icon">N</span>
+        <span class="ctx-icon">${getIconSvg('externalLink', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.visit_nexus'))}
       </button>`;
     }
     if (mod.githubRepo) {
       html += `<button type="button" class="context-menu-item" data-action="visit-github">
-        <span class="ctx-icon">G</span>
+        <span class="ctx-icon">${getIconSvg('github', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.visit_github'))}
       </button>`;
     }
@@ -489,11 +490,11 @@ export function showContextMenu(modId: string, x: number, y: number): void {
     if (workshopId) {
       html += `<div class="context-menu-sep"></div>
         <button type="button" class="context-menu-item" data-action="visit-steam-app">
-          <span class="ctx-icon">♨️</span>
+          <span class="ctx-icon">${getIconSvg('package', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.visit_steam_app'))}
         </button>
         <button type="button" class="context-menu-item" data-action="visit-steam-web">
-          <span class="ctx-icon">🌐</span>
+          <span class="ctx-icon">${getIconSvg('globe', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.visit_steam_web'))}
         </button>`;
     }
@@ -502,7 +503,7 @@ export function showContextMenu(modId: string, x: number, y: number): void {
   if (!isWorkshop) {
     html += `<div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item danger" data-action="remove">
-        <span class="ctx-icon">✕</span>
+        <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.remove_mod'))}
       </button>`;
   }

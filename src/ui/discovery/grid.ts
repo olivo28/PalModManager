@@ -6,6 +6,7 @@ import { discState, isUserPremium } from './state';
 import { formatDateDisplay } from './helpers';
 import { openModDetails } from './detailsModal';
 import { discoveryDom } from '../../framework';
+import { getIconSvg } from '../icons/mod';
 
 export function renderGrid(mods: DiscoveryModItem[]): void {
   const grid = discoveryDom.elMaybe('discovery-grid');
@@ -23,8 +24,8 @@ export function renderGrid(mods: DiscoveryModItem[]): void {
     const updatedDate = formatDateDisplay(m.updatedAt);
 
     const actionBtnHtml = isPremium
-      ? `<button class="discovery-card-btn-install" data-action="quick-install" data-mod-id="${m.modId}" title="${t('discovery.btn_quick_install')}">⚡ ${t('discovery.install_short')}</button>`
-      : `<button class="discovery-card-btn-install" data-action="view-nexus" data-mod-id="${m.modId}" title="${t('discovery.view_on_nexus')}">🌐 ${t('discovery.view_on_nexus')}</button>`;
+      ? `<button class="discovery-card-btn-install" data-action="quick-install" data-mod-id="${m.modId}" title="${t('discovery.btn_quick_install')}">${getIconSvg('zap', 'pmm-icon-xs')} <span>${t('discovery.install_short')}</span></button>`
+      : `<button class="discovery-card-btn-install" data-action="view-nexus" data-mod-id="${m.modId}" title="${t('discovery.view_on_nexus')}">${getIconSvg('externalLink', 'pmm-icon-xs')} <span>Nexus</span></button>`;
 
     return `
       <div class="discovery-card ${isBlurred ? 'nsfw-blurred' : ''}" data-mod-id="${m.modId}">
@@ -33,7 +34,7 @@ export function renderGrid(mods: DiscoveryModItem[]): void {
           <div class="discovery-card-badges">
             <span class="discovery-badge-category">${escapeHtml(cat)}</span>
             <div class="discovery-card-right-badges">
-              ${isNsfw ? '<span class="discovery-badge-nsfw">🔞 NSFW</span>' : ''}
+              ${isNsfw ? `<span class="discovery-badge-nsfw">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>NSFW</span></span>` : ''}
               <span class="discovery-badge-version">v${escapeHtml(m.version)}</span>
             </div>
           </div>
@@ -44,14 +45,14 @@ export function renderGrid(mods: DiscoveryModItem[]): void {
           <p class="discovery-card-summary">${escapeHtml(m.summary || 'No description.')}</p>
           
           <div class="discovery-card-dates">
-            <span title="Uploaded date">📅 ${uploadedDate || 'N/A'}</span>
-            <span title="Updated date">🔄 ${updatedDate || uploadedDate || 'N/A'}</span>
+            <span title="Uploaded date">${getIconSvg('calendar', 'pmm-icon-xs')} <span>${uploadedDate || 'N/A'}</span></span>
+            <span title="Updated date">${getIconSvg('clock', 'pmm-icon-xs')} <span>${updatedDate || uploadedDate || 'N/A'}</span></span>
           </div>
 
           <div class="discovery-card-footer">
             <div class="discovery-card-stats">
-              <span class="discovery-card-stat" title="Endorsements">👍 ${m.endorsements.toLocaleString()}</span>
-              <span class="discovery-card-stat" title="Downloads">📥 ${m.downloads.toLocaleString()}</span>
+              <span class="discovery-card-stat" title="Endorsements">${getIconSvg('thumbsUp', 'pmm-icon-xs')} <span>${m.endorsements.toLocaleString()}</span></span>
+              <span class="discovery-card-stat" title="Downloads">${getIconSvg('download', 'pmm-icon-xs')} <span>${m.downloads.toLocaleString()}</span></span>
             </div>
             ${actionBtnHtml}
           </div>

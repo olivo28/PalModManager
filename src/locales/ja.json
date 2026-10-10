@@ -343,7 +343,9 @@
     "btn_remove": "削除",
     "dialog_select_config_title": "\"{name}\" の設定ファイルを選択",
     "pak_contents_title": ".pak の内部コンテンツ",
-    "btn_load_pak_contents": ".pak のアセットを検査"
+    "btn_load_pak_contents": ".pak のアセットを検査",
+    "comp_disabled_tooltip": "コンポーネントが無効です。クリックしてゲーム内で有効化します。",
+    "comp_enabled_tooltip": "コンポーネントが有効です。クリックしてゲーム内で無効化します。"
   },
   "installer": {
     "log_merged_hybrid": "[MERGE] 既存のMod「{name}」とコンポーネントを統合しました",
@@ -457,7 +459,12 @@
     "orphans_summary_mixed": "ユーザー設定 {configs} 件（保持）および古いファイル {stale} 件（削除対象）。",
     "orphans_instructions": "チェックを外したファイルは更新時に安全に削除されます。保持したいファイルを選択してください。",
     "orphans_badge_config": "設定 (保持)",
-    "orphans_badge_stale": "古いファイル (削除)"
+    "orphans_badge_stale": "古いファイル (削除)",
+    "variant_detected_title": "バリアントを検出",
+    "variant_detected_desc": "このMODの別のバリアントが既にインストールされています（{name}）",
+    "mode_separate": "個別インストール",
+    "mode_merge": "ハイブリッドとして統合",
+    "btn_merge_install": "統合してインストール"
   },
   "editor": {
     "completions": {
@@ -1718,7 +1725,8 @@
     "untracked_success": "Nexus Modsの追跡リストから削除しました",
     "mod_conflict_active": "有効化されたMOD「{conflicting}」と競合するため、「{name}」を有効化できません。先に「{conflicting}」を無効化してください。",
     "bridging_workshop": "「{name}」をPalworldのWorkshopメニューに登録中...",
-    "bridge_workshop_success": "「{name}」をWorkshopメニューに登録しました (ID: {id})"
+    "bridge_workshop_success": "「{name}」をWorkshopメニューに登録しました (ID: {id})",
+    "component_toggled_success": "MODコンポーネントを切り替えました"
   },
   "dialogs": {
     "confirm_remove_mod": "「{name}」を完全に削除しますか？",
@@ -1999,7 +2007,14 @@
     "badge_single_choice": "1つ選択",
     "badge_at_most_one": "任意",
     "badge_all_required": "全て必須",
-    "badge_optional": "自由"
+    "badge_optional": "自由",
+    "sidebar_status_title": "ステータス",
+    "sidebar_selected_title": "選択構成",
+    "status_ready": "準備完了",
+    "status_pending": "保留中",
+    "option_selected_single": "{count} 個選択中",
+    "options_selected_count": "{count} 個選択中",
+    "click_to_zoom": "クリックしてプレビューを拡大"
   },
   "crash_doctor": {
     "scanning_dumps": "クラッシュダンプとエンジンログを解析中...",

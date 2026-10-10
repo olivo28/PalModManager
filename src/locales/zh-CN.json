@@ -343,7 +343,9 @@
     "btn_remove": "移除",
     "dialog_select_config_title": "为 \"{name}\" 选择配置文件",
     "pak_contents_title": ".pak 容器内部内容",
-    "btn_load_pak_contents": "检查 .pak 内部资产"
+    "btn_load_pak_contents": "检查 .pak 内部资产",
+    "comp_disabled_tooltip": "组件已禁用。点击以在游戏中启用。",
+    "comp_enabled_tooltip": "组件已启用。点击以在游戏中禁用。"
   },
   "installer": {
     "log_merged_hybrid": "[MERGE] 已与现有模组合并组件：{name}",
@@ -457,7 +459,12 @@
     "orphans_summary_mixed": "包含 {configs} 个用户配置文件（默认保留）与 {stale} 个旧文件（默认清除）。",
     "orphans_instructions": "未勾选的文件将在更新过程中被彻底清除。请勾选您希望保留的文件。",
     "orphans_badge_config": "配置 (保留)",
-    "orphans_badge_stale": "旧文件 (清除)"
+    "orphans_badge_stale": "旧文件 (清除)",
+    "variant_detected_title": "检测到变体",
+    "variant_detected_desc": "此模组的另一个变体已安装（{name}）",
+    "mode_separate": "单独安装",
+    "mode_merge": "合并为混合模组",
+    "btn_merge_install": "合并并安装"
   },
   "editor": {
     "completions": {
@@ -1718,7 +1725,8 @@
     "untracked_success": "已从 Nexus Mods 关注列表中移除",
     "mod_conflict_active": "无法启用“{name}”，因为它与正在运行的模组“{conflicting}”冲突。请先禁用“{conflicting}”。",
     "bridging_workshop": "正在将“{name}”注册到 Palworld 创意工坊菜单...",
-    "bridge_workshop_success": "成功将“{name}”注册至创意工坊菜单 (ID: {id})"
+    "bridge_workshop_success": "成功将“{name}”注册至创意工坊菜单 (ID: {id})",
+    "component_toggled_success": "模组组件状态已切换"
   },
   "dialogs": {
     "confirm_remove_mod": "确定要永久移除“{name}”吗？",
@@ -1999,7 +2007,14 @@
     "badge_single_choice": "选一项",
     "badge_at_most_one": "可选",
     "badge_all_required": "全部必选",
-    "badge_optional": "任意"
+    "badge_optional": "任意",
+    "sidebar_status_title": "状态",
+    "sidebar_selected_title": "已选配置",
+    "status_ready": "就绪",
+    "status_pending": "待选择",
+    "option_selected_single": "已选 {count} 项",
+    "options_selected_count": "已选 {count} 项",
+    "click_to_zoom": "点击放大预览"
   },
   "crash_doctor": {
     "scanning_dumps": "正在分析崩溃转储文件与引擎日志...",

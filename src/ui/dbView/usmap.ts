@@ -2,6 +2,7 @@ import { dbDom } from '../../framework';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
+import { getIconSvg } from '../icons/mod';
 import {
   getUsmapSummary,
   searchUsmapEntries,
@@ -25,7 +26,7 @@ export async function loadUsmapData(): Promise<void> {
     renderUsmapView();
   } catch (e) {
     showToast(`Failed to load USMAP: ${e}`, 'error');
-    if (panel) panel.innerHTML = `<div class="db-error">❌ ${escapeHtml(String(e))}</div>`;
+    if (panel) panel.innerHTML = `<div class="db-error" style="display:flex;align-items:center;gap:6px;">${getIconSvg('xCircle', 'pmm-icon-sm')} <span>${escapeHtml(String(e))}</span></div>`;
   }
 }
 
@@ -51,21 +52,23 @@ export function renderUsmapView(): void {
       <div class="db-usmap-header">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div style="display: flex; align-items: center; gap: 8px;">
-            <span style="font-size: 13px; font-weight: 700; color: var(--accent);">⚡ Palworld USMAP Reflection Schema</span>
+            <span style="font-size: 13px; font-weight: 700; color: var(--accent); display: inline-flex; align-items: center; gap: 6px;">
+              ${getIconSvg('zap', 'pmm-icon-sm')} <span>Palworld USMAP Reflection Schema</span>
+            </span>
             <span style="font-size: 11px; padding: 2px 8px; background: rgba(0, 210, 255, 0.12); border: 1px solid rgba(0, 210, 255, 0.3); border-radius: 12px; color: var(--accent); font-weight: 600;">
               ${escapeHtml(verStr)}
             </span>
           </div>
           <button id="db-usmap-sync-btn" class="btn btn-secondary btn-xs" style="display: flex; align-items: center; gap: 6px; font-size: 11px; padding: 4px 10px;">
-            <span>🔄</span> <span>${escapeHtml(t('db.btn_sync_usmap') || 'Sync Mappings')}</span>
+            ${getIconSvg('refreshCw', 'pmm-icon-xs')} <span>${escapeHtml(t('db.btn_sync_usmap') || 'Sync Mappings')}</span>
           </button>
         </div>
 
         <!-- Stats counter -->
         <div style="display: flex; gap: 14px; font-size: 11.5px; color: var(--text-muted); flex-wrap: wrap;">
-          <span>📦 <b>${s?.totalStructs?.toLocaleString() || '0'}</b> Structs & Classes</span>
-          <span>🏷️ <b>${s?.totalEnums?.toLocaleString() || '0'}</b> Enums</span>
-          <span>📝 <b>${s?.totalNames?.toLocaleString() || '0'}</b> FNames</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('package', 'pmm-icon-xs')} <b>${s?.totalStructs?.toLocaleString() || '0'}</b> Structs & Classes</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('tag', 'pmm-icon-xs')} <b>${s?.totalEnums?.toLocaleString() || '0'}</b> Enums</span>
+          <span style="display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('fileText', 'pmm-icon-xs')} <b>${s?.totalNames?.toLocaleString() || '0'}</b> FNames</span>
         </div>
 
         <!-- Search & Filters -->
@@ -197,7 +200,7 @@ function updateUsmapTableAndFooter(): void {
               <td class="db-cell" style="font-size: 11px; color: var(--text-muted); font-family: 'Consolas', monospace;">${escapeHtml(item.preview)}</td>
               <td class="db-cell db-cell-mono" style="text-align: right; font-size: 11px;">${item.category === 'struct' ? `${item.propertyCount} props` : item.category === 'enum' ? `${item.enumValuesCount} vals` : '—'}</td>
               <td class="db-cell" style="text-align: center; padding: 4px 6px;">
-                <button class="btn btn-secondary btn-xs db-row-copy-btn" data-copy="${escapeHtml(item.name)}" title="Copy Name" style="padding: 2px 6px; font-size: 10px; border-radius: 4px;">📋</button>
+                <button class="btn btn-secondary btn-xs db-row-copy-btn" data-copy="${escapeHtml(item.name)}" title="Copy Name" style="padding: 2px 6px; font-size: 10px; border-radius: 4px; display: inline-flex; align-items: center;">${getIconSvg('copy', 'pmm-icon-xs')}</button>
               </td>
             </tr>
           `;
@@ -329,7 +332,7 @@ export function renderUsmapInspector(): void {
       <div style="display: flex; gap: 4px; align-items: center;">
         <button id="db-inspector-toggle-visual" class="btn btn-xs ${dbState.usmapInspectorMode === 'visual' ? 'btn-primary' : 'btn-secondary'}">Schema</button>
         <button id="db-inspector-toggle-json" class="btn btn-xs ${dbState.usmapInspectorMode === 'json' ? 'btn-primary' : 'btn-secondary'}">JSON</button>
-        <button id="db-inspector-close-btn" class="btn btn-secondary btn-xs" title="Close inspector (Full width table)" style="padding: 2px 7px; margin-left: 4px;">✕</button>
+        <button id="db-inspector-close-btn" class="btn btn-secondary btn-xs" title="Close inspector (Full width table)" style="padding: 2px 7px; margin-left: 4px; display: inline-flex; align-items: center;">${getIconSvg('x', 'pmm-icon-xs')}</button>
       </div>
     `;
 
@@ -458,7 +461,7 @@ export function renderUsmapInspector(): void {
           Global string table symbol used across Palworld engine reflection, SDK methods, and property serializations.
         </div>
         <button id="db-fname-copy-btn" class="btn btn-secondary btn-xs" style="align-self: flex-start; display: flex; align-items: center; gap: 6px; font-size: 11px; margin-top: 4px;">
-          <span>📋</span> <span>Copy Symbol Name</span>
+          ${getIconSvg('copy', 'pmm-icon-xs')} <span>Copy Symbol Name</span>
         </button>
       </div>
     `;

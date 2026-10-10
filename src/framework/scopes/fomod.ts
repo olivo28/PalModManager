@@ -19,6 +19,8 @@ export interface FomodDomMap {
   'fomod-btn-prev': HTMLButtonElement;
   'fomod-btn-next': HTMLButtonElement;
   'fomod-next-label': HTMLElement;
+  'fomod-sidebar-status-val': HTMLElement;
+  'fomod-sidebar-selected-val': HTMLElement;
 }
 
 export const fomodDom = createScope<FomodDomMap>('fomod');

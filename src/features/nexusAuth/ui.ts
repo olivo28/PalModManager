@@ -7,6 +7,7 @@ import { processOAuthCallback, processNxmDownload, triggerOAuthLogin, triggerLog
 import { openNexusProfileModal } from './profileModal';
 import { updateProtocolStatusUI } from './protocol';
 import { mainDom, settingsDom } from '../../framework';
+import { getIconSvg } from '../../ui/icons/mod';
 
 export async function initNexusAuth(): Promise<void> {
   // 1. Initial check of account status
@@ -89,7 +90,7 @@ export function renderNexusAccountUI(): void {
         </div>
         <div class="nexus-profile-actions" style="display: flex; gap: 8px; align-items: center;">
           <button type="button" class="btn btn-secondary btn-sm" id="btn-nexus-open-modal" style="display: flex; align-items: center; gap: 5px;">
-            <span>👤</span> ${t('nexus_profile.modal_title')}
+            <span>${getIconSvg('user', 'pmm-icon-xs')}</span> ${t('nexus_profile.modal_title')}
           </button>
           <button type="button" class="btn btn-danger btn-sm" id="btn-nexus-disconnect">
             ${t('settings.nexus_disconnect_btn')}

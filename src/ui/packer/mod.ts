@@ -4,6 +4,8 @@ import type { PackerProgressPayload } from '../../types';
 import { showToast } from '../toast';
 import { showConfirm, showPrompt } from '../confirm';
 import { t } from '../../utils/i18n';
+import { getIconSvg } from '../icons/mod';
+import { escapeHtml } from '../../utils/helpers';
 import { StagedFile, addStagedPaths, scanAndBuildStagedFiles, toggleSkipFile, autoStructureWorkspace } from './staging';
 import { renderWorkspace, renderListMode, renderTreeMode, renderTreeHtml, formatBytes, clearMetadataForm, updateBuildButtonState } from './rendering';
 import { setupPackerDragAndDrop, setupTreeDragAndDropHandlers } from './dragDrop';
@@ -298,7 +300,7 @@ function setupPackerEventListeners(): void {
       const btn = packerDom.elMaybe('packer-build-btn') as HTMLButtonElement;
       if (btn) {
         btn.disabled = true;
-        btn.textContent = `📦 ${t('packer.btn_packing') || 'Packing...'} (0%)`;
+        btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(t('packer.btn_packing') || 'Packing...')} (0%)</span></span>`;
       }
       showToast(t('packer.toast_packing_wait'), 'info');
 
@@ -306,7 +308,7 @@ function setupPackerEventListeners(): void {
           if (btn && event.payload) {
             const { percent, processedFiles, totalFiles } = event.payload;
             const packingTxt = t('packer.btn_packing') || 'Packing...';
-            btn.textContent = `📦 ${packingTxt} ${percent}% (${processedFiles}/${totalFiles})`;
+            btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(packingTxt)} ${percent}% (${processedFiles}/${totalFiles})</span></span>`;
           }
         });
 
@@ -387,7 +389,7 @@ function setupPackerEventListeners(): void {
         const btn = packerDom.elMaybe('packer-build-btn');
         if (btn) {
           btn.disabled = false;
-          btn.innerHTML = `📦 ${escapeHtml(t('packer.btn_package_mod'))}`;
+          btn.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(t('packer.btn_package_mod'))}</span></span>`;
         }
       }
   });

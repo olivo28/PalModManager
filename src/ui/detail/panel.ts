@@ -4,6 +4,7 @@ import { convertFileSrc } from '@tauri-apps/api/core';
 import { loadMods, renderModsView } from '../modsView';
 import { showToast } from '../toast';
 import { escapeHtml } from '../../utils/helpers';
+import { getIconSvg } from '../icons/mod';
 import { t } from '../../utils/i18n';
 import { descriptionToHtml } from '../../utils/bbcode';
 import { isModMissingGamePass } from '../mods/card';
@@ -12,13 +13,19 @@ import { autoFetchNexusInfo, setupNexusIdEdit } from './nexus';
 import { renderVersion, renderGithubSection, setupDetailTabs } from './sections';
 import { detailDom } from '../../framework';
 
-export function openDetailPanel(modId: string): void {
+export function openDetailPanel(modId: string, targetTab?: string): void {
   const state = getState();
   const mod = state.allMods.find(m => m.id === modId);
   if (!mod) return;
   updateState({ currentDetailMod: mod });
 
   const panel = detailDom.el('detail-panel');
+  const overlay = detailDom.el('detail-overlay');
+  const isSameMod = panel.dataset.id === modId && overlay.classList.contains('visible');
+  const currentTab = detailDom.query<HTMLElement>('.detail-tab.active')?.dataset.tab;
+  const previousScrollTop = isSameMod ? detailDom.el('detail-body').scrollTop : 0;
+  const activeTab = targetTab || (isSameMod && currentTab ? currentTab : 'info');
+
   panel.dataset.id = modId;
 
   detailDom.el('detail-name-header').textContent = mod.name;
@@ -182,11 +189,26 @@ export function openDetailPanel(modId: string): void {
         if (c.files && c.files.length > 0) {
           filesHtml = `
             <div style="display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; padding-left: 2px;">
-              ${c.files.map(f => `
-                <span class="badge" style="font-family: monospace; font-size: 9.5px; padding: 2px 6px; background: rgba(0, 188, 255, 0.08); color: var(--accent); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;" title="${escapeHtml(f)}">
-                  <span style="font-size: 10px;">📦</span> <span>${escapeHtml(f)}</span>
-                </span>
-              `).join('')}
+              ${c.files.map(f => {
+                const isPak = f.toLowerCase().endsWith('.pak') || f.toLowerCase().endsWith('.pak.disabled');
+                const isDisabled = f.toLowerCase().endsWith('.disabled');
+                const cleanFileName = isDisabled ? f.slice(0, -9) : f;
+                const fullFilePath = `${c.path}/${f}`.replace(/\\/g, '/');
+                if (isPak) {
+                  return `
+                    <button class="badge detail-component-toggle-btn ${isDisabled ? 'disabled' : 'enabled'}" data-mod-id="${mod.id}" data-file-path="${escapeHtml(fullFilePath)}" style="cursor: pointer; font-family: monospace; font-size: 9.5px; padding: 3px 8px; background: ${isDisabled ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 188, 255, 0.12)'}; color: ${isDisabled ? 'var(--text-muted)' : 'var(--accent)'}; border: 1px solid ${isDisabled ? 'var(--border)' : 'rgba(0, 188, 255, 0.35)'}; border-radius: 4px; display: inline-flex; align-items: center; gap: 5px; opacity: ${isDisabled ? '0.65' : '1'}; transition: all 0.15s ease;" title="${isDisabled ? escapeHtml(t('detail.comp_disabled_tooltip')) : escapeHtml(t('detail.comp_enabled_tooltip'))}">
+                      <span class="detail-comp-led" style="width: 6px; height: 6px; border-radius: 50%; background: ${isDisabled ? 'var(--text-muted)' : '#2ecc71'}; box-shadow: ${isDisabled ? 'none' : '0 0 6px #2ecc71'};"></span>
+                      <span>${escapeHtml(cleanFileName)}</span>
+                      <span style="font-size: 8px; opacity: 0.8; text-transform: uppercase;">[${isDisabled ? escapeHtml(t('common.disabled')) : escapeHtml(t('common.enabled'))}]</span>
+                    </button>
+                  `;
+                }
+                return `
+                  <span class="badge" style="font-family: monospace; font-size: 9.5px; padding: 2px 6px; background: rgba(0, 188, 255, 0.08); color: var(--accent); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 4px; display: inline-flex; align-items: center; gap: 4px;" title="${escapeHtml(f)}">
+                    ${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(f)}</span>
+                  </span>
+                `;
+              }).join('')}
             </div>
           `;
         }
@@ -200,6 +222,26 @@ export function openDetailPanel(modId: string): void {
           </div>
         `;
       }).join('');
+
+      componentsContainer.querySelectorAll<HTMLButtonElement>('.detail-component-toggle-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          e.stopPropagation();
+          const targetPath = btn.dataset.filePath;
+          const targetModId = btn.dataset.modId;
+          if (!targetPath || !targetModId) return;
+          try {
+            btn.disabled = true;
+            const { toggleModComponent } = await import('../../api');
+            const updated = await toggleModComponent(targetModId, targetPath);
+            showToast(t('toasts.component_toggled_success'), 'success');
+            await loadMods();
+            openDetailPanel(updated.id);
+          } catch (err: any) {
+            showToast(String(err), 'error');
+            btn.disabled = false;
+          }
+        });
+      });
     } else {
       componentsContainer.innerHTML = `
         <div class="detail-row">
@@ -215,7 +257,7 @@ export function openDetailPanel(modId: string): void {
       folderButtonsContainer.style.display = 'flex';
       folderButtonsContainer.innerHTML = compFolders.map(c => `
         <button class="btn-action detail-open-comp-folder" data-path="${escapeHtml(c.path)}" style="flex: 1; min-width: 0; display: flex; align-items: center; justify-content: center; gap: 6px; padding: 7px 10px; font-size: 11px; font-weight: 600; white-space: nowrap;" title="${escapeHtml(c.path)}">
-          <span style="font-size: 13px; flex-shrink: 0;">📁</span>
+          <span style="color: var(--accent); display: inline-flex; flex-shrink: 0;">${getIconSvg('folder', 'pmm-icon-xs')}</span>
           <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${escapeHtml(c.buttonLabel)}</span>
         </button>
       `).join('');
@@ -297,7 +339,7 @@ export function openDetailPanel(modId: string): void {
         } catch (err: any) {
           showToast(t('toasts.export_failed', { error: String(err) }), 'error');
           gpConvertBtn.disabled = false;
-          gpConvertBtn.innerHTML = `<span>⚡</span> <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>`;
+          gpConvertBtn.innerHTML = `${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.btn_convert_gamepass'))}</span>`;
         }
       };
     } else {
@@ -369,11 +411,11 @@ export function openDetailPanel(modId: string): void {
         <div style="background:var(--bg-secondary); border:1px solid var(--border); border-radius:6px; padding:10px 12px; display:flex; flex-direction:column; gap:8px;">
           <div style="display:flex; justify-content:space-between; align-items:center;">
             <div style="display:flex; align-items:center; gap:6px;">
-              <span style="font-size:14px;">📦</span>
+              <span style="color:var(--accent); display:inline-flex;">${getIconSvg('package', 'pmm-icon-sm')}</span>
               <span style="font-size:12px; font-weight:700; color:var(--text-primary);">${escapeHtml(t('detail.pak_contents_title') || 'Internal .pak Contents')}</span>
             </div>
-            <button type="button" id="detail-load-pak-contents-btn" class="btn-tiny" style="font-size:10.5px; padding:3px 8px; border-color:var(--accent); color:var(--accent);">
-              🔍 ${escapeHtml(t('detail.btn_load_pak_contents') || 'Inspect .pak Assets')}
+            <button type="button" id="detail-load-pak-contents-btn" class="btn-tiny" style="font-size:10.5px; padding:3px 8px; border-color:var(--accent); color:var(--accent); display:inline-flex; align-items:center; gap:4px;">
+              ${getIconSvg('search', 'pmm-icon-xs')} <span>${escapeHtml(t('detail.btn_load_pak_contents') || 'Inspect .pak Assets')}</span>
             </button>
           </div>
           <div id="detail-pak-contents-body" style="display:none; flex-direction:column; gap:8px; margin-top:4px;"></div>
@@ -387,19 +429,19 @@ export function openDetailPanel(modId: string): void {
         loadPakBtn.addEventListener('click', async () => {
           if (pakBodyEl.style.display === 'flex') {
             pakBodyEl.style.display = 'none';
-            loadPakBtn.textContent = `🔍 ${t('detail.btn_load_pak_contents') || 'Inspect .pak Assets'}`;
+            loadPakBtn.innerHTML = `${getIconSvg('search', 'pmm-icon-xs')} <span>${escapeHtml(t('detail.btn_load_pak_contents') || 'Inspect .pak Assets')}</span>`;
             return;
           }
 
           loadPakBtn.disabled = true;
-          loadPakBtn.innerHTML = `<span>⏳</span> <span>${escapeHtml(t('scanner.loading') || 'Loading...')}</span>`;
+          loadPakBtn.innerHTML = `${getIconSvg('refreshCw', 'pmm-icon-xs spin')} <span>${escapeHtml(t('scanner.loading') || 'Loading...')}</span>`;
 
           try {
             const { inspectModPakContents } = await import('../../api');
             const pakResults = await inspectModPakContents(mod.id);
 
             loadPakBtn.disabled = false;
-            loadPakBtn.textContent = `🔼 ${t('common.hide') || 'Hide'}`;
+            loadPakBtn.innerHTML = `${getIconSvg('chevronUp', 'pmm-icon-xs')} <span>${escapeHtml(t('common.hide') || 'Hide')}</span>`;
             pakBodyEl.style.display = 'flex';
 
             pakBodyEl.innerHTML = `
@@ -408,7 +450,7 @@ export function openDetailPanel(modId: string): void {
                 ${pakResults.map(p => `
                   <div style="background:var(--bg-primary); border:1px solid var(--border); border-radius:4px; padding:6px 8px; display:flex; flex-direction:column; gap:4px;">
                     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:4px;">
-                      <span style="font-family:monospace; font-size:11px; font-weight:700; color:var(--accent);">📦 ${escapeHtml(p.pakName)}</span>
+                      <span style="font-family:monospace; font-size:11px; font-weight:700; color:var(--accent); display:inline-flex; align-items:center; gap:4px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(p.pakName)}</span></span>
                       <span class="badge" style="font-size:9px; padding:1px 5px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3);">${p.totalFiles} ${escapeHtml(t('scanner.assets_count_label') || 'assets')}</span>
                     </div>
                     <div class="detail-pak-file-list" style="display:flex; flex-direction:column; gap:2px; margin-top:2px;">
@@ -418,8 +460,8 @@ export function openDetailPanel(modId: string): void {
                           <div style="display:flex; align-items:center; gap:5px;">
                             <span style="font-size:8.5px; padding:1px 4px; border-radius:2px; background:rgba(255,255,255,0.06); color:var(--text-secondary);">${escapeHtml(f.assetType)}</span>
                             ${f.path.toLowerCase().endsWith('.uasset') || f.path.toLowerCase().endsWith('.uexp') ? `
-                              <button class="btn-inspect-uasset-action" data-mod="${escapeHtml(mod.id)}" data-path="${escapeHtml(f.path)}" title="${escapeHtml(t('scanner.uasset_btn_inspect') || 'Deep Inspect Asset')}" style="background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.3); border-radius:3px; color:var(--accent); cursor:pointer; font-size:9.5px; padding:1px 5px; display:flex; align-items:center; gap:2px;">
-                                <span>🔍</span>
+                              <button class="btn-inspect-uasset-action" data-mod="${escapeHtml(mod.id)}" data-path="${escapeHtml(f.path)}" title="${escapeHtml(t('scanner.uasset_btn_inspect') || 'Deep Inspect Asset')}" style="background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.3); border-radius:3px; color:var(--accent); cursor:pointer; font-size:9.5px; padding:1px 5px; display:inline-flex; align-items:center; justify-content:center;">
+                                ${getIconSvg('search', 'pmm-icon-xs')}
                               </button>
                             ` : ''}
                           </div>
@@ -459,9 +501,9 @@ export function openDetailPanel(modId: string): void {
             });
           } catch (err: any) {
             loadPakBtn.disabled = false;
-            loadPakBtn.textContent = `🔍 ${t('detail.btn_load_pak_contents') || 'Inspect .pak Assets'}`;
+            loadPakBtn.innerHTML = `${getIconSvg('search', 'pmm-icon-xs')} <span>${escapeHtml(t('detail.btn_load_pak_contents') || 'Inspect .pak Assets')}</span>`;
             pakBodyEl.style.display = 'flex';
-            pakBodyEl.innerHTML = `<span style="font-size:11px; color:var(--danger);">⚠️ ${escapeHtml(String(err))}</span>`;
+            pakBodyEl.innerHTML = `<span style="font-size:11px; color:var(--danger); display:inline-flex; align-items:center; gap:4px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(String(err))}</span></span>`;
           }
         });
       }
@@ -501,14 +543,18 @@ export function openDetailPanel(modId: string): void {
     });
   }
 
-  // Reset scroll position and tabs — fixes state persistence across mods
-  detailDom.el('detail-body').scrollTop = 0;
   detailDom.queryAll('.detail-tab').forEach(t => t.classList.remove('active'));
-  detailDom.query('.detail-tab[data-tab="info"]')?.classList.add('active');
-  detailDom.el('detail-info-tab').style.display = '';
-  detailDom.el('detail-tech-tab').style.display = 'none';
+  const targetTabBtn = detailDom.query(`.detail-tab[data-tab="${activeTab}"]`);
+  if (targetTabBtn) {
+    targetTabBtn.classList.add('active');
+  } else {
+    detailDom.query('.detail-tab[data-tab="info"]')?.classList.add('active');
+  }
+  detailDom.el('detail-info-tab').style.display = activeTab === 'info' ? '' : 'none';
+  detailDom.el('detail-tech-tab').style.display = activeTab === 'tech' ? '' : 'none';
 
-  detailDom.el('detail-overlay').classList.add('visible');
+  detailDom.el('detail-body').scrollTop = isSameMod ? previousScrollTop : 0;
+  overlay.classList.add('visible');
   setupDetailTabs();
 }
 

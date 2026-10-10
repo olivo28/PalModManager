@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { openUrl } from '../../../api';
+import { getIconSvg } from '../../icons/mod';
 import { showToast } from '../../toast';
 import { getActiveSyncSession, setActiveSyncSession } from './state';
 import { updateFloatingSyncPill, hideFloatingSyncPill } from './floatingPill';
@@ -21,7 +22,7 @@ function ensureDialogElement(): HTMLElement {
         <h3 id="profile-sync-dialog-title" style="margin: 0; font-size: var(--text-lg, 16px); font-weight: 600;">
           ${escapeHtml(t('profiles.sync_dialog_title'))}
         </h3>
-        <button class="modal-close-btn" id="profile-sync-dialog-close-x" style="background: none; border: none; font-size: var(--text-base, 16px); cursor: pointer; color: var(--text-muted);">✕</button>
+        <button class="modal-close-btn" id="profile-sync-dialog-close-x" style="background: none; border: none; cursor: pointer; color: var(--text-muted); display: inline-flex; align-items: center;">${getIconSvg('x', 'pmm-icon-sm')}</button>
       </div>
       <div class="modal-body" style="overflow-y: auto; flex: 1; padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(12px * var(--ui-scale, 1));">
         <div id="profile-sync-dialog-desc" style="font-size: var(--text-base, 13px); color: var(--text-secondary); line-height: 1.5;"></div>
@@ -118,11 +119,11 @@ export function showMissingModsDialog(): void {
             <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
               ${nexusUrl ? `
                 <button type="button" class="btn-secondary btn-sm sync-open-url-btn" data-url="${escapeHtml(nexusUrl)}" style="font-size: var(--text-sm, 12px); display: inline-flex; align-items: center; gap: 4px;">
-                  🌐 NexusMods
+                  ${getIconSvg('globe', 'pmm-icon-xs')} <span>NexusMods</span>
                 </button>
               ` : `
-                <button type="button" class="btn-secondary btn-sm sync-copy-name-btn" data-name="${escapeHtml(mod.name)}" style="font-size: var(--text-sm, 12px);">
-                  📋 ${escapeHtml(t('common.copy_name'))}
+                <button type="button" class="btn-secondary btn-sm sync-copy-name-btn" data-name="${escapeHtml(mod.name)}" style="font-size: var(--text-sm, 12px); display: inline-flex; align-items: center; gap: 4px;">
+                  ${getIconSvg('copy', 'pmm-icon-xs')} <span>${escapeHtml(t('common.copy_name'))}</span>
                 </button>
               `}
             </div>

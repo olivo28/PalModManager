@@ -2,6 +2,7 @@ import { inspectUAssetDeep, decodeUAssetTexture, type UAssetInspectionDetails, t
 import { t } from '../../utils/i18n';
 import { escapeHtml, formatBytes } from '../../utils/helpers';
 import { showToast } from '../toast';
+import { getIconSvg } from '../icons/mod';
 import { renderDataTableGridHtml, setupDataTableGridEvents } from './uasset/datatableGrid';
 import { renderPropertyTweakerHtml, setupPropertyTweakerEvents } from './uasset/propertyTweaker';
 
@@ -24,7 +25,7 @@ export async function renderInlineUAssetInspector(
       <div style="display:flex;align-items:center;gap:12px;min-width:0;">
         ${onBack ? `
           <button id="btn-editor-inline-back" class="editor-inline-back-btn">
-            <span>←</span> <span>${escapeHtml(t('editor.btn_back_to_pak'))}</span>
+            ${getIconSvg('chevronLeft', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.btn_back_to_pak'))}</span>
           </button>
         ` : ''}
         <div style="display:flex;flex-direction:column;min-width:0;">
@@ -38,7 +39,7 @@ export async function renderInlineUAssetInspector(
       </div>
       <div>
         <button id="btn-editor-inline-popout" class="editor-inline-open-modal-btn" title="${escapeHtml(t('editor.btn_open_modal'))}">
-          <span>⛶</span> <span>${escapeHtml(t('editor.btn_open_modal'))}</span>
+          ${getIconSvg('maximize', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.btn_open_modal'))}</span>
         </button>
       </div>
     </div>
@@ -95,36 +96,36 @@ export async function renderInlineUAssetInspector(
 
     contentEl.innerHTML = `
       <div class="editor-inline-uasset-tabs">
-        <button class="uasset-tab-btn active" data-tab="tab-inline-overview" style="background:var(--bg-card);border:1px solid var(--border);border-bottom:none;color:var(--accent);font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          📊 ${escapeHtml(t('scanner.uasset_tab_overview'))}
+        <button class="uasset-tab-btn active" data-tab="tab-inline-overview" style="background:var(--bg-card);border:1px solid var(--border);border-bottom:none;color:var(--accent);font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('barChart', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_overview'))}</span>
         </button>
         ${hasDatatableGrid ? `
-        <button class="uasset-tab-btn" data-tab="tab-inline-datatable" style="background:none;border:1px solid transparent;color:#4af626;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          📊 ${escapeHtml(t('editor.tab_datatable_grid'))} (${details.datatableGrid!.totalRows})
+        <button class="uasset-tab-btn" data-tab="tab-inline-datatable" style="background:none;border:1px solid transparent;color:#4af626;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('db', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.tab_datatable_grid'))} (${details.datatableGrid!.totalRows})</span>
         </button>
         ` : ''}
         ${showTweaker ? `
-        <button class="uasset-tab-btn" data-tab="tab-inline-tweaker" style="background:none;border:1px solid transparent;color:#ffd166;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          ✏️ ${escapeHtml(t('editor.tab_live_properties'))} (${details.instantiatedProperties?.length || 0})
+        <button class="uasset-tab-btn" data-tab="tab-inline-tweaker" style="background:none;border:1px solid transparent;color:#ffd166;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('editor', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.tab_live_properties'))} (${details.instantiatedProperties?.length || 0})</span>
         </button>
         ` : ''}
         ${isTexture ? `
-        <button class="uasset-tab-btn" data-tab="tab-inline-texture" style="background:none;border:1px solid transparent;color:#00bcff;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          🖼️ ${escapeHtml(t('scanner.uasset_tab_texture'))}
+        <button class="uasset-tab-btn" data-tab="tab-inline-texture" style="background:none;border:1px solid transparent;color:#00bcff;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('image', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_texture'))}</span>
         </button>
         ` : ''}
-        <button class="uasset-tab-btn" data-tab="tab-inline-exports" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          📤 ${escapeHtml(t('scanner.uasset_tab_exports'))} (${details.exports.length})
+        <button class="uasset-tab-btn" data-tab="tab-inline-exports" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('upload', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_exports'))} (${details.exports.length})</span>
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-inline-imports" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          📥 ${escapeHtml(t('scanner.uasset_tab_imports'))} (${details.imports.length})
+        <button class="uasset-tab-btn" data-tab="tab-inline-imports" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('download', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_imports'))} (${details.imports.length})</span>
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-inline-names" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          🏷️ ${escapeHtml(t('scanner.uasset_tab_names'))} (${details.summary.nameCount})
+        <button class="uasset-tab-btn" data-tab="tab-inline-names" style="background:none;border:1px solid transparent;color:var(--text-secondary);font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('tag', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_names'))} (${details.summary.nameCount})</span>
         </button>
         ${details.resolvedSchema ? `
-        <button class="uasset-tab-btn" data-tab="tab-inline-schema" style="background:none;border:1px solid transparent;color:#38bdf8;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;">
-          🧬 ${escapeHtml(t('scanner.uasset_tab_schema'))} (${details.resolvedSchema.totalProperties})
+        <button class="uasset-tab-btn" data-tab="tab-inline-schema" style="background:none;border:1px solid transparent;color:#38bdf8;font-weight:700;font-size:11.5px;padding:6px 14px;border-radius:6px 6px 0 0;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+          ${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_schema'))} (${details.resolvedSchema.totalProperties})</span>
         </button>
         ` : ''}
       </div>
@@ -154,19 +155,19 @@ export async function renderInlineUAssetInspector(
           ${isTexture ? `
             <div style="background:rgba(0,188,255,0.05);border:1px solid rgba(0,188,255,0.2);border-radius:8px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;gap:12px;">
               <div style="display:flex;align-items:center;gap:12px;">
-                <span style="font-size:24px;">🖼️</span>
+                <span style="color:#00bcff;display:inline-flex;">${getIconSvg('image', 'pmm-icon-lg')}</span>
                 <div>
                   <div style="font-size:11.5px;font-weight:700;color:#00bcff;">${escapeHtml(t('scanner.uasset_texture_title'))}</div>
                   <div style="font-size:10px;color:var(--text-secondary);">${escapeHtml(t('scanner.uasset_texture_desc', { size: details.summary.uexpSizeBytes ? formatBytes(details.summary.uexpSizeBytes) : (t('scanner.uasset_embedded_in_uasset')) }))}</div>
                 </div>
               </div>
-              <button id="btn-inline-goto-texture" class="editor-pak-btn-inspect" style="padding:5px 12px;font-size:11px;">
-                <span>🖼️</span> <span>${escapeHtml(t('scanner.uasset_tab_texture'))}</span>
+              <button id="btn-inline-goto-texture" class="editor-pak-btn-inspect" style="padding:5px 12px;font-size:11px;display:inline-flex;align-items:center;gap:5px;">
+                ${getIconSvg('image', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_texture'))}</span>
               </button>
             </div>
           ` : (isMaterial ? `
             <div style="background:rgba(192,132,252,0.05);border:1px solid rgba(192,132,252,0.2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
-              <span style="font-size:24px;">🎨</span>
+              <span style="color:#c084fc;display:inline-flex;">${getIconSvg('palette', 'pmm-icon-lg')}</span>
               <div>
                 <div style="font-size:11.5px;font-weight:700;color:#c084fc;">${escapeHtml(t('scanner.uasset_material_title'))}</div>
                 <div style="font-size:10px;color:var(--text-secondary);">${escapeHtml(t('scanner.uasset_material_desc'))}</div>
@@ -174,7 +175,7 @@ export async function renderInlineUAssetInspector(
             </div>
           ` : (isDataTable ? `
             <div style="background:rgba(74,246,38,0.05);border:1px solid rgba(74,246,38,0.2);border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:12px;">
-              <span style="font-size:24px;">📊</span>
+              <span style="color:#4af626;display:inline-flex;">${getIconSvg('db', 'pmm-icon-lg')}</span>
               <div>
                 <div style="font-size:11.5px;font-weight:700;color:#4af626;">${escapeHtml(t('scanner.uasset_datatable_title'))}</div>
                 <div style="font-size:10px;color:var(--text-secondary);">${escapeHtml(t('scanner.uasset_datatable_desc'))}</div>
@@ -392,8 +393,8 @@ export async function renderInlineUAssetInspector(
         if (viewportEl) {
           viewportEl.style.display = 'flex';
           viewportEl.innerHTML = `
-            <div style="padding:24px;text-align:center;color:var(--danger);font-size:11px;">
-              ⚠️ ${escapeHtml(String(err))}
+            <div style="padding:24px;text-align:center;color:var(--danger);font-size:11px;display:flex;align-items:center;justify-content:center;gap:6px;">
+              ${getIconSvg('alertTriangle', 'pmm-icon-sm')} <span>${escapeHtml(String(err))}</span>
             </div>
           `;
         }
@@ -471,8 +472,8 @@ export async function renderInlineUAssetInspector(
 
   } catch (err) {
     contentEl.innerHTML = `
-      <div style="padding:32px;text-align:center;color:var(--danger);font-size:12px;">
-        ⚠️ ${escapeHtml(String(err))}
+      <div style="padding:32px;text-align:center;color:var(--danger);font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+        ${getIconSvg('alertTriangle', 'pmm-icon-sm')} <span>${escapeHtml(String(err))}</span>
       </div>
     `;
   }

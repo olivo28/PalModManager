@@ -2,7 +2,7 @@ import { settingsDom } from '../../../framework';
 import { showToast } from '../../toast';
 import { showConfirm } from '../../confirm';
 import { t } from '../../../utils/i18n';
-import { formatBytes } from './helpers';
+import { formatBytes, setBadgeWithIcon } from './helpers';
 import type { DevResourceProgressPayload, SdkProgressPayload } from '../../../types';
 import {
   refreshUsmapStatus,
@@ -66,7 +66,7 @@ export async function refreshDevResourcesStatus(): Promise<void> {
         }
         const sdkBadge = settingsDom.elMaybe('settings-sdk-badge');
         if (sdkBadge && res.isAvailable && res.fileSizeBytes > 0 && !isMatched) {
-          sdkBadge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          setBadgeWithIcon(sdkBadge, 'alertTriangle', t('settings.status_build_mismatch') || 'Build Mismatch');
           sdkBadge.style.background = 'rgba(245,158,11,0.15)';
           sdkBadge.style.color = '#f59e0b';
           sdkBadge.style.borderColor = 'rgba(245,158,11,0.3)';
@@ -87,7 +87,7 @@ export async function refreshDevResourcesStatus(): Promise<void> {
         }
         const schBadge = settingsDom.elMaybe('settings-schemas-badge');
         if (schBadge && res.isAvailable && res.fileSizeBytes > 0 && !isMatched) {
-          schBadge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          setBadgeWithIcon(schBadge, 'alertTriangle', t('settings.status_build_mismatch') || 'Build Mismatch');
           schBadge.style.background = 'rgba(245,158,11,0.15)';
           schBadge.style.color = '#f59e0b';
           schBadge.style.borderColor = 'rgba(245,158,11,0.3)';
@@ -131,23 +131,23 @@ function updateCardUi(
   if (badge) {
     if (isAvailable && fileSize > 0) {
       if (isBuildMatched) {
-        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+        setBadgeWithIcon(badge, 'checkCircle', t('settings.status_synced_ready') || 'Synced & Ready');
         badge.style.background = 'var(--success-dim)';
         badge.style.color = 'var(--success)';
         badge.style.borderColor = 'var(--success-dim)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_build_mismatch') || 'Build Mismatch');
         badge.style.background = 'var(--warning-dim)';
         badge.style.color = 'var(--warning)';
         badge.style.borderColor = 'var(--warning-dim)';
       }
     } else if (hasLocalDump) {
-      badge.textContent = `📂 ${t('settings.sdk_status_local_found') || 'Local Dump Found'}`;
+      setBadgeWithIcon(badge, 'folder', t('settings.sdk_status_local_found') || 'Local Dump Found');
       badge.style.background = 'var(--info-dim)';
       badge.style.color = 'var(--info)';
       badge.style.borderColor = 'var(--info-dim)';
     } else {
-      badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
+      setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_missing') || 'Missing / Not Synced');
       badge.style.background = 'var(--danger-dim)';
       badge.style.color = 'var(--danger)';
       badge.style.borderColor = 'var(--danger-dim)';

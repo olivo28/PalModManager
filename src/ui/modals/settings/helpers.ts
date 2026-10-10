@@ -1,5 +1,12 @@
 import { t } from '../../../utils/i18n';
+import { escapeHtml } from '../../../utils/helpers';
+import { getIconSvg } from '../../icons/mod';
+import type { IconName } from '../../icons/paths';
 import { _tempCustomDataPath } from './state';
+
+export function setBadgeWithIcon(badge: HTMLElement, iconName: IconName, label: string): void {
+  badge.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg(iconName, 'pmm-icon-xs')}<span>${escapeHtml(label)}</span></span>`;
+}
 
 export function formatBytes(bytes: number, decimals = 1): string {
   if (bytes === 0) return '0 B';

@@ -1,5 +1,6 @@
 import { escapeHtml } from '../utils/helpers';
 import { t } from '../utils/i18n';
+import { getIconSvg } from './icons/mod';
 
 function formatConfirmText(text: string): string {
   return text.split('\n\n').map(para => {
@@ -21,10 +22,13 @@ function formatConfirmText(text: string): string {
     safe = safe.replace(/\n/g, '<br/>');
 
     // Render alert / warning notices in dedicated callout cards
-    if (/^(📢|⚠️|ℹ️|🚨)/u.test(trimmed)) {
+    const alertPrefixRegex = /^(\uD83D\uDCE2|\u26A0\uFE0F?|\u2139\uFE0F?|\uD83D\uDEA8)\s*/u;
+    if (alertPrefixRegex.test(trimmed)) {
+      const cleanSafe = safe.replace(alertPrefixRegex, '');
       return `
-        <div style="background:rgba(245, 158, 11, 0.09); border:1px solid rgba(245, 158, 11, 0.28); border-left:3px solid #f59e0b; border-radius:6px; padding:10px 12px; margin-bottom:14px; font-size:12px; line-height:1.55; color:var(--text-secondary);">
-          ${safe}
+        <div style="background:rgba(245, 158, 11, 0.09); border:1px solid rgba(245, 158, 11, 0.28); border-left:3px solid #f59e0b; border-radius:6px; padding:10px 12px; margin-bottom:14px; font-size:12px; line-height:1.55; color:var(--text-secondary); display:flex; align-items:flex-start; gap:8px;">
+          <span style="color:#f59e0b; display:inline-flex; flex-shrink:0; margin-top:2px;">${getIconSvg('alertTriangle', 'pmm-icon-sm')}</span>
+          <div>${cleanSafe}</div>
         </div>
       `;
     }

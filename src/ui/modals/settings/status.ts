@@ -2,7 +2,8 @@ import { getImageCacheSize, getStorageUsage, getSafetyBackupInfo, checkSteamProt
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { settingsDom } from '../../../framework';
-import { formatBytes } from './helpers';
+import { formatBytes, setBadgeWithIcon } from './helpers';
+import { getIconSvg } from '../../icons/mod';
 
 export async function refreshSteamProtocolStatus(): Promise<void> {
   const handlerEl = settingsDom.elMaybe('settings-steam-proto-handler');
@@ -95,7 +96,7 @@ export async function refreshSafetyBackupStatus(): Promise<void> {
     if (info.exists && info.timestamp) {
       const dateStr = new Date(info.timestamp).toLocaleString();
       const sizeKb = info.zipSizeBytes ? Math.round(info.zipSizeBytes / 1024) : 0;
-      statusElem.innerHTML = `✅ <strong>${escapeHtml(t('settings.safety_initial_snapshot'))}:</strong> ${dateStr} (${sizeKb} KB)<br>• ${escapeHtml(t('settings.safety_tracked_summary', { ue4ss: info.ue4ssModsCount, palschema: info.palschemaModsCount }))}`;
+      statusElem.innerHTML = `<span style="display:inline-flex;align-items:center;gap:6px;vertical-align:middle;">${getIconSvg('checkCircle', 'pmm-icon-xs')} <strong>${escapeHtml(t('settings.safety_initial_snapshot'))}:</strong></span> ${dateStr} (${sizeKb} KB)<br>• ${escapeHtml(t('settings.safety_tracked_summary', { ue4ss: info.ue4ssModsCount, palschema: info.palschemaModsCount }))}`;
       statusElem.style.color = 'var(--text-secondary)';
     } else {
       statusElem.textContent = t('settings.safety_none');
@@ -120,22 +121,22 @@ export async function refreshUsmapStatus(): Promise<void> {
 
     if (badge) {
       if (status.isSynced && status.localUsmapExists) {
-        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+        setBadgeWithIcon(badge, 'checkCircle', t('settings.status_synced_ready') || 'Synced & Ready');
         badge.style.background = 'var(--success-dim)';
         badge.style.color = 'var(--success)';
         badge.style.borderColor = 'var(--success-dim)';
       } else if (status.localUsmapExists && status.isBuildMatched === false) {
-        badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_build_mismatch') || 'Build Mismatch');
         badge.style.background = 'var(--warning-dim)';
         badge.style.color = 'var(--warning)';
         badge.style.borderColor = 'var(--warning-dim)';
       } else if (status.localUsmapExists) {
-        badge.textContent = `📦 ${t('settings.usmap_status_available') || 'Available (Bundled)'}`;
+        setBadgeWithIcon(badge, 'package', t('settings.usmap_status_available') || 'Available (Bundled)');
         badge.style.background = 'var(--info-dim)';
         badge.style.color = 'var(--info)';
         badge.style.borderColor = 'var(--info-dim)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_missing') || 'Missing / Not Synced');
         badge.style.background = 'var(--danger-dim)';
         badge.style.color = 'var(--danger)';
         badge.style.borderColor = 'var(--danger-dim)';
@@ -176,7 +177,7 @@ export async function refreshUsmapStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get USMAP mappings status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
+      setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_error') || 'Error');
     }
   }
 }
@@ -196,17 +197,17 @@ export async function refreshSdkStatus(): Promise<void> {
 
     if (badge) {
       if (status.installed && status.totalClasses > 0) {
-        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+        setBadgeWithIcon(badge, 'checkCircle', t('settings.status_synced_ready') || 'Synced & Ready');
         badge.style.background = 'var(--success-dim)';
         badge.style.color = 'var(--success)';
         badge.style.borderColor = 'var(--success-dim)';
       } else if (status.localGameCxxFound) {
-        badge.textContent = `📂 ${t('settings.sdk_status_local_found') || 'Local Folder Detected'}`;
+        setBadgeWithIcon(badge, 'folder', t('settings.sdk_status_local_found') || 'Local Folder Detected');
         badge.style.background = 'var(--info-dim)';
         badge.style.color = 'var(--info)';
         badge.style.borderColor = 'var(--info-dim)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_missing') || 'Missing / Not Synced');
         badge.style.background = 'var(--danger-dim)';
         badge.style.color = 'var(--danger)';
         badge.style.borderColor = 'var(--danger-dim)';
@@ -232,7 +233,7 @@ export async function refreshSdkStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get SDK status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
+      setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_error') || 'Error');
     }
   }
 }
@@ -253,18 +254,18 @@ export async function refreshBlueprintsStatus(): Promise<void> {
     if (badge) {
       if (status.totalBlueprints > 0) {
         if (status.blueprintsIsBuildMatched === false) {
-          badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_build_mismatch') || 'Build Mismatch');
           badge.style.background = 'var(--warning-dim)';
           badge.style.color = 'var(--warning)';
           badge.style.borderColor = 'var(--warning-dim)';
         } else {
-          badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+          setBadgeWithIcon(badge, 'checkCircle', t('settings.status_synced_ready') || 'Synced & Ready');
           badge.style.background = 'var(--success-dim)';
           badge.style.color = 'var(--success)';
           badge.style.borderColor = 'var(--success-dim)';
         }
       } else {
-        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_missing') || 'Missing / Not Synced');
         badge.style.background = 'var(--danger-dim)';
         badge.style.color = 'var(--danger)';
         badge.style.borderColor = 'var(--danger-dim)';
@@ -301,7 +302,7 @@ export async function refreshBlueprintsStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get Blueprints catalog status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
+      setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_error') || 'Error');
     }
   }
 }
@@ -323,18 +324,18 @@ export async function refreshDatatablesStatus(): Promise<void> {
     if (badge) {
       if (status.totalDatatables > 0) {
         if (status.datatablesIsBuildMatched === false) {
-          badge.textContent = `⚠️ ${t('settings.status_build_mismatch') || 'Build Mismatch'}`;
+          setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_build_mismatch') || 'Build Mismatch');
           badge.style.background = 'var(--warning-dim)';
           badge.style.color = 'var(--warning)';
           badge.style.borderColor = 'var(--warning-dim)';
         } else {
-          badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+          setBadgeWithIcon(badge, 'checkCircle', t('settings.status_synced_ready') || 'Synced & Ready');
           badge.style.background = 'var(--success-dim)';
           badge.style.color = 'var(--success)';
           badge.style.borderColor = 'var(--success-dim)';
         }
       } else {
-        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_missing') || 'Missing / Not Synced');
         badge.style.background = 'var(--danger-dim)';
         badge.style.color = 'var(--danger)';
         badge.style.borderColor = 'var(--danger-dim)';
@@ -375,7 +376,7 @@ export async function refreshDatatablesStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get DataTables catalog status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
+      setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_error') || 'Error');
     }
   }
 }
@@ -396,12 +397,12 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
 
     if (badge) {
       if (catalog.is_available && catalog.total_raw_schemas > 0) {
-        badge.textContent = `✅ ${t('settings.status_synced_ready') || 'Synced & Ready'}`;
+        setBadgeWithIcon(badge, 'checkCircle', t('settings.status_synced_ready') || 'Synced & Ready');
         badge.style.background = 'var(--success-dim)';
         badge.style.color = 'var(--success)';
         badge.style.borderColor = 'var(--success-dim)';
       } else {
-        badge.textContent = `⚠️ ${t('settings.status_missing') || 'Missing / Not Synced'}`;
+        setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_missing') || 'Missing / Not Synced');
         badge.style.background = 'var(--danger-dim)';
         badge.style.color = 'var(--danger)';
         badge.style.borderColor = 'var(--danger-dim)';
@@ -431,7 +432,7 @@ export async function refreshPalSchemaSchemasStatus(): Promise<void> {
   } catch (e) {
     console.error('Failed to get PalSchema schemas catalog status:', e);
     if (badge) {
-      badge.textContent = `⚠️ ${t('settings.status_error') || 'Error'}`;
+      setBadgeWithIcon(badge, 'alertTriangle', t('settings.status_error') || 'Error');
     }
   }
 }

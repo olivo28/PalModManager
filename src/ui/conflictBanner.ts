@@ -2,6 +2,7 @@ import { cleanConflictDlls } from '../api';
 import { showToast } from './toast';
 import { loadDependencies } from './modsView';
 import { t } from '../utils/i18n';
+import { getIconSvg } from './icons/mod';
 import { mainDom } from '../framework';
 
 let bannerElement: HTMLElement | null = null;
@@ -27,14 +28,18 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
 
   bannerElement.innerHTML = `
     <div class="conflict-banner-content">
-      <span class="conflict-banner-icon">⚠️</span>
+      <span class="conflict-banner-icon" style="color:var(--warning);display:inline-flex;">${getIconSvg('alertTriangle', 'pmm-icon-md')}</span>
       <div class="conflict-banner-text">
         <strong>${t('dependencies.banner_conflict_title')}</strong> ${t('dependencies.banner_conflict_desc', { dlls: dllNames })}
       </div>
     </div>
     <div class="conflict-banner-actions">
-      <button id="clean-conflict-dlls-btn" class="conflict-btn-action" title="${t('dependencies.banner_clean_btn_title')}">${t('dependencies.banner_clean_btn')}</button>
-      <button id="dismiss-conflict-banner-btn" class="conflict-btn-dismiss" title="${t('dependencies.banner_dismiss_title')}">✕</button>
+      <button id="clean-conflict-dlls-btn" class="conflict-btn-action" title="${t('dependencies.banner_clean_btn_title')}" style="display:inline-flex;align-items:center;gap:5px;">
+        ${getIconSvg('clean', 'pmm-icon-xs')} <span>${t('dependencies.banner_clean_btn')}</span>
+      </button>
+      <button id="dismiss-conflict-banner-btn" class="conflict-btn-dismiss" title="${t('dependencies.banner_dismiss_title')}" style="display:inline-flex;align-items:center;">
+        ${getIconSvg('x', 'pmm-icon-xs')}
+      </button>
     </div>
   `;
 
@@ -50,7 +55,7 @@ export function renderConflictBanner(conflictingDlls: string[]): void {
       await loadDependencies();
     } catch (e: any) {
       showToast(t('toasts.clean_conflict_dlls_failed', { error: String(e) }), 'error');
-      if (cleanBtn) cleanBtn.textContent = '🧹 Clean Conflict DLLs';
+      if (cleanBtn) cleanBtn.innerHTML = `${getIconSvg('clean', 'pmm-icon-xs')} <span>${t('dependencies.banner_clean_btn')}</span>`;
     }
   });
 

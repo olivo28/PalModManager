@@ -1,5 +1,6 @@
 import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
+import { getIconSvg } from '../icons/mod';
 import { editorDom } from '../../framework';
 import { getState } from '../../state';
 import { handleEditorSave, _originalContent, clearOriginalContent, getDirtyBufferCount, clearBufferCache, _fileBufferCache, getBufferKey } from './viewer';
@@ -221,7 +222,7 @@ function showUnsavedChangesModal(
             const isActive = idx === selectedIndex;
             return `
               <button class="unsaved-tab-chip" data-idx="${idx}" style="display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid ${isActive ? 'var(--accent)' : 'var(--border)'};background:${isActive ? 'rgba(0,188,255,0.15)' : 'var(--bg-secondary)'};color:${isActive ? 'var(--text-primary)' : 'var(--text-secondary)'};user-select:none;">
-                <span>📄</span>
+                ${getIconSvg('fileText', 'pmm-icon-xs')}
                 <span>${escapeHtml(fileName)}</span>
                 <span style="color:#f1707b;font-size:9px;">●</span>
               </button>
@@ -236,7 +237,7 @@ function showUnsavedChangesModal(
       <div class="modal" style="width: 750px; max-width: 90vw;">
         <div class="modal-header">
           <h3>${escapeHtml(t('editor.unsaved_title'))}</h3>
-          <button class="modal-close-btn" id="unsaved-close-x">✕</button>
+          <button class="modal-close-btn" id="unsaved-close-x">${getIconSvg('x', 'pmm-icon-sm')}</button>
         </div>
         <div class="modal-body" style="gap:12px;padding:20px;">
           <div style="font-size:13px;color:var(--text-muted);">

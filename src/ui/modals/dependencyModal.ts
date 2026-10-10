@@ -14,6 +14,7 @@ import {
 import { dependencyDom } from '../../framework';
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
+import { getIconSvg } from '../icons/mod';
 import { t, updateDOMTranslations } from '../../utils/i18n';
 import { loadDependencies } from '../mods/dependencies';
 import { loadProfiles } from '../mods/profiles';
@@ -91,7 +92,7 @@ export async function showDependencyModal(depType: 'ue4ss' | 'palschema'): Promi
 
   titleEl.textContent = t('dependencies.manager_title', { dep: depName });
   if (isUe4ss) {
-    iconEl.innerHTML = '<span style="font-size:20px; line-height:1;">⚡</span>';
+    iconEl.innerHTML = `<span style="color:var(--accent); display:inline-flex;">${getIconSvg('zap', 'pmm-icon-md')}</span>`;
   } else {
     iconEl.innerHTML = '<img src="/palschema.png" alt="PalSchema" style="width:22px; height:22px; object-fit:contain; vertical-align:middle; border-radius:4px;" />';
   }
@@ -169,7 +170,7 @@ export async function refreshVaultView(depType: 'ue4ss' | 'palschema'): Promise<
     if (entries.length === 0) {
       listEl.innerHTML = `
         <div style="text-align:center; padding:20px; color:var(--text-muted); font-size:12px; background:var(--bg-primary); border-radius:6px; border:1px dashed var(--border);">
-          <span>📦 ${t('dependencies.no_vault_entries')}</span>
+          <span style="display:inline-flex; align-items:center; gap:6px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${t('dependencies.no_vault_entries')}</span></span>
           <div style="margin-top:4px; font-size:11px; opacity:0.8;">${t('dependencies.vault_empty_hint')}</div>
         </div>
       `;
@@ -257,8 +258,8 @@ function createVaultEntryCard(entry: DependencyVaultEntry, depType: 'ue4ss' | 'p
 
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'btn-icon';
-    deleteBtn.style.cssText = 'font-size: var(--text-sm, 12px); padding: calc(4px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); color: var(--text-muted); background: transparent; border: none; cursor: pointer;';
-    deleteBtn.textContent = '🗑️';
+    deleteBtn.style.cssText = 'padding: calc(4px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); color: var(--text-muted); background: transparent; border: none; cursor: pointer; display: inline-flex; align-items: center; justify-content: center;';
+    deleteBtn.innerHTML = getIconSvg('trash', 'pmm-icon-xs');
     deleteBtn.title = t('common.delete');
     deleteBtn.onclick = () => handleVaultDelete(entry, depType);
     actions.appendChild(deleteBtn);

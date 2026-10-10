@@ -3,6 +3,7 @@ import { tweakDataTableCell } from '../../../api';
 import { escapeHtml } from '../../../utils/helpers';
 import { showToast } from '../../toast';
 import { t } from '../../../utils/i18n';
+import { getIconSvg } from '../../icons/mod';
 
 export interface DataTableGridOptions {
   grid: UAssetDataTableGrid;
@@ -50,16 +51,16 @@ export function renderDataTableGridHtml(grid: UAssetDataTableGrid): string {
         <div style="display:flex;gap:8px;align-items:center;">
           <!-- View Switcher -->
           <div style="display:flex;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;overflow:hidden;padding:1px;">
-            <button type="button" id="btn-dt-mode-table" class="dt-view-mode-btn active" style="padding:4px 9px;font-size:11px;font-weight:700;border:none;background:rgba(0,188,255,0.2);color:#00bcff;cursor:pointer;border-radius:3px;">
-              📊 Table Grid
+            <button type="button" id="btn-dt-mode-table" class="dt-view-mode-btn active" style="padding:4px 9px;font-size:11px;font-weight:700;border:none;background:rgba(0,188,255,0.2);color:#00bcff;cursor:pointer;border-radius:3px;display:inline-flex;align-items:center;gap:4px;">
+              ${getIconSvg('db', 'pmm-icon-xs')} <span>Table Grid</span>
             </button>
-            <button type="button" id="btn-dt-mode-json" class="dt-view-mode-btn" style="padding:4px 9px;font-size:11px;font-weight:700;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-radius:3px;">
-              📜 JSON (FModel)
+            <button type="button" id="btn-dt-mode-json" class="dt-view-mode-btn" style="padding:4px 9px;font-size:11px;font-weight:700;border:none;background:none;color:var(--text-secondary);cursor:pointer;border-radius:3px;display:inline-flex;align-items:center;gap:4px;">
+              ${getIconSvg('fileText', 'pmm-icon-xs')} <span>JSON (FModel)</span>
             </button>
           </div>
 
-          <button type="button" id="btn-dt-copy-json" style="padding:4px 8px;font-size:11px;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;border-radius:4px;" title="Copy DataTable as JSON">
-            📋 Copy
+          <button type="button" id="btn-dt-copy-json" style="padding:4px 8px;font-size:11px;border:1px solid var(--border);background:var(--bg-primary);color:var(--text-secondary);cursor:pointer;border-radius:4px;display:inline-flex;align-items:center;gap:4px;" title="Copy DataTable as JSON">
+            ${getIconSvg('copy', 'pmm-icon-xs')} <span>Copy</span>
           </button>
 
           <input type="text" id="dt-grid-search" placeholder="${escapeHtml(t('editor.dt_search_placeholder') || 'Search rows & values...')}" style="background:var(--bg-primary);border:1px solid var(--border);color:var(--text-primary);padding:4px 8px;border-radius:4px;font-size:11px;width:180px;" />
@@ -75,7 +76,7 @@ export function renderDataTableGridHtml(grid: UAssetDataTableGrid): string {
               ${columns.map(col => `
                 <th style="padding:8px 12px;border-right:1px solid var(--border);min-width:120px;white-space:nowrap;color:var(--text-primary);" title="${escapeHtml(getColTooltip(col))}">
                   <span>${escapeHtml(col)}</span>
-                  <span style="font-size:9px;color:var(--text-muted);font-weight:normal;margin-left:4px;" title="${escapeHtml(getColTooltip(col))}">ℹ️</span>
+                  <span style="display:inline-flex;color:var(--text-muted);margin-left:4px;" title="${escapeHtml(getColTooltip(col))}">${getIconSvg('info', 'pmm-icon-xs')}</span>
                 </th>
               `).join('')}
             </tr>
@@ -101,8 +102,8 @@ export function renderDataTableGridHtml(grid: UAssetDataTableGrid): string {
                         <div style="display:flex;align-items:center;justify-content:space-between;gap:4px;">
                           <span class="dt-cell-val" style="overflow:hidden;text-overflow:ellipsis;">${valStr}</span>
                           ${isPrimitive ? `
-                            <button type="button" class="btn-dt-cell-edit" title="${escapeHtml(t('editor.btn_edit_cell') || 'Edit Cell')}" style="opacity:0.4;border:none;background:rgba(0,188,255,0.15);color:#00bcff;padding:1px 4px;border-radius:3px;cursor:pointer;font-size:10px;transition:opacity 0.15s ease;">
-                              ✏️
+                            <button type="button" class="btn-dt-cell-edit" title="${escapeHtml(t('editor.btn_edit_cell') || 'Edit Cell')}" style="opacity:0.4;border:none;background:rgba(0,188,255,0.15);color:#00bcff;padding:1px 4px;border-radius:3px;cursor:pointer;font-size:10px;transition:opacity 0.15s ease;display:inline-flex;align-items:center;justify-content:center;">
+                              ${getIconSvg('editor', 'pmm-icon-xs')}
                             </button>
                           ` : ''}
                         </div>
@@ -170,8 +171,8 @@ export function setupDataTableGridEvents(
     btnCopy.addEventListener('click', async () => {
       try {
         await navigator.clipboard.writeText(jsonCodeEl.textContent || '');
-        btnCopy.textContent = '✅ Copied!';
-        setTimeout(() => { btnCopy.textContent = '📋 Copy'; }, 2000);
+        btnCopy.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('check', 'pmm-icon-xs')}<span>Copied!</span></span>`;
+        setTimeout(() => { btnCopy.innerHTML = `<span style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('copy', 'pmm-icon-xs')}<span>Copy</span></span>`; }, 2000);
       } catch (_) {
         showToast('Failed to copy to clipboard', 'error');
       }
@@ -221,7 +222,7 @@ export function setupDataTableGridEvents(
         }
 
         try {
-          btn.textContent = '⏳';
+          btn.innerHTML = getIconSvg('refreshCw', 'pmm-icon-xs spin');
           const res = await tweakDataTableCell({
             modId,
             pakPath,
@@ -240,7 +241,7 @@ export function setupDataTableGridEvents(
         } catch (err) {
           showToast(String(err), 'error');
         } finally {
-          btn.textContent = '✏️';
+          btn.innerHTML = getIconSvg('editor', 'pmm-icon-xs');
         }
       });
     }

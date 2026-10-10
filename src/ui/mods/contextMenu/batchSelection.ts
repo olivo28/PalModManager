@@ -6,6 +6,7 @@ import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { hideContextMenu, positionContextMenu } from './menuDom';
 import { mainDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 export function showBulkContextMenu(x: number, y: number): void {
   const menu = mainDom.el('context-menu');
@@ -17,7 +18,7 @@ export function showBulkContextMenu(x: number, y: number): void {
   const anyInFolder = folders.some(f => selectedIds.some(id => f.mod_ids.includes(id)));
   const foldersHtml = folders.map(f => `
     <button type="button" class="context-submenu-item" data-action="bulk-move-to-folder" data-folder-id="${f.id}" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-      <span>📁</span> ${escapeHtml(f.name)}
+      <span style="display:inline-flex;align-items:center;">${getIconSvg('folder', 'pmm-icon-xs')}</span> ${escapeHtml(f.name)}
     </button>
   `).join('');
 
@@ -25,40 +26,40 @@ export function showBulkContextMenu(x: number, y: number): void {
     <div style="font-size:9px;font-weight:700;color:var(--text-muted);padding:6px 16px 2px;text-transform:uppercase">${escapeHtml(t('common.selected_count_mods', { count: selectedCount }))}</div>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="bulk-enable">
-      <span class="ctx-icon">●</span>
+      <span class="ctx-icon">${getIconSvg('eye', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('bulk.enable_selected'))}
     </button>
     <button type="button" class="context-menu-item" data-action="bulk-disable">
-      <span class="ctx-icon">◌</span>
+      <span class="ctx-icon">${getIconSvg('eyeOff', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('bulk.disable_selected'))}
     </button>
     <div class="context-menu-sep"></div>
     <div class="context-menu-item has-submenu" style="position:relative;display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">📁</span>
+      <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.move_to_folder'))}
-      <span style="margin-left:auto;font-size:9px;color:var(--text-muted);pointer-events:none;">▶</span>
+      <span style="margin-left:auto;display:inline-flex;align-items:center;color:var(--text-muted);pointer-events:none;">${getIconSvg('chevronRight', 'pmm-icon-xs')}</span>
       <div class="context-submenu" style="display:none;position:absolute;top:-4px;left:100%;background:var(--bg-primary);border:1px solid var(--border);border-radius:6px;box-shadow:0 8px 32px rgba(0,0,0,0.5);min-width:160px;z-index:4000;padding:4px 0;">
         ${foldersHtml}
         ${(folders.length > 0 && anyInFolder) ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         ${anyInFolder ? `<button type="button" class="context-submenu-item" data-action="bulk-move-to-folder" data-folder-id="none" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>❌</span> ${escapeHtml(t('context.remove_from_folders'))}
+          <span style="display:inline-flex;align-items:center;">${getIconSvg('xCircle', 'pmm-icon-xs')}</span> ${escapeHtml(t('context.remove_from_folders'))}
         </button>` : ''}
         ${folders.length > 0 ? `<div style="height:1px;background:var(--border);margin:4px 0;"></div>` : ''}
         <button type="button" class="context-submenu-item" data-action="bulk-move-to-new-folder" style="display:flex;align-items:center;width:100%;padding:6px 12px;background:none;border:none;color:var(--text-primary);cursor:pointer;font-size:12px;text-align:left;gap:6px;">
-          <span>➕</span> ${escapeHtml(t('context.new_folder'))}
+          <span style="display:inline-flex;align-items:center;">${getIconSvg('plus', 'pmm-icon-xs')}</span> ${escapeHtml(t('context.new_folder'))}
         </button>
       </div>
     </div>
     ${selectedCount === 2 ? `
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="bulk-merge-hybrid">
-      <span class="ctx-icon">⚡</span>
+      <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.merge_as_hybrid'))}
     </button>
     ` : ''}
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item danger" data-action="bulk-remove">
-      <span class="ctx-icon">✕</span>
+      <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('bulk.delete_selected'))}
     </button>
   `;

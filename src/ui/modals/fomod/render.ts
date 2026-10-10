@@ -1,5 +1,7 @@
 import { fomodDom } from '../../../framework';
 import { t } from '../../../utils/i18n';
+import { escapeHtml } from '../../../utils/helpers';
+import { getIconSvg } from '../../icons/mod';
 import type { FomodGroup, FomodPlugin, FomodStep } from './types';
 import {
   getFomodState,
@@ -29,7 +31,7 @@ export function parseStepHeader(rawName: string, stepIndex: number): ParsedStepH
     return {
       sidebarLabel: 'Base Dimensions',
       heading: 'Base Dimensions & Range Settings',
-      subtitle: `💡 Note: ${trimmed.slice(1, -1).trim() || trimmed}`,
+      subtitle: trimmed.slice(1, -1).trim() || trimmed,
     };
   }
 
@@ -39,7 +41,7 @@ export function parseStepHeader(rawName: string, stepIndex: number): ParsedStepH
     return {
       sidebarLabel: 'Presets & Overrides',
       heading: 'Presets & Quick Configs',
-      subtitle: noteMatch ? `⚠️ Note: ${noteMatch[1].trim()}` : '',
+      subtitle: noteMatch ? noteMatch[1].trim() : '',
     };
   }
 
@@ -51,7 +53,7 @@ export function parseStepHeader(rawName: string, stepIndex: number): ParsedStepH
     return {
       sidebarLabel: mainTitle,
       heading: mainTitle,
-      subtitle: note ? `💡 ${note}` : '',
+      subtitle: note || '',
     };
   }
 
@@ -141,7 +143,7 @@ export function renderSidebarSteps(
     if (isValid) {
       const check = document.createElement('span');
       check.className = 'step-status-icon';
-      check.textContent = '✓';
+      check.innerHTML = getIconSvg('check', 'pmm-icon-xs');
       btn.appendChild(check);
     }
 
@@ -151,6 +153,24 @@ export function renderSidebarSteps(
 
     navEl.appendChild(btn);
   });
+
+  const state = getFomodState();
+  let totalSelected = 0;
+  for (const set of state.selections.values()) {
+    totalSelected += set.size;
+  }
+  const allValid = steps.every(isStepValid);
+  const statusEl = fomodDom.el('fomod-sidebar-status-val');
+  const selectedEl = fomodDom.el('fomod-sidebar-selected-val');
+  if (statusEl) {
+    statusEl.textContent = allValid ? t('fomod.status_ready') : t('fomod.status_pending');
+    statusEl.style.color = allValid ? 'var(--success)' : 'var(--warning)';
+  }
+  if (selectedEl) {
+    selectedEl.textContent = totalSelected === 1
+      ? t('fomod.option_selected_single', { count: '1' })
+      : t('fomod.options_selected_count', { count: String(totalSelected) });
+  }
 }
 
 export function renderMainHeader(step: FomodStep): void {
@@ -173,7 +193,7 @@ export function renderMainHeader(step: FomodStep): void {
 
   // Subtitle / Note
   if (parsed.subtitle) {
-    subtitleEl.textContent = parsed.subtitle;
+    subtitleEl.innerHTML = `<span style="display: inline-flex; align-items: center; gap: 6px;">${getIconSvg('info', 'pmm-icon-xs')} <span>${escapeHtml(parsed.subtitle)}</span></span>`;
     subtitleEl.style.display = 'block';
   } else {
     subtitleEl.style.display = 'none';
@@ -219,7 +239,10 @@ export function renderSingleGroupView(group: FomodGroup, onStateChange: () => vo
   if (instruction) {
     const instrEl = document.createElement('div');
     instrEl.className = 'fomod-group-instruction';
-    instrEl.textContent = `💡 Setting Note: ${instruction}`;
+    instrEl.style.display = 'inline-flex';
+    instrEl.style.alignItems = 'center';
+    instrEl.style.gap = '6px';
+    instrEl.innerHTML = `${getIconSvg('info', 'pmm-icon-xs')} <span>${escapeHtml(instruction)}</span>`;
     card.appendChild(instrEl);
   }
 
@@ -265,7 +288,10 @@ export function renderAccordionGroup(
 
   const chevron = document.createElement('span');
   chevron.className = 'accordion-chevron';
-  chevron.textContent = '▶';
+  chevron.style.display = 'inline-flex';
+  chevron.style.alignItems = 'center';
+  chevron.style.justifyContent = 'center';
+  chevron.innerHTML = getIconSvg('chevronRight', 'pmm-icon-xs');
 
   const title = document.createElement('span');
   title.className = 'accordion-title';
@@ -292,12 +318,12 @@ export function renderAccordionGroup(
   if (isValid) {
     const check = document.createElement('span');
     check.className = 'accordion-check';
-    check.textContent = '✓';
+    check.innerHTML = getIconSvg('check', 'pmm-icon-xs');
     right.appendChild(check);
   } else {
     const warn = document.createElement('span');
     warn.className = 'accordion-warn';
-    warn.textContent = '⚠️';
+    warn.innerHTML = getIconSvg('alertTriangle', 'pmm-icon-xs');
     right.appendChild(warn);
   }
 
@@ -321,7 +347,10 @@ export function renderAccordionGroup(
   if (instruction) {
     const instrEl = document.createElement('div');
     instrEl.className = 'fomod-group-instruction';
-    instrEl.textContent = `💡 Setting Note: ${instruction}`;
+    instrEl.style.display = 'inline-flex';
+    instrEl.style.alignItems = 'center';
+    instrEl.style.gap = '6px';
+    instrEl.innerHTML = `${getIconSvg('info', 'pmm-icon-xs')} <span>${escapeHtml(instruction)}</span>`;
     body.appendChild(instrEl);
   }
 
@@ -386,7 +415,10 @@ export function renderPluginOption(
   if (isRemembered) {
     const remTag = document.createElement('span');
     remTag.className = 'fomod-tag-remembered';
-    remTag.textContent = `🟢 ${t('fomod.remembered_tag')}`;
+    remTag.style.display = 'inline-flex';
+    remTag.style.alignItems = 'center';
+    remTag.style.gap = '4px';
+    remTag.innerHTML = `${getIconSvg('checkCircle', 'pmm-icon-xs')} <span>${escapeHtml(t('fomod.remembered_tag'))}</span>`;
     labelRow.appendChild(remTag);
   }
 
@@ -438,10 +470,31 @@ export function renderPluginOption(
     thumb.className = 'fomod-option-thumb';
     thumb.src = plugin.imageBase64;
     thumb.alt = plugin.name;
+    thumb.title = t('fomod.click_to_zoom');
+    thumb.style.cursor = 'zoom-in';
+    thumb.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      openFomodLightbox(plugin.imageBase64!, plugin.name);
+    });
     row.appendChild(thumb);
   }
 
   return row;
+}
+
+export function openFomodLightbox(src: string, alt: string): void {
+  const overlay = document.createElement('div');
+  overlay.className = 'fomod-lightbox-overlay';
+  const img = document.createElement('img');
+  img.className = 'fomod-lightbox-img';
+  img.src = src;
+  img.alt = alt;
+  overlay.appendChild(img);
+  overlay.addEventListener('click', () => {
+    overlay.remove();
+  });
+  document.body.appendChild(overlay);
 }
 
 export function getGroupSelectionSummary(group: FomodGroup, selectedSet: Set<string>): string {

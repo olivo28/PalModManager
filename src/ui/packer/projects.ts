@@ -6,6 +6,7 @@ import { stagedFiles, sourcePaths, targetOverrides, virtualFolders, backupPaths,
 import { scanAndBuildStagedFiles } from './staging';
 import { clearMetadataForm, updateBuildButtonState } from './rendering';
 import { packerDom } from '../../framework';
+import { getIconSvg } from '../icons/mod';
 
 import { ModMetadata, PackerProject } from './mod';
 
@@ -28,7 +29,7 @@ export function renderProjectsHub(): void {
     const typeBadge = modTypeVal ? `<span class="mod-type-badge" style="font-size:10px; padding:2px 6px; margin-top:6px;">${escapeHtml(modTypeVal)}</span>` : '';
     return `
       <div class="packer-project-card" data-name="${escapeHtml(proj.name)}">
-        <div class="packer-project-card-icon">📁</div>
+        <div class="packer-project-card-icon">${getIconSvg('folder', 'pmm-icon-lg')}</div>
         <div class="packer-project-card-title">${escapeHtml(proj.name)}</div>
         <div class="packer-project-card-meta">${escapeHtml(t('common.version'))}: ${escapeHtml(proj.metadata?.version || '1.0.0')}</div>
         ${typeBadge}
@@ -42,7 +43,7 @@ export function renderProjectsHub(): void {
 
   html += `
     <div class="packer-project-card new-placeholder" id="packer-hub-create-card">
-      <div class="packer-project-card-icon">+</div>
+      <div class="packer-project-card-icon">${getIconSvg('plus', 'pmm-icon-lg')}</div>
       <div class="packer-project-card-title">${escapeHtml(t('packer.btn_new_project'))}</div>
       <div class="packer-project-card-meta">${escapeHtml(t('packer.project_meta_type'))}</div>
     </div>

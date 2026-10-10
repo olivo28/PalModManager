@@ -1,6 +1,7 @@
 import type { BatchItem } from './types';
 
 export let _pendingUpdateModId: string | null = null;
+export let _targetMergeModId: string | null = null;
 export let _pendingBatchPaths: string[] = [];
 export let _batchItems: BatchItem[] = [];
 export let _onInstallCompleteCallback: ((success: boolean) => void) | null = null;
@@ -9,6 +10,10 @@ export let _isProcessingInstall = false;
 
 export function setPendingUpdateModId(id: string | null): void {
   _pendingUpdateModId = id;
+}
+
+export function setTargetMergeModId(id: string | null): void {
+  _targetMergeModId = id;
 }
 
 export function setPendingBatchPaths(paths: string[]): void {
@@ -32,5 +37,6 @@ export function setInstallModalCallback(cb: ((success: boolean) => void) | null)
   if (cb !== null) {
     _lastInstallSuccess = false;
     _isProcessingInstall = false;
+    _targetMergeModId = null;
   }
 }

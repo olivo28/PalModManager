@@ -205,6 +205,7 @@ pub fn run() {
             mod_commands::open_path,
             mod_commands::rename_mod,
             mod_commands::merge_mods_as_hybrid,
+            mod_commands::toggle_mod_component,
             config_archive::check_archived_config,
             config_archive::apply_archived_config,
             config_archive::preview_archived_config_diff,

@@ -16,7 +16,7 @@ fn heal_damaged_paks(dir: &Path) {
     for entry in &entries {
         let p = entry.path();
         let fname = p.file_name().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
-        if fname.ends_with(".pmm.json") || fname.ends_with(".json") || fname.ends_with(".ucas") || fname.ends_with(".utoc") || fname.ends_with(".sig") || fname.ends_with(".bak") || fname.ends_with(".txt") {
+        if fname.ends_with(".pmm.json") || fname.ends_with(".json") || fname.ends_with(".ucas") || fname.ends_with(".utoc") || fname.ends_with(".sig") || fname.ends_with(".bak") || fname.ends_with(".txt") || fname.ends_with(".disabled") {
             continue;
         }
         let ext = p.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();

@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { ModInfo } from '../types';
 import { escapeHtml } from '../utils/helpers';
 import { getState } from '../state';
+import { getIconSvg } from './icons/mod';
 import { loadOrderDom, mainDom } from '../framework';
 
 let _ue4ssMods: ModInfo[] = [];
@@ -128,7 +129,7 @@ function renderGenericList(container: HTMLElement, modsList: ModInfo[], sectionT
     const badgeBg = typeLower === 'ue4ss' ? 'var(--type-ue4ss-dim)' : (typeLower === 'palschema' ? 'rgba(0,188,255,0.1)' : 'var(--type-hybrid-dim)');
 
     item.innerHTML = `
-      <span class="load-order-drag-handle" style="color:var(--text-muted);font-size:18px;cursor:grab;margin-right:4px;line-height:1;flex-shrink:0;">☰</span>
+      <span class="load-order-drag-handle" style="color:var(--text-muted);display:inline-flex;align-items:center;cursor:grab;margin-right:6px;flex-shrink:0;">${getIconSvg('gripVertical', 'pmm-icon-sm')}</span>
       <label class="switch" style="position: relative; display: inline-block; width: 34px; height: 20px; margin: 0; flex-shrink:0;">
         <input type="checkbox" class="load-order-toggle" data-index="${idx}" ${isEnabled ? 'checked' : ''} style="opacity: 0; width: 0; height: 0;" />
         <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #333; transition: .3s; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1);"></span>

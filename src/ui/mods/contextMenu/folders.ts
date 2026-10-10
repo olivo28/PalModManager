@@ -5,6 +5,7 @@ import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { getContextOverlay, hideContextMenu, positionContextMenu } from './menuDom';
 import { mainDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 export function showFolderContextMenu(folderId: string, x: number, y: number): void {
   const state = getState();
@@ -18,7 +19,7 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
   const modsInFolder = state.allMods.filter(m => folder.mod_ids.includes(m.id));
   const allEnabled = modsInFolder.length > 0 && modsInFolder.every(m => m.enabled);
   const toggleLabel = allEnabled ? t('context.folder_disable_all') : t('context.folder_enable_all');
-  const toggleIcon = allEnabled ? '⏸' : '▶';
+  const toggleIcon = allEnabled ? getIconSvg('eyeOff', 'pmm-icon-sm') : getIconSvg('eye', 'pmm-icon-sm');
 
   const folders = currentProfile?.mod_folders || [];
   const folderIndex = folders.findIndex(f => f.id === folderId);
@@ -27,21 +28,21 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
 
   const html = `
     <button type="button" class="context-menu-item" data-action="enter-folder">
-      <span class="ctx-icon">📂</span>
+      <span class="ctx-icon">${getIconSvg('folderOpen', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.folder_enter'))}
     </button>
     ${canMoveUp ? `
     <button type="button" class="context-menu-item" data-action="move-folder-up">
-      <span class="ctx-icon">▲</span>
+      <span class="ctx-icon">${getIconSvg('chevronUp', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.folder_move_up'))}
     </button>` : ''}
     ${canMoveDown ? `
     <button type="button" class="context-menu-item" data-action="move-folder-down">
-      <span class="ctx-icon">▼</span>
+      <span class="ctx-icon">${getIconSvg('chevronDown', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.folder_move_down'))}
     </button>` : ''}
     <button type="button" class="context-menu-item" data-action="rename-folder">
-      <span class="ctx-icon">✏</span>
+      <span class="ctx-icon">${getIconSvg('editor', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.folder_rename'))}
     </button>
     <button type="button" class="context-menu-item" data-action="toggle-folder-mods">
@@ -49,12 +50,12 @@ export function showFolderContextMenu(folderId: string, x: number, y: number): v
       ${escapeHtml(toggleLabel)}
     </button>
     <button type="button" class="context-menu-item" data-action="check-updates-mods">
-      <span class="ctx-icon">↑</span>
+      <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.check_updates'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item danger" data-action="delete-folder">
-      <span class="ctx-icon">🗑</span>
+      <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.folder_delete'))}
     </button>
   `;

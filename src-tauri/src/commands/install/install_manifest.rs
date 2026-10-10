@@ -52,6 +52,16 @@ pub async fn install_mod_with_manifest(
             let m_folder = crate::profiles::get_mod_folder_name(m);
             let m_phys = crate::installer::helpers::get_physical_identity(&m.game_path, &m.disabled_path);
 
+            // Physically distinct destination check:
+            // If they land on different .pak stems or different root folders, they are independent file variants
+            // and MUST NEVER be treated as an existing mod to be overwritten or purged.
+            let physically_distinct = (!target_phys.is_empty() && !m_phys.is_empty() && !m_phys.eq_ignore_ascii_case(&target_phys))
+                || (!target_folder.is_empty() && !m_folder.is_empty() && !m_folder.eq_ignore_ascii_case(target_folder));
+
+            if physically_distinct {
+                return false;
+            }
+
             // 1. Same exact Nexus file ID
             let same_file_id = target_file_id.is_some() && m.nexus_file_id.as_deref() == target_file_id;
             // 2. Same display name
@@ -63,10 +73,8 @@ pub async fn install_mod_with_manifest(
 
             // 5. Fallback Nexus page match: only consider same mod if they do NOT have distinct physical identities or distinct folder names
             let same_nexus = target_nexus.is_some() && m.nexus_mod_id == target_nexus;
-            let physically_distinct = (!target_phys.is_empty() && !m_phys.is_empty() && !m_phys.eq_ignore_ascii_case(&target_phys))
-                || (!target_folder.is_empty() && !m_folder.is_empty() && !m_folder.eq_ignore_ascii_case(target_folder));
 
-            same_file_id || same_name || same_phys || same_folder || (same_nexus && !physically_distinct)
+            same_file_id || same_name || same_phys || same_folder || same_nexus
         }).cloned();
 
         (data.settings.game_path.clone(), data.settings.program_path.clone(), existing)
@@ -160,6 +168,20 @@ pub async fn install_mod_with_manifest(
     })
     .await
     .map_err(|e| e.to_string())??;
+
+    // Disambiguate display name if another installed mod already shares the identical name
+    {
+        let data = state.data.lock().map_err(|e| e.to_string())?;
+        if data.mods.iter().any(|m| m.id != final_mod.id && m.name.eq_ignore_ascii_case(&final_mod.name)) {
+            let discriminator = if !manifest.folder_name.is_empty() && !final_mod.name.to_lowercase().contains(&manifest.folder_name.to_lowercase()) {
+                manifest.folder_name.clone()
+            } else {
+                let count = data.mods.iter().filter(|m| m.name.starts_with(&final_mod.name)).count();
+                format!("Variant {}", count + 1)
+            };
+            final_mod.name = format!("{} ({})", final_mod.name, discriminator);
+        }
+    }
 
     let _ = app_handle.emit("install-progress", InstallProgressPayload {
         stage: "saving".to_string(),

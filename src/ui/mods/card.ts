@@ -3,6 +3,7 @@ import { escapeHtml } from '../../utils/helpers';
 import { t } from '../../utils/i18n';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { isNexusModEndorsed, isNexusModTracked } from '../../features/nexusAuth/state';
+import { getIconSvg } from '../icons/mod';
 
 export async function handleCardImageError(img: HTMLImageElement, originalUrl: string): Promise<void> {
   img.onerror = null;
@@ -116,11 +117,11 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
   const isTracked = isNexusModTracked(mod.nexusModId, state.currentSettings?.nexusTrackedCache);
 
   const endorsedBadge = isEndorsed
-    ? `<span class="badge-nexus-endorsed" style="font-size: 8px; font-weight: bold; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 1px 4px; border-radius: 3px; cursor: default;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+    ? `<span class="badge-nexus-endorsed" style="font-size: 8px; font-weight: bold; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 1px 4px; border-radius: 3px; cursor: default; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">${getIconSvg('thumbsUp', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_endorsed'))}</span></span>`
     : '';
 
   const trackedBadge = isTracked
-    ? `<span class="badge-nexus-tracked" style="font-size: 8px; font-weight: bold; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 1px 4px; border-radius: 3px; cursor: default;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+    ? `<span class="badge-nexus-tracked" style="font-size: 8px; font-weight: bold; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 1px 4px; border-radius: 3px; cursor: default; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">${getIconSvg('target', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_tracked'))}</span></span>`
     : '';
 
   if (state.viewLayout === 'list') {
@@ -130,11 +131,21 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     const extraText = extraCount > 0 ? `+${extraCount} ${escapeHtml(t('card.extra_files_count', { count: extraCount }))}` : escapeHtml(t('common.none'));
     const formattedDate = mod.installDate ? mod.installDate.substring(0, 10) : escapeHtml(t('common.unknown'));
 
-    const removeBtn = `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
+    const removeBtn = `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">${getIconSvg('x', 'pmm-icon-xs')}</button>`;
 
     const childClass = isChild ? 'folder-child-row' : '';
     const childIndent = isChild ? `<span class="tree-connector">↳</span>` : '';
     const folderAttr = isChild ? `data-folder-id="${folderId}"` : '';
+
+    const rawPath = mod.gamePath || mod.disabledPath || '';
+    let variantStem = rawPath.split(/[/\\]/).pop() || '';
+    if (variantStem.toLowerCase().endsWith('.disabled')) {
+      variantStem = variantStem.slice(0, -9);
+    }
+    const hasSiblingNexus = Boolean(mod.nexusModId && state.allMods?.some((other: any) => other.id !== mod.id && other.nexusModId === mod.nexusModId));
+    const variantBadge = (hasSiblingNexus && variantStem)
+      ? `<span class="mod-card-variant-badge" style="font-family: monospace; font-size: 8.5px; padding: 1px 5px; background: rgba(0, 188, 255, 0.12); color: var(--accent); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 3px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(variantStem)}">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(variantStem)}</span></span>`
+      : '';
 
     return `
     <div class="mod-card list-row-card ${childClass} ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}" ${folderAttr}>
@@ -146,12 +157,13 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
         </label>
         <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
         <span class="mod-card-name" style="font-weight:600;">${escapeHtml(mod.name)}</span>
+        ${variantBadge ? `<span style="margin-left: 6px;">${variantBadge}</span>` : ''}
         ${isWorkshop ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_workshop'))}</span>` : ''}
-        ${isMissingGp ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
+        ${isMissingGp ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">${getIconSvg('gamepad', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_gamepass_missing'))}</span></span>` : ''}
         ${updateVer ? `<span style="margin-left: 8px; font-size: 8px; font-weight: bold; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); padding: 1px 4px; border-radius: 3px;">${escapeHtml(t('card.badge_update_available', { version: updateVer }))}</span>` : ''}
         ${trackedBadge ? `<span style="margin-left: 6px;">${trackedBadge}</span>` : ''}
         ${endorsedBadge ? `<span style="margin-left: 6px;">${endorsedBadge}</span>` : ''}
-        ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="margin-left: 6px; font-size: 11px; cursor: pointer;" title="${escapeHtml(mod.customNotes)}">📝</span>` : ''}
+        ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="margin-left: 6px; font-size: 11px; cursor: pointer; display: inline-flex; align-items: center;" title="${escapeHtml(mod.customNotes)}">${getIconSvg('fileText', 'pmm-icon-xs')}</span>` : ''}
       </div>
       <div class="cell status-cell">
       </div>
@@ -201,12 +213,22 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
     : `<div class="mod-card-image-wrap"><div class="mod-card-image-placeholder ${mod.type}">${placeholderLetter}</div></div>`;
 
   const updateBadge = updateVer
-    ? `<span class="mod-card-update-badge" title="${escapeHtml(t('card.badge_update_available', { version: updateVer }))}">&#9650; ${escapeHtml(t('context.update_mod'))} (v${escapeHtml(updateVer)})</span>`
+    ? `<span class="mod-card-update-badge" title="${escapeHtml(t('card.badge_update_available', { version: updateVer }))}">${getIconSvg('arrowUp', 'pmm-icon-xs')} <span>${escapeHtml(t('context.update_mod'))} (v${escapeHtml(updateVer)})</span></span>`
     : '';
 
-  const removeBtn = `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">✕</button>`;
+  const removeBtn = `<button class="card-remove-btn" data-id="${mod.id}" title="${escapeHtml(t('card.remove_btn_title'))}">${getIconSvg('x', 'pmm-icon-xs')}</button>`;
 
   const isSelected = state.selectedModIds.has(mod.id);
+
+  const rawPath = mod.gamePath || mod.disabledPath || '';
+  let variantStem = rawPath.split(/[/\\]/).pop() || '';
+  if (variantStem.toLowerCase().endsWith('.disabled')) {
+    variantStem = variantStem.slice(0, -9);
+  }
+  const hasSiblingNexus = Boolean(mod.nexusModId && state.allMods?.some((other: any) => other.id !== mod.id && other.nexusModId === mod.nexusModId));
+  const variantBadge = (hasSiblingNexus && variantStem)
+    ? `<span class="mod-card-variant-badge" style="font-family: monospace; font-size: 8.5px; padding: 1px 5px; background: rgba(0, 188, 255, 0.12); color: var(--accent); border: 1px solid rgba(0, 188, 255, 0.25); border-radius: 3px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(variantStem)}">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(variantStem)}</span></span>`
+    : '';
 
   return `
   <div class="mod-card ${mod.enabled ? '' : 'disabled'} ${isSelected ? 'selected' : ''}" data-id="${mod.id}" data-type="${mod.type}" data-is-workshop="${isWorkshop}">
@@ -215,15 +237,16 @@ export function buildModCardHtml(mod: ModInfo, state: any, isChild: boolean = fa
       <div class="mod-card-body-top">
         <span class="mod-card-name">${escapeHtml(mod.name)}</span>
         <div style="display: flex; align-items: center; gap: 4px;">
-          ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="font-size: 11px; cursor: pointer;" title="${escapeHtml(mod.customNotes)}">📝</span>` : ''}
+          ${mod.customNotes && mod.customNotes.trim() ? `<span class="badge-mod-notes" style="font-size: 11px; cursor: pointer; display: inline-flex; align-items: center;" title="${escapeHtml(mod.customNotes)}">${getIconSvg('fileText', 'pmm-icon-xs')}</span>` : ''}
           <span class="mod-card-led ${mod.enabled ? 'on' : 'off'}"></span>
         </div>
       </div>
       <div class="mod-card-meta">
         <span class="mod-card-type ${mod.type}">${escapeHtml(mod.type.toLowerCase() === 'hybrid' ? t('card.type_hybrid') : mod.type.toUpperCase())}</span>
+        ${variantBadge}
         <span class="mod-card-version">v${escapeHtml(mod.version)}</span>
-        ${isMissingGp ? `<span class="badge-gp-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px; cursor: help;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">🎮 ${escapeHtml(t('card.badge_gamepass_missing'))}</span>` : ''}
-        ${mod.type === 'altermatic' && mod.nexusModId !== 1626 && !mod.name.toLowerCase().includes('altermatic - runtime') && !mod.name.toLowerCase().startsWith('altermatic') && !state.dependencies?.altermatic_installed && !state.allMods?.some((m: any) => m.enabled && (m.nexusModId === 1626 || m.name.toLowerCase().includes('altermatic - runtime') || (m.name.toLowerCase().startsWith('altermatic') && m.type === 'altermatic'))) ? `<span class="badge-dep-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 118, 117, 0.15); color: var(--type-altermatic); border: 1px solid rgba(255, 118, 117, 0.35); padding: 1px 4px; border-radius: 3px; cursor: help;" title="${escapeHtml(t('card.altermatic_missing_tooltip') || 'Requires Altermatic framework')}">⚠️ ${escapeHtml(t('card.badge_altermatic_missing') || 'ALTERMATIC MISSING')}</span>` : ''}
+        ${isMissingGp ? `<span class="badge-gp-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 170, 0, 0.15); color: #ffaa00; border: 1px solid rgba(255, 170, 0, 0.3); padding: 1px 4px; border-radius: 3px; cursor: help; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.gamepass_missing_tooltip'))}">${getIconSvg('gamepad', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_gamepass_missing'))}</span></span>` : ''}
+        ${mod.type === 'altermatic' && mod.nexusModId !== 1626 && !mod.name.toLowerCase().includes('altermatic - runtime') && !mod.name.toLowerCase().startsWith('altermatic') && !state.dependencies?.altermatic_installed && !state.allMods?.some((m: any) => m.enabled && (m.nexusModId === 1626 || m.name.toLowerCase().includes('altermatic - runtime') || (m.name.toLowerCase().startsWith('altermatic') && m.type === 'altermatic'))) ? `<span class="badge-dep-missing" style="font-size: 8px; font-weight: bold; background: rgba(255, 118, 117, 0.15); color: var(--type-altermatic); border: 1px solid rgba(255, 118, 117, 0.35); padding: 1px 4px; border-radius: 3px; cursor: help; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.altermatic_missing_tooltip') || 'Requires Altermatic framework')}">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_altermatic_missing') || 'ALTERMATIC MISSING')}</span></span>` : ''}
         ${updateBadge}
         ${trackedBadge}
         ${endorsedBadge}
@@ -254,7 +277,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
   if (state.viewLayout === 'list') {
     const isCollapsed = state.collapsedFolderIds ? state.collapsedFolderIds.has(folder.id) : false;
     const isExpanded = !isCollapsed;
-    const chevron = `<span class="folder-chevron" data-folder-id="${folder.id}">${isExpanded ? '▼' : '▶'}</span>`;
+    const chevron = `<span class="folder-chevron" data-folder-id="${folder.id}">${isExpanded ? getIconSvg('chevronDown', 'pmm-icon-xs') : getIconSvg('chevronRight', 'pmm-icon-xs')}</span>`;
 
     const countText = modsInFolder.length === 1
       ? t('card.folder_mods_count_single')
@@ -264,7 +287,7 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
     <div class="mod-card folder-card list-row-card ${isExpanded ? 'expanded' : 'collapsed'} ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" data-is-expanded="${isExpanded}">
       <div class="cell name-cell">
         ${chevron}
-        <span style="margin-right: 4px;">📁</span>
+        <span style="margin-right: 4px; display: inline-flex; align-items: center;">${getIconSvg('folder', 'pmm-icon-sm')}</span>
         <span class="mod-card-name">${escapeHtml(folder.name)}</span>
       </div>
       <div class="cell status-cell">
@@ -286,8 +309,8 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
         <span>-</span>
       </div>
       <div class="cell action-cell" onclick="event.stopPropagation()">
-        <button class="mod-folder-btn rename-btn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}">✏</button>
-        <button class="mod-folder-btn delete-btn delete" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}">✕</button>
+        <button class="mod-folder-btn rename-btn" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;display:inline-flex;align-items:center;" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}">${getIconSvg('editor', 'pmm-icon-xs')}</button>
+        <button class="mod-folder-btn delete-btn delete" style="background:none;border:none;color:var(--text-secondary);cursor:pointer;padding:4px;display:inline-flex;align-items:center;" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}">${getIconSvg('x', 'pmm-icon-xs')}</button>
       </div>
     </div>`;
 
@@ -313,11 +336,11 @@ export function buildFolderCardHtml(folder: any, modsInFolder: ModInfo[], state:
   return `
   <div class="mod-card folder-card ${isSelected ? 'selected' : ''}" data-id="${folder.id}" data-type="folder" style="position:relative;">
     <div class="folder-card-actions" style="position: absolute; top: 8px; right: 8px; display: flex; gap: 4px; opacity: 0; z-index: 10;" onclick="event.stopPropagation()">
-      <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✏</button>
-      <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px;">✕</button>
+      <button class="mod-folder-btn rename-btn" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.prompt_rename_folder'))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center;">${getIconSvg('editor', 'pmm-icon-xs')}</button>
+      <button class="mod-folder-btn delete-btn delete" data-folder-id="${folder.id}" title="${escapeHtml(t('dialogs.confirm_delete_folder', { name: folder.name }))}" style="padding: 2px 6px; font-size: 11px; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); cursor: pointer; border-radius: 4px; display: inline-flex; align-items: center;">${getIconSvg('x', 'pmm-icon-xs')}</button>
     </div>
-    <div class="mod-card-image-wrap folder-icon-wrap" style="display:flex;align-items:center;justify-content:center;height:120px;background:var(--bg-secondary);font-size:48px;">
-      📁
+    <div class="mod-card-image-wrap folder-icon-wrap" style="display:flex;align-items:center;justify-content:center;height:120px;background:var(--bg-secondary);color:var(--accent);">
+      ${getIconSvg('folder', 'pmm-icon-2xl')}
     </div>
     <div class="mod-card-body" style="padding: 12px; display: flex; flex-direction: column; flex-grow: 1; justify-content: space-between;">
       <div class="mod-card-body-top">

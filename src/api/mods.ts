@@ -179,6 +179,10 @@ export async function mergeModsAsHybrid(primaryModId: string, secondaryModId: st
   return invoke('merge_mods_as_hybrid', { primaryModId, secondaryModId });
 }
 
+export async function toggleModComponent(modId: string, targetFile: string): Promise<ModInfo> {
+  return invoke('toggle_mod_component', { modId, targetFile });
+}
+
 export async function checkArchivedConfig(nexusModId: number | null, modName: string): Promise<ArchivedConfigInfo | null> {
   return invoke('check_archived_config', { nexusModId, modName });
 }

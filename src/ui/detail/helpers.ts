@@ -26,7 +26,7 @@ export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
     const normalized = itemPath.replace(/\\/g, '/');
     const lower = normalized.toLowerCase();
 
-    const isPakFile = lower.endsWith('.pak');
+    const isPakFile = lower.endsWith('.pak') || lower.endsWith('.pak.disabled');
     const isLogicMods = lower.includes('logicmods');
 
     // If it's a pak file, resolve its folder directory
@@ -128,14 +128,14 @@ export function getModComponentFolders(mod: ModInfo): ModComponentFolder[] {
       const fLower = fNorm.toLowerCase();
 
       // If this file is an internal child of primaryPath and not a pak, skip
-      if (primaryPath && !fLower.endsWith('.pak')) {
+      if (primaryPath && !fLower.endsWith('.pak') && !fLower.endsWith('.pak.disabled')) {
         const primNorm = primaryPath.replace(/\\/g, '/').toLowerCase();
         if (fLower.startsWith(primNorm + '/') || fLower === primNorm) {
           continue;
         }
       }
 
-      if (fLower.endsWith('.pak')) {
+      if (fLower.endsWith('.pak') || fLower.endsWith('.pak.disabled')) {
         registerItem(f, fLower.includes('logicmods') ? 'logicmods' : 'pak');
       } else if (fLower.includes('swapjson') || fLower.includes('alterconfig')) {
         const parentDir = f.substring(0, Math.max(f.lastIndexOf('/'), f.lastIndexOf('\\')));

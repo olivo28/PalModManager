@@ -12,6 +12,7 @@ import { t } from '../utils/i18n';
 import { openInstallModalForZip, setInstallModalCallback } from '../ui/modals/installer';
 import { mainDom, fomodDom, bus } from '../framework';
 import { getState } from '../state';
+import { getIconSvg } from '../ui/icons/mod';
 
 export interface NxmQueueItem {
   id: string;
@@ -424,8 +425,8 @@ export function renderQueueUI(): void {
 
     if (item.status === 'downloading') {
       statusClass = 'nxm-status-downloading';
-      const speedPart = item.speedText ? ` • ⚡ ${item.speedText}` : '';
-      const etaPart = item.etaText ? ` • ⏳ ${item.etaText}` : '';
+      const speedPart = item.speedText ? ` • ${item.speedText}` : '';
+      const etaPart = item.etaText ? ` • ${item.etaText}` : '';
       statusText = `${t('nxm_queue.status_downloading')} ${item.progress}%${speedPart}${etaPart}`;
     } else if (item.status === 'awaiting_install') {
       statusClass = 'nxm-status-ready';
@@ -452,7 +453,7 @@ export function renderQueueUI(): void {
         <button type="button" class="btn btn-primary btn-sm btn-queue-install" data-id="${item.id}" style="padding: 2px 8px !important; font-size: 10px !important;">
           ${t('nxm_queue.btn_install_now')}
         </button>
-        <button type="button" class="nxm-tray-btn btn-queue-cancel" data-id="${item.id}" title="Cancel">✕</button>
+        <button type="button" class="nxm-tray-btn btn-queue-cancel" data-id="${item.id}" title="Cancel">${getIconSvg('x', 'pmm-icon-xs')}</button>
       `;
     } else if (item.status === 'installing') {
       actionBtnHtml = `
@@ -462,11 +463,11 @@ export function renderQueueUI(): void {
       `;
     } else if (item.status === 'done' || item.status === 'cancelled' || item.status === 'error') {
       actionBtnHtml = `
-        <button type="button" class="nxm-tray-btn btn-queue-remove" data-id="${item.id}" title="Remove">✕</button>
+        <button type="button" class="nxm-tray-btn btn-queue-remove" data-id="${item.id}" title="Remove">${getIconSvg('x', 'pmm-icon-xs')}</button>
       `;
     } else if (item.status === 'queued') {
       actionBtnHtml = `
-        <button type="button" class="nxm-tray-btn btn-queue-cancel" data-id="${item.id}" title="Cancel">✕</button>
+        <button type="button" class="nxm-tray-btn btn-queue-cancel" data-id="${item.id}" title="Cancel">${getIconSvg('x', 'pmm-icon-xs')}</button>
       `;
     }
 

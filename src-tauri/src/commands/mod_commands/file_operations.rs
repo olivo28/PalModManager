@@ -555,3 +555,108 @@ pub fn is_mod_bridged_cmd(
     let game_path = data.settings.game_path.clone();
     Ok(crate::workshop_bridge::is_mod_bridged(&game_path, &mod_id))
 }
+
+#[tauri::command]
+pub fn toggle_mod_component(
+    mod_id: String,
+    target_file: String,
+    state: State<AppState>,
+) -> Result<crate::models::ModInfo, String> {
+    let mut data = state.data.lock().map_err(|e| e.to_string())?;
+    let program_path = data.settings.program_path.clone();
+
+    let mod_index = data.mods.iter().position(|m| m.id == mod_id)
+        .ok_or_else(|| format!("Mod '{}' not found", mod_id))?;
+
+    let mod_info = &mut data.mods[mod_index];
+    let norm_target = target_file.replace('\\', "/").to_lowercase();
+
+    let is_primary_game = mod_info.game_path.replace('\\', "/").to_lowercase() == norm_target;
+    let is_primary_disabled = mod_info.disabled_path.replace('\\', "/").to_lowercase() == norm_target;
+    let extra_idx = mod_info.extra_files.iter().position(|f| f.replace('\\', "/").to_lowercase() == norm_target);
+
+    if !is_primary_game && !is_primary_disabled && extra_idx.is_none() {
+        return Err(format!("Component '{}' not found in mod '{}'", target_file, mod_info.name));
+    }
+
+    let current_path_str = if is_primary_game {
+        mod_info.game_path.clone()
+    } else if is_primary_disabled {
+        mod_info.disabled_path.clone()
+    } else {
+        mod_info.extra_files[extra_idx.unwrap()].clone()
+    };
+
+    let current_path = PathBuf::from(&current_path_str);
+    if !current_path.exists() {
+        return Err(format!("Component file '{}' does not exist on disk", current_path.display()));
+    }
+
+    let is_disabled = current_path_str.to_lowercase().ends_with(".disabled");
+    let new_path = if is_disabled {
+        let s = if current_path_str.to_lowercase().ends_with(".disabled") {
+            &current_path_str[..current_path_str.len() - 9]
+        } else {
+            &current_path_str
+        };
+        PathBuf::from(s)
+    } else {
+        PathBuf::from(format!("{}.disabled", current_path_str))
+    };
+
+    fs::rename(&current_path, &new_path)
+        .map_err(|e| format!("Failed to rename component file '{}': {}", current_path.display(), e))?;
+
+    // Rename companion files (.ucas, .utoc) if they exist
+    if let Some(parent) = current_path.parent() {
+        let file_stem = current_path.file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or_default();
+        let base_stem = if is_disabled {
+            Path::new(&file_stem).file_stem().map(|s| s.to_string_lossy().to_string()).unwrap_or(file_stem)
+        } else {
+            file_stem
+        };
+
+        for ext in &["ucas", "utoc"] {
+            let comp_curr = if is_disabled {
+                parent.join(format!("{}.{}.disabled", base_stem, ext))
+            } else {
+                parent.join(format!("{}.{}", base_stem, ext))
+            };
+            let comp_new = if is_disabled {
+                parent.join(format!("{}.{}", base_stem, ext))
+            } else {
+                parent.join(format!("{}.{}.disabled", base_stem, ext))
+            };
+            if comp_curr.exists() {
+                let _ = fs::rename(&comp_curr, &comp_new);
+            }
+        }
+    }
+
+    let new_path_str = new_path.to_string_lossy().to_string();
+    if is_primary_game {
+        mod_info.game_path = new_path_str.clone();
+    } else if is_primary_disabled {
+        mod_info.disabled_path = new_path_str.clone();
+    } else if let Some(idx) = extra_idx {
+        mod_info.extra_files[idx] = new_path_str.clone();
+    }
+
+    let primary_enabled = !mod_info.game_path.is_empty() && !mod_info.game_path.to_lowercase().ends_with(".disabled");
+    let any_extra_enabled = mod_info.extra_files.iter().any(|f| !f.to_lowercase().ends_with(".disabled"));
+    mod_info.enabled = primary_enabled || any_extra_enabled;
+
+    crate::logger::log(&format!(
+        "toggle_mod_component: Toggled '{}' in mod '{}' -> '{}' (mod.enabled={})",
+        current_path_str, mod_info.name, new_path_str, mod_info.enabled
+    ));
+
+    let final_mod = mod_info.clone();
+    let _ = crate::profiles::save_pmm_meta(&final_mod);
+    let data_clone = data.clone();
+    drop(data);
+
+    let _ = crate::db::save_db(&program_path, &data_clone);
+    Ok(final_mod)
+}
+

@@ -2,6 +2,7 @@ import { inspectModPakContents, type PakInspectionResult } from '../../api';
 import { t } from '../../utils/i18n';
 import { escapeHtml, formatBytes } from '../../utils/helpers';
 import { setStatusBarMode } from './monaco/statusBar';
+import { getIconSvg } from '../icons/mod';
 
 export interface PakExplorerOptions {
   modId: string;
@@ -23,7 +24,7 @@ export async function renderPakExplorer(
   container.innerHTML = `
     <div class="editor-pak-header">
       <div class="editor-pak-title-group">
-        <span class="editor-pak-icon">📦</span>
+        <span class="editor-pak-icon">${getIconSvg('package', 'pmm-icon-sm')}</span>
         <div style="min-width:0;">
           <div class="editor-pak-title" title="${escapeHtml(cleanPakName)}">${escapeHtml(cleanPakName)}</div>
           <div class="editor-pak-meta">
@@ -33,7 +34,7 @@ export async function renderPakExplorer(
         </div>
       </div>
       <div class="editor-pak-search-wrap">
-        <span class="editor-pak-search-icon">🔍</span>
+        <span class="editor-pak-search-icon">${getIconSvg('search', 'pmm-icon-xs')}</span>
         <input type="text" id="editor-pak-filter-input" class="editor-pak-search-input" placeholder="${escapeHtml(t('editor.search_pak_assets'))}" autocomplete="off" spellcheck="false" />
       </div>
     </div>
@@ -62,7 +63,7 @@ export async function renderPakExplorer(
     if (!activePak || !activePak.files || activePak.files.length === 0) {
       if (bodyEl) {
         bodyEl.innerHTML = `
-          <div style="font-size:36px;margin-bottom:8px;opacity:0.6;">📦</div>
+          <div style="margin-bottom:8px;opacity:0.6;">${getIconSvg('package', 'pmm-icon-hero')}</div>
           <div style="font-size:13px;font-weight:600;color:var(--text-primary);margin-bottom:4px;">${escapeHtml(t('editor.no_content_available'))}</div>
           <div style="font-size:11px;color:var(--text-muted);">${escapeHtml(cleanPakName)}</div>
         `;
@@ -110,12 +111,12 @@ export async function renderPakExplorer(
     });
 
     const chipDefinitions: Array<{ key: string; label: string; icon: string }> = [
-      { key: 'all', label: t('editor.filter_all') || 'All', icon: '📦' },
-      { key: 'blueprints', label: t('editor.filter_blueprints') || 'Blueprints', icon: '🔷' },
-      { key: 'textures', label: t('editor.filter_textures') || 'Textures', icon: '🖼️' },
-      { key: 'materials', label: t('editor.filter_materials') || 'Materials', icon: '🎨' },
-      { key: 'tables', label: t('editor.filter_tables') || 'DataTables', icon: '📊' },
-      { key: 'other', label: t('editor.filter_other') || 'Other', icon: '⚡' },
+      { key: 'all', label: t('editor.filter_all') || 'All', icon: getIconSvg('package', 'pmm-icon-xs') },
+      { key: 'blueprints', label: t('editor.filter_blueprints') || 'Blueprints', icon: getIconSvg('settings', 'pmm-icon-xs') },
+      { key: 'textures', label: t('editor.filter_textures') || 'Textures', icon: getIconSvg('image', 'pmm-icon-xs') },
+      { key: 'materials', label: t('editor.filter_materials') || 'Materials', icon: getIconSvg('palette', 'pmm-icon-xs') },
+      { key: 'tables', label: t('editor.filter_tables') || 'DataTables', icon: getIconSvg('db', 'pmm-icon-xs') },
+      { key: 'other', label: t('editor.filter_other') || 'Other', icon: getIconSvg('zap', 'pmm-icon-xs') },
     ];
 
     const activeChips = chipDefinitions.filter(c => c.key === 'all' || (counts[c.key] && counts[c.key] > 0));
@@ -144,9 +145,9 @@ export async function renderPakExplorer(
               <table class="editor-pak-table">
                 <thead>
                   <tr>
-                    <th style="width:62%;"><span style="margin-right:6px;">📁</span>${escapeHtml(t('editor.col_asset_path'))}</th>
-                    <th style="width:18%;"><span style="margin-right:6px;">🏷️</span>${escapeHtml(t('editor.col_asset_type'))}</th>
-                    <th style="width:20%;text-align:right;"><span style="margin-right:6px;">⚡</span>${escapeHtml(t('editor.col_asset_actions'))}</th>
+                    <th style="width:62%;"><span style="display:inline-flex;align-items:center;gap:6px;">${getIconSvg('folder', 'pmm-icon-xs')}<span>${escapeHtml(t('editor.col_asset_path'))}</span></span></th>
+                    <th style="width:18%;"><span style="display:inline-flex;align-items:center;gap:6px;">${getIconSvg('tag', 'pmm-icon-xs')}<span>${escapeHtml(t('editor.col_asset_type'))}</span></span></th>
+                    <th style="width:20%;text-align:right;"><span style="display:inline-flex;align-items:center;gap:6px;justify-content:flex-end;">${getIconSvg('zap', 'pmm-icon-xs')}<span>${escapeHtml(t('editor.col_asset_actions'))}</span></span></th>
                   </tr>
                 </thead>
                 <tbody id="editor-pak-tbody">
@@ -160,24 +161,24 @@ export async function renderPakExplorer(
 
                     let catKey = 'other';
                     let pillClass = 'asset';
-                    let pillIcon = '⚡';
+                    let pillIcon = getIconSvg('zap', 'pmm-icon-xs');
                     const assetTypeLower = (f.assetType || '').toLowerCase();
 
                     if (assetTypeLower.includes('texture') || lowerPath.endsWith('.png') || lowerPath.endsWith('.dds')) {
                       pillClass = 'texture';
-                      pillIcon = '🖼️';
+                      pillIcon = getIconSvg('image', 'pmm-icon-xs');
                       catKey = 'textures';
                     } else if (assetTypeLower.includes('blueprint') || lowerPath.includes('/blueprint/')) {
                       pillClass = 'blueprint';
-                      pillIcon = '🔷';
+                      pillIcon = getIconSvg('settings', 'pmm-icon-xs');
                       catKey = 'blueprints';
                     } else if (assetTypeLower.includes('material')) {
                       pillClass = 'material';
-                      pillIcon = '🎨';
+                      pillIcon = getIconSvg('palette', 'pmm-icon-xs');
                       catKey = 'materials';
                     } else if (assetTypeLower.includes('table') || assetTypeLower.includes('data')) {
                       pillClass = 'datatable';
-                      pillIcon = '📊';
+                      pillIcon = getIconSvg('db', 'pmm-icon-xs');
                       catKey = 'tables';
                     }
 
@@ -185,7 +186,7 @@ export async function renderPakExplorer(
                       <tr class="editor-pak-row" data-search="${escapeHtml((f.name + ' ' + f.path + ' ' + f.assetType).toLowerCase())}" data-type="${catKey}">
                         <td class="editor-pak-cell path">
                           <div class="editor-pak-path-cell" title="${escapeHtml(f.path)}">
-                            <span class="editor-pak-folder-icon">📁</span>
+                            <span class="editor-pak-folder-icon">${getIconSvg('folder', 'pmm-icon-xs')}</span>
                             <span class="dir">${escapeHtml(dirPart)}</span>
                             <span class="file">${escapeHtml(filePart)}</span>
                             ${isPayload ? `<span class="editor-pak-companion-badge">${escapeHtml(t('editor.companion_payload') || 'Payload')}</span>` : ''}
@@ -201,10 +202,10 @@ export async function renderPakExplorer(
                           ${isInspectable ? `
                             <div class="editor-pak-btn-group">
                               <button class="editor-pak-btn-inspect" data-path="${escapeHtml(f.path)}" title="${escapeHtml(t('editor.btn_inspect_asset') || 'Inspect Asset')}">
-                                <span>🔍</span> <span>${escapeHtml(t('editor.btn_inspect_asset') || 'Inspect')}</span>
+                                <span>${getIconSvg('search', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('editor.btn_inspect_asset') || 'Inspect')}</span>
                               </button>
                               <button class="editor-pak-btn-popout" data-path="${escapeHtml(f.path)}" title="${escapeHtml(t('editor.btn_open_modal') || 'Open in Window')}">
-                                <span>⛶</span>
+                                <span>${getIconSvg('maximize', 'pmm-icon-xs')}</span>
                               </button>
                             </div>
                           ` : ''}
@@ -305,8 +306,8 @@ export async function renderPakExplorer(
   } catch (err) {
     if (bodyEl) {
       bodyEl.innerHTML = `
-        <div style="padding:32px;text-align:center;color:var(--danger);font-size:12px;">
-          ⚠️ ${escapeHtml(String(err))}
+        <div style="padding:32px;text-align:center;color:var(--danger);font-size:12px;display:flex;align-items:center;justify-content:center;gap:6px;">
+          ${getIconSvg('alertTriangle', 'pmm-icon-sm')} <span>${escapeHtml(String(err))}</span>
         </div>
       `;
     }

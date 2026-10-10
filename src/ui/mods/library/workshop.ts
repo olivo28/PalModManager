@@ -5,6 +5,7 @@ import { escapeHtml } from '../../../utils/helpers';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { getWorkshopState, setWorkshopGlobalEnabled, openUrl } from '../../../api';
 import { _activeLibrarySubTab, _librarySearchQuery, _libraryFilterStatus, _librarySortBy } from './state';
+import { getIconSvg } from '../../icons/mod';
 
 const WORKSHOP_TIMESTAMPS_KEY = 'pmm_workshop_mod_timestamps';
 const NEW_MOD_DURATION_MS = 10 * 60 * 1000; // 10 minutes
@@ -492,7 +493,7 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
 
       const isNew = isWorkshopModNew(m.packageName);
       const newBadge = isNew
-        ? `<span style="font-size: 7.5px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 5px; border-radius: 8px; box-shadow: 0 0 6px rgba(0,188,255,0.5); letter-spacing: 0.3px; white-space: nowrap;">✨ ${escapeHtml(t('card.badge_new'))}</span>`
+        ? `<span style="font-size: 7.5px; font-weight: 700; background: linear-gradient(135deg, #00bcff, #38ef7d); color: #000; padding: 2px 5px; border-radius: 8px; box-shadow: 0 0 6px rgba(0,188,255,0.5); letter-spacing: 0.3px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">${getIconSvg('sparkles', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_new'))}</span></span>`
         : '';
 
       const badgeText = m.isFramework ? 'FRAMEWORK' : t('card.badge_workshop');
@@ -503,7 +504,7 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
         : !!(normalMod && m.version && normalMod.version && m.version !== normalMod.version && m.version !== '1.0');
 
       const updateBadge = hasUpdate
-        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span>`
+        ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px 5px; border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">${getIconSvg('arrowUp', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_update_available', { version: m.version }))}</span></span>`
         : '';
 
       const isInstalledInProfile = isWorkshopMode ? (m.isInstalled || wState.activeModList.includes(m.packageName)) : isInstalledNormal;
@@ -515,7 +516,7 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
         versionTextHtml = `
           <div style="font-size:10px; color:var(--text-muted); text-align:center; display:flex; flex-direction:column; gap:2px;">
             <div>${escapeHtml(t('common.version'))} ${escapeHtml(m.version)} &bull; ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)}</div>
-            <div style="color:#38ef7d; font-weight:700; font-size:10.5px;">✓ ${escapeHtml(t('library.managed_by_pmm', { version: managedVersion ? `v${managedVersion}` : '' }))}</div>
+            <div style="color:#38ef7d; font-weight:700; font-size:10.5px; display:inline-flex; align-items:center; justify-content:center; gap:4px;">${getIconSvg('check', 'pmm-icon-xs')} <span>${escapeHtml(t('library.managed_by_pmm', { version: managedVersion ? `v${managedVersion}` : '' }))}</span></div>
           </div>`;
       } else if (isInstalledInProfile) {
         if (hasUpdate) {
@@ -527,7 +528,7 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
         } else {
           versionTextHtml = `
             <div style="font-size:10px; color:var(--text-muted); text-align:center;">
-              ${escapeHtml(t('common.version'))} ${escapeHtml(profileInstalledVer || m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('library.status_installed_in_profile'))} ✓)</span>
+              ${escapeHtml(t('common.version'))} ${escapeHtml(profileInstalledVer || m.version)} ${escapeHtml(t('common.author'))}: ${escapeHtml(m.author)} <span style="color:#38ef7d; font-weight:600; margin-left:2px;">(${escapeHtml(t('library.status_installed_in_profile'))})</span>
             </div>`;
         }
       } else {
@@ -538,7 +539,7 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
       }
 
       const toggleBtnText = isManagedByPmm
-        ? `✓ ${escapeHtml(t('library.managed_by_pmm_btn'))}`
+        ? `${getIconSvg('check', 'pmm-icon-xs')} <span>${escapeHtml(t('library.managed_by_pmm_btn'))}</span>`
         : (!isInstalledInProfile
             ? t('library.btn_install_to_profile')
             : (isActiveInCurrentMode ? t('common.disable') : t('common.enable')));
@@ -550,15 +551,15 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
             : (isActiveInCurrentMode ? 'btn-action btn-action-danger' : 'btn-primary btn-sm'));
 
       const frameworkBtnExtra = isManagedByPmm
-        ? 'style="flex:1;padding:6px;font-size:10px;cursor:default;background:rgba(56, 239, 125, 0.12);color:#38ef7d;border:1px solid rgba(56, 239, 125, 0.3);opacity:0.95;"'
+        ? 'style="flex:1;padding:6px;font-size:10px;cursor:default;background:rgba(56, 239, 125, 0.12);color:#38ef7d;border:1px solid rgba(56, 239, 125, 0.3);opacity:0.95;display:inline-flex;align-items:center;justify-content:center;gap:4px;"'
         : (m.isFramework ? 'disabled style="flex:1;padding:6px;font-size:10px;cursor:not-allowed;opacity:0.5;"' : 'style="flex:1;padding:6px;font-size:10px;cursor:pointer;"');
 
       const updateBtn = (hasUpdate && (isWorkshopMode ? m.isActive : isInstalledNormal))
-        ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);" title="${escapeHtml(t('library.btn_update_to', { version: m.version }))}">▲ ${escapeHtml(t('library.btn_update_to', { version: m.version }))}</button>`
+        ? `<button class="workshop-item-update-btn btn-primary btn-sm" data-package="${escapeHtml(m.packageName)}" style="padding:6px;font-size:10px;cursor:pointer;background:rgba(255, 157, 0, 0.2);color:#ff9d00;border:1px solid rgba(255, 157, 0, 0.4);display:inline-flex;align-items:center;justify-content:center;gap:4px;" title="${escapeHtml(t('library.btn_update_to', { version: m.version }))}">${getIconSvg('arrowUp', 'pmm-icon-xs')} <span>${escapeHtml(t('library.btn_update_to', { version: m.version }))}</span></button>`
         : '';
 
       const removeProfileBtn = (isInstalledInProfile && !isManagedByPmm && !m.isFramework)
-        ? `<button class="workshop-item-remove-profile-btn btn-secondary btn-sm" data-package="${escapeHtml(m.packageName)}" data-id="${escapeHtml(normalMod ? normalMod.id : m.packageName)}" style="padding:6px 8px;font-size:10px;cursor:pointer;color:var(--danger);" title="${escapeHtml(t('library.btn_remove_from_profile'))}">🗑️</button>`
+        ? `<button class="workshop-item-remove-profile-btn btn-secondary btn-sm" data-package="${escapeHtml(m.packageName)}" data-id="${escapeHtml(normalMod ? normalMod.id : m.packageName)}" style="padding:6px 8px;font-size:10px;cursor:pointer;color:var(--danger);" title="${escapeHtml(t('library.btn_remove_from_profile'))}">${getIconSvg('trash', 'pmm-icon-xs')}</button>`
         : '';
 
       return `
@@ -583,8 +584,8 @@ export async function renderWorkshopLibraryTab(container: HTMLElement): Promise<
                 ${toggleBtnText}
               </button>
               ${removeProfileBtn}
-              <button class="workshop-item-folder-btn btn-secondary btn-sm" data-path="${escapeHtml(wState.workshopRoot + '/' + m.workshopId)}" style="padding:6px 8px;font-size:10px;cursor:pointer;" title="${escapeHtml(t('library.workshop_open_folder_title'))}">
-                📁 ${escapeHtml(t('common.folder'))}
+              <button class="workshop-item-folder-btn btn-secondary btn-sm" data-path="${escapeHtml(wState.workshopRoot + '/' + m.workshopId)}" style="padding:6px 8px;font-size:10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px;" title="${escapeHtml(t('library.workshop_open_folder_title'))}">
+                ${getIconSvg('folder', 'pmm-icon-xs')} <span>${escapeHtml(t('common.folder'))}</span>
               </button>
             </div>
           </div>

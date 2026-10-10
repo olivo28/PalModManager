@@ -2,6 +2,7 @@ import { getState } from '../../../state';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import type { FileTreeNode } from './types';
+import { getIconSvg } from '../../icons/mod';
 
 export function showFileTreeModal(routes: any[], modName: string, zipPath?: string): void {
   const state = getState();
@@ -62,30 +63,30 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
   function getAssetTypeBadge(type: string): string {
     let color = '#888';
     let bg = 'rgba(255,255,255,0.06)';
-    let icon = '📄';
+    let iconName = 'fileText';
 
     switch (type) {
       case 'DataTable':
-        color = '#00d2d3'; bg = 'rgba(0,210,211,0.15)'; icon = '📊'; break;
+        color = '#00d2d3'; bg = 'rgba(0,210,211,0.15)'; iconName = 'db'; break;
       case 'Blueprint':
-        color = '#54a0ff'; bg = 'rgba(84,160,255,0.15)'; icon = '⚙️'; break;
+        color = '#54a0ff'; bg = 'rgba(84,160,255,0.15)'; iconName = 'settings'; break;
       case 'Widget':
-        color = '#5f27cd'; bg = 'rgba(95,39,205,0.15)'; icon = '🖥️'; break;
+        color = '#5f27cd'; bg = 'rgba(95,39,205,0.15)'; iconName = 'editor'; break;
       case 'Material':
-        color = '#ff9f43'; bg = 'rgba(255,159,67,0.15)'; icon = '🎨'; break;
+        color = '#ff9f43'; bg = 'rgba(255,159,67,0.15)'; iconName = 'palette'; break;
       case 'Texture':
-        color = '#10ac84'; bg = 'rgba(16,172,132,0.15)'; icon = '🖼️'; break;
+        color = '#10ac84'; bg = 'rgba(16,172,132,0.15)'; iconName = 'image'; break;
       case 'Mesh':
-        color = '#ee5253'; bg = 'rgba(238,82,83,0.15)'; icon = '📦'; break;
+        color = '#ee5253'; bg = 'rgba(238,82,83,0.15)'; iconName = 'package'; break;
       case 'Audio':
-        color = '#ff6b6b'; bg = 'rgba(255,107,107,0.15)'; icon = '🔊'; break;
+        color = '#ff6b6b'; bg = 'rgba(255,107,107,0.15)'; iconName = 'activity'; break;
       case 'Animation':
-        color = '#feca57'; bg = 'rgba(254,202,87,0.15)'; icon = '🎬'; break;
+        color = '#feca57'; bg = 'rgba(254,202,87,0.15)'; iconName = 'sparkles'; break;
       default:
-        color = '#c8d6e5'; bg = 'rgba(200,214,229,0.1)'; icon = '📄'; break;
+        color = '#c8d6e5'; bg = 'rgba(200,214,229,0.1)'; iconName = 'fileText'; break;
     }
 
-    return `<span style="display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:700; color:${color}; background:${bg}; border:1px solid ${color}33; border-radius:3px; padding:1px 5px; text-transform:uppercase;">${icon} ${type}</span>`;
+    return `<span style="display:inline-flex; align-items:center; gap:3px; font-size:9px; font-weight:700; color:${color}; background:${bg}; border:1px solid ${color}33; border-radius:3px; padding:1px 5px; text-transform:uppercase;">${getIconSvg(iconName, 'pmm-icon-xs')} <span>${type}</span></span>`;
   }
 
   function renderFileTreeHTML(node: FileTreeNode, depth: number = 0): string {
@@ -104,7 +105,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
         return `
           <div class="tree-folder-node" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; flex-direction: column; gap: 4px;">
             <div class="tree-folder-header" style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); padding: calc(4px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius: 4px; color: var(--text-primary); font-weight: 600; font-size: var(--text-sm, 12px); background: rgba(255,255,255,0.02); user-select: none; transition: background 0.2s; cursor: pointer;">
-              <span class="tree-folder-icon" style="color: #ffd166; font-size: calc(13px * var(--ui-scale, 1)); display: flex; align-items: center;">📁</span>
+              <span class="tree-folder-icon" style="color: #ffd166; font-size: calc(13px * var(--ui-scale, 1)); display: flex; align-items: center;">${getIconSvg('folder', 'pmm-icon-sm')}</span>
               <span class="tree-folder-name" style="font-family: monospace;">${escapeHtml(child.name)}</span>
             </div>
             <div class="tree-folder-children" style="border-left: 1px dashed var(--border); margin-left: 7px; padding-left: 6px; display: flex; flex-direction: column; gap: 2px;">
@@ -121,7 +122,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
           <div class="tree-file-node" data-search-text="${escapeHtml((child.name + ' ' + relativeDest).toLowerCase())}" style="margin-left: ${depth === 0 ? 0 : 12}px; display: flex; flex-direction: column; gap: 4px; padding: calc(6px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)); border-radius: 4px; font-size: var(--text-xs, 11px); transition: background 0.2s; background: rgba(255,255,255,0.01); border: 1px solid var(--border);">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui-scale, 1));">
               <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1)); overflow: hidden; flex-grow: 1;">
-                <span style="color: ${isPak ? 'var(--accent)' : 'var(--text-secondary)'}; font-size: calc(12px * var(--ui-scale, 1)); display: flex; align-items: center;">${isPak ? '📦' : '📄'}</span>
+                <span style="color: ${isPak ? 'var(--accent)' : 'var(--text-secondary)'}; font-size: calc(12px * var(--ui-scale, 1)); display: flex; align-items: center;">${isPak ? getIconSvg('package', 'pmm-icon-sm') : getIconSvg('fileText', 'pmm-icon-sm')}</span>
                 <div style="display: flex; flex-direction: column; overflow: hidden;">
                   <span class="tree-file-name" style="font-family: monospace; color: var(--text-primary); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-weight: 500;">${escapeHtml(child.name)}</span>
                   <span style="font-size: var(--text-2xs, 9px); color: var(--text-muted); text-overflow: ellipsis; overflow: hidden; white-space: nowrap; font-family: monospace;" title="${escapeHtml(child.destPath || '')}">→ ${escapeHtml(relativeDest)}</span>
@@ -129,13 +130,13 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
               </div>
               <div style="display: flex; align-items: center; gap: calc(6px * var(--ui-scale, 1)); flex-shrink: 0;">
                 <span style="font-size: var(--text-2xs, 8.5px); padding: 1px calc(4px * var(--ui-scale, 1)); border-radius: 3px; background: var(--bg-secondary); color: var(--accent); border: 1px solid var(--border); text-transform: uppercase;">${escapeHtml(child.routeType || 'FILE')}</span>
-                ${isPak ? `<button type="button" class="btn-tiny inspect-pak-btn" data-target="${pakId}" data-pak-name="${escapeHtml(child.name)}" data-pak-dest="${escapeHtml(child.destPath || '')}" style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)); background: var(--bg-card); border-color: var(--accent); color: var(--accent); cursor: pointer;" data-i18n="installer.btn_inspect_pak">🔍 ${escapeHtml(t('installer.btn_inspect_pak') || 'Inspect .pak')}</button>` : ''}
+                ${isPak ? `<button type="button" class="btn-tiny inspect-pak-btn" data-target="${pakId}" data-pak-name="${escapeHtml(child.name)}" data-pak-dest="${escapeHtml(child.destPath || '')}" style="font-size: var(--text-2xs, 10px); padding: calc(2px * var(--ui-scale, 1)) calc(7px * var(--ui-scale, 1)); background: var(--bg-card); border-color: var(--accent); color: var(--accent); cursor: pointer; display: inline-flex; align-items: center; gap: 4px;" data-i18n="installer.btn_inspect_pak">${getIconSvg('search', 'pmm-icon-xs')} <span>${escapeHtml(t('installer.btn_inspect_pak') || 'Inspect .pak')}</span></button>` : ''}
               </div>
             </div>
             ${isPak ? `
               <div id="${pakId}" class="pak-internal-container" style="display:none; margin-top: 6px; padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); background: var(--bg-secondary); border: 1px solid var(--border); border-radius: 4px; flex-direction: column; gap: 6px;">
                 <div class="pak-internal-loading" style="font-size: var(--text-xs, 10.5px); color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
-                  <span>⏳</span> <span>${escapeHtml(t('scanner.loading') || 'Loading pak index...')}</span>
+                  <span>${getIconSvg('clock', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('scanner.loading') || 'Loading pak index...')}</span>
                 </div>
                 <div class="pak-internal-content" style="display:none; flex-direction:column; gap:6px;"></div>
               </div>
@@ -168,15 +169,15 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
     <div class="modal" style="width: min(calc(720px * var(--ui-scale, 1)), 94vw); max-width: 94vw; background: var(--bg-primary); border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 8px 32px rgba(0,0,0,0.5); display: flex; flex-direction: column; overflow: hidden; max-height: 85vh;">
       <div class="modal-header" style="padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(16px * var(--ui-scale, 1));">📂</span>
+          <span style="display: flex; align-items: center; color: var(--accent);">${getIconSvg('folderOpen', 'pmm-icon-md')}</span>
           <h3 style="margin: 0; font-size: var(--text-md, 15px); font-weight: 600; color: var(--text-primary);">${escapeHtml(modName)} - ${escapeHtml(t('installer.btn_show_files'))}</h3>
         </div>
-        <button id="filetree-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: var(--text-base, 16px);">✕</button>
+        <button id="filetree-modal-close-x" style="background: none; border: none; color: var(--text-muted); cursor: pointer; display: flex; align-items: center;">${getIconSvg('x', 'pmm-icon-sm')}</button>
       </div>
 
       <!-- Quick Search Bar -->
       <div style="padding: calc(8px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); background: var(--bg-secondary); display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
-        <span style="font-size: var(--text-base, 13px); color: var(--text-muted);">🔍</span>
+        <span style="display: flex; align-items: center; color: var(--text-muted);">${getIconSvg('search', 'pmm-icon-sm')}</span>
         <input type="text" id="filetree-search-input" placeholder="${escapeHtml(t('scanner.search_placeholder') || 'Search files or assets...')}" style="flex: 1; background: var(--bg-primary); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: calc(6px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); outline: none;" />
         <span id="filetree-count-badge" class="badge" style="font-size: var(--text-2xs, 10px); padding: 2px calc(8px * var(--ui-scale, 1)); background: rgba(255,255,255,0.05); color: var(--text-muted); border: 1px solid var(--border);">${escapeHtml(t('installer.file_count_badge', { count: routes.length }) || `${routes.length} files`)}</span>
       </div>
@@ -186,8 +187,8 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
       </div>
 
       <div class="modal-footer" style="padding: calc(10px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-shrink: 0; background: var(--bg-secondary);">
-        <div style="font-size: var(--text-xs, 11px); color: var(--text-muted);">
-          <span>💡 ${escapeHtml(t('installer.pak_inspect_hint') || 'Click "Inspect .pak" to see internal DataTables, Blueprints & Assets.')}</span>
+        <div style="font-size: var(--text-xs, 11px); color: var(--text-muted); display: flex; align-items: center; gap: 6px;">
+          <span>${getIconSvg('info', 'pmm-icon-xs')}</span> <span>${escapeHtml(t('installer.pak_inspect_hint') || 'Click "Inspect .pak" to see internal DataTables, Blueprints & Assets.')}</span>
         </div>
         <button id="filetree-modal-close" class="btn-primary" style="padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); font-size: var(--text-sm, 12px); cursor: pointer; border-radius: 4px;">${escapeHtml(t('common.close'))}</button>
       </div>
@@ -212,10 +213,10 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
       const icon = hdr.querySelector('.tree-folder-icon') as HTMLElement;
       if (children.style.display === 'none') {
         children.style.display = 'flex';
-        icon.textContent = '📁';
+        icon.innerHTML = getIconSvg('folderOpen', 'pmm-icon-sm');
       } else {
         children.style.display = 'none';
-        icon.textContent = '📁';
+        icon.innerHTML = getIconSvg('folder', 'pmm-icon-sm');
       }
     });
   });
@@ -232,12 +233,12 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
 
       if (containerEl.style.display === 'flex') {
         containerEl.style.display = 'none';
-        btn.textContent = `🔍 ${t('installer.btn_inspect_pak') || 'Inspect .pak'}`;
+        btn.innerHTML = `${getIconSvg('search', 'pmm-icon-xs')} <span>${t('installer.btn_inspect_pak') || 'Inspect .pak'}</span>`;
         return;
       }
 
       containerEl.style.display = 'flex';
-      btn.textContent = `🔼 ${t('common.hide') || 'Hide'}`;
+      btn.innerHTML = `${getIconSvg('chevronUp', 'pmm-icon-xs')} <span>${t('common.hide') || 'Hide'}</span>`;
 
       const loadingEl = containerEl.querySelector('.pak-internal-loading') as HTMLElement;
       const contentEl = containerEl.querySelector('.pak-internal-content') as HTMLElement;
@@ -266,7 +267,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
         contentEl.innerHTML = `
           <div style="display:flex; justify-content:space-between; align-items:center; padding-bottom:6px; border-bottom:1px solid var(--border); flex-wrap:wrap; gap:6px;">
             <div style="display:flex; align-items:center; gap:6px; flex-wrap:wrap;">
-              <span style="font-size:11px; font-weight:700; color:var(--text-primary);">📦 ${escapeHtml(inspectRes.pakName)}</span>
+              <span style="font-size:11px; font-weight:700; color:var(--text-primary); display:inline-flex; align-items:center; gap:4px;">${getIconSvg('package', 'pmm-icon-xs')} <span>${escapeHtml(inspectRes.pakName)}</span></span>
               <span class="badge" style="font-size:9.5px; padding:1px 6px; background:rgba(0,188,255,0.15); color:#00bcff; border:1px solid rgba(0,188,255,0.3); font-weight:600;">${escapeHtml(t('installer.internal_assets_count', { count: inspectRes.totalFiles }) || `${inspectRes.totalFiles} internal assets`)}</span>
             </div>
             <div style="display:flex; align-items:center; gap:4px; flex-wrap:wrap;">
@@ -281,7 +282,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
                   ${getAssetTypeBadge(f.assetType)}
                   ${f.path.toLowerCase().endsWith('.uasset') || f.path.toLowerCase().endsWith('.uexp') ? `
                     <button class="btn-inspect-uasset-installer" data-pak="${escapeHtml(pakName)}" data-path="${escapeHtml(f.path)}" title="${escapeHtml(t('scanner.uasset_btn_inspect') || 'Deep Inspect Asset')}" style="background:rgba(0,188,255,0.15); border:1px solid rgba(0,188,255,0.3); border-radius:3px; color:var(--accent); cursor:pointer; font-size:9.5px; padding:1px 5px; display:flex; align-items:center; gap:2px;">
-                      <span>🔍</span>
+                      <span>${getIconSvg('search', 'pmm-icon-xs')}</span>
                     </button>
                   ` : ''}
                 </div>
@@ -308,7 +309,7 @@ export function showFileTreeModal(routes: any[], modName: string, zipPath?: stri
       } catch (err: any) {
         loadingEl.style.display = 'none';
         contentEl.style.display = 'flex';
-        contentEl.innerHTML = `<span style="font-size:11px; color:var(--danger);">⚠️ ${escapeHtml(String(err))}</span>`;
+        contentEl.innerHTML = `<span style="font-size:11px; color:var(--danger); display:inline-flex; align-items:center; gap:4px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(String(err))}</span></span>`;
       }
     });
   });

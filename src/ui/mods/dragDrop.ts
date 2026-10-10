@@ -1,6 +1,7 @@
 import { getState, updateState } from '../../state';
 import { loadMods } from './loader';
 import { showToast } from '../toast';
+import { getIconSvg } from '../icons/mod';
 import { handleAddMultipleModsToFolder } from './events';
 import { reorderModFolders } from '../../api';
 
@@ -139,7 +140,7 @@ export function setupCardDragToFolder(container: HTMLElement): void {
         ? `<span style="background: var(--accent); color: #fff; font-size: 10px; padding: 2px 6px; border-radius: 10px; font-weight: bold;">${draggingIds.length}</span>` 
         : '';
 
-      ghost.innerHTML = `${draggingType === 'folder' ? '📁' : '📦'} <span>${escapeHtml(ghostLabel)}</span> ${isMulti ? '' : countBadge}`;
+      ghost.innerHTML = `${draggingType === 'folder' ? getIconSvg('folder', 'pmm-icon-sm') : getIconSvg('package', 'pmm-icon-sm')} <span>${escapeHtml(ghostLabel)}</span> ${isMulti ? '' : countBadge}`;
       document.body.appendChild(ghost);
     }
 

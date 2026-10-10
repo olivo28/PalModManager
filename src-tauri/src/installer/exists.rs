@@ -26,6 +26,7 @@ pub fn check_mod_exists(
                     if !db_id.is_empty() && db_id == zip_norm && is_type_compatible {
                         return true;
                     }
+                    return false;
                 }
             }
 

@@ -2,6 +2,7 @@ import { inspectUAssetDeep, decodeUAssetTexture, type UAssetInspectionDetails, t
 import { t } from '../../utils/i18n';
 import { escapeHtml, formatBytes } from '../../utils/helpers';
 import { showToast } from '../toast';
+import { getIconSvg } from '../icons/mod';
 import { mainDom } from '../../framework';
 
 export async function openUAssetInspectorModal(params: {
@@ -19,13 +20,13 @@ export async function openUAssetInspectorModal(params: {
         
         <div style="background: var(--bg-secondary); padding: calc(14px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1)); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center;">
           <div style="display: flex; align-items: center; gap: calc(10px * var(--ui-scale, 1));">
-            <span style="font-size: calc(20px * var(--ui-scale, 1));">📦</span>
+            <span style="color: var(--accent); display: inline-flex;">${getIconSvg('package', 'pmm-icon-md')}</span>
             <div>
               <div style="font-size: var(--text-md, 14px); font-weight: 700; color: var(--text-primary);">${escapeHtml(t('scanner.uasset_modal_title') || 'Unreal Engine Asset Inspector')}</div>
               <div style="font-size: var(--text-xs, 11px); color: var(--text-muted); font-family: monospace;">${escapeHtml(params.assetInternalPath)}</div>
             </div>
           </div>
-          <button id="btn-close-uasset-modal" style="background: none; border: none; font-size: calc(18px * var(--ui-scale, 1)); color: var(--text-muted); cursor: pointer; padding: calc(4px * var(--ui-scale, 1));">✕</button>
+          <button id="btn-close-uasset-modal" style="background: none; border: none; color: var(--text-muted); cursor: pointer; padding: calc(4px * var(--ui-scale, 1)); display: inline-flex; align-items: center;">${getIconSvg('x', 'pmm-icon-sm')}</button>
         </div>
 
         <div id="uasset-modal-body" style="padding: calc(36px * var(--ui-scale, 1)) calc(20px * var(--ui-scale, 1)); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: calc(12px * var(--ui-scale, 1)); min-height: calc(280px * var(--ui-scale, 1));">
@@ -65,25 +66,25 @@ export async function openUAssetInspectorModal(params: {
     bodyEl.innerHTML = `
       <!-- Tabs Navigation -->
       <div style="background: rgba(0,0,0,0.25); border-bottom: 1px solid var(--border); display: flex; gap: calc(4px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)) 0 calc(16px * var(--ui-scale, 1)); overflow-x: auto;">
-        <button class="uasset-tab-btn active" data-tab="tab-overview" style="background: var(--bg-card); border: 1px solid var(--border); border-bottom: none; color: var(--accent); font-weight: 700; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
-          📊 ${escapeHtml(t('scanner.uasset_tab_overview') || 'Overview')}
+        <button class="uasset-tab-btn active" data-tab="tab-overview" style="background: var(--bg-card); border: 1px solid var(--border); border-bottom: none; color: var(--accent); font-weight: 700; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+          ${getIconSvg('barChart', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_overview') || 'Overview')}</span>
         </button>
         ${isTexture ? `
-        <button class="uasset-tab-btn" data-tab="tab-texture" style="background: none; border: 1px solid transparent; color: #00bcff; font-weight: 700; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
-          🖼️ ${escapeHtml(t('scanner.uasset_tab_texture') || 'GPU Texture')}
+        <button class="uasset-tab-btn" data-tab="tab-texture" style="background: none; border: 1px solid transparent; color: #00bcff; font-weight: 700; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+          ${getIconSvg('image', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_texture') || 'GPU Texture')}</span>
         </button>
         ` : ''}
-        <button class="uasset-tab-btn" data-tab="tab-exports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
-          📤 ${escapeHtml(t('scanner.uasset_tab_exports') || 'Exports')} (${details.exports.length})
+        <button class="uasset-tab-btn" data-tab="tab-exports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+          ${getIconSvg('upload', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_exports') || 'Exports')} (${details.exports.length})</span>
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-imports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
-          📥 ${escapeHtml(t('scanner.uasset_tab_imports') || 'Imports')} (${details.imports.length})
+        <button class="uasset-tab-btn" data-tab="tab-imports" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+          ${getIconSvg('download', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_imports') || 'Imports')} (${details.imports.length})</span>
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-names" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
-          🔤 ${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map')} (${details.summary.nameCount})
+        <button class="uasset-tab-btn" data-tab="tab-names" style="background: none; border: 1px solid transparent; color: var(--text-secondary); font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+          ${getIconSvg('tag', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_names') || 'Name Map')} (${details.summary.nameCount})</span>
         </button>
-        <button class="uasset-tab-btn" data-tab="tab-schema" style="background: none; border: 1px solid transparent; color: #38bdf8; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease;">
-          ⚡ ${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema (USMAP)')} ${details.resolvedSchema ? `(${details.resolvedSchema.totalProperties})` : ''}
+        <button class="uasset-tab-btn" data-tab="tab-schema" style="background: none; border: 1px solid transparent; color: #38bdf8; font-size: var(--text-xs, 11.5px); padding: calc(6px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); border-radius: calc(6px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)) 0 0; cursor: pointer; transition: all 0.15s ease; display: inline-flex; align-items: center; gap: calc(6px * var(--ui-scale, 1));">
+          ${getIconSvg('zap', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_schema') || 'Schema (USMAP)')} ${details.resolvedSchema ? `(${details.resolvedSchema.totalProperties})` : ''}</span>
         </button>
       </div>
 
@@ -119,19 +120,19 @@ export async function openUAssetInspectorModal(params: {
           ${isTexture ? `
             <div style="background: rgba(0, 188, 255, 0.05); border: 1px solid rgba(0, 188, 255, 0.2); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(12px * var(--ui-scale, 1)) calc(16px * var(--ui-scale, 1)); display: flex; align-items: center; justify-content: space-between; gap: calc(12px * var(--ui-scale, 1));">
               <div style="display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
-                <span style="font-size: calc(24px * var(--ui-scale, 1)); flex-shrink: 0;">🖼️</span>
+                <span style="color: #00bcff; display: inline-flex; flex-shrink: 0;">${getIconSvg('image', 'pmm-icon-lg')}</span>
                 <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
                   <span style="font-size: var(--text-xs, 11.5px); font-weight: 700; color: #00bcff;">${escapeHtml(t('scanner.uasset_texture_title') || 'DirectDraw Surface / GPU Texture2D Binary')}</span>
                   <span style="font-size: var(--text-2xs, 10px); color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_texture_desc', { size: details.summary.uexpSizeBytes ? formatBytes(details.summary.uexpSizeBytes) : (t('scanner.uasset_embedded_in_uasset') || 'Embedded') }) || `Cooked texture streaming resource. Raw mipmaps and BC7/DXT compressed pixel buffers are embedded in the .uexp payload.`)}</span>
                 </div>
               </div>
               <button id="btn-quick-goto-texture" class="btn btn-primary btn-sm" style="font-size: var(--text-xs, 11px); padding: calc(5px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: inline-flex; align-items: center; gap: calc(5px * var(--ui-scale, 1)); white-space: nowrap;">
-                <span>🖼️</span> <span>${escapeHtml(t('scanner.uasset_tab_texture') || 'View Texture')}</span>
+                ${getIconSvg('image', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_tab_texture') || 'View Texture')}</span>
               </button>
             </div>
           ` : (isMaterial ? `
             <div style="background: rgba(192, 132, 252, 0.05); border: 1px solid rgba(192, 132, 252, 0.2); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
-              <span style="font-size: calc(24px * var(--ui-scale, 1)); flex-shrink: 0;">🎨</span>
+              <span style="color: #c084fc; display: inline-flex; flex-shrink: 0;">${getIconSvg('palette', 'pmm-icon-lg')}</span>
               <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
                 <span style="font-size: var(--text-xs, 11.5px); font-weight: 700; color: #c084fc;">${escapeHtml(t('scanner.uasset_material_title') || 'Material / Shader Graph Instance')}</span>
                 <span style="font-size: var(--text-2xs, 10px); color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_material_desc') || 'Contains compiled shader parameter overrides, texture sampler references, and material pipeline definitions.')}</span>
@@ -139,7 +140,7 @@ export async function openUAssetInspectorModal(params: {
             </div>
           ` : (isDataTable ? `
             <div style="background: rgba(74, 246, 38, 0.05); border: 1px solid rgba(74, 246, 38, 0.2); border-radius: calc(8px * var(--ui-scale, 1)); padding: calc(10px * var(--ui-scale, 1)) calc(14px * var(--ui-scale, 1)); display: flex; align-items: center; gap: calc(12px * var(--ui-scale, 1));">
-              <span style="font-size: calc(24px * var(--ui-scale, 1)); flex-shrink: 0;">📊</span>
+              <span style="color: #4af626; display: inline-flex; flex-shrink: 0;">${getIconSvg('db', 'pmm-icon-lg')}</span>
               <div style="display: flex; flex-direction: column; gap: calc(2px * var(--ui-scale, 1));">
                 <span style="font-size: var(--text-xs, 11.5px); font-weight: 700; color: #4af626;">${escapeHtml(t('scanner.uasset_datatable_title') || 'Unreal Engine DataTable Asset')}</span>
                 <span style="font-size: var(--text-2xs, 10px); color: var(--text-secondary); line-height: 1.4;">${escapeHtml(t('scanner.uasset_datatable_desc') || 'Contains structured game data rows, item templates, stats, or configuration mappings.')}</span>
@@ -241,7 +242,7 @@ export async function openUAssetInspectorModal(params: {
           ${details.resolvedSchema ? `
             <div style="background: rgba(56, 189, 248, 0.06); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: calc(6px * var(--ui-scale, 1)); padding: calc(8px * var(--ui-scale, 1)) calc(12px * var(--ui-scale, 1)); display: flex; justify-content: space-between; align-items: center; font-size: var(--text-xs, 11px);">
               <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-                <span style="font-size: calc(14px * var(--ui-scale, 1));">⚡</span>
+                <span style="color: #38bdf8; display: inline-flex;">${getIconSvg('zap', 'pmm-icon-sm')}</span>
                 <span><strong>${escapeHtml(details.resolvedSchema.matchedStructName)}</strong> ${details.resolvedSchema.superType ? `<span style="color: var(--text-muted); font-size: var(--text-2xs, 10px);">(extends ${escapeHtml(details.resolvedSchema.superType)})</span>` : ''}</span>
               </div>
               <span class="badge" style="font-size: var(--text-2xs, 9.5px); padding: calc(2px * var(--ui-scale, 1)) calc(6px * var(--ui-scale, 1)); background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3);">
@@ -356,7 +357,7 @@ export async function openUAssetInspectorModal(params: {
             <div style="background: rgba(0, 188, 255, 0.08); padding: 8px 14px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
               
               <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
-                <span style="font-size: 14px;">🖼️</span>
+                <span style="color: #00bcff; display: inline-flex;">${getIconSvg('image', 'pmm-icon-sm')}</span>
                 <strong style="color: #00bcff; font-size: 12px;">${escapeHtml(t('scanner.uasset_texture_preview_title') || 'GPU Texture Preview')}</strong>
                 <span class="badge" style="font-size: 9.5px; padding: 2px 7px; background: rgba(0, 188, 255, 0.15); color: #00bcff; border: 1px solid rgba(0, 188, 255, 0.3); font-weight: 700;">${tex.width} × ${tex.height} px</span>
                 <span class="badge" style="font-size: 9.5px; padding: 2px 7px; background: rgba(255, 209, 102, 0.15); color: #ffd166; border: 1px solid rgba(255, 209, 102, 0.3); font-weight: 700;">${escapeHtml(tex.formatName)}</span>
@@ -378,19 +379,19 @@ export async function openUAssetInspectorModal(params: {
 
                 <!-- Zoom Controls -->
                 <div style="display: inline-flex; align-items: center; gap: 4px; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 6px; padding: 2px 6px;">
-                  <button id="btn-tex-zoom-out" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 12px; padding: 2px 4px;">🔍−</button>
+                  <button id="btn-tex-zoom-out" style="background: none; border: none; color: var(--text-primary); cursor: pointer; padding: 2px 4px; display: inline-flex; align-items: center; gap: 2px;">${getIconSvg('search', 'pmm-icon-xs')}<span>−</span></button>
                   <span id="tex-zoom-label" style="font-size: 10px; color: var(--text-muted); min-width: 32px; text-align: center; font-family: monospace;">100%</span>
-                  <button id="btn-tex-zoom-in" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 12px; padding: 2px 4px;">🔍+</button>
+                  <button id="btn-tex-zoom-in" style="background: none; border: none; color: var(--text-primary); cursor: pointer; padding: 2px 4px; display: inline-flex; align-items: center; gap: 2px;">${getIconSvg('search', 'pmm-icon-xs')}<span>+</span></button>
                   <button id="btn-tex-zoom-reset" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 10px; padding: 2px 4px; border-left: 1px solid var(--border);">1:1</button>
-                  <button id="btn-tex-zoom-fit" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 10px; padding: 2px 4px;">⤢</button>
+                  <button id="btn-tex-zoom-fit" style="background: none; border: none; color: var(--text-secondary); cursor: pointer; padding: 2px 4px; display: inline-flex; align-items: center;" title="Fit">${getIconSvg('maximize', 'pmm-icon-xs')}</button>
                 </div>
 
                 <!-- Action Export Buttons -->
                 <button id="btn-tex-copy-img" class="btn btn-secondary btn-sm" style="font-size: 10px; padding: 3px 8px; display: inline-flex; align-items: center; gap: 4px;">
-                  <span>📋</span> <span>${escapeHtml(t('scanner.uasset_texture_copy') || 'Copy')}</span>
+                  ${getIconSvg('copy', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_texture_copy') || 'Copy')}</span>
                 </button>
                 <button id="btn-tex-save-png" class="btn btn-primary btn-sm" style="font-size: 10px; padding: 3px 10px; display: inline-flex; align-items: center; gap: 4px; font-weight: 700;">
-                  <span>💾</span> <span>${escapeHtml(t('scanner.uasset_texture_save_png') || 'Save PNG')}</span>
+                  ${getIconSvg('save', 'pmm-icon-xs')} <span>${escapeHtml(t('scanner.uasset_texture_save_png') || 'Save PNG')}</span>
                 </button>
 
               </div>
@@ -560,7 +561,7 @@ export async function openUAssetInspectorModal(params: {
       } catch (texErr: any) {
         if (loaderEl) {
           loaderEl.innerHTML = `
-            <span style="font-size: 24px;">⚠️</span>
+            <span style="color: var(--danger); display: inline-flex;">${getIconSvg('alertTriangle', 'pmm-icon-lg')}</span>
             <span style="font-size: 11px; color: var(--danger);">${escapeHtml(t('scanner.uasset_texture_decode_failed') || 'Failed to decode texture payload')}: ${escapeHtml(String(texErr))}</span>
           `;
         }
@@ -636,7 +637,7 @@ export async function openUAssetInspectorModal(params: {
     if (!bodyEl) return;
     bodyEl.innerHTML = `
       <div style="padding: 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 8px;">
-        <span style="font-size: 28px;">⚠️</span>
+        <span style="color: var(--danger); display: inline-flex;">${getIconSvg('alertTriangle', 'pmm-icon-2xl')}</span>
         <strong style="color: var(--danger); font-size: 13px;">${escapeHtml(t('scanner.uasset_failed_inspect') || 'Failed to inspect asset')}</strong>
         <p style="font-size: 11px; color: var(--text-muted); max-width: 500px; line-height: 1.5; font-family: monospace;">${escapeHtml(String(err))}</p>
         <button id="btn-close-uasset-fail" class="btn-secondary" style="margin-top: 8px; padding: 5px 14px; font-size: 12px;">${escapeHtml(t('common.close') || 'Close')}</button>

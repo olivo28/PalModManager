@@ -3,6 +3,7 @@ import type { UpgradeOrphansResult, UpgradeOrphanFile } from '../../../api';
 import { escapeHtml } from '../../../utils/helpers';
 import { t } from '../../../utils/i18n';
 import { installerDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 let _currentOrphans: UpgradeOrphanFile[] = [];
 
@@ -72,14 +73,14 @@ function renderOrphanFilesAccordion(files: UpgradeOrphanFile[]): void {
     <div style="border: 1px solid rgba(255, 170, 0, 0.35); background: rgba(255, 170, 0, 0.08); border-radius: 6px; padding: calc(8px * var(--ui-scale, 1)) calc(10px * var(--ui-scale, 1)); display: flex; flex-direction: column; gap: calc(6px * var(--ui-scale, 1));">
       <div style="display: flex; align-items: center; justify-content: space-between; cursor: pointer;" id="orphan-files-toggle-header">
         <div style="display: flex; align-items: center; gap: calc(8px * var(--ui-scale, 1));">
-          <span style="font-size: calc(13px * var(--ui-scale, 1));">📂</span>
+          <span style="display: inline-flex; align-items: center; color: #ffaa00;">${getIconSvg('folderOpen', 'pmm-icon-sm')}</span>
           <div style="display: flex; flex-direction: column; text-align: left;">
             <span style="font-size: var(--text-sm, 11px); font-weight: bold; color: var(--text-primary);">${escapeHtml(t('installer.orphans_title'))}</span>
             <span style="font-size: var(--text-2xs, 9px); color: var(--text-muted);">${escapeHtml(summary)}</span>
           </div>
         </div>
         <div style="display: flex; align-items: center; gap: 6px;">
-          <span id="orphan-files-chevron" style="font-size: 10px; color: var(--text-secondary); transition: transform 0.2s ease;">▼</span>
+          <span id="orphan-files-chevron" style="display: inline-flex; align-items: center; color: var(--text-secondary); transition: transform 0.2s ease;">${getIconSvg('chevronDown', 'pmm-icon-xs')}</span>
         </div>
       </div>
 

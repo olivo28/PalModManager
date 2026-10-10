@@ -25,11 +25,11 @@ export function registerMonacoQuickFixProvider(): void {
           const endLine = diag.endLine || diag.line;
           const endCol = diag.endColumn || (startCol + diag.target.length);
 
-          let title = t('editor.quickfix_replace', { suggestion: diag.suggestion }) || `💡 Quick Fix: Replace with "${diag.suggestion}"`;
+          let title = t('editor.quickfix_replace', { suggestion: diag.suggestion }) || `Quick Fix: Replace with "${diag.suggestion}"`;
           if (diag.category === 'ue4ss_deprecated') {
-            title = t('editor.quickfix_deprecated', { target: diag.target, suggestion: diag.suggestion }) || `💡 Replace deprecated "${diag.target}" with "${diag.suggestion}"`;
+            title = t('editor.quickfix_deprecated', { target: diag.target, suggestion: diag.suggestion }) || `Replace deprecated "${diag.target}" with "${diag.suggestion}"`;
           } else if (diag.category === 'anti_pattern') {
-            title = t('editor.quickfix_safe_error', { suggestion: diag.suggestion }) || `🛡️ Safe Error Handling: Capture "${diag.suggestion}"`;
+            title = t('editor.quickfix_safe_error', { suggestion: diag.suggestion }) || `Safe Error Handling: Capture "${diag.suggestion}"`;
           }
 
           actions.push({

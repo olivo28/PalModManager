@@ -31,8 +31,8 @@ export async function bootstrapApp(): Promise<void> {
   initThemeEngine();
 
   try {
-    await logFromJs("⚡ PMM-Core Reactive Engine: Frontend runtime initialized (Zero-VDOM, 11 scopes, Svelte-like)");
-    console.info('%c⚡ PMM-Core Reactive Engine initialized (Zero-VDOM, 11 scopes)', 'color: #38bdf8; font-weight: bold; font-size: 13px;');
+    await logFromJs("PMM-Core Reactive Engine: Frontend runtime initialized (Zero-VDOM, 11 scopes, Svelte-like)");
+    console.info('%cPMM-Core Reactive Engine initialized (Zero-VDOM, 11 scopes)', 'color: #38bdf8; font-weight: bold; font-size: 13px;');
     const settings = await getSettings();
     updateState({ currentSettings: settings });
     if (settings.language) {

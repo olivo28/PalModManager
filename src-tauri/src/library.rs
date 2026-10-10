@@ -570,9 +570,16 @@ pub fn list_library(program_path: &str, installed_mods: &[ModInfo]) -> Result<Ve
             let matched_installed = installed_mods.iter().find(|m| {
                 let norm_m_name = normalize(&m.name);
                 let norm_m_id = normalize(&m.id);
-                norm_m_name == norm_canonical
-                    || norm_m_id == norm_canonical
-                    || (item.nexus_mod_id.is_some() && m.nexus_mod_id.is_some() && m.nexus_mod_id == item.nexus_mod_id)
+                if !m.source_zip.is_empty() && m.source_zip.eq_ignore_ascii_case(&item.zip_name) {
+                    return true;
+                }
+                let m_phys = crate::installer::helpers::get_physical_identity(&m.game_path, &m.disabled_path);
+                let item_norm = item.zip_name.replace(' ', "").replace('-', "").replace('_', "").to_lowercase();
+                if !m_phys.is_empty() && item_norm.contains(&m_phys) {
+                    return true;
+                }
+                (norm_m_name == norm_canonical || norm_m_id == norm_canonical)
+                    || (item.nexus_mod_id.is_some() && m.nexus_mod_id == item.nexus_mod_id && m.source_zip.is_empty())
             });
 
             let is_installed = matched_installed.is_some();

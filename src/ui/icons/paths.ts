@@ -60,6 +60,10 @@ export const ICON_PATHS: Record<string, IconDef> = {
     body: '<path d="M5 12h14"/><path d="M12 5v14"/>',
     mode: 'stroke',
   },
+  gripVertical: {
+    body: '<circle cx="9" cy="12" r="1.5"/><circle cx="9" cy="5" r="1.5"/><circle cx="9" cy="19" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="15" cy="5" r="1.5"/><circle cx="15" cy="19" r="1.5"/>',
+    mode: 'fill',
+  },
   arrowUp: {
     body: '<line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/>',
     mode: 'stroke',
@@ -302,6 +306,38 @@ export const ICON_PATHS: Record<string, IconDef> = {
   },
   trendingDown: {
     body: '<polyline points="23 18 13.5 8.5 8.5 13.5 1 6"/><polyline points="17 18 23 18 23 12"/>',
+    mode: 'stroke',
+  },
+  chevronDown: {
+    body: '<polyline points="6 9 12 15 18 9"/>',
+    mode: 'stroke',
+  },
+  chevronUp: {
+    body: '<polyline points="18 15 12 9 6 15"/>',
+    mode: 'stroke',
+  },
+  chevronLeft: {
+    body: '<polyline points="15 18 9 12 15 6"/>',
+    mode: 'stroke',
+  },
+  chevronRight: {
+    body: '<polyline points="9 18 15 12 9 6"/>',
+    mode: 'stroke',
+  },
+  flame: {
+    body: '<path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/>',
+    mode: 'stroke',
+  },
+  crown: {
+    body: '<path d="m2 4 3 12h14l3-12-6 7-4-7-4 7-6-7zm3 16h14"/>',
+    mode: 'stroke',
+  },
+  refreshCw: {
+    body: '<path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M3 21v-5h5"/>',
+    mode: 'stroke',
+  },
+  maximize: {
+    body: '<path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>',
     mode: 'stroke',
   },
 };

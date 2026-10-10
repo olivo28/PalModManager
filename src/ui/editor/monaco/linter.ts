@@ -98,7 +98,7 @@ export async function runValidation(
         startColumn: startCol,
         endLineNumber: endLine,
         endColumn: endCol,
-        message: diag.message + (diag.suggestion ? `\n💡 Quick Fix: ${diag.suggestion}` : ''),
+        message: diag.message + (diag.suggestion ? `\nQuick Fix: ${diag.suggestion}` : ''),
         source: 'PalModManager',
       };
     });

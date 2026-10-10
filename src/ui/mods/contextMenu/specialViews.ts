@@ -13,6 +13,7 @@ import { showContextMenu } from './singleMod';
 import { showFolderContextMenu } from './folders';
 import { showBulkContextMenu } from './batchSelection';
 import { mainDom, editorDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 export function showGlobalContextMenu(x: number, y: number): void {
   const menu = mainDom.el('context-menu');
@@ -33,64 +34,64 @@ export function showGlobalContextMenu(x: number, y: number): void {
 
   const html = `
     <button type="button" class="context-menu-item" data-action="new-folder">
-      <span class="ctx-icon">📁</span>
+      <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.new_mod_folder'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="install">
-      <span class="ctx-icon">+</span>
+      <span class="ctx-icon">${getIconSvg('plus', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.install_archive'))}
     </button>
     <button type="button" class="context-menu-item" data-action="install-nexus-id">
-      <span class="ctx-icon">🔗</span>
+      <span class="ctx-icon">${getIconSvg('link', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.install_nexus_id'))}
     </button>
     <button type="button" class="context-menu-item" data-action="rescan">
-      <span class="ctx-icon">↻</span>
+      <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.rescan_mods'))}
     </button>
     <button type="button" class="context-menu-item" data-action="check-updates-global">
-      <span class="ctx-icon">↑</span>
+      <span class="ctx-icon">${getIconSvg('arrowUp', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.check_updates'))}
     </button>
     <button type="button" class="context-menu-item" data-action="export-json">
-      <span class="ctx-icon">📤</span>
+      <span class="ctx-icon">${getIconSvg('upload', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.export_json'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="check-deps">
-      <span class="ctx-icon">&#8634;</span>
+      <span class="ctx-icon">${getIconSvg('scan', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.check_deps_updates'))}
     </button>
     ${ue4ssInstalled
       ? isUe4ssWorkshop
         ? `<button type="button" class="context-menu-item disabled" disabled title="${workshopTooltip}">
-            <span class="ctx-icon" style="opacity:0.4">✕</span>
+            <span class="ctx-icon" style="opacity:0.4">${getIconSvg('trash', 'pmm-icon-sm')}</span>
             <span style="opacity:0.4">${escapeHtml(t('context.uninstall_ue4ss'))}</span>
             <span style="margin-left:auto;font-size:9px;opacity:0.5">Workshop</span>
            </button>`
         : `<button type="button" class="context-menu-item danger" data-action="uninstall-ue4ss">
-            <span class="ctx-icon">✕</span>
+            <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
             ${escapeHtml(t('context.uninstall_ue4ss'))}
            </button>`
       : `<button type="button" class="context-menu-item" data-action="update-ue4ss">
-          <span class="ctx-icon">U</span>
+          <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.install_ue4ss'))}
          </button>`
     }
     ${palschemaInstalled
       ? isPalSchemaWorkshop
         ? `<button type="button" class="context-menu-item disabled" disabled title="${workshopTooltip}">
-            <span class="ctx-icon" style="opacity:0.4">✕</span>
+            <span class="ctx-icon" style="opacity:0.4">${getIconSvg('trash', 'pmm-icon-sm')}</span>
             <span style="opacity:0.4">${escapeHtml(t('context.uninstall_palschema'))}</span>
             <span style="margin-left:auto;font-size:9px;opacity:0.5">Workshop</span>
            </button>`
         : `<button type="button" class="context-menu-item danger" data-action="uninstall-palschema">
-            <span class="ctx-icon">✕</span>
+            <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span>
             ${escapeHtml(t('context.uninstall_palschema'))}
            </button>`
       : `<button type="button" class="context-menu-item" data-action="update-palschema">
-          <span class="ctx-icon">S</span>
+          <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span>
           ${escapeHtml(t('context.install_palschema'))}
          </button>`
     }
@@ -98,23 +99,23 @@ export function showGlobalContextMenu(x: number, y: number): void {
     <div style="padding: 4px 12px 2px; font-size: 9px; color: var(--text-muted); font-weight: bold; text-transform: uppercase; opacity: 0.7;">${escapeHtml(t('context.open_folder_header'))}</div>
     ${hasUe4ss ? `
       <button type="button" class="context-menu-item" data-action="open-folder-ue4ss">
-        <span class="ctx-icon">📂</span>
+        <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.folder_ue4ss'))}
       </button>
     ` : ''}
     ${hasPalSchema ? `
       <button type="button" class="context-menu-item" data-action="open-folder-palschema">
-        <span class="ctx-icon">📂</span>
+        <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
         ${escapeHtml(t('context.folder_palschema'))}
       </button>
     ` : ''}
     <button type="button" class="context-menu-item" data-action="open-folder-paks">
-      <span class="ctx-icon">📂</span>
+      <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.folder_paks'))}
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" data-action="settings">
-      <span class="ctx-icon">⚙</span>
+      <span class="ctx-icon">${getIconSvg('settings', 'pmm-icon-sm')}</span>
       ${escapeHtml(t('context.settings'))}
     </button>
   `;
@@ -290,24 +291,24 @@ export function showEditorContextMenu(x: number, y: number): void {
 
   menu.innerHTML = `
     <button type="button" class="context-menu-item" id="editor-ctx-save" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">💾</span> Save <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+S</span>
+      <span class="ctx-icon">${getIconSvg('save', 'pmm-icon-sm')}</span> Save <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+S</span>
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" id="editor-ctx-cut" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">✂</span> Cut <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+X</span>
+      <span class="ctx-icon">${getIconSvg('crop', 'pmm-icon-sm')}</span> Cut <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+X</span>
     </button>
     <button type="button" class="context-menu-item" id="editor-ctx-copy" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">📋</span> Copy <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+C</span>
+      <span class="ctx-icon">${getIconSvg('copy', 'pmm-icon-sm')}</span> Copy <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+C</span>
     </button>
     <button type="button" class="context-menu-item" id="editor-ctx-paste" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">📥</span> Paste <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+V</span>
+      <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span> Paste <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+V</span>
     </button>
     <div class="context-menu-sep"></div>
     <button type="button" class="context-menu-item" id="editor-ctx-find" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">🔍</span> Find <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+F</span>
+      <span class="ctx-icon">${getIconSvg('search', 'pmm-icon-sm')}</span> Find <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+F</span>
     </button>
     <button type="button" class="context-menu-item" id="editor-ctx-selectall" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">✓</span> Select All <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+A</span>
+      <span class="ctx-icon">${getIconSvg('check', 'pmm-icon-sm')}</span> Select All <span style="margin-left:auto;color:var(--text-muted);font-size:10px;">Ctrl+A</span>
     </button>
   `;
 
@@ -388,31 +389,31 @@ export function showLibraryContextMenu(modId: string | null, zipName: string | n
   if (selectedCount > 1) {
     menu.innerHTML = `
       <button type="button" class="context-menu-item" id="lib-ctx-install" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">📥</span> ${escapeHtml(t('library.btn_install_selected', { count: selectedCount }))}
+        <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_install_selected', { count: selectedCount }))}
       </button>
       <div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item danger" id="lib-ctx-remove" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">🗑️</span> ${escapeHtml(t('library.btn_delete_selected_library'))}
+        <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_delete_selected_library'))}
       </button>
     `;
   } else if (modId) {
     menu.innerHTML = `
       <button type="button" class="context-menu-item" id="lib-ctx-install" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">📥</span> ${escapeHtml(t('library.btn_install_mod'))}
+        <span class="ctx-icon">${getIconSvg('download', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_install_mod'))}
       </button>
       <div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item danger" id="lib-ctx-remove" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">🗑️</span> ${escapeHtml(t('library.btn_delete_from_library'))}
+        <span class="ctx-icon">${getIconSvg('trash', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_delete_from_library'))}
       </button>
     `;
   } else {
     // Empty space in Local Library
     menu.innerHTML = `
       <button type="button" class="context-menu-item" id="lib-ctx-check-updates" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">🔍</span> ${escapeHtml(t('library.btn_check_nexus_updates'))}
+        <span class="ctx-icon">${getIconSvg('search', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_check_nexus_updates'))}
       </button>
       <button type="button" class="context-menu-item" id="lib-ctx-open-folder" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">📁</span> ${escapeHtml(t('library.btn_open_library_folder'))}
+        <span class="ctx-icon">${getIconSvg('folder', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_open_library_folder'))}
       </button>
     `;
   }
@@ -484,15 +485,15 @@ export function showWorkshopContextMenu(packageName: string | null, workshopId: 
   
   menu.innerHTML = `
     <button type="button" class="context-menu-item" id="ws-ctx-check-updates" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">🔍</span> ${escapeHtml(t('library.btn_check_workshop_updates'))}
+      <span class="ctx-icon">${getIconSvg('search', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_check_workshop_updates'))}
     </button>
     <button type="button" class="context-menu-item" id="ws-ctx-force-verify" style="display:flex;align-items:center;width:100%;">
-      <span class="ctx-icon">⚡</span> ${escapeHtml(t('library.btn_force_steam_validation'))}
+      <span class="ctx-icon">${getIconSvg('zap', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_force_steam_validation'))}
     </button>
     ${workshopId ? `
       <div class="context-menu-sep"></div>
       <button type="button" class="context-menu-item" id="ws-ctx-open-steam" style="display:flex;align-items:center;width:100%;">
-        <span class="ctx-icon">🌐</span> ${escapeHtml(t('library.btn_open_in_steam'))}
+        <span class="ctx-icon">${getIconSvg('globe', 'pmm-icon-sm')}</span> ${escapeHtml(t('library.btn_open_in_steam'))}
       </button>
     ` : ''}
   `;

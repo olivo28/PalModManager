@@ -6,6 +6,7 @@ import { formatSize, compareVersions } from './helpers';
 import { _libraryOnlineUpdatesMap, type LibraryGroup } from './state';
 import { triggerInstallFromLibrary, updateLibraryBulkBar, handleLibraryDelete } from './actions';
 import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
+import { getIconSvg } from '../../icons/mod';
 
 const _expandedLibraryIds = new Set<string>();
 
@@ -81,9 +82,9 @@ export function renderLibraryListView(groups: LibraryGroup[], container: HTMLEle
     const miniThumbHtml = displayImgSrc
       ? `<div style="width:32px;height:32px;border-radius:4px;border:1px solid var(--border);overflow:hidden;background:var(--bg-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;">
            <img src="${displayImgSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none';this.nextElementSibling&&(this.nextElementSibling.style.display='flex');" />
-           <div style="display:none;font-size:14px;opacity:0.6;">📦</div>
+           <div style="display:none;opacity:0.6;">${getIconSvg('package', 'pmm-icon-sm')}</div>
          </div>`
-      : `<div style="width:32px;height:32px;border-radius:4px;border:1px solid var(--border);background:var(--bg-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:14px;opacity:0.6;">📦</div>`;
+      : `<div style="width:32px;height:32px;border-radius:4px;border:1px solid var(--border);background:var(--bg-primary);flex-shrink:0;display:flex;align-items:center;justify-content:center;opacity:0.6;">${getIconSvg('package', 'pmm-icon-sm')}</div>`;
 
     const versionSelectHtml = group.versions.length > 1
       ? `<select class="library-version-select form-select" data-id="${group.modId}" style="padding:3px 6px;font-size:11px;font-weight:600;background:var(--bg-primary);border:1px solid var(--border);border-radius:4px;color:var(--text-primary);cursor:pointer;outline:none;max-width:110px;">
@@ -99,16 +100,16 @@ export function renderLibraryListView(groups: LibraryGroup[], container: HTMLEle
     // Accordion Drawer Content
     const drawerImageHtml = displayImgSrc
       ? `<img class="library-drawer-preview" src="${displayImgSrc}" onerror="this.style.display='none';" />`
-      : `<div class="library-drawer-preview" style="display:flex;align-items:center;justify-content:center;font-size:28px;opacity:0.4;">📦</div>`;
+      : `<div class="library-drawer-preview" style="display:flex;align-items:center;justify-content:center;opacity:0.4;">${getIconSvg('package', 'pmm-icon-2xl')}</div>`;
 
     const libNexusId = group.nexusModId || state.allMods.find((m: any) => (m.nexusModId && group.nexusModId && m.nexusModId === group.nexusModId) || m.name.toLowerCase() === cleanName.toLowerCase())?.nexusModId;
     const isEndorsed = isNexusModEndorsed(libNexusId, state.currentSettings?.nexusEndorsementsCache);
     const isTracked = isNexusModTracked(libNexusId, state.currentSettings?.nexusTrackedCache);
     const libEndorsedBadge = isEndorsed
-      ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+      ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px 4px; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">${getIconSvg('thumbsUp', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_endorsed'))}</span></span>`
       : '';
     const libTrackedBadge = isTracked
-      ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px 4px; border-radius: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+      ? `<span style="font-size: 7.5px; font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px 4px; border-radius: 3px; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">${getIconSvg('target', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_tracked'))}</span></span>`
       : '';
 
     return `
@@ -118,7 +119,7 @@ export function renderLibraryListView(groups: LibraryGroup[], container: HTMLEle
           <input type="checkbox" class="library-card-checkbox" data-id="${group.modId}" ${isSelected ? 'checked' : ''} />
           
           <button class="library-row-toggle-btn" data-id="${group.modId}" title="${escapeHtml(t('library.unroll_details'))}">
-            ${isExpanded ? '▼' : '▶'}
+            ${isExpanded ? getIconSvg('chevronDown', 'pmm-icon-xs') : getIconSvg('chevronRight', 'pmm-icon-xs')}
           </button>
 
           ${miniThumbHtml}
@@ -142,7 +143,7 @@ export function renderLibraryListView(groups: LibraryGroup[], container: HTMLEle
               ${installBtnText}
             </button>
             <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" title="${escapeHtml(t('library.btn_delete_ver'))}">
-              ✕
+              ${getIconSvg('x', 'pmm-icon-xs')}
             </button>
           </div>
         </div>

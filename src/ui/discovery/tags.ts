@@ -1,6 +1,7 @@
 import { escapeHtml } from '../../utils/helpers';
 import { discState, NEXUS_PALWORLD_TAGS } from './state';
 import { discoveryDom } from '../../framework';
+import { getIconSvg } from '../icons/mod';
 
 export function renderTagChips(type: 'include' | 'exclude'): void {
   const container = discoveryDom.elMaybe(type === 'include' ? 'tags-include-chips' : 'tags-exclude-chips');
@@ -15,7 +16,7 @@ export function renderTagChips(type: 'include' | 'exclude'): void {
   container.innerHTML = Array.from(set).map((tag) => `
     <span class="discovery-tag-chip ${type === 'exclude' ? 'exclude' : ''}" data-tag="${escapeHtml(tag)}">
       ${escapeHtml(tag)}
-      <span class="discovery-tag-chip-remove" data-type="${type}" data-tag="${escapeHtml(tag)}">×</span>
+      <span class="discovery-tag-chip-remove" data-type="${type}" data-tag="${escapeHtml(tag)}">${getIconSvg('x', 'pmm-icon-xs')}</span>
     </span>
   `).join('');
 
@@ -51,7 +52,7 @@ export function renderTagMenu(type: 'include' | 'exclude', filterText: string = 
     return `
       <div class="discovery-tag-menu-item ${isSelected ? `selected ${type === 'exclude' ? 'exclude' : ''}` : ''}" data-type="${type}" data-tag="${escapeHtml(tag)}">
         <span>${escapeHtml(tag)}</span>
-        ${isSelected ? `<span class="discovery-tag-menu-item-check">✓</span>` : ''}
+        ${isSelected ? `<span class="discovery-tag-menu-item-check">${getIconSvg('check', 'pmm-icon-xs')}</span>` : ''}
       </div>
     `;
   }).join('');

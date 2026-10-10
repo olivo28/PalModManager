@@ -30,7 +30,7 @@ export function setupGlobalShortcuts(): void {
         if (badge) badge.textContent = `${Math.round(next * 100)}%`;
 
         const percent = Math.round(next * 100);
-        showToast(t('toasts.scale_level', { percent }) || `🔍 UI Scale: ${percent}%`, 'info');
+        showToast(t('toasts.scale_level', { percent }) || `UI Scale: ${percent}%`, 'info');
 
         if (_scaleSaveTimer) clearTimeout(_scaleSaveTimer);
         _scaleSaveTimer = setTimeout(async () => {

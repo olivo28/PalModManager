@@ -4,6 +4,7 @@ import { getMonacoEditor } from './instance';
 import { toggleProblemsPanel } from './problemsPanel';
 import { getMappingsStatus, getSdkStatus, getReflectionCatalogsStatus, getEditorCompletions } from '../../../api';
 import { t } from '../../../utils/i18n';
+import { getIconSvg } from '../../icons/mod';
 
 let _isInitialized = false;
 let _cachedUsmapLabel = '';
@@ -64,7 +65,7 @@ export function updateStatusBarProblems(fileCount: number, workspaceCount: numbe
   if (!countEl || !btn) return;
 
   if (fileCount === 0 && workspaceCount === 0) {
-    countEl.textContent = `✓ 0`;
+    countEl.innerHTML = `<span style="display:inline-flex;align-items:center;gap:3px;">${getIconSvg('check', 'pmm-icon-xs')} <span>0</span></span>`;
     btn.className = 'editor-status-btn';
     btn.title = t('editor.problems_clean') || 'No problems detected in mod';
   } else {

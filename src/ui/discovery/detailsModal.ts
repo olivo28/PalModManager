@@ -22,6 +22,7 @@ import { handleDiscoveryImageError, deriveDiscoveryModTitle } from './helpers';
 import { openLightbox } from './lightbox';
 import { discoveryDom } from '../../framework';
 import { isNexusModEndorsed, isNexusModTracked } from '../../features/nexusAuth/state';
+import { getIconSvg } from '../icons/mod';
 
 let _isModalListenersSetup = false;
 
@@ -217,11 +218,11 @@ export function populateModalData(details: DiscoveryModDetails): void {
     if (installedMod) {
       const instVer = installedMod.version && installedMod.version !== 'unknown' ? `v${installedMod.version}` : '';
       installedBadge.style.display = 'inline-flex';
-      installedBadge.textContent = instVer ? `✓ ${t('discovery.status_installed')}: ${instVer}` : `✓ ${t('discovery.status_installed')}`;
+      installedBadge.innerHTML = instVer ? `${getIconSvg('check', 'pmm-icon-xs')} <span>${t('discovery.status_installed')}: ${instVer}</span>` : `${getIconSvg('check', 'pmm-icon-xs')} <span>${t('discovery.status_installed')}</span>`;
       installedBadge.title = t('discovery.status_installed_title', { name: installedMod.name, version: instVer || 'unknown' });
     } else {
       installedBadge.style.display = 'none';
-      installedBadge.textContent = '';
+      installedBadge.innerHTML = '';
     }
   }
   if (updated) {
@@ -267,7 +268,7 @@ export function populateModalData(details: DiscoveryModDetails): void {
       filesInstruction.textContent = t('discovery.files_instruction');
       filesInstruction.style.color = 'var(--text-muted)';
     } else {
-      filesInstruction.textContent = `ℹ️ ${t('discovery.premium_required_info')}`;
+      filesInstruction.innerHTML = `${getIconSvg('info', 'pmm-icon-xs')} <span>${t('discovery.premium_required_info')}</span>`;
       filesInstruction.style.color = '#da8e35';
     }
   }
@@ -335,7 +336,7 @@ export function renderChangelogsList(details: DiscoveryModDetails, container: HT
       <div class="discovery-changelogs-empty">
         <p>${t('discovery.no_changelogs')}</p>
         <button id="discovery-view-nexus-changelog-btn" class="btn-discovery-action" style="margin-top: 10px; display: inline-flex;">
-          <span>🔗</span> ${t('discovery.view_changelog_nexus')}
+          ${getIconSvg('externalLink', 'pmm-icon-xs')} <span>${t('discovery.view_changelog_nexus')}</span>
         </button>
       </div>
     `;
@@ -405,15 +406,15 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
   const getScanBadge = (status?: string | null) => {
     const st = (status || 'VERIFIED').toUpperCase();
     if (st === 'VERIFIED' || st === 'SAFE' || st === 'PASSED') {
-      return `<span class="discovery-scan-badge scan-verified" title="Virus scan verified clean">🟢 ${t('discovery.scan_verified')}</span>`;
+      return `<span class="discovery-scan-badge scan-verified" title="Virus scan verified clean">${getIconSvg('shieldCheck', 'pmm-icon-xs')} <span>${t('discovery.scan_verified')}</span></span>`;
     }
     if (st.includes('MANUAL')) {
-      return `<span class="discovery-scan-badge scan-manual" title="Manually verified by Nexus Mods staff">🔵 ${t('discovery.scan_manual')}</span>`;
+      return `<span class="discovery-scan-badge scan-manual" title="Manually verified by Nexus Mods staff">${getIconSvg('shield', 'pmm-icon-xs')} <span>${t('discovery.scan_manual')}</span></span>`;
     }
     if (st.includes('QUARANTINE') || st.includes('SUSPICIOUS') || st.includes('INFECTED')) {
-      return `<span class="discovery-scan-badge scan-quarantine" title="Suspicious file under quarantine">🔴 ${t('discovery.scan_quarantine')}</span>`;
+      return `<span class="discovery-scan-badge scan-quarantine" title="Suspicious file under quarantine">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${t('discovery.scan_quarantine')}</span></span>`;
     }
-    return `<span class="discovery-scan-badge scan-unverified" title="Awaiting or scanning">⚪ ${t('discovery.scan_unverified')}</span>`;
+    return `<span class="discovery-scan-badge scan-unverified" title="Awaiting or scanning">${getIconSvg('clock', 'pmm-icon-xs')} <span>${t('discovery.scan_unverified')}</span></span>`;
   };
 
   const renderFileCard = (f: DiscoveryFileItem) => {
@@ -426,8 +427,8 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
     const totalDls = f.totalDownloads !== undefined && f.totalDownloads !== null ? f.totalDownloads.toLocaleString() : '--';
 
     const btnHtml = isPremium
-      ? `<button class="discovery-file-btn-install" data-file-id="${f.fileId}" title="${t('discovery.install_file')}">⚡ ${t('discovery.install_short')}</button>`
-      : `<button class="discovery-file-btn-install free-download" data-file-id="${f.fileId}" title="${t('discovery.manual_download')}">🌐 ${t('discovery.manual_download')}</button>`;
+      ? `<button class="discovery-file-btn-install" data-file-id="${f.fileId}" title="${t('discovery.install_file')}">${getIconSvg('zap', 'pmm-icon-xs')} <span>${t('discovery.install_short')}</span></button>`
+      : `<button class="discovery-file-btn-install free-download" data-file-id="${f.fileId}" title="${t('discovery.manual_download')}">${getIconSvg('globe', 'pmm-icon-xs')} <span>${t('discovery.manual_download')}</span></button>`;
 
     return `
       <div class="discovery-file-card ${isPrimaryCard ? 'primary-file' : ''}" data-file-id="${f.fileId}">
@@ -441,20 +442,20 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
             ${btnHtml}
             ${hasExtraContent ? `
               <button type="button" class="btn-discovery-action discovery-file-toggle-btn" data-file-id="${f.fileId}" title="Toggle description & changelog" style="padding: 6px 10px;">
-                🔽
+                ${getIconSvg('chevronDown', 'pmm-icon-xs')}
               </button>
             ` : ''}
           </div>
         </div>
 
         <div class="discovery-file-meta">
-          <span>📅 ${t('discovery.uploaded_label')}: <strong>${f.uploadedAt || '--'}</strong></span>
+          <span>${getIconSvg('calendar', 'pmm-icon-xs')} ${t('discovery.uploaded_label')}: <strong>${f.uploadedAt || '--'}</strong></span>
           <span>•</span>
-          <span>💾 ${t('discovery.size_label')}: <strong>${escapeHtml(f.sizeFormatted)}</strong></span>
+          <span>${getIconSvg('save', 'pmm-icon-xs')} ${t('discovery.size_label')}: <strong>${escapeHtml(f.sizeFormatted)}</strong></span>
           <span>•</span>
-          <span>🏷️ ${t('discovery.version_label')}: <strong>${escapeHtml(f.version)}</strong></span>
-          ${uniqueDls !== '--' ? `<span>•</span><span>👤 ${t('discovery.unique_dls')}: <strong>${uniqueDls}</strong></span>` : ''}
-          ${totalDls !== '--' ? `<span>•</span><span>📥 ${t('discovery.total_dls')}: <strong>${totalDls}</strong></span>` : ''}
+          <span>${getIconSvg('tag', 'pmm-icon-xs')} ${t('discovery.version_label')}: <strong>${escapeHtml(f.version)}</strong></span>
+          ${uniqueDls !== '--' ? `<span>•</span><span>${getIconSvg('user', 'pmm-icon-xs')} ${t('discovery.unique_dls')}: <strong>${uniqueDls}</strong></span>` : ''}
+          ${totalDls !== '--' ? `<span>•</span><span>${getIconSvg('download', 'pmm-icon-xs')} ${t('discovery.total_dls')}: <strong>${totalDls}</strong></span>` : ''}
         </div>
 
         ${hasExtraContent ? `
@@ -462,7 +463,7 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
             ${descHtml ? `<div class="discovery-file-desc">${descHtml}</div>` : ''}
             ${f.changelogEntries && f.changelogEntries.length > 0 ? `
               <div class="discovery-file-changelog-wrap" style="margin-top: 8px;">
-                <strong style="font-size: 11px; color: var(--text-primary);">📜 ${t('discovery.file_changelog')}:</strong>
+                <strong style="font-size: 11px; color: var(--text-primary); display: inline-flex; align-items: center; gap: 4px;">${getIconSvg('fileText', 'pmm-icon-xs')} <span>${t('discovery.file_changelog')}:</span></strong>
                 <ul class="discovery-changelog-items" style="margin-top: 4px; padding-left: 16px; font-size: 11px; color: var(--text-secondary);">
                   ${f.changelogEntries.map((c) => `<li>${escapeHtml(c)}</li>`).join('')}
                 </ul>
@@ -476,21 +477,21 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
 
   let html = '';
   if (mainFiles.length > 0) {
-    html += `<div class="discovery-file-section-title">⭐ ${t('discovery.main_files')} <span class="section-count">${mainFiles.length}</span></div>`;
+    html += `<div class="discovery-file-section-title">${getIconSvg('star', 'pmm-icon-xs')} <span>${t('discovery.main_files')}</span> <span class="section-count">${mainFiles.length}</span></div>`;
     html += mainFiles.map(renderFileCard).join('');
   }
   if (updateFiles.length > 0) {
-    html += `<div class="discovery-file-section-title">🔄 ${t('discovery.update_files')} <span class="section-count">${updateFiles.length}</span></div>`;
+    html += `<div class="discovery-file-section-title">${getIconSvg('refreshCw', 'pmm-icon-xs')} <span>${t('discovery.update_files')}</span> <span class="section-count">${updateFiles.length}</span></div>`;
     html += updateFiles.map(renderFileCard).join('');
   }
   if (optionalFiles.length > 0) {
-    html += `<div class="discovery-file-section-title">📦 ${t('discovery.optional_files')} <span class="section-count">${optionalFiles.length}</span></div>`;
+    html += `<div class="discovery-file-section-title">${getIconSvg('package', 'pmm-icon-xs')} <span>${t('discovery.optional_files')}</span> <span class="section-count">${optionalFiles.length}</span></div>`;
     html += optionalFiles.map(renderFileCard).join('');
   }
   if (archivedFiles.length > 0) {
     html += `
       <button id="discovery-toggle-archived-btn" class="discovery-archived-toggle-btn">
-        <span id="discovery-toggle-archived-icon">🔽</span>
+        <span id="discovery-toggle-archived-icon">${getIconSvg('chevronDown', 'pmm-icon-xs')}</span>
         <span id="discovery-toggle-archived-text">${t('discovery.show_archived_files', { count: archivedFiles.length })}</span>
       </button>
       <div id="discovery-archived-files-container" style="display: none; flex-direction: column; gap: 12px; margin-top: 6px;">
@@ -516,7 +517,7 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
           : t('discovery.show_archived_files', { count: archivedFiles.length });
       }
       if (toggleIcon) {
-        toggleIcon.textContent = isHidden ? '🔼' : '🔽';
+        toggleIcon.innerHTML = isHidden ? getIconSvg('chevronUp', 'pmm-icon-xs') : getIconSvg('chevronDown', 'pmm-icon-xs');
       }
     });
   }
@@ -532,7 +533,7 @@ export function renderFilesList(details: DiscoveryModDetails, container: HTMLEle
       if (body) {
         const isShown = body.style.display !== 'none';
         body.style.display = isShown ? 'none' : 'block';
-        btn.textContent = isShown ? '🔽' : '🔼';
+        btn.innerHTML = isShown ? getIconSvg('chevronDown', 'pmm-icon-xs') : getIconSvg('chevronUp', 'pmm-icon-xs');
       }
     });
   });
@@ -576,7 +577,7 @@ export function setupModalActions(details: DiscoveryModDetails): void {
       endorseBtn.classList.remove('active');
       endorseBtn.classList.add('own-mod-btn');
       endorseBtn.title = t('discovery.own_mod_cannot_endorse');
-      if (endorseText) endorseText.textContent = `👑 ${t('discovery.own_mod_label')}`;
+      if (endorseText) endorseText.innerHTML = `${getIconSvg('crown', 'pmm-icon-xs')} <span>${t('discovery.own_mod_label')}</span>`;
       endorseBtn.onclick = () => {
         showToast(t('discovery.own_mod_cannot_endorse'), 'warning');
       };
@@ -606,7 +607,7 @@ export function setupModalActions(details: DiscoveryModDetails): void {
           if (errStr.includes('IS_OWN_MOD')) {
             showToast(t('discovery.own_mod_cannot_endorse'), 'warning');
             endorseBtn.classList.add('own-mod-btn');
-            if (endorseText) endorseText.textContent = `👑 ${t('discovery.own_mod_label')}`;
+            if (endorseText) endorseText.innerHTML = `${getIconSvg('crown', 'pmm-icon-xs')} <span>${t('discovery.own_mod_label')}</span>`;
           } else {
             showToast(errStr, 'error');
           }

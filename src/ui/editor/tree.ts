@@ -6,6 +6,7 @@ import { showConfirm } from '../confirm';
 import { confirmDiscardOrSave, _lastFilePerMod, loadFileContent, loadEditorData, clearEditorContent, _fileBufferCache, _originalContent, clearBufferCache, getBufferKey } from './viewer';
 import { getMonacoContent } from './monaco/instance';
 import { editorDom } from '../../framework';
+import { getIconSvg } from '../icons/mod';
 
 export function renderEditorModTree(): void {
   const tree = editorDom.elMaybe('editor-mod-tree');
@@ -42,7 +43,7 @@ export function renderEditorModTree(): void {
     if (mods.length === 0) return '';
     const items = mods.map(m => `
       <div class="editor-mod-item${m.id === currentModId ? ' active' : ''}" data-mod-id="${m.id}" title="${escapeHtml(m.name)}">
-        <span class="editor-mod-item-icon">📄</span>
+        <span class="editor-mod-item-icon">${getIconSvg('fileText', 'pmm-icon-xs')}</span>
         <span style="overflow:hidden;text-overflow:ellipsis;">${escapeHtml(m.name)}</span>
       </div>
     `).join('');
@@ -357,8 +358,8 @@ function renderNodeHTML(node: FileTreeNode): string {
       return `
       <div class="editor-tree-folder${isCollapsed ? ' collapsed' : ''}" data-folder-path="${escapeHtml(child.path)}">
         <div class="editor-tree-folder-header">
-          <span class="editor-tree-chevron">▾</span>
-          <span class="editor-file-icon" style="color:var(--accent);">📁</span>
+          <span class="editor-tree-chevron" style="display:inline-flex;align-items:center;">${getIconSvg('chevronDown', 'pmm-icon-xs')}</span>
+          <span class="editor-file-icon" style="color:var(--accent);display:inline-flex;align-items:center;">${getIconSvg('folder', 'pmm-icon-xs')}</span>
           <span class="editor-folder-name">${escapeHtml(child.name)}</span>
         </div>
         <div class="editor-tree-folder-children">
@@ -376,19 +377,19 @@ function renderNodeHTML(node: FileTreeNode): string {
         (currentMod.configPath && (currentMod.configPath.replace(/\\/g, '/').endsWith(child.path) || child.path.endsWith(currentMod.configPath.replace(/\\/g, '/')))) ||
         child.path.toLowerCase().startsWith('shared/')
       );
-      const configBadge = isConfigPath ? `<span class="editor-file-badge" title="${escapeHtml(t('editor.badge_config') || 'Active Configuration')}" style="font-size:10px; margin-left:4px; opacity:0.85;">⚙️</span>` : '';
+      const configBadge = isConfigPath ? `<span class="editor-file-badge" title="${escapeHtml(t('editor.badge_config') || 'Active Configuration')}" style="margin-left:4px; opacity:0.85; display:inline-flex; align-items:center;">${getIconSvg('settings', 'pmm-icon-xs')}</span>` : '';
 
       let actionButtons = '';
       if (isBak) {
         actionButtons += `
           <button class="editor-file-action-btn editor-file-diff-btn" data-path="${escapeHtml(child.path)}" title="${escapeHtml(t('editor.btn_diff') || 'Compare Diff')}">
-            🔍
+            ${getIconSvg('search', 'pmm-icon-xs')}
           </button>
         `;
       }
       actionButtons += `
         <button class="editor-file-action-btn editor-file-delete-btn" data-path="${escapeHtml(child.path)}" title="${escapeHtml(t('editor.btn_delete_file') || 'Delete File')}">
-          🗑️
+          ${getIconSvg('trash', 'pmm-icon-xs')}
         </button>
       `;
 
@@ -419,8 +420,8 @@ export function renderFileTree(files: string[]): void {
       <div class="editor-file-tree-title-row">
         <span class="editor-file-tree-mod-name" title="${escapeHtml(modName)}">${escapeHtml(modName)}</span>
         <div class="editor-file-tree-actions">
-          <button id="editor-new-file-btn" class="editor-tree-icon-btn" title="${escapeHtml(t('editor.btn_new_file') || 'New File')}">📄+</button>
-          <button id="editor-new-folder-btn" class="editor-tree-icon-btn" title="${escapeHtml(t('editor.btn_new_folder') || 'New Folder')}">📁+</button>
+          <button id="editor-new-file-btn" class="editor-tree-icon-btn" title="${escapeHtml(t('editor.btn_new_file') || 'New File')}" style="display:inline-flex;align-items:center;gap:2px;">${getIconSvg('fileText', 'pmm-icon-xs')}<span style="font-size:10px;font-weight:700;">+</span></button>
+          <button id="editor-new-folder-btn" class="editor-tree-icon-btn" title="${escapeHtml(t('editor.btn_new_folder') || 'New Folder')}" style="display:inline-flex;align-items:center;gap:2px;">${getIconSvg('folder', 'pmm-icon-xs')}<span style="font-size:10px;font-weight:700;">+</span></button>
         </div>
       </div>
     </div>

@@ -2,6 +2,7 @@ import { readModFile, saveModFile, listModFiles } from '../../api';
 import { getState, updateState } from '../../state';
 import { showToast } from '../toast';
 import { escapeHtml, formatBytes } from '../../utils/helpers';
+import { getIconSvg } from '../icons/mod';
 import { t } from '../../utils/i18n';
 import { marked } from 'marked';
 import { confirmDiscardOrSave } from './unsaved';
@@ -157,15 +158,15 @@ export function renderEditorBreadcrumbs(modName: string, filePath: string): stri
   const normalized = filePath.replace(/\\/g, '/').replace(/^\/+/, '');
   const parts = normalized.split('/').filter(Boolean);
   if (parts.length === 0) {
-    return `<div class="editor-bc-crumb"><span class="editor-bc-mod">📦 ${escapeHtml(modName)}</span></div>`;
+    return `<div class="editor-bc-crumb"><span class="editor-bc-mod">${getIconSvg('package', 'pmm-icon-xs')} ${escapeHtml(modName)}</span></div>`;
   }
   const fileName = parts.pop()!;
   const isPak = fileName.toLowerCase().endsWith('.pak');
   const cleanFileName = isPak ? fileName.replace(/^\[Pak\]\s*/i, '') : fileName;
-  const fileIcon = isPak ? '📦' : '📄';
+  const fileIcon = isPak ? getIconSvg('package', 'pmm-icon-xs') : getIconSvg('fileText', 'pmm-icon-xs');
   const segmentsHtml = [
-    `<span class="editor-bc-mod">📦 ${escapeHtml(modName)}</span>`,
-    ...parts.map(p => `<span class="editor-bc-sep">›</span><span class="editor-bc-part">📁 ${escapeHtml(p)}</span>`),
+    `<span class="editor-bc-mod">${getIconSvg('package', 'pmm-icon-xs')} ${escapeHtml(modName)}</span>`,
+    ...parts.map(p => `<span class="editor-bc-sep">›</span><span class="editor-bc-part">${getIconSvg('folder', 'pmm-icon-xs')} ${escapeHtml(p)}</span>`),
     `<span class="editor-bc-sep">›</span><span class="editor-bc-file">${fileIcon} ${escapeHtml(cleanFileName)}</span>`,
   ].join('');
   return `<div class="editor-bc-crumb">${segmentsHtml}</div>`;
@@ -285,7 +286,7 @@ export async function loadFileContent(filePath: string, lineNumber?: number): Pr
             const fileSizeFormatted = result.fileSize ? formatBytes(result.fileSize) : '';
             preview.innerHTML = `
               <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;padding:40px 20px;box-sizing:border-box;background:var(--bg-secondary);text-align:center;">
-                <div style="font-size:48px;margin-bottom:12px;opacity:0.85;">⚡</div>
+                <div style="margin-bottom:12px;opacity:0.85;color:var(--accent);display:inline-flex;">${getIconSvg('zap', 'pmm-icon-2xl')}</div>
                 <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">${escapeHtml(assetName)}</div>
                 <div style="font-size:12px;color:var(--text-secondary);margin-bottom:4px;">${escapeHtml(t('editor.binary_asset_title') || 'Unreal Engine Binary Asset')}</div>
                 <div style="font-size:11px;color:var(--text-muted);margin-bottom:18px;max-width:440px;line-height:1.5;">${escapeHtml(t('editor.binary_asset_desc') || 'Binary compiled asset files (.uasset/.pak) cannot be edited directly as plain text.')}${fileSizeFormatted ? ` (${fileSizeFormatted})` : ''}</div>

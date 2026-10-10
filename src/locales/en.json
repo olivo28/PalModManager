@@ -343,7 +343,9 @@
     "btn_remove": "Remove",
     "dialog_select_config_title": "Select config file for \"{name}\"",
     "pak_contents_title": "Internal .pak Contents",
-    "btn_load_pak_contents": "Inspect .pak Assets"
+    "btn_load_pak_contents": "Inspect .pak Assets",
+    "comp_disabled_tooltip": "Component disabled. Click to enable in game.",
+    "comp_enabled_tooltip": "Component enabled. Click to disable in game."
   },
   "installer": {
     "log_merged_hybrid": "[MERGE] Merged components with existing mod: {name}",
@@ -457,7 +459,12 @@
     "orphans_summary_mixed": "{configs} user config(s) (kept) and {stale} old file(s) (purged).",
     "orphans_instructions": "Unchecked files will be cleanly removed during the update. Check any file you wish to keep.",
     "orphans_badge_config": "Config (Keep)",
-    "orphans_badge_stale": "Stale (Remove)"
+    "orphans_badge_stale": "Stale (Remove)",
+    "variant_detected_title": "Variant Detected",
+    "variant_detected_desc": "Another variant of this mod is already installed ({name})",
+    "mode_separate": "Install Separate",
+    "mode_merge": "Merge as Hybrid",
+    "btn_merge_install": "Merge & Install"
   },
   "editor": {
     "completions": {
@@ -1718,7 +1725,8 @@
     "untracked_success": "Mod removed from tracking on Nexus Mods",
     "mod_conflict_active": "Cannot enable '{name}' because it conflicts with active mod '{conflicting}'. Please disable '{conflicting}' first.",
     "bridging_workshop": "Registering \"{name}\" into Palworld Workshop menu...",
-    "bridge_workshop_success": "Successfully registered \"{name}\" in Workshop menu (ID: {id})"
+    "bridge_workshop_success": "Successfully registered \"{name}\" in Workshop menu (ID: {id})",
+    "component_toggled_success": "Mod component toggled successfully"
   },
   "dialogs": {
     "confirm_remove_mod": "Remove \"{name}\" permanently?",
@@ -1999,7 +2007,14 @@
     "badge_single_choice": "Pick one",
     "badge_at_most_one": "Optional",
     "badge_all_required": "All required",
-    "badge_optional": "Any"
+    "badge_optional": "Any",
+    "sidebar_status_title": "Status",
+    "sidebar_selected_title": "Choices",
+    "status_ready": "Ready",
+    "status_pending": "Pending",
+    "option_selected_single": "{count} selected",
+    "options_selected_count": "{count} selected",
+    "click_to_zoom": "Click to enlarge preview"
   },
   "crash_doctor": {
     "scanning_dumps": "Inspecting crash dumps and engine logs...",

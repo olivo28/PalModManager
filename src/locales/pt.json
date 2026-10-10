@@ -343,7 +343,9 @@
     "btn_remove": "Remover",
     "dialog_select_config_title": "Selecionar arquivo de configuração para \"{name}\"",
     "pak_contents_title": "Conteúdo Interno do .pak",
-    "btn_load_pak_contents": "Inspecionar Assets do .pak"
+    "btn_load_pak_contents": "Inspecionar Assets do .pak",
+    "comp_disabled_tooltip": "Componente desativado. Clique para ativar no jogo.",
+    "comp_enabled_tooltip": "Componente ativado. Clique para desativar no jogo."
   },
   "installer": {
     "log_merged_hybrid": "[MERGE] Componentes mesclados com o mod existente: {name}",
@@ -457,7 +459,12 @@
     "orphans_summary_mixed": "{configs} ajuste(s) do usuário (mantidos) e {stale} arquivo(s) obsoleto(s) (removidos).",
     "orphans_instructions": "Arquivos desmarcados serão removidos com segurança durante a atualização. Marque os que deseja manter.",
     "orphans_badge_config": "Config (Manter)",
-    "orphans_badge_stale": "Obsoleto (Remover)"
+    "orphans_badge_stale": "Obsoleto (Remover)",
+    "variant_detected_title": "Variante detectada",
+    "variant_detected_desc": "Outra variante deste mod já está instalada ({name})",
+    "mode_separate": "Instalar separadamente",
+    "mode_merge": "Mesclar como híbrido",
+    "btn_merge_install": "Mesclar e instalar"
   },
   "editor": {
     "completions": {
@@ -1718,7 +1725,8 @@
     "untracked_success": "Mod removido do acompanhamento no Nexus Mods",
     "mod_conflict_active": "Não é possível ativar '{name}' porque está em conflito com o mod ativo '{conflicting}'. Desative '{conflicting}' primeiro.",
     "bridging_workshop": "Registrando \"{name}\" no menu Workshop do Palworld...",
-    "bridge_workshop_success": "Registrado com sucesso \"{name}\" no menu Workshop (ID: {id})"
+    "bridge_workshop_success": "Registrado com sucesso \"{name}\" no menu Workshop (ID: {id})",
+    "component_toggled_success": "Componente do mod alternado com sucesso"
   },
   "dialogs": {
     "confirm_remove_mod": "Excluir \"{name}\" permanentemente?",
@@ -1999,7 +2007,14 @@
     "badge_single_choice": "Escolha um",
     "badge_at_most_one": "Opcional",
     "badge_all_required": "Todos obrigatórios",
-    "badge_optional": "Qualquer"
+    "badge_optional": "Qualquer",
+    "sidebar_status_title": "Status",
+    "sidebar_selected_title": "Opções",
+    "status_ready": "Pronto",
+    "status_pending": "Pendente",
+    "option_selected_single": "{count} selecionada",
+    "options_selected_count": "{count} selecionadas",
+    "click_to_zoom": "Clique para ampliar a prévia"
   },
   "crash_doctor": {
     "scanning_dumps": "Inspecionando despejos de memória e logs da engine...",

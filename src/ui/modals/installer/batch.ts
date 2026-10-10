@@ -10,7 +10,7 @@ import { t } from '../../../utils/i18n';
 import type { BatchItem } from './types';
 import { withInstallProgress, createProgressLogUpdater } from './progress';
 import {
-  _pendingUpdateModId, _pendingBatchPaths, _batchItems, _isProcessingInstall,
+  _pendingUpdateModId, _targetMergeModId, _pendingBatchPaths, _batchItems, _isProcessingInstall,
   setPendingBatchPaths, setPendingUpdateModId, setBatchItems, setLastInstallSuccess, setIsProcessingInstall
 } from './state';
 import { showInstallModal, closeInstallModal, setModalStatus, getCleanNameFromFilename } from './helpers';
@@ -549,6 +549,21 @@ async function executeModInstallation(
       );
     } else {
       installedMod = await withInstallProgress(() => installModWithManifest(manifest, state.currentAnalysis.zipPath), progressCb);
+    }
+
+    if (_targetMergeModId && installedMod) {
+      try {
+        const { mergeModsAsHybrid } = await import('../../../api');
+        const merged = await mergeModsAsHybrid(_targetMergeModId, installedMod.id);
+        if (merged) {
+          installedMod = merged;
+          logs.push(`<div style="color:#00bcff;font-weight:bold;">${escapeHtml(t('installer.log_merged_hybrid', { name: merged.name }))}</div>`);
+          resultsList.innerHTML = logs.join('');
+        }
+      } catch (mergeErr) {
+        logs.push(`<div style="color:#ffaa00;">[WARN] Failed to merge into existing mod: ${escapeHtml(String(mergeErr))}</div>`);
+        resultsList.innerHTML = logs.join('');
+      }
     }
 
     if (installedMod && !installedMod.enabled && !_pendingUpdateModId) {

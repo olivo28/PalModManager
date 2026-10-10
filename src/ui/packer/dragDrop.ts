@@ -3,6 +3,9 @@ import { stagedFiles, targetOverrides, renderWorkspace, virtualFolders, setVirtu
 import { showToast as toast } from '../toast';
 import { t } from '../../utils/i18n';
 import { packerDom } from '../../framework';
+import { getIconSvg } from '../icons/mod';
+import type { IconName } from '../icons/paths';
+import { escapeHtml } from '../../utils/helpers';
 
 function showToast(msg: string, type: 'success' | 'warning' | 'error' | 'info'): void {
   toast(msg, type);
@@ -80,16 +83,16 @@ export function setupTreeDragAndDropHandlers(container: HTMLElement): void {
     if (root) root.classList.remove('drag-over');
   }
 
-  function createGhost(label: string): HTMLElement {
+  function createGhost(label: string, iconName: IconName = 'package'): HTMLElement {
     const g = document.createElement('div');
     g.style.cssText = `
       position: fixed; pointer-events: none; z-index: 9998;
       background: rgba(0,188,255,0.15); border: 1px solid var(--accent);
       color: var(--text-primary); font-size: 12px; padding: 4px 10px;
       border-radius: 6px; backdrop-filter: blur(6px); white-space: nowrap;
-      box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.4); display: inline-flex; align-items: center; gap: 5px;
     `;
-    g.textContent = `📦 ${label}`;
+    g.innerHTML = `${getIconSvg(iconName, 'pmm-icon-xs')} <span>${escapeHtml(label)}</span>`;
     document.body.appendChild(g);
     return g;
   }
@@ -155,7 +158,7 @@ export function setupTreeDragAndDropHandlers(container: HTMLElement): void {
       draggedIndex = null;
 
       const dirname = draggedDirPath.split('/').pop() || draggedDirPath;
-      ghost = createGhost('📁 ' + dirname);
+      ghost = createGhost(dirname, 'folder');
       ghost.style.left = (e.clientX + 12) + 'px';
       ghost.style.top = (e.clientY + 8) + 'px';
 
@@ -233,14 +236,14 @@ export function setupTreeDragAndDropHandlers(container: HTMLElement): void {
           const dirname = oldPath.split('/').pop() || oldPath;
           const newPath = `${folderPath}/${dirname}`;
           moveDirPath(oldPath, newPath);
-          showToast(t('packer.toast_moved_file', { file: `📁 ${dirname}`, target: folderPath }), 'success');
+          showToast(t('packer.toast_moved_file', { file: dirname, target: folderPath }), 'success');
           renderWorkspace();
         }
       } else if (isRoot) {
         // Dropped on root
         const dirname = oldPath.split('/').pop() || oldPath;
         moveDirPath(oldPath, dirname);
-        showToast(t('packer.toast_moved_file', { file: `📁 ${dirname}`, target: 'root' }), 'success');
+        showToast(t('packer.toast_moved_file', { file: dirname, target: 'root' }), 'success');
         renderWorkspace();
       }
     }

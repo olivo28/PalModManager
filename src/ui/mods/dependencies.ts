@@ -3,6 +3,7 @@ import { checkDependencies, checkDependenciesFull, installUe4ss, installPalschem
 import { showToast } from '../toast';
 import { showConfirm } from '../confirm';
 import { t } from '../../utils/i18n';
+import { getIconSvg } from '../icons/mod';
 import { loadMods } from './loader';
 import { loadProfiles } from './profiles';
 import { bus, mainDom } from '../../framework';
@@ -210,9 +211,11 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
       ue4ssEl.title = `UE4SS${fullVerForTitle} — ${t('dependencies.up_to_date')}`;
     }
   } else {
-    ue4ssEl.textContent = 'UE4SS ✕';
+    ue4ssEl.innerHTML = `<span>UE4SS</span> ${getIconSvg('x', 'pmm-icon-xs')}`;
     ue4ssEl.className = 'dep-badge missing';
-    ue4ssEl.style.display = '';
+    ue4ssEl.style.display = 'inline-flex';
+    ue4ssEl.style.alignItems = 'center';
+    ue4ssEl.style.gap = '3px';
     ue4ssEl.style.cursor = 'pointer';
     ue4ssEl.title = t('dependencies.ue4ss_not_installed');
   }
@@ -233,9 +236,11 @@ export function renderDependencyBadges(deps: import('../../types').DependencySta
     psEl.style.cursor = 'pointer';
     psEl.title = isWorkshop ? `PalSchema${ver} (Steam Workshop) — ${t('dependencies.managed_by_steam')}` : (deps.palschema_needs_update ? t('dependencies.update_available_palschema') : t('dependencies.up_to_date'));
   } else {
-    psEl.textContent = 'PalSchema ✕';
+    psEl.innerHTML = `<span>PalSchema</span> ${getIconSvg('x', 'pmm-icon-xs')}`;
     psEl.className = 'dep-badge missing';
-    psEl.style.display = '';
+    psEl.style.display = 'inline-flex';
+    psEl.style.alignItems = 'center';
+    psEl.style.gap = '3px';
     psEl.style.cursor = 'pointer';
     psEl.title = t('dependencies.palschema_not_installed');
   }

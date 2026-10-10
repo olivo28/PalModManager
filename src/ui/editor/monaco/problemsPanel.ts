@@ -5,6 +5,7 @@ import { getState } from '../../../state';
 import { t } from '../../../utils/i18n';
 import { revealAndSelectFile } from '../tree';
 import { getCurrentMonacoFilePath, getMonacoEditor } from './state';
+import { getIconSvg } from '../../icons/mod';
 
 const STORAGE_HEIGHT_KEY = 'pmm_editor_problems_height';
 const STORAGE_OPEN_KEY = 'pmm_editor_problems_open';
@@ -234,7 +235,7 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
   if (count === 0) {
     list.innerHTML = `
       <div class="editor-problems-empty">
-        <span class="empty-icon">✓</span>
+        <span class="empty-icon">${getIconSvg('checkCircle', 'pmm-icon-lg')}</span>
         <span>${t('editor.problems_empty') || 'No problems have been detected in the current file.'}</span>
       </div>
     `;
@@ -246,19 +247,19 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
 
   let html = '';
   _currentFileDiagnostics.forEach((diag, index) => {
-    let icon = '⚠️';
+    let icon = getIconSvg('alertTriangle', 'pmm-icon-xs');
     let iconClass = 'warning';
     if (diag.severity === 'error') {
-      icon = '❌';
+      icon = getIconSvg('xCircle', 'pmm-icon-xs');
       iconClass = 'error';
     } else if (diag.severity === 'info') {
-      icon = 'ℹ️';
+      icon = getIconSvg('info', 'pmm-icon-xs');
       iconClass = 'info';
     }
 
     let categoryBadge = '';
     if (diag.category === 'conflict') {
-      categoryBadge = `<span class="diag-category-badge conflict" style="background:rgba(239,68,68,0.18);color:#f87171;border:1px solid rgba(239,68,68,0.35);">⚔️ ${escapeHtml(t('editor.problems_category_conflict') || 'Conflict')}</span>`;
+      categoryBadge = `<span class="diag-category-badge conflict" style="background:rgba(239,68,68,0.18);color:#f87171;border:1px solid rgba(239,68,68,0.35);display:inline-flex;align-items:center;gap:3px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.problems_category_conflict') || 'Conflict')}</span></span>`;
     } else if (diag.category === 'ue4ss') {
       categoryBadge = '<span class="diag-category-badge ue4ss">UE4SS</span>';
     } else if (diag.category === 'palschema') {
@@ -280,7 +281,7 @@ export function renderProblemsList(diagnostics: EditorDiagnostic[]): void {
           ${categoryBadge}
           <span class="problem-location">${fileName} [${diag.line}, ${diag.column}]</span>
         </span>
-        ${hasFix ? `<button class="problem-fix-btn" data-index="${index}" title="${escapeHtml(fixTitle)}">💡 ${escapeHtml(fixLabel)}</button>` : ''}
+        ${hasFix ? `<button class="problem-fix-btn" data-index="${index}" title="${escapeHtml(fixTitle)}" style="display:inline-flex;align-items:center;gap:4px;">${getIconSvg('lightbulb', 'pmm-icon-xs')} <span>${escapeHtml(fixLabel)}</span></button>` : ''}
       </div>
     `;
   });
@@ -425,7 +426,7 @@ export function injectScannerDiagnostics(diagnosticsByMod: Record<string, Record
             startColumn: Math.max(1, diag.column),
             endLineNumber: diag.endLine ? Math.max(diag.line, diag.endLine) : diag.line,
             endColumn: diag.endColumn || (diag.column + Math.max(1, (diag.target || '').length)),
-            message: diag.message + (diag.suggestion ? `\n💡 Quick Fix: ${diag.suggestion}` : ''),
+            message: diag.message + (diag.suggestion ? `\nQuick Fix: ${diag.suggestion}` : ''),
             source: 'PalModManager',
           };
         });
@@ -518,7 +519,7 @@ export async function triggerWorkspaceScan(force = false): Promise<void> {
     if (workspaceList) {
       workspaceList.innerHTML = `
         <div class="editor-problems-empty" style="color:var(--text-danger);">
-          <span>⚠️ Failed to scan workspace: ${escapeHtml(String(err))}</span>
+          <span>${getIconSvg('alertTriangle', 'pmm-icon-sm')} Failed to scan workspace: ${escapeHtml(String(err))}</span>
         </div>
       `;
     }
@@ -546,7 +547,7 @@ function renderWorkspaceProblemsView(): void {
   if (totalIssues === 0) {
     workspaceList.innerHTML = `
       <div class="editor-problems-empty">
-        <span class="empty-icon">✓</span>
+        <span class="empty-icon">${getIconSvg('checkCircle', 'pmm-icon-lg')}</span>
         <span>${t('editor.problems_workspace_empty') || 'No problems have been detected across the entire mod workspace.'}</span>
       </div>
     `;
@@ -561,7 +562,7 @@ function renderWorkspaceProblemsView(): void {
     html += `
       <div class="editor-problems-file-group">
         <div class="editor-problems-file-header">
-          <span class="file-icon">📁</span>
+          <span class="file-icon">${getIconSvg('folder', 'pmm-icon-xs')}</span>
           <span class="file-title">${escapeHtml(filePath)}</span>
           <span class="file-issue-badge">${diags.length}</span>
         </div>
@@ -569,19 +570,19 @@ function renderWorkspaceProblemsView(): void {
     `;
 
     diags.forEach((diag) => {
-      let icon = '⚠️';
+      let icon = getIconSvg('alertTriangle', 'pmm-icon-xs');
       let iconClass = 'warning';
       if (diag.severity === 'error') {
-        icon = '❌';
+        icon = getIconSvg('xCircle', 'pmm-icon-xs');
         iconClass = 'error';
       } else if (diag.severity === 'info') {
-        icon = 'ℹ️';
+        icon = getIconSvg('info', 'pmm-icon-xs');
         iconClass = 'info';
       }
 
       let categoryBadge = '';
       if (diag.category === 'conflict') {
-        categoryBadge = `<span class="diag-category-badge conflict" style="background:rgba(239,68,68,0.18);color:#f87171;border:1px solid rgba(239,68,68,0.35);">⚔️ ${escapeHtml(t('editor.problems_category_conflict') || 'Conflict')}</span>`;
+        categoryBadge = `<span class="diag-category-badge conflict" style="background:rgba(239,68,68,0.18);color:#f87171;border:1px solid rgba(239,68,68,0.35);display:inline-flex;align-items:center;gap:3px;">${getIconSvg('alertTriangle', 'pmm-icon-xs')} <span>${escapeHtml(t('editor.problems_category_conflict') || 'Conflict')}</span></span>`;
       } else if (diag.category === 'ue4ss') {
         categoryBadge = '<span class="diag-category-badge ue4ss">UE4SS</span>';
       } else if (diag.category === 'palschema') {

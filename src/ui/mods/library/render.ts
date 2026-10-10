@@ -20,6 +20,7 @@ import {
 import { renderLibraryListView } from './listView';
 import { isNexusModEndorsed, isNexusModTracked } from '../../../features/nexusAuth/state';
 import { libraryDom } from '../../../framework';
+import { getIconSvg } from '../../icons/mod';
 
 export async function renderLibraryView(): Promise<void> {
   const container = libraryDom.elMaybe('library-container');
@@ -247,10 +248,10 @@ export async function renderLibraryView(): Promise<void> {
       // Check if there is an online Nexus update for this library card
       const onlineNexusVer = _libraryOnlineUpdatesMap.get(group.modId);
       const onlineUpdateBadge = onlineNexusVer
-        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px calc(5px * var(--ui-scale, 1)); border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap;">▲ ${escapeHtml(t('card.badge_update_available', { version: onlineNexusVer }))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(255, 157, 0, 0.15); color: #ff9d00; border: 1px solid rgba(255, 157, 0, 0.4); padding: 2px calc(5px * var(--ui-scale, 1)); border-radius: 3px; letter-spacing: 0.2px; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px;">${getIconSvg('arrowUp', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_update_available', { version: onlineNexusVer }))}</span></span>`
         : '';
 
-      let imageHtml = `<div style="font-size:calc(32px * var(--ui-scale, 1));text-align:center;color:var(--text-muted);opacity:0.8;margin:calc(8px * var(--ui-scale, 1)) 0;">📦</div>`;
+      let imageHtml = `<div style="text-align:center;color:var(--text-muted);opacity:0.8;margin:calc(8px * var(--ui-scale, 1)) 0;">${getIconSvg('package', 'pmm-icon-2xl')}</div>`;
       let resolvedSrc = group.nexusPictureUrl;
       if (resolvedSrc) {
         let displaySrc = resolvedSrc;
@@ -260,7 +261,7 @@ export async function renderLibraryView(): Promise<void> {
         imageHtml = `
           <div class="library-card-img-container" style="width:100%;height:calc(95px * var(--ui-scale, 1));border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
             <img src="${displaySrc}" data-original-src="${resolvedSrc}" style="width:100%;height:100%;object-fit:cover;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='block'));" />
-            <div style="display:none;font-size:calc(28px * var(--ui-scale, 1));opacity:0.6;">📦</div>
+            <div style="display:none;opacity:0.6;">${getIconSvg('package', 'pmm-icon-2xl')}</div>
             ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
           </div>
         `;
@@ -280,14 +281,14 @@ export async function renderLibraryView(): Promise<void> {
           imageHtml = `
             <div class="library-card-img-container" style="width:100%;height:calc(95px * var(--ui-scale, 1));border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
               <img src="${displaySrc}" data-original-src="${src}" style="width:100%;height:100%;object-fit:cover;" onerror="window.handleUniversalImageFallback ? window.handleUniversalImageFallback(this) : (this.onerror=null, this.style.display='none', this.nextElementSibling && (this.nextElementSibling.style.display='block'));" />
-              <div style="display:none;font-size:calc(28px * var(--ui-scale, 1));opacity:0.6;">📦</div>
+              <div style="display:none;opacity:0.6;">${getIconSvg('package', 'pmm-icon-2xl')}</div>
               ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             </div>
           `;
         } else {
           imageHtml = `
             <div class="library-card-img-container" style="width:100%;height:calc(95px * var(--ui-scale, 1));border-radius:4px;overflow:hidden;background:var(--bg-primary);display:flex;align-items:center;justify-content:center;position:relative;">
-              <div style="font-size:calc(28px * var(--ui-scale, 1));opacity:0.6;">📦</div>
+              <div style="opacity:0.6;">${getIconSvg('package', 'pmm-icon-2xl')}</div>
               ${modType ? `<span class="library-type-tag ${modType.toLowerCase()}">${modType}</span>` : ''}
             </div>
           `;
@@ -319,10 +320,10 @@ export async function renderLibraryView(): Promise<void> {
       const isEndorsed = isNexusModEndorsed(libNexusId, state.currentSettings?.nexusEndorsementsCache);
       const isTracked = isNexusModTracked(libNexusId, state.currentSettings?.nexusTrackedCache);
       const libEndorsedBadge = isEndorsed
-        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px calc(4px * var(--ui-scale, 1)); border-radius: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">👍 ${escapeHtml(t('card.badge_endorsed'))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(46, 204, 113, 0.15); color: #2ecc71; border: 1px solid rgba(46, 204, 113, 0.35); padding: 2px calc(4px * var(--ui-scale, 1)); border-radius: 3px; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.badge_endorsed_tooltip'))}">${getIconSvg('thumbsUp', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_endorsed'))}</span></span>`
         : '';
       const libTrackedBadge = isTracked
-        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px calc(4px * var(--ui-scale, 1)); border-radius: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">📌 ${escapeHtml(t('card.badge_tracked'))}</span>`
+        ? `<span style="font-size: var(--text-2xs, 7.5px); font-weight: 700; background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.35); padding: 2px calc(4px * var(--ui-scale, 1)); border-radius: 3px; display: inline-flex; align-items: center; gap: 3px;" title="${escapeHtml(t('card.badge_tracked_tooltip'))}">${getIconSvg('target', 'pmm-icon-xs')} <span>${escapeHtml(t('card.badge_tracked'))}</span></span>`
         : '';
 
       return `
@@ -353,7 +354,7 @@ export async function renderLibraryView(): Promise<void> {
 
             <div style="display:flex;gap:calc(6px * var(--ui-scale, 1));margin-top:calc(4px * var(--ui-scale, 1));z-index:4;">
               <button class="library-item-install btn-action ${isUpdateAvailable ? 'btn-action-primary' : ''}" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" style="flex:1;padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);font-weight:600;cursor:pointer;">${installBtnText}</button>
-              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" data-installed="${group.isInstalled}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);cursor:pointer;">✕</button>
+              <button class="library-item-delete btn-action btn-action-danger" data-id="${group.modId}" data-zip="${escapeHtml(latestVerObj.zipName)}" data-installed="${group.isInstalled}" title="${escapeHtml(t('library.btn_delete_ver'))}" style="padding:calc(5px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1));font-size:var(--text-sm, 11px);cursor:pointer;">${getIconSvg('x', 'pmm-icon-xs')}</button>
             </div>
           </div>
         </div>
