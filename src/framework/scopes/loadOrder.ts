@@ -7,6 +7,8 @@ export interface LoadOrderDomMap {
   'ue4ss-list-subcontainer': HTMLElement;
   'palschema-load-section': HTMLElement;
   'palschema-list-subcontainer': HTMLElement;
+  'palschema-badge': HTMLElement;
+  'palschema-subtitle': HTMLElement;
 }
 
 export const loadOrderDom = createScope<LoadOrderDomMap>('loadOrder');

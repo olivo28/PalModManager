@@ -2238,5 +2238,19 @@
       "check_updates_all": "설치된 모든 모드의 최신 업데이트를 확인합니다",
       "export_json": "현재 설치된 모드 목록을 JSON 파일로 내보냅니다"
     }
+  },
+  "load_order": {
+    "ue4ss_title": "UE4SS 모드 로드 순서",
+    "ue4ss_subtitle": "Mods/mods.txt를 통해 제어됨",
+    "ue4ss_loading": "UE4SS 순서 로드 중...",
+    "palschema_title": "PalSchema 모드 로드 순서",
+    "palschema_legacy_badge": "실험적",
+    "palschema_native_badge": "네이티브 0.7.0+",
+    "palschema_legacy_subtitle": "NTFS 접합점 접두사로 제어됨 (Windows 전용)",
+    "palschema_native_subtitle": "load_order.json 및 metadata.json을 통해 기본 제어됨",
+    "palschema_loading": "PalSchema 순서 로드 중...",
+    "no_mods": "활성화되거나 설치된 {type} 모드가 없습니다.",
+    "version_label": "버전: {version}",
+    "mod_id_label": "ID: {id}"
   }
 }

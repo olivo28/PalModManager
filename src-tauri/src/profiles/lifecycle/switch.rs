@@ -28,6 +28,15 @@ pub fn switch_profile(
                 let snapshot_path = current_dir.join("mods.txt.snapshot");
                 let _ = fs::copy(&mods_txt, &snapshot_path);
             }
+
+            // Snapshot native load_order.json if active
+            if crate::palschema::is_palschema_native_flo(Path::new(&game_path)) {
+                if let Some(order_file) = crate::palschema::get_load_order_file_path(Path::new(&game_path)) {
+                    if order_file.exists() {
+                        let _ = fs::copy(&order_file, current_dir.join("palschema_load_order.json"));
+                    }
+                }
+            }
         }
     }
 
@@ -50,6 +59,32 @@ pub fn switch_profile(
                 let _ = fs::copy(&ws_backup, &mods_txt);
             } else if std_backup.exists() {
                 let _ = fs::copy(&std_backup, &mods_txt);
+            }
+        }
+
+        // Restore native load_order.json and sync in-situ metadata.json enabled states
+        if crate::palschema::is_palschema_native_flo(Path::new(&game_path)) {
+            let profile_order = target_dir.join("palschema_load_order.json");
+            if profile_order.exists() {
+                if let Some(target_order_file) = crate::palschema::get_load_order_file_path(Path::new(&game_path)) {
+                    let _ = fs::copy(&profile_order, &target_order_file);
+                }
+            }
+
+            let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
+            if gp.palschema_mods_dir.exists() {
+                if let Ok(entries) = fs::read_dir(&gp.palschema_mods_dir) {
+                    for entry in entries.flatten() {
+                        let path = entry.path();
+                        if path.is_dir() {
+                            let folder_name = path.file_name().unwrap_or_default().to_string_lossy().to_string();
+                            let is_enabled = target_profile.enabled_mod_ids.iter().any(|id| {
+                                id.eq_ignore_ascii_case(&folder_name)
+                            });
+                            let _ = crate::palschema::PalSchemaMetadata::set_enabled_in_dir(&path, is_enabled);
+                        }
+                    }
+                }
             }
         }
     }

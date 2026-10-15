@@ -149,6 +149,13 @@ pub fn scan_mods_internal(
             original_name: None,
             custom_name: None,
             fomod_choices: None,
+            palschema_mod_id: if wmod.install_type == WorkshopInstallType::PalSchemaMod {
+                crate::palschema::PalSchemaMetadata::read_from_dir(&game_mod_path)
+                    .map(|m| m.mod_id)
+                    .or_else(|| Some(wmod.package_name.to_lowercase()))
+            } else {
+                None
+            },
         });
     }
 

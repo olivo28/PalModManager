@@ -347,40 +347,62 @@ pub fn update_mod(
             let gp = crate::dependency_checker::build_game_profile(Path::new(game_path));
             let palschema_mods_dir = gp.palschema_mods_dir.clone();
             let palschema_storage_dir = gp.palschema_storage_dir.clone();
+            let is_native = crate::palschema::is_palschema_native_flo(Path::new(game_path));
 
-            if palschema_mods_dir.exists() {
-                if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
-                    for entry in entries.flatten() {
-                        let path = entry.path();
-                        let name = path.file_name().unwrap().to_string_lossy().to_string();
-                        let clean_name = if name.len() > 4 && name[..3].chars().all(|c| c.is_ascii_digit()) && name.as_bytes()[3] == b'_' {
-                            &name[4..]
-                        } else {
-                            &name
-                        };
-                        if clean_name.to_lowercase() == folder_name.to_lowercase() {
-                            let _ = crate::profiles::remove_junction_or_symlink(&path);
+            if is_native {
+                // Native PalSchema 0.7.0+: Zero file moving! In-place toggle via metadata.json
+                let mod_dir = palschema_mods_dir.join(&folder_name);
+                let target_dir = if mod_dir.exists() { mod_dir } else { src_path };
+                if target_dir.exists() {
+                    let _ = crate::palschema::PalSchemaMetadata::set_enabled_in_dir(&target_dir, false);
+                    existing.game_path = target_dir.to_string_lossy().to_string();
+                }
+                existing.disabled_path = String::new();
+
+                // Exclude from load_order.json
+                if let Some(mut order) = crate::palschema::read_load_order(Path::new(game_path)) {
+                    let schema_id = existing.palschema_mod_id.as_deref().unwrap_or(&folder_name).to_lowercase();
+                    if let Some(pos) = order.iter().position(|id| id == &schema_id) {
+                        order.remove(pos);
+                        let _ = crate::palschema::write_load_order(Path::new(game_path), &order);
+                    }
+                }
+            } else {
+                // Legacy PalSchema < 0.7.0
+                if palschema_mods_dir.exists() {
+                    if let Ok(entries) = fs::read_dir(&palschema_mods_dir) {
+                        for entry in entries.flatten() {
+                            let path = entry.path();
+                            let name = path.file_name().unwrap().to_string_lossy().to_string();
+                            let clean_name = if name.len() > 4 && name[..3].chars().all(|c| c.is_ascii_digit()) && name.as_bytes()[3] == b'_' {
+                                &name[4..]
+                            } else {
+                                &name
+                            };
+                            if clean_name.to_lowercase() == folder_name.to_lowercase() {
+                                let _ = crate::profiles::remove_junction_or_symlink(&path);
+                            }
                         }
                     }
                 }
-            }
 
-            let storage_path = palschema_storage_dir.join(&folder_name);
-            let final_src = if storage_path.exists() {
-                storage_path
-            } else if src_path.exists() {
-                src_path
-            } else {
-                palschema_mods_dir.join(&folder_name)
-            };
+                let storage_path = palschema_storage_dir.join(&folder_name);
+                let final_src = if storage_path.exists() {
+                    storage_path
+                } else if src_path.exists() {
+                    src_path
+                } else {
+                    palschema_mods_dir.join(&folder_name)
+                };
 
-            if final_src.exists() {
-                let dest_dir = disabled_base.join("palschema");
-                let _ = fs::create_dir_all(&dest_dir);
-                let dest = dest_dir.join(&folder_name);
-                move_path(&final_src, &dest)?;
-                existing.disabled_path = dest.to_string_lossy().to_string();
-                existing.game_path = String::new();
+                if final_src.exists() {
+                    let dest_dir = disabled_base.join("palschema");
+                    let _ = fs::create_dir_all(&dest_dir);
+                    let dest = dest_dir.join(&folder_name);
+                    move_path(&final_src, &dest)?;
+                    existing.disabled_path = dest.to_string_lossy().to_string();
+                    existing.game_path = String::new();
+                }
             }
             existing.enabled = false;
         } else if existing.mod_type == ModType::Pak || existing.mod_type == ModType::LogicMods {
@@ -543,6 +565,8 @@ fn purge_stale_files_in_mod_dir(
 
         // Skip protected metadata, manifests, and configs
         if fname_lower.ends_with(".pmm.json")
+            || fname_lower == "metadata.json"
+            || fname_lower == "load_order.json"
             || fname_lower == "enabled.txt"
             || fname.starts_with('.')
             || fname_lower.ends_with(".bak")

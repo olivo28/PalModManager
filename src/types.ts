@@ -43,6 +43,7 @@ export interface ModInfo {
   originalName?: string | null;
   customName?: string | null;
   fomodChoices?: Record<string, string[]> | null;
+  palschemaModId?: string | null;
 }
 
 export interface NexusAccountInfo {

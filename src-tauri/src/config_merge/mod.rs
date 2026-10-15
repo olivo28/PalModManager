@@ -200,6 +200,9 @@ pub fn snapshot_configs(mod_dir: &Path, custom_config: Option<&str>) -> ConfigSn
                             // 3. Located inside a config/, settings/, or runtime data folder, OR
                             // 4. Filename explicitly contains "config", "setting", or "option"
                             if ext_lower == "json" || ext_lower == "jsonc" {
+                                if fname_lower == "metadata.json" || fname_lower == "load_order.json" || fname_lower.ends_with(".pmm.json") {
+                                    continue;
+                                }
                                 let is_json_config = custom_fname.as_ref() == Some(&path.file_name().unwrap_or_default().to_os_string())
                                     || path_str_lower.contains("shared")
                                     || is_runtime_folder

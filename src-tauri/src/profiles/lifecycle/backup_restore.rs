@@ -137,6 +137,10 @@ pub fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile
                     }
                 }
             }
+            let ps_load_order = ws_mods_dir.join("PalSchema").join("load_order.json");
+            if ps_load_order.exists() {
+                let _ = fs::copy(&ps_load_order, profile_dir.join("palschema_load_order.json"));
+            }
         }
         DependencyMode::Standard => {
             let ue4ss_game = win64.join("ue4ss");
@@ -225,6 +229,10 @@ pub fn backup_game_files_to_profile(game_path: &str, profile_dir: &Path, profile
             let ps_version_file = std_ue4ss_mods_dir.join("PalSchema").join("palschema.version");
             if ps_version_file.exists() {
                 let _ = fs::copy(&ps_version_file, profile_dir.join("palschema.version"));
+            }
+            let ps_load_order = std_ue4ss_mods_dir.join("PalSchema").join("load_order.json");
+            if ps_load_order.exists() {
+                let _ = fs::copy(&ps_load_order, profile_dir.join("palschema_load_order.json"));
             }
         }
         DependencyMode::None => {}
@@ -443,6 +451,10 @@ pub fn restore_profile_files_to_game(
                         }
                     }
                 }
+                let ps_load_order = profile_dir.join("palschema_load_order.json");
+                if ps_load_order.exists() {
+                    let _ = fs::copy(&ps_load_order, target_ws_mods_dir.join("PalSchema").join("load_order.json"));
+                }
             }
 
             let db = crate::db::load_db(program_path);
@@ -507,6 +519,10 @@ pub fn restore_profile_files_to_game(
                             }
                         }
                     }
+                }
+                let ps_load_order = profile_dir.join("palschema_load_order.json");
+                if ps_load_order.exists() {
+                    let _ = fs::copy(&ps_load_order, target_std_mods_dir.join("PalSchema").join("load_order.json"));
                 }
             }
 
@@ -575,5 +591,9 @@ pub fn restore_profile_files_to_game(
             }
             let _ = fs::remove_dir(&palschema_storage);
         }
+    }
+
+    if crate::palschema::is_palschema_native_flo(Path::new(game_path)) {
+        let _ = crate::palschema::migrate_legacy_storage(Path::new(game_path));
     }
 }

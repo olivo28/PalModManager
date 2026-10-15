@@ -76,6 +76,11 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                 original_name: meta.original_name,
                 custom_name: meta.custom_name,
                 fomod_choices: meta.fomod_choices,
+                palschema_mod_id: if path.is_dir() {
+                    crate::palschema::PalSchemaMetadata::read_from_dir(path).map(|m| m.mod_id)
+                } else {
+                    None
+                },
             });
         }
     } else if path.is_file() {
@@ -160,6 +165,7 @@ pub fn load_pmm_meta(path: &Path) -> Option<ModInfo> {
                         original_name: meta.original_name,
                         custom_name: meta.custom_name,
                         fomod_choices: meta.fomod_choices,
+                        palschema_mod_id: None,
                     });
                 }
             }

@@ -375,6 +375,7 @@ mod tests {
             original_name: None,
             custom_name: None,
             fomod_choices: None,
+            palschema_mod_id: None,
         };
 
         let diffs = diff_exact_match_configs(&old_snapshot, &temp_dir, &mod_info);

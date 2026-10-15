@@ -232,7 +232,63 @@ pub fn get_palschema_load_order(state: State<AppState>) -> Result<Vec<ModInfo>, 
     let gp = crate::dependency_checker::build_game_profile(Path::new(&game_path));
     let palschema_mods_dir = gp.palschema_mods_dir.clone();
 
-    // Read the physical mods/ directory to determine current order weights and enabled state
+    // 1. Native PalSchema (>= 0.7.0) support: read load_order.json and metadata.json
+    let is_native = crate::palschema::is_palschema_native_flo(Path::new(&game_path));
+    if is_native {
+        let _ = crate::palschema::migrate_legacy_storage(Path::new(&game_path));
+        let native_order = crate::palschema::read_load_order(Path::new(&game_path)).unwrap_or_default();
+        let mut order_map = std::collections::HashMap::new();
+        for (idx, id) in native_order.iter().enumerate() {
+            order_map.insert(id.to_lowercase(), idx);
+        }
+
+        let mut filtered_mods = Vec::new();
+        for mut m in target_mods {
+            let folder_name = crate::profiles::get_mod_folder_name(&m).to_lowercase();
+            let mod_dir = palschema_mods_dir.join(&folder_name);
+
+            let meta_opt = if mod_dir.exists() {
+                crate::palschema::PalSchemaMetadata::read_from_dir(&mod_dir)
+            } else {
+                None
+            };
+
+            let schema_id = m.palschema_mod_id.as_deref()
+                .map(|s| s.to_lowercase())
+                .or_else(|| meta_opt.as_ref().map(|meta| meta.mod_id.clone()))
+                .unwrap_or_else(|| folder_name.clone());
+
+            m.palschema_mod_id = Some(schema_id.clone());
+
+            let profile_enabled = current_profile.enabled_mod_ids.iter().any(|id| {
+                let id_lower = id.to_lowercase();
+                id_lower == m.id.to_lowercase() || id_lower == m.name.to_lowercase() || id_lower == folder_name || id_lower == schema_id
+            });
+            m.enabled = meta_opt.and_then(|meta| meta.enabled).unwrap_or(profile_enabled);
+
+            let weight = order_map.get(&schema_id)
+                .or_else(|| order_map.get(&folder_name))
+                .or_else(|| order_map.get(&m.name.to_lowercase()))
+                .copied()
+                .unwrap_or(usize::MAX);
+            m.mods_txt_order = if weight == usize::MAX { Some(999) } else { Some(weight as u32) };
+            filtered_mods.push(m);
+        }
+
+        filtered_mods.sort_by(|a, b| {
+            let weight_a = a.mods_txt_order.unwrap_or(999);
+            let weight_b = b.mods_txt_order.unwrap_or(999);
+            if weight_a != weight_b {
+                weight_a.cmp(&weight_b)
+            } else {
+                a.name.to_lowercase().cmp(&b.name.to_lowercase())
+            }
+        });
+
+        return Ok(filtered_mods);
+    }
+
+    // 2. Legacy fallback (< 0.7.0): read physical mods/ directory for prefix weights
     let mut order_map = std::collections::HashMap::new();
     let mut enabled_map = std::collections::HashMap::new();
 
@@ -319,7 +375,79 @@ pub fn save_palschema_load_order(ordered_items: Vec<(String, bool)>, state: Stat
 
     let map_file_path = palschema_mods_dir.parent().unwrap().join("FLOPalSchema.json");
 
-    // 1. Delete all junctions tracked in previous FLOPalSchema.json mapping file
+    let current_profile_id = data.current_profile_id.clone();
+    let program_path = data.settings.program_path.clone();
+
+    // 1. Native PalSchema (>= 0.7.0): In-place metadata.json toggling + direct load_order.json (Zero file moves!)
+    let is_native = crate::palschema::is_palschema_native_flo(Path::new(&game_path));
+    if is_native {
+        let _ = crate::palschema::migrate_legacy_storage(Path::new(&game_path));
+        let mut ordered_schema_ids = Vec::new();
+
+        for (idx, (id, enabled)) in ordered_items.iter().enumerate() {
+            let mut folder_name_opt = None;
+            let mut mod_name_opt = None;
+
+            if let Some(m) = data.mods.iter_mut().find(|mod_item| &mod_item.id == id) {
+                let folder_name = crate::profiles::get_mod_folder_name(m);
+                let mod_dir = palschema_mods_dir.join(&folder_name);
+                m.mods_txt_order = Some(idx as u32);
+                m.enabled = *enabled;
+                folder_name_opt = Some(folder_name.clone());
+                mod_name_opt = Some(m.name.clone());
+
+                if mod_dir.exists() {
+                    let _ = crate::palschema::PalSchemaMetadata::set_enabled_in_dir(&mod_dir, *enabled);
+                    m.game_path = mod_dir.to_string_lossy().to_string();
+                    m.disabled_path = String::new();
+                }
+
+                let schema_id = m.palschema_mod_id.as_deref()
+                    .unwrap_or(&folder_name)
+                    .to_lowercase();
+                m.palschema_mod_id = Some(schema_id.clone());
+
+                if *enabled {
+                    ordered_schema_ids.push(schema_id);
+                }
+            }
+
+            if let (Some(_), Some(mod_name)) = (folder_name_opt, mod_name_opt) {
+                if let Some(profile) = data.profiles.iter_mut().find(|p| p.id == current_profile_id) {
+                    let position = profile.enabled_mod_ids.iter().position(|name| {
+                        name.to_lowercase() == id.to_lowercase() || name.to_lowercase() == mod_name.to_lowercase()
+                    });
+                    if *enabled {
+                        if position.is_none() {
+                            profile.enabled_mod_ids.push(mod_name.clone());
+                        }
+                    } else if let Some(pos) = position {
+                        profile.enabled_mod_ids.remove(pos);
+                    }
+                }
+            }
+        }
+
+        // Write native load_order.json
+        let _ = crate::palschema::write_load_order(Path::new(&game_path), &ordered_schema_ids);
+
+        // Also save profile backup copy of load_order.json
+        let profile_dir = crate::profiles::get_profile_dir(&program_path, &current_profile_id);
+        let _ = fs::create_dir_all(&profile_dir);
+        let profile_order_file = profile_dir.join("palschema_load_order.json");
+        let _ = fs::write(&profile_order_file, serde_json::to_string_pretty(&ordered_schema_ids).unwrap_or_default());
+
+        if map_file_path.exists() {
+            let _ = fs::remove_file(&map_file_path);
+        }
+
+        let data_clone = data.clone();
+        drop(data);
+        let _ = crate::db::save_db(&data_clone.settings.program_path, &data_clone);
+        return Ok(());
+    }
+
+    // 2. Legacy PalSchema (< 0.7.0): Delete junctions tracked in FLOPalSchema.json
     if map_file_path.exists() {
         if let Ok(content) = fs::read_to_string(&map_file_path) {
             if let Ok(old_map) = serde_json::from_str::<serde_json::Value>(&content) {

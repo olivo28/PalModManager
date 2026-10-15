@@ -2238,5 +2238,19 @@
       "check_updates_all": "Comprueba actualizaciones para todos los mods instalados",
       "export_json": "Exporta la lista de mods instalados a un archivo JSON"
     }
+  },
+  "load_order": {
+    "ue4ss_title": "Orden de Carga de Mods UE4SS",
+    "ue4ss_subtitle": "Controlado mediante Mods/mods.txt",
+    "ue4ss_loading": "Cargando orden de UE4SS...",
+    "palschema_title": "Orden de Carga de Mods PalSchema",
+    "palschema_legacy_badge": "Experimental",
+    "palschema_native_badge": "Nativo 0.7.0+",
+    "palschema_legacy_subtitle": "Controlado mediante prefijos de uniones NTFS (Solo Windows)",
+    "palschema_native_subtitle": "Controlado de forma nativa mediante load_order.json y metadata.json",
+    "palschema_loading": "Cargando orden de PalSchema...",
+    "no_mods": "No hay mods de {type} activos o instalados.",
+    "version_label": "Versión: {version}",
+    "mod_id_label": "ID: {id}"
   }
 }

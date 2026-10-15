@@ -2238,5 +2238,19 @@
       "check_updates_all": "インストールされているすべてのMODの更新を確認します",
       "export_json": "現在インストールされているMODのリストをJSONファイルに書き出します"
     }
+  },
+  "load_order": {
+    "ue4ss_title": "UE4SS Mod ロード順序",
+    "ue4ss_subtitle": "Mods/mods.txt 経由で管理",
+    "ue4ss_loading": "UE4SS の順序を読み込み中...",
+    "palschema_title": "PalSchema Mod ロード順序",
+    "palschema_legacy_badge": "実験的",
+    "palschema_native_badge": "ネイティブ 0.7.0+",
+    "palschema_legacy_subtitle": "NTFS ジャンクション接頭辞で管理（Windows 専用）",
+    "palschema_native_subtitle": "load_order.json と metadata.json でネイティブに管理",
+    "palschema_loading": "PalSchema の順序を読み込み中...",
+    "no_mods": "有効またはインストール済みの {type} Mod はありません。",
+    "version_label": "バージョン: {version}",
+    "mod_id_label": "ID: {id}"
   }
 }

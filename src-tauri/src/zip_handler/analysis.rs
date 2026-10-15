@@ -66,7 +66,7 @@ pub fn analyze_zip(zip_path: &str) -> Result<ZipAnalysis, String> {
         if nl.ends_with(".dll") { has_dll = true; }
         if nl.ends_with(".json") || nl.ends_with(".jsonc") {
             has_json = true;
-            if nl.contains("info.json") || nl.contains("modinfo.pmm.json") { has_info_json = true; }
+            if nl.contains("info.json") || nl.contains("modinfo.pmm.json") || nl.ends_with("metadata.json") { has_info_json = true; }
         }
         if nl.ends_with(".pak") { has_pak = true; }
         let norm_nl = nl.replace('\\', "/");

@@ -355,6 +355,7 @@ mod tests {
             original_name: None,
             custom_name: None,
             fomod_choices: None,
+            palschema_mod_id: None,
         };
 
         let deduced = deduce_fomod_choices_from_disk(&temp_dir, &mod_info, &config, &zip_path);

@@ -121,6 +121,7 @@ pub fn scan_pak_mods(
             original_name: None,
             custom_name: None,
             fomod_choices: None,
+            palschema_mod_id: None,
         });
     }
 }

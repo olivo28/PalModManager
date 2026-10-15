@@ -56,6 +56,8 @@ pub struct ProfileShareManifest {
     pub hide_native_mods: Option<bool>,
     pub mod_folders: Vec<ModFolder>,
     pub load_order_metadata: Option<Vec<(String, bool)>>,
+    #[serde(default)]
+    pub palschema_load_order: Option<Vec<String>>,
     pub required_dependencies: Vec<String>,
     pub mods: Vec<ProfileShareMod>,
 }
@@ -300,6 +302,21 @@ pub fn export_profile_manifest_internal(
         hide_native_mods: profile.hide_native_mods,
         mod_folders: profile.mod_folders.clone(),
         load_order_metadata: profile.load_order_metadata.clone(),
+        palschema_load_order: {
+            let p_dir = crate::profiles::utils::get_profile_dir(&data.settings.program_path, profile_id);
+            let ps_order_path = p_dir.join("palschema_load_order.json");
+            if ps_order_path.exists() {
+                crate::palschema::read_load_order(&ps_order_path)
+            } else if let Some(game_order_path) = crate::palschema::get_load_order_file_path(Path::new(&data.settings.game_path)) {
+                if game_order_path.exists() {
+                    crate::palschema::read_load_order(&game_order_path)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        },
         required_dependencies: required_deps,
         mods,
     };
@@ -529,6 +546,13 @@ pub fn apply_profile_manifest_internal(
         compatibility_patches: None,
         ue4ss_control_mode: None,
     };
+
+    if let Some(ref order) = manifest.palschema_load_order {
+        let p_dir = crate::profiles::utils::get_profile_dir(&data.settings.program_path, &profile_id);
+        let _ = fs::create_dir_all(&p_dir);
+        let order_path = p_dir.join("palschema_load_order.json");
+        let _ = crate::palschema::write_load_order(&order_path, order);
+    }
 
     data.profiles.push(new_profile);
 

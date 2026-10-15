@@ -29,6 +29,7 @@ pub mod workshop_bridge;
 pub mod system_open;
 pub mod game_detector;
 pub mod diagnostics;
+pub mod palschema;
 
 use commands::mod_commands;
 use commands::settings_commands;

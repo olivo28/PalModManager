@@ -169,7 +169,30 @@ pub fn execute_manifest(
         let palschema_mods_dir = ue4ss_mods_dir.join("PalSchema").join("mods");
         let extracted_mod_dir = palschema_mods_dir.join(&manifest.folder_name);
 
-        if force_load_order_palschema {
+        let is_native_ps = crate::palschema::is_palschema_native_flo(std::path::Path::new(game_path));
+        if is_native_ps {
+            // PalSchema 0.7.0+ native mode: keep in mods/ directory, zero junctions, zero Storage
+            if extracted_mod_dir.exists() {
+                let normal_str = normalize_path_separator(&extracted_mod_dir.to_string_lossy());
+                if !manifest.has_ue4ss {
+                    primary_path = normal_str.clone();
+                }
+                if !component_paths.contains(&normal_str) {
+                    component_paths.push(normal_str);
+                }
+
+                // If native load_order.json is configured, ensure newly installed mod is included
+                if let Some(mut existing_order) = crate::palschema::read_load_order(std::path::Path::new(game_path)) {
+                    let schema_mod_id = crate::palschema::PalSchemaMetadata::read_from_dir(&extracted_mod_dir)
+                        .map(|m| m.mod_id)
+                        .unwrap_or_else(|| manifest.folder_name.to_lowercase());
+                    if !existing_order.contains(&schema_mod_id) {
+                        existing_order.push(schema_mod_id);
+                        let _ = crate::palschema::write_load_order(std::path::Path::new(game_path), &existing_order);
+                    }
+                }
+            }
+        } else if force_load_order_palschema {
             let palschema_storage_dir = ue4ss_mods_dir.join("PalSchema").join("Storage");
             if extracted_mod_dir.exists() {
                 let storage_dest = palschema_storage_dir.join(&manifest.folder_name);
@@ -283,5 +306,14 @@ pub fn execute_manifest(
         original_name: Some(manifest.display_name.clone()),
         custom_name: None,
         fomod_choices: manifest.fomod_choices.clone(),
+        palschema_mod_id: if manifest.has_palschema {
+            let ue4ss_mods_dir = crate::dependency_checker::get_ue4ss_mods_dir(game_path);
+            let extracted_mod_dir = ue4ss_mods_dir.join("PalSchema").join("mods").join(&manifest.folder_name);
+            crate::palschema::PalSchemaMetadata::read_from_dir(&extracted_mod_dir)
+                .map(|m| m.mod_id)
+                .or_else(|| Some(manifest.folder_name.to_lowercase()))
+        } else {
+            None
+        },
     })
 }

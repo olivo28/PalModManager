@@ -45,6 +45,26 @@ pub async fn analyze_zip(zip_path: String, state: State<'_, AppState>) -> Result
                 }
             }
         }
+        if modinfo_data.is_none() {
+            let meta_file_path = analysis.files.iter().find(|f| {
+                let lower = f.to_lowercase().replace('\\', "/");
+                lower == "metadata.json" || lower.ends_with("/metadata.json")
+            });
+            if let Some(target_file) = meta_file_path {
+                if let Some(content) = zip_handler::read_archive_file(&zip_path, target_file) {
+                    if let Ok(meta) = serde_json::from_str::<crate::palschema::PalSchemaMetadata>(&content) {
+                        modinfo_data = Some(serde_json::json!({
+                            "name": meta.name.clone().unwrap_or_else(|| meta.mod_id.clone()),
+                            "folderName": meta.name.clone().unwrap_or_else(|| meta.mod_id.clone()),
+                            "version": meta.version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                            "author": meta.authors.as_ref().map(|a| a.join(", ")),
+                            "description": meta.description,
+                            "palschemaModId": meta.mod_id,
+                        }));
+                    }
+                }
+            }
+        }
     }
 
     let mut sidecar_data: Option<Value> = None;
@@ -212,6 +232,20 @@ pub async fn check_mod_exists_command(
                     } else if let Some(name) = val.get("name").and_then(|v| v.as_str()) {
                         metadata_folder_name = Some(name.to_string());
                     }
+                }
+            }
+        }
+    }
+
+    if metadata_folder_name.is_none() {
+        let meta_file_path = analysis.files.iter().find(|f| {
+            let lower = f.to_lowercase().replace('\\', "/");
+            lower == "metadata.json" || lower.ends_with("/metadata.json")
+        });
+        if let Some(target_file) = meta_file_path {
+            if let Some(content) = zip_handler::read_archive_file(&zip_path, target_file) {
+                if let Ok(meta) = serde_json::from_str::<crate::palschema::PalSchemaMetadata>(&content) {
+                    metadata_folder_name = meta.name.clone().or_else(|| Some(meta.mod_id.clone()));
                 }
             }
         }

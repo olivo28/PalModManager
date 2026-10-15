@@ -4,6 +4,8 @@ import { escapeHtml } from '../utils/helpers';
 import { getState } from '../state';
 import { getIconSvg } from './icons/mod';
 import { loadOrderDom, mainDom } from '../framework';
+import { t } from '../utils/i18n';
+import { compareVersions } from './mods/library/helpers';
 
 let _ue4ssMods: ModInfo[] = [];
 let _palschemaMods: ModInfo[] = [];
@@ -28,27 +30,30 @@ export async function renderLoadView(): Promise<void> {
 
   const showUe4ss = !!settings?.forceLoadOrderUe4ss;
   const showPalschema = !!settings?.forceLoadOrderPalschema;
+  const palschemaVer = state.dependencies?.palschema_version || '';
+  const initialNative = (palschemaVer ? compareVersions(palschemaVer, '0.7.0') >= 0 : false)
+    || _palschemaMods.some(m => !!m.palschemaModId);
 
   container.innerHTML = `
     <!-- UE4SS Section -->
     <div id="ue4ss-load-section" class="load-section-container" style="flex: 1; display: ${showUe4ss ? 'flex' : 'none'}; flex-direction: column; gap: 10px; min-width: 320px; background: rgba(20,20,20,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 100%;">
       <div style="display:flex; flex-direction:column; gap:4px; border-bottom:1px solid var(--border); padding-bottom:10px; flex-shrink:0;">
-        <span style="font-size:14px; font-weight:700; color:var(--text-primary);">UE4SS Mods Load Order</span>
-        <span style="font-size:10px; color:var(--text-muted);">Controlled via Mods/mods.txt</span>
+        <span style="font-size:14px; font-weight:700; color:var(--text-primary);">${t('load_order.ue4ss_title')}</span>
+        <span style="font-size:10px; color:var(--text-muted);">${t('load_order.ue4ss_subtitle')}</span>
       </div>
       <div id="ue4ss-list-subcontainer" style="flex:1; display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-right:4px;">
-        <div style="color:var(--text-muted); font-size:12px; padding:8px;">Loading UE4SS order...</div>
+        <div style="color:var(--text-muted); font-size:12px; padding:8px;">${t('load_order.ue4ss_loading')}</div>
       </div>
     </div>
 
     <!-- PalSchema Section -->
     <div id="palschema-load-section" class="load-section-container" style="flex: 1; display: ${showPalschema ? 'flex' : 'none'}; flex-direction: column; gap: 10px; min-width: 320px; background: rgba(20,20,20,0.2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; height: 100%;">
       <div style="display:flex; flex-direction:column; gap:4px; border-bottom:1px solid var(--border); padding-bottom:10px; flex-shrink:0;">
-        <span style="font-size:14px; font-weight:700; color:var(--text-primary);">PalSchema Mods Load Order <span style="font-size:9px; color:var(--accent); font-weight:normal; margin-left:2px; vertical-align:middle; border: 1px solid rgba(0,188,255,0.2); padding: 1px 4px; border-radius: 3px;">Experimental</span></span>
-        <span style="font-size:10px; color:var(--text-muted);">Controlled via NTFS Junction Prefixes (Windows Only)</span>
+        <span style="font-size:14px; font-weight:700; color:var(--text-primary);">${t('load_order.palschema_title')} <span id="palschema-badge" style="font-size:9px; color:var(--accent); font-weight:normal; margin-left:2px; vertical-align:middle; border: 1px solid rgba(0,188,255,0.2); padding: 1px 4px; border-radius: 3px;">${initialNative ? t('load_order.palschema_native_badge') : t('load_order.palschema_legacy_badge')}</span></span>
+        <span id="palschema-subtitle" style="font-size:10px; color:var(--text-muted);">${initialNative ? t('load_order.palschema_native_subtitle') : t('load_order.palschema_legacy_subtitle')}</span>
       </div>
       <div id="palschema-list-subcontainer" style="flex:1; display:flex; flex-direction:column; gap:8px; overflow-y:auto; padding-right:4px;">
-        <div style="color:var(--text-muted); font-size:12px; padding:8px;">Loading PalSchema order...</div>
+        <div style="color:var(--text-muted); font-size:12px; padding:8px;">${t('load_order.palschema_loading')}</div>
       </div>
     </div>
   `;
@@ -74,6 +79,13 @@ export async function renderLoadView(): Promise<void> {
   if (showPalschema) {
     try {
       _palschemaMods = await invoke<ModInfo[]>('get_palschema_load_order');
+      const detectedNative = (palschemaVer ? compareVersions(palschemaVer, '0.7.0') >= 0 : false)
+        || _palschemaMods.some(m => !!m.palschemaModId);
+      const badgeEl = loadOrderDom.elMaybe('palschema-badge');
+      if (badgeEl) badgeEl.textContent = detectedNative ? t('load_order.palschema_native_badge') : t('load_order.palschema_legacy_badge');
+      const subEl = loadOrderDom.elMaybe('palschema-subtitle');
+      if (subEl) subEl.textContent = detectedNative ? t('load_order.palschema_native_subtitle') : t('load_order.palschema_legacy_subtitle');
+
       renderPalSchemaList(palschemaSub);
       if (_palschemaAbort) { _palschemaAbort.abort(); }
       _palschemaAbort = new AbortController();
@@ -97,7 +109,7 @@ function renderGenericList(container: HTMLElement, modsList: ModInfo[], sectionT
   if (!container) return;
 
   if (modsList.length === 0) {
-    container.innerHTML = `<div style="color:var(--text-muted);font-size:12px;padding:12px;text-align:center;background:rgba(255,255,255,0.01);border:1px dashed var(--border);border-radius:8px;">No active/installed ${sectionType === 'ue4ss' ? 'UE4SS / Hybrid' : 'PalSchema'} mods.</div>`;
+    container.innerHTML = `<div style="color:var(--text-muted);font-size:12px;padding:12px;text-align:center;background:rgba(255,255,255,0.01);border:1px dashed var(--border);border-radius:8px;">${t('load_order.no_mods', { type: sectionType === 'ue4ss' ? 'UE4SS / Hybrid' : 'PalSchema' })}</div>`;
     return;
   }
 
@@ -136,7 +148,10 @@ function renderGenericList(container: HTMLElement, modsList: ModInfo[], sectionT
       </label>
       <div style="flex:1;display:flex;flex-direction:column;gap:2px;min-width:0;padding-right:8px;">
         <span style="font-size:13px;font-weight:700;color:var(--text-primary);letter-spacing:0.3px;word-break:break-word;line-height:1.2;">${escapeHtml(mod.name)}</span>
-        <span style="font-size:10px;color:var(--text-muted);">Version: ${escapeHtml(mod.version)}</span>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+          <span style="font-size:10px;color:var(--text-muted);">${t('load_order.version_label', { version: escapeHtml(mod.version) })}</span>
+          ${mod.palschemaModId ? `<span style="font-size:10px;color:var(--accent);font-family:monospace;background:rgba(0,188,255,0.08);border:1px solid rgba(0,188,255,0.2);padding:1px 6px;border-radius:3px;">${t('load_order.mod_id_label', { id: escapeHtml(mod.palschemaModId) })}</span>` : ''}
+        </div>
       </div>
       <span style="font-size:10px;padding:3px 10px;border-radius:4px;border:1px solid ${badgeBg};color:${badgeColor};background:${badgeBg};font-weight:700;letter-spacing:0.5px;text-transform:uppercase;flex-shrink:0;">${escapeHtml(typeLabel)}</span>
     `;

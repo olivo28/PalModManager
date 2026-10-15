@@ -56,6 +56,11 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     original_name: None,
                     custom_name: None,
                     fomod_choices: None,
+                    palschema_mod_id: if mod_path.is_dir() && *mod_type == ModType::PalSchema {
+                        crate::palschema::PalSchemaMetadata::read_from_dir(&mod_path).map(|m| m.mod_id)
+                    } else {
+                        None
+                    },
                 });
             }
         }
@@ -106,6 +111,7 @@ pub fn scan_disabled_mods(disabled_base: &Path, results: &mut Vec<ModInfo>) {
                     original_name: None,
                     custom_name: None,
                     fomod_choices: None,
+                    palschema_mod_id: None,
                 });
             }
         }

@@ -98,6 +98,8 @@ pub struct ModInfo {
     pub custom_name: Option<String>,
     #[serde(default)]
     pub fomod_choices: Option<std::collections::HashMap<String, Vec<String>>>,
+    #[serde(default)]
+    pub palschema_mod_id: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]

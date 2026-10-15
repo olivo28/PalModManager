@@ -53,6 +53,8 @@ pub struct ProfilePackManifest {
     pub hide_native_mods: Option<bool>,
     pub mod_folders: Vec<ModFolder>,
     pub load_order_metadata: Option<Vec<(String, bool)>>,
+    #[serde(default)]
+    pub palschema_load_order: Option<Vec<String>>,
     pub dependencies: Vec<ExportedDependencyMeta>,
     pub mods: Vec<ExportedModMeta>,
 }
@@ -301,6 +303,21 @@ pub fn export_profile_pack_internal(
         hide_native_mods: profile.hide_native_mods,
         mod_folders: profile.mod_folders.clone(),
         load_order_metadata: profile.load_order_metadata.clone(),
+        palschema_load_order: {
+            let p_dir = get_profile_dir(program_path, profile_id);
+            let ps_order_path = p_dir.join("palschema_load_order.json");
+            if ps_order_path.exists() {
+                crate::palschema::read_load_order(&ps_order_path)
+            } else if let Some(game_order_path) = crate::palschema::get_load_order_file_path(Path::new(game_path)) {
+                if game_order_path.exists() {
+                    crate::palschema::read_load_order(&game_order_path)
+                } else {
+                    None
+                }
+            } else {
+                None
+            }
+        },
         dependencies: exported_dependencies,
         mods: exported_mods,
     };
@@ -471,7 +488,7 @@ pub fn import_profile_pack_internal(
             data.mods.push(ModInfo {
                 id: m_meta.id.clone(),
                 name: m_meta.name.clone(),
-                mod_type: m_type,
+                mod_type: m_type.clone(),
                 nexus_mod_id: m_meta.nexus_mod_id,
                 nexus_url: m_meta.nexus_url.clone(),
                 nexus_author: m_meta.nexus_author.clone(),
@@ -511,6 +528,11 @@ pub fn import_profile_pack_internal(
                 original_name: None,
                 custom_name: None,
                 fomod_choices: None,
+                palschema_mod_id: if m_type == ModType::PalSchema {
+                    Some(m_meta.id.to_lowercase())
+                } else {
+                    None
+                },
             });
         }
     }
@@ -543,6 +565,11 @@ pub fn import_profile_pack_internal(
         compatibility_patches: None,
         ue4ss_control_mode: Some("enabled_txt".to_string()),
     };
+
+    if let Some(ref order) = manifest.palschema_load_order {
+        let order_path = profile_dir.join("palschema_load_order.json");
+        let _ = crate::palschema::write_load_order(&order_path, order);
+    }
 
     if let Ok(json) = serde_json::to_string_pretty(&new_profile) {
         let _ = fs::write(profile_dir.join("profile.json"), json);

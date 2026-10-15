@@ -2238,5 +2238,19 @@
       "check_updates_all": "检查所有已安装模组是否有新版本",
       "export_json": "将当前已安装的模组列表导出为 JSON 文件"
     }
+  },
+  "load_order": {
+    "ue4ss_title": "UE4SS 模组加载顺序",
+    "ue4ss_subtitle": "通过 Mods/mods.txt 控制",
+    "ue4ss_loading": "正在加载 UE4SS 顺序...",
+    "palschema_title": "PalSchema 模组加载顺序",
+    "palschema_legacy_badge": "实验性",
+    "palschema_native_badge": "原生 0.7.0+",
+    "palschema_legacy_subtitle": "通过 NTFS 连接点前缀控制（仅限 Windows）",
+    "palschema_native_subtitle": "通过 load_order.json 和 metadata.json 原生控制",
+    "palschema_loading": "正在加载 PalSchema 顺序...",
+    "no_mods": "未找到已激活或已安装的 {type} 模组。",
+    "version_label": "版本：{version}",
+    "mod_id_label": "ID: {id}"
   }
 }

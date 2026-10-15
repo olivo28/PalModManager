@@ -54,15 +54,29 @@ pub fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names
 
             if has_json {
                 let install_date = file_install_date(&mod_path);
+                let schema_meta = crate::palschema::PalSchemaMetadata::read_from_dir(&mod_path);
+                let (palschema_mod_id, display_name, version, author, is_meta_enabled) = if let Some(ref m) = schema_meta {
+                    let a_str = m.authors.as_ref().map(|a| a.join(", "));
+                    (
+                        Some(m.mod_id.clone()),
+                        m.name.clone().unwrap_or_else(|| clean_name.clone()),
+                        m.version.clone().unwrap_or_else(|| "1.0.0".to_string()),
+                        a_str,
+                        m.enabled.unwrap_or(true),
+                    )
+                } else {
+                    (None, clean_name.clone(), "unknown".to_string(), None, true)
+                };
+
                 results.push(ModInfo {
                     id: clean_name.clone(),
-                    name: clean_name.clone(),
+                    name: display_name,
                     mod_type: ModType::PalSchema,
-                    nexus_mod_id: None, nexus_url: None, nexus_author: None, nexus_summary: None,
+                    nexus_mod_id: None, nexus_url: None, nexus_author: author, nexus_summary: None,
                     nexus_picture_url: None, nexus_endorsements: None, nexus_downloads: None,
-                    version: "unknown".to_string(), install_date,
+                    version, install_date,
                     source_zip: String::new(), config_path: None, config_paths: None,
-                    config_type: None, enabled: true,
+                    config_type: None, enabled: is_meta_enabled,
                     game_path: mod_path.to_string_lossy().to_string(),
                     disabled_path: String::new(),
                     pak_destination: None, has_enabled_txt: false, mods_txt_order: None,
@@ -80,6 +94,7 @@ pub fn scan_palschema_mods(dir: &Path, results: &mut Vec<ModInfo>, ignored_names
                     original_name: None,
                     custom_name: None,
                     fomod_choices: None,
+                    palschema_mod_id,
                 });
             }
         }
